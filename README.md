@@ -31,11 +31,11 @@ Set `githubOrg` in `lib/config.ts` and the Projects section lists your real repo
 ## Epoch: going live for the fest
 
 1. Create a free project at [supabase.com](https://supabase.com).
-2. Run [`supabase/schema.sql`](supabase/schema.sql) in the SQL editor. All coin movement happens in database functions, so a tampered browser can't mint coins, and each stall works once per attendee.
+2. Run [`supabase/schema.sql`](supabase/schema.sql) in the SQL editor. All coin movement happens in database functions, so a tampered browser can't mint coins, and recharge points work once per attendee.
 3. Enable **Authentication → Providers → GitHub**, with redirect URL `https://<your-domain>/epoch/register`.
 4. Copy `.env.example` to `.env.local` and fill in the URL and anon key.
 5. After you sign in once, make yourself admin: `update profiles set role = 'admin' where handle = 'your-handle';`
-6. Open `/epoch/admin`, **print the QR sheet**, and put one code on each stall table.
+6. Open `/epoch/admin`, **print the QR sheet**, and put one code on each booth.
 
 **Epoch mode:** the *EPOCH* item in the nav and the black-disc page transition are always there; the live dot and countdown follow `opensAt`/`closesAt`. Force it with `NEXT_PUBLIC_EPOCH_MODE=live|off`.
 
