@@ -44,6 +44,8 @@ export interface Tx {
   at: string;
 }
 
+export interface JoinRequest { id: string; handle: string; email: string; firstEvent: string; createdAt: string }
+
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
 export interface RegisterInput { handle: string; name: string; email: string }
@@ -67,4 +69,6 @@ export interface EpochStore {
   lookup(userId: string): Promise<Profile | null>;
   /** demo mode only: unlock organiser tools with a shared code */
   elevate?(code: string): Promise<Result>;
+  /** staff, live (Supabase) mode only: club sign-ups from the home page */
+  joinRequests?(): Promise<JoinRequest[]>;
 }

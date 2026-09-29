@@ -79,6 +79,11 @@ export const supabaseStore: EpochStore = {
     return profile ? { ok: true, profile } : fail("Awarded, but couldn't reload the profile.");
   },
 
+  async joinRequests() {
+    const { data } = await sb().from("join_requests").select("*").order("created_at", { ascending: false }).limit(1000);
+    return (data ?? []).map((r) => ({ id: String(r.id), handle: r.handle, email: r.email, firstEvent: r.first_event, createdAt: r.created_at }));
+  },
+
   async lookup(userId) {
     const { data } = await sb().from("profiles").select("*").eq("id", userId).maybeSingle();
     return data ? toProfile(data as Row) : null;

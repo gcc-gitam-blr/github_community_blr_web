@@ -1,14 +1,15 @@
 "use client";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Frame, Notice } from "./Frame";
 import { Coin, btnInk, btnSoft, field, glass, label } from "./Bits";
 import { BoothSection } from "./home/BoothSection";
 import { useEpoch } from "./EpochProvider";
 import { qr } from "@/lib/epoch/store";
 import { BOOTHS, STARTER_COINS, EPOCH } from "@/lib/epoch/config";
-import type { Reward } from "@/lib/epoch/types";
+import type { JoinRequest, Reward } from "@/lib/epoch/types";
+import { CLUB } from "@/lib/config";
 
 export function BoothsPage() {
   return <Frame title="Where coins go." sub="Recharge points earn. Everything else spends."><BoothSection /></Frame>;
@@ -17,8 +18,8 @@ export function BoothsPage() {
 export function ShopPage() {
   const { store, me, refresh } = useEpoch(); const [items, setItems] = useState<Reward[]>([]);
   const [msg, setMsg] = useState<{ k: "ok" | "err"; t: string } | null>(null); const [busy, setBusy] = useState("");
-  const load = () => store?.rewards().then(setItems);
-  useEffect(() => { void load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [store]);
+  const load = useCallback(() => store?.rewards().then(setItems), [store]);
+  useEffect(() => { void load(); }, [load]);
 
   const buy = async (r: Reward) => {
     if (!store) return; setBusy(r.id); setMsg(null);
@@ -89,6 +90,8 @@ export function AdminPage() {
 
   return (
     <Frame title="Organiser desk." sub={`Verify tickets (${STARTER_COINS} ${EPOCH.currency}, once), award prizes, and print the booth QR sheet.`} aside={<div className="no-print flex gap-2"><Link href="/epoch/scan" className={btnInk}>Scan a wallet</Link><button onClick={() => window.print()} className={btnSoft}>Print QR sheet</button></div>}>
+      <SignUps />
+      <h2 className="no-print mb-4 mt-12 text-[28px] font-medium tracking-[-0.03em]">Booth QR codes</h2>
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 print:grid-cols-3">
         {printable.map((b) => (
           <li key={b.id} className={`${glass} flex break-inside-avoid flex-col items-center gap-3 p-6 text-center print:border-black print:bg-white`}>
@@ -100,5 +103,47 @@ export function AdminPage() {
         ))}
       </ul>
     </Frame>
+  );
+}
+
+/* Club sign-ups from the home page's "Join the club" form (live mode only), with a CSV export. */
+function SignUps() {
+  const { store } = useEpoch();
+  const [rows, setRows] = useState<JoinRequest[] | null>(null);
+  useEffect(() => { store?.joinRequests?.().then(setRows); }, [store]);
+  const eventName = (d: string) => CLUB.events.find((e) => e.date === d)?.title ?? d;
+
+  const csv = () => {
+    const q = (s: string) => `"${s.replace(/"/g, '""')}"`;
+    const body = ["handle,email,first_event,signed_up", ...(rows ?? []).map((r) => [r.handle, r.email, eventName(r.firstEvent), r.createdAt].map(q).join(","))].join("\n");
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([body], { type: "text/csv" })); a.download = "club-sign-ups.csv"; a.click(); URL.revokeObjectURL(a.href);
+  };
+
+  return (
+    <section className={`${glass} no-print mb-4 p-6 sm:p-8`}>
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div><h2 className="text-[28px] font-medium tracking-[-0.03em]">Club sign-ups</h2><p className={label}>From the “Join the club” form on the home page.</p></div>
+        {rows && rows.length > 0 && <button onClick={csv} className={btnSoft}>Download CSV</button>}
+      </div>
+      {!store?.joinRequests ? <p className="text-mute">Connect Supabase to collect sign-ups here. Until then the form uses the club&apos;s form link or email.</p>
+        : rows === null ? <p className="text-mute">Loading…</p>
+        : rows.length === 0 ? <p className="text-mute">No sign-ups yet.</p>
+        : (
+          <div className="max-h-[360px] overflow-y-auto" data-lenis-prevent>
+            <table className="w-full text-left text-[15px]">
+              <thead className="sticky top-0 bg-white text-[13px] text-mute"><tr><th className="py-2 font-normal">GitHub</th><th className="font-normal">Email</th><th className="font-normal">Wants to try</th><th className="text-right font-normal">When</th></tr></thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id} className="border-t border-hair">
+                    <td className="py-2.5"><a className="underline-offset-4 hover:underline" href={`https://github.com/${r.handle}`} target="_blank" rel="noopener">@{r.handle}</a></td>
+                    <td className="text-mute">{r.email}</td><td>{eventName(r.firstEvent)}</td>
+                    <td className="text-right text-mute">{new Date(r.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+    </section>
   );
 }
