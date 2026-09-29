@@ -1,0 +1,68 @@
+/* Runs supabase/schema.sql inside PGlite (real Postgres compiled to WASM) and exercises the
+   coin functions exactly as the live site calls them. Supabase's auth schema is stubbed:
+   auth.uid() reads a setting we switch between users. */
+import { PGlite } from "@electric-sql/pglite";
+import fs from "node:fs";
+
+const db = new PGlite();
+let fails = 0; const ok = (n: string, c: boolean) => { console.log((c ? "PASS" : "FAIL") + "  " + n); if (!c) fails++; };
+const as = (uid: string) => db.query(`select set_config('test.uid', $1, false)`, [uid]);
+const one = async <T,>(sql: string, p: unknown[] = []) => (await db.query<T>(sql, p)).rows[0];
+const call = async (fn: string, args: unknown[]) => (await one<{ r: { ok: boolean; error?: string; delta?: number; balance?: number } }>(`select ${fn}(${args.map((_, i) => `$${i + 1}`).join(",")}) as r`, args)).r;
+const coins = async (id: string) => (await one<{ coins: number }>("select coins from profiles where id = $1", [id])).coins;
+
+const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-0000-00000000000b";
+
+(async () => {
+  await db.exec(`
+    create role anon; create role authenticated;
+    create schema auth;
+    create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb);
+    create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.uid', true), '')::uuid $$;
+    insert into auth.users values ('${ADA}', 'ada@gitam.in', '{"user_name":"ada"}'), ('${ORG}', 'org@gitam.in', '{"user_name":"org"}');
+  `);
+  await db.exec(fs.readFileSync("supabase/schema.sql", "utf8"));
+  ok("schema.sql runs cleanly on Postgres", true);
+
+  await as(ADA); await db.query("select register_profile('Ada Lovelace')");
+  await as(ORG); await db.query("select register_profile('Organiser')");
+  ok("register_profile creates profiles with 0 coins", (await coins(ADA)) === 0);
+  ok("register_profile is idempotent", (await one<{ n: number }>("select count(*)::int n from profiles")).n === 2 && !!(await db.query("select register_profile('again')")));
+
+  await as(ADA);
+  ok("a booth scan before the ticket is verified is refused", !(await call("scan_booth", ["vr"])).ok);
+  ok("an attendee can't verify tickets", !(await call("issue_ticket", [ADA, 199, 2])).ok);
+  ok("an attendee can't award coins", !(await call("award_coins", [ADA, 1000, "free money"])).ok);
+
+  await db.query("update profiles set role = 'admin' where id = $1", [ORG]);
+  await as(ORG);
+  ok("organiser verifies the ticket", (await call("issue_ticket", [ADA, 199, 2])).ok);
+  ok("the ticket credits 398 (₹199 × 2)", (await coins(ADA)) === 398);
+  ok("a second verification is refused", !(await call("issue_ticket", [ADA, 199, 2])).ok && (await coins(ADA)) === 398);
+
+  await as(ADA);
+  const vr = await call("scan_booth", ["vr"]);
+  ok("VR costs 40 → 358", vr.ok && vr.delta === -40 && vr.balance === 358);
+  ok("an immediate second VR scan is blocked (20 s guard)", !(await call("scan_booth", ["vr"])).ok && (await coins(ADA)) === 358);
+  const rc = await call("scan_booth", ["recharge-trivia"]);
+  ok("a recharge point pays +20 → 378", rc.ok && rc.delta === 20 && rc.balance === 378);
+  ok("the same recharge point refuses a second go", !(await call("scan_booth", ["recharge-trivia"])).ok && (await coins(ADA)) === 378);
+  ok("a free booth isn't a coin QR", !(await call("scan_booth", ["startup"])).ok);
+  ok("an unknown booth is refused", !(await call("scan_booth", ["nope"])).ok);
+
+  ok("buying a sticker pack works → 338", (await call("redeem_reward", ["sticker-pack"])).ok && (await coins(ADA)) === 338);
+  ok("stock drops to 199", (await one<{ stock: number }>("select stock from rewards where id='sticker-pack'")).stock === 199);
+  await db.query("update profiles set coins = 10 where id = $1", [ADA]);
+  ok("you can't buy what you can't afford", !(await call("redeem_reward", ["tee"])).ok && (await coins(ADA)) === 10);
+  ok("you can't pay for a booth you can't afford", !(await call("scan_booth", ["git-escape"])).ok && (await coins(ADA)) === 10);
+
+  await as(ORG);
+  ok("organiser can't push a balance below zero", !(await call("award_coins", [ADA, -50, "refund"])).ok);
+  ok("organiser awards a prize", (await call("award_coins", [ADA, 100, "Fail-Proof Code winner"])).ok && (await coins(ADA)) === 110);
+
+  const lb = await one<{ handle: string; earned: number }>("select handle, earned from leaderboard order by earned desc");
+  ok("leaderboard counts earnings (recharge + prize), not the ticket", lb.handle === "ada" && lb.earned === 120);
+  ok("ledger has every movement", (await one<{ n: number }>("select count(*)::int n from txs where user_id = $1", [ADA])).n === 5);
+
+  console.log(fails ? `\n${fails} FAILED` : "\nall schema checks passed"); process.exit(fails ? 1 : 0);
+})().catch((e) => { console.error("FAIL  crashed:", e.message); process.exit(1); });
