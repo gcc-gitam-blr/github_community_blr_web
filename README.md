@@ -52,6 +52,13 @@ Set `githubOrg` in `lib/config.ts` and the Projects section lists your real repo
 
 `npm test` runs the economy rules against the demo store.
 
+## Epoch: what's in the design
+
+- **Glass command bar** (press `/` or ⌘/Ctrl-K): jump to any page, booth or session, or ask a question — “how much is VR?”, “when do recharge points work?”. Answers come from the real config in `lib/epoch/ask.ts` (no external AI) and are covered by `npm test`.
+- **The coin**: drawn as SVG (`components/epoch/EpochCoin.tsx`, also `public/epoch-coin.svg`) and rendered as a physical 3D coin with Three.js (`Coin3DScene.tsx`); it falls back to the flat SVG without WebGL or with reduced motion.
+- **Dashboard wallet**: “Howdy” greeting, glass activity feed, Quick access column, left rail.
+- **Landing**: gradient headline, dark economy panel, colour-block booth categories that filter the list, dotted rules and a giant dotted call-to-action.
+
 ## Epoch typeface
 
 Epoch is set in **Oddval Medium** ([Type Forward](https://typeforward.com/typefaces/oddval), licensed). Drop `Oddval-Medium.woff2` (or `.otf`/`.ttf`) into `public/fonts/` and the Epoch pages use it automatically; until then they fall back to Instrument Sans.
