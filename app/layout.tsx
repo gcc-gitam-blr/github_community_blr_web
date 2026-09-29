@@ -1,24 +1,31 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Instrument_Sans, JetBrains_Mono, Outfit } from "next/font/google";
+import { JetBrains_Mono, Mona_Sans } from "next/font/google";
+import { SmoothScroll } from "@/components/ui/SmoothScroll";
 import "./globals.css";
 
-const outfit = Outfit({ subsets: ["latin"], weight: ["600", "700", "800", "900"], variable: "--font-outfit" });
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const instrument = Instrument_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-instrument" }); // fallback for Oddval
+// GitHub's own open-source typeface (SIL OFL). The width axis gives the wide headline cut.
+const mona = Mona_Sans({ subsets: ["latin"], axes: ["wdth"], variable: "--font-mona", display: "swap" });
 const jbm = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jbm" });
 
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
 export const metadata: Metadata = {
-  title: "GitHub Community Club BLR — Learn. Build. Merge.",
+  metadataBase: new URL(SITE),
+  title: { default: "GitHub Community Club · GITAM Bengaluru", template: "%s · GitHub Community Club BLR" },
   description: "The GitHub Community Club at GITAM University Bengaluru. Workshops, open source and Epoch, our flagship technical event.",
-  openGraph: { title: "GitHub Community Club BLR", description: "Learn. Build. Merge.", type: "website" },
+  openGraph: { title: "GitHub Community Club · GITAM Bengaluru", description: "Learn. Build. Merge. Six events this year and one flagship: Epoch.", type: "website", siteName: "GitHub Community Club BLR" },
+  twitter: { card: "summary_large_image" },
   icons: { icon: "/favicon.svg" },
 };
 export const viewport: Viewport = { themeColor: "#ffffff" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" className={`${outfit.variable} ${inter.variable} ${jbm.variable} ${instrument.variable}`}>
-      <body className="min-h-screen antialiased">{children}</body>
+    <html lang="en" data-scroll-behavior="smooth" className={`${mona.variable} ${jbm.variable}`}>
+      <body className="min-h-screen antialiased">
+        <SmoothScroll />
+        {children}
+      </body>
     </html>
   );
 }
