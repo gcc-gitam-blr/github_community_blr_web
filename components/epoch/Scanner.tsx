@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { mono } from "./Bits";
+
 
 /** Camera QR scanner (html5-qrcode, loaded on demand). Calls onCode once per scan. */
 export function Scanner({ onCode, paused }: { onCode: (text: string) => void; paused?: boolean }) {
@@ -25,12 +25,12 @@ export function Scanner({ onCode, paused }: { onCode: (text: string) => void; pa
   }, []);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-edge bg-black">
+    <div className="relative overflow-hidden rounded-3xl border border-white/70 bg-black shadow-[0_12px_50px_-24px_rgba(70,45,130,.5)]">
       <div id="epoch-reader" className="min-h-[300px] [&_video]:w-full" />
-      {starting && <p className={`${mono} absolute inset-0 grid place-items-center text-gold`}>Starting camera…</p>}
-      {err && <p className={`${mono} absolute inset-0 grid place-items-center p-6 text-center text-gold`}>{err}</p>}
+      {starting && <p className={`text-sm absolute inset-0 grid place-items-center text-white`}>Starting camera…</p>}
+      {err && <p className={`text-sm absolute inset-0 grid place-items-center p-6 text-center text-white`}>{err}</p>}
       {/* viewfinder corners */}
-      {[["left-4 top-4", "border-l-4 border-t-4"], ["right-4 top-4", "border-r-4 border-t-4"], ["left-4 bottom-4", "border-l-4 border-b-4"], ["right-4 bottom-4", "border-r-4 border-b-4"]].map(([p, b]) => <i key={p} className={`pointer-events-none absolute h-8 w-8 border-gold ${p} ${b}`} />)}
+      {[["left-4 top-4", "border-l-4 border-t-4"], ["right-4 top-4", "border-r-4 border-t-4"], ["left-4 bottom-4", "border-l-4 border-b-4"], ["right-4 bottom-4", "border-r-4 border-b-4"]].map(([p, b]) => <i key={p} className={`pointer-events-none absolute h-8 w-8 border-white ${p} ${b}`} />)}
     </div>
   );
 }
