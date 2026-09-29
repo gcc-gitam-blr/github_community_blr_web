@@ -1,10 +1,17 @@
 "use client";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Frame, Notice } from "./Frame";
-import { Coin, btnEpoch, mono } from "./Bits";
+import { Coin, btnGold, card, field, mono } from "./Bits";
 import { useEpoch } from "./EpochProvider";
-import { EPOCH } from "@/lib/epoch/config";
+import { EPOCH, STARTER_COINS } from "@/lib/epoch/config";
+
+const STEPS = [
+  ["Create your profile", "Takes a minute. This is where your balance and history will live."],
+  [`Pay for your ticket — ₹${EPOCH.ticketPriceINR}`, EPOCH.ticketUrl ? "Use the payment link in your wallet." : "Pay at the registration desk on the day (a payment link will be added here)."],
+  ["Show your QR at the desk", `An organiser scans it, verifies the ticket, and ${STARTER_COINS} ${EPOCH.currency} land in your wallet instantly.`],
+];
 
 export function Register() {
   const { store, me, refresh } = useEpoch(); const router = useRouter();
@@ -21,26 +28,33 @@ export function Register() {
     const r = await store.register(f);
     setBusy(false);
     if (!r.ok) return setMsg({ k: r.error.startsWith("Redirecting") ? "info" : "err", t: r.error });
-    await refresh(); router.push("/epoch/wallet?welcome=1");
+    await refresh(); router.push("/epoch/wallet");
   };
 
-  const input = "w-full border-b-2 border-ink/20 bg-transparent py-3 text-xl outline-none transition focus:border-epoch-line";
   return (
-    <Frame kicker="// register" title={<>Join the <span className="text-epoch-line">fest</span>.</>}>
-      <div className="grid md:grid-cols-2">
-        <form onSubmit={submit} className="space-y-8 border-b border-epoch-line/70 p-6 sm:p-10 md:border-b-0 md:border-r" noValidate>
-          {me && <Notice kind="ok">You&apos;re already in as @{me.handle}. <a className="underline" href="/epoch/wallet">Open wallet →</a></Notice>}
-          {!remote && <label className="block"><span className={`${mono} text-ink-3`}>GitHub handle</span><input className={input} value={f.handle} onChange={set("handle")} placeholder="@your-handle" autoComplete="off" /></label>}
-          <label className="block"><span className={`${mono} text-ink-3`}>Display name</span><input className={input} value={f.name} onChange={set("name")} placeholder="Ada Lovelace" autoComplete="name" /></label>
-          {!remote && <label className="block"><span className={`${mono} text-ink-3`}>Email</span><input className={input} type="email" value={f.email} onChange={set("email")} placeholder="you@college.edu" autoComplete="email" /></label>}
+    <Frame kicker="// register" title={<>Get your <span className="text-gold">ticket</span>.</>}>
+      <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+        <form onSubmit={submit} noValidate className={`${card} space-y-6 p-7 sm:p-10`}>
+          {me && <Notice kind="ok">You&apos;re already in as @{me.handle}. <Link className="underline" href="/epoch/wallet">Open wallet →</Link></Notice>}
+          {!remote && <label className="block"><span className={`${mono} mb-2 block text-fog`}>GitHub handle</span><input className={field} value={f.handle} onChange={set("handle")} placeholder="@your-handle" autoComplete="off" /></label>}
+          <label className="block"><span className={`${mono} mb-2 block text-fog`}>Display name</span><input className={field} value={f.name} onChange={set("name")} placeholder="Ada Lovelace" autoComplete="name" /></label>
+          {!remote && <label className="block"><span className={`${mono} mb-2 block text-fog`}>Email</span><input className={field} type="email" value={f.email} onChange={set("email")} placeholder="you@gitam.in" autoComplete="email" /></label>}
           {msg && <Notice kind={msg.k}>{msg.t}</Notice>}
-          <button disabled={busy || !store} className={`${btnEpoch} w-full py-4`}>{busy ? "Working…" : remote ? "Continue with GitHub ↗" : `Claim ${EPOCH.welcomeCoins} ${EPOCH.currency} ↗`}</button>
-          <p className="text-sm text-ink-3">{remote ? "We use GitHub sign-in so nobody can register twice." : "Demo mode: your wallet lives in this browser. Connect Supabase for the live fest."}</p>
+          <button disabled={busy || !store} className={`${btnGold} w-full !py-4 text-lg`}>{busy ? "Working…" : remote ? "Continue with GitHub →" : "Create my profile →"}</button>
+          <p className="text-sm text-fog/80">{remote ? "GitHub sign-in means nobody can register twice." : "Demo mode: your wallet lives in this browser. Connect Supabase for the live event."}</p>
         </form>
-        <div className="grid place-items-center gap-5 bg-epoch/40 p-10 text-center">
-          <Coin size={140} spin />
-          <p className="font-display text-[clamp(48px,7vw,88px)] font-black leading-none tracking-tighter">+{EPOCH.welcomeCoins}</p>
-          <p className={`${mono} text-ink-2`}>{EPOCH.currency} on sign-up</p>
+
+        <div className={`${card} p-7 sm:p-10`}>
+          <div className="mb-8 flex items-center gap-4"><Coin size={56} /><div><p className="font-display text-5xl font-black tracking-tighter text-gold">{STARTER_COINS}</p><p className={`${mono} text-fog`}>{EPOCH.currency} · ₹{EPOCH.ticketPriceINR} × {EPOCH.coinsPerINR}</p></div></div>
+          <ol className="space-y-6">
+            {STEPS.map(([t, d], i) => (
+              <li key={t} className="flex gap-4">
+                <span className="grid h-9 w-9 flex-none place-items-center rounded-full border border-gold/50 font-mono text-sm font-bold text-gold">{i + 1}</span>
+                <div><h3 className="font-display text-xl font-bold tracking-tight">{t}</h3><p className="mt-1 text-[15px] text-fog">{d}</p></div>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-8 text-xs text-fog/70">Ticket price is a working figure from the plan; the final price will be announced.</p>
         </div>
       </div>
     </Frame>
