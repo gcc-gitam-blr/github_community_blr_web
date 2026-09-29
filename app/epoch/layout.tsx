@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import { EpochProvider } from "@/components/epoch/EpochProvider";
+import { CommandProvider } from "@/components/epoch/Command";
 import { EpochNav } from "@/components/epoch/EpochNav";
 import { EpochEntrance } from "@/components/epoch/EpochEntrance";
+import { EpochMain } from "@/components/epoch/EpochMain";
 
 export const metadata: Metadata = {
   title: "epoch — GITAM Bengaluru's GitHub tech fest",
   description: "Two days of workshops, competitions and 20+ booths on one currency: Epoch Coins.",
+  icons: { icon: "/epoch-coin.svg" },
 };
 
 /* Oddval Medium is a licensed font. If you add it to /public/fonts the browser picks it up;
@@ -17,12 +20,14 @@ const OddvalFace = `
 export default function EpochLayout({ children }: { children: React.ReactNode }) {
   return (
     <EpochProvider>
-      <style dangerouslySetInnerHTML={{ __html: OddvalFace }} />
-      <div className="epoch-field min-h-screen pb-28 font-epoch text-ink md:pb-0 print:bg-white">
-        <EpochNav />
-        <main className="relative z-10">{children}</main>
-      </div>
-      <EpochEntrance />
+      <CommandProvider>
+        <style dangerouslySetInnerHTML={{ __html: OddvalFace }} />
+        <div className="epoch-field min-h-screen pb-28 font-epoch text-ink md:pb-0 print:bg-white">
+          <EpochNav />
+          <EpochMain>{children}</EpochMain>
+        </div>
+        <EpochEntrance />
+      </CommandProvider>
     </EpochProvider>
   );
 }
