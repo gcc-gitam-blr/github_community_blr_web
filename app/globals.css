@@ -111,3 +111,4 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 800; letter-spac
 @keyframes glow { 0%, 100% { opacity: .5; transform: scaleX(.92); filter: hue-rotate(0deg); } 50% { opacity: .8; transform: scaleX(1.04); filter: hue-rotate(35deg); } }
 .grid-lines { background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px); background-size: 96px 96px; }
 .mask-fade-b { -webkit-mask-image: linear-gradient(#000 60%, transparent); mask-image: linear-gradient(#000 60%, transparent); }
+.cmd-input:focus-visible { outline: none; }
