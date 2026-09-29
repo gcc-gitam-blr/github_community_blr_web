@@ -180,3 +180,21 @@ on conflict do nothing;
 
 -- Make yourself an admin (replace with your GitHub handle after first login):
 -- update profiles set role = 'admin' where handle = 'your-handle';
+
+-- ============================================================
+-- Club sign-ups (the "Join the club" form on the home page)
+-- Anyone may INSERT one row (the site's /api/join validates first);
+-- only volunteers/admins can read them, on the organiser desk.
+-- ============================================================
+create table if not exists join_requests (
+  id bigint generated always as identity primary key,
+  handle text not null check (handle ~* '^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9])){0,38}$'),
+  email text not null check (length(email) <= 254 and email ~ '^[^\s@]+@[^\s@]+\.[^\s@]+$'),
+  first_event text not null check (length(first_event) <= 20),
+  created_at timestamptz not null default now()
+);
+create unique index if not exists join_requests_one_per_email on join_requests (lower(email));
+alter table join_requests enable row level security;
+create policy "anyone can sign up" on join_requests for insert to anon, authenticated with check (true);
+create policy "staff read sign-ups" on join_requests for select using (my_role() in ('volunteer','admin'));
+grant insert on join_requests to anon, authenticated;
