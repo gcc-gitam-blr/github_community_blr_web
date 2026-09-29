@@ -25,11 +25,11 @@
   --color-fog: #a3a4bd;
   --color-edge: rgba(255, 255, 255, 0.09);
 
-  --font-display: var(--font-outfit), system-ui, sans-serif;
-  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-mona), system-ui, sans-serif;
+  --font-sans: var(--font-mona), -apple-system, "Segoe UI", system-ui, sans-serif;
   --font-mono: var(--font-jbm), ui-monospace, Consolas, monospace;
-  /* Epoch type: Oddval Medium if /public/fonts has it, otherwise Instrument Sans */
-  --font-epoch: "Oddval", var(--font-instrument), system-ui, sans-serif;
+  /* Epoch type: Oddval Medium if /public/fonts has it, otherwise Mona Sans */
+  --font-epoch: "Oddval", var(--font-mona), system-ui, sans-serif;
 
   --color-haze: #f6f3fb;
   --color-mute: #6c6b7a;
@@ -51,7 +51,12 @@
 
 html { scroll-behavior: smooth; scroll-padding-top: 90px; }
 body { font-family: var(--font-sans); background: #fff; color: var(--color-ink); -webkit-font-smoothing: antialiased; }
-h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.035em; line-height: 1.02; }
+@layer base {
+/* Mona Sans, wide and heavy for headlines — GitHub's marketing voice */
+h1, h2 { font-family: var(--font-display); font-weight: 800; font-stretch: 115%; letter-spacing: -0.03em; line-height: 1.02; }
+h3, h4 { font-family: var(--font-display); font-weight: 650; font-stretch: 105%; letter-spacing: -0.015em; line-height: 1.15; }
+}
+.font-display { font-stretch: 112%; }
 ::selection { background: var(--color-brand); color: var(--color-ink); }
 :focus-visible { outline: 3px solid var(--color-link); outline-offset: 3px; border-radius: 4px; }
 [hidden] { display: none !important; }
@@ -75,8 +80,10 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 800; letter-spac
 .epoch-field::after { content: ""; position: fixed; inset: 0; pointer-events: none; opacity: 0.28; mix-blend-mode: multiply; z-index: 0;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.35 0 0 0 0 0.5 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 
-/* Epoch type: beat the club site's global heading rule (bold Outfit) */
-.epoch-field :is(h1, h2, h3, h4) { font-family: var(--font-epoch); font-weight: 500; letter-spacing: -0.04em; }
+@layer base {
+/* Epoch type: medium weight, normal width */
+.epoch-field :is(h1, h2, h3, h4):not(footer *) { font-family: var(--font-epoch); font-weight: 500; font-stretch: 100%; letter-spacing: -0.04em; }
+}
 
 /* ---------- epoch: coin ---------- */, orbit, coin flow ---------- */
 @keyframes coin-spin { from { transform: rotateX(12deg) rotateY(0deg); } to { transform: rotateX(12deg) rotateY(360deg); } }
@@ -108,3 +115,9 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 800; letter-spac
 .grid-lines { background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px); background-size: 96px 96px; }
 .mask-fade-b { -webkit-mask-image: linear-gradient(#000 60%, transparent); mask-image: linear-gradient(#000 60%, transparent); }
 .cmd-input:focus-visible { outline: none; }
+
+/* ---------- Lenis smooth scroll ---------- */
+html.lenis, html.lenis body { height: auto; }
+.lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-smooth iframe { pointer-events: none; }
