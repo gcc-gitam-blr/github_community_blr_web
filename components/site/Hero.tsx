@@ -24,12 +24,12 @@ export function Hero() {
         <div className="min-w-0">
           <Reveal>
             <EpochLink className="inline-flex items-center gap-2.5 rounded-full border border-ink/15 bg-white/70 py-1.5 pl-1.5 pr-4 font-mono text-[13px] backdrop-blur transition hover:border-ink">
-              <span className="rounded-full bg-ink px-2.5 py-0.5 font-bold text-epoch">{EPOCH.name}&apos;{EPOCH.edition}</span>
-              {EPOCH.dates} · earn coins →
+              <span className="rounded-full bg-ink px-2.5 py-0.5 font-bold text-gold">{EPOCH.name}_{EPOCH.edition}</span>
+              {EPOCH.month} · Epoch Coins →
             </EpochLink>
           </Reveal>
           <Reveal delay={0.08}><h1 className="my-7 text-[clamp(64px,8.6vw,122px)] leading-[0.92]">Learn.<br />Build.<br />Merge<span aria-hidden className="ml-[.12em] animate-blink tracking-[-0.08em]">&gt;_</span></h1></Reveal>
-          <Reveal delay={0.16}><p className="max-w-[44ch] text-[19px] text-ink-2">We&apos;re the campus crew that turns &ldquo;I want to code&rdquo; into pull requests, hackathon wins and real open-source contributions. Free to join, hard to leave.</p></Reveal>
+          <Reveal delay={0.16}><p className="max-w-[44ch] text-[19px] text-ink-2">The GitHub Community Club at GITAM Bengaluru turns &ldquo;I want to code&rdquo; into pull requests, project launches and real open-source contributions — culminating in Epoch, our flagship technical month.</p></Reveal>
           <Reveal delay={0.24} className="mt-9 flex flex-wrap items-center gap-8">
             <a href="#join" className="lift rounded-md border-2 border-ink bg-ink px-[26px] py-[15px] font-display font-bold text-white">Join the club</a>
             <a href="#events" className="group inline-flex items-center gap-2 font-semibold text-link">See what&apos;s next <span className="transition-transform group-hover:translate-x-1.5">→</span></a>
