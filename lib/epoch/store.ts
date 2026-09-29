@@ -19,12 +19,12 @@ export async function getStore(): Promise<EpochStore> {
   return cached;
 }
 
-/** QR payloads: `epoch:u:<userId>` for wallets, `epoch:s:<stallId>` for stalls. */
+/** QR payloads: `epoch:u:<userId>` for wallets, `epoch:b:<boothId>` for booths. */
 export const qr = {
   user: (id: string) => `epoch:u:${id}`,
-  stall: (id: string) => `epoch:s:${id}`,
-  parse(text: string): { kind: "user" | "stall"; id: string } | null {
-    const m = /^epoch:(u|s):(.+)$/.exec(text.trim());
-    return m ? { kind: m[1] === "u" ? "user" : "stall", id: m[2] } : null;
+  booth: (id: string) => `epoch:b:${id}`,
+  parse(text: string): { kind: "user" | "booth"; id: string } | null {
+    const m = /^epoch:(u|b):(.+)$/.exec(text.trim());
+    return m ? { kind: m[1] === "u" ? "user" : "booth", id: m[2] } : null;
   },
 };
