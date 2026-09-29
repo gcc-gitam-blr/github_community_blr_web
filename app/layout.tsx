@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono, Mona_Sans } from "next/font/google";
 import { SmoothScroll } from "@/components/ui/SmoothScroll";
+import { SITE_URL as SITE } from "@/lib/site";
 import "./globals.css";
 
 // GitHub's own open-source typeface (SIL OFL). The width axis gives the wide headline cut.
 const mona = Mona_Sans({ subsets: ["latin"], axes: ["wdth"], variable: "--font-mona", display: "swap" });
 const jbm = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jbm" });
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
