@@ -21,12 +21,22 @@ export const EPOCH = {
 
   // The Epoch section "opens" on its own between these times. To force it on/off
   // set NEXT_PUBLIC_EPOCH_MODE=live | off in .env.local.
+  // When the real dates are announced, set startsAt (e.g. "2026-12-11T09:00:00+05:30"):
+  // the club site then shows "Epoch starts in N days". Left empty so we never count down to a guess.
+  startsAt: "",
   opensAt: "2026-12-01T00:00:00+05:30",
   closesAt: "2026-12-31T23:59:59+05:30",
   organiserCode: process.env.NEXT_PUBLIC_EPOCH_ORGANISER_CODE || "epoch-admin", // demo mode only
 };
 
 export const STARTER_COINS = EPOCH.ticketPriceINR * EPOCH.coinsPerINR;
+
+/** Days until Epoch starts, or null when the date isn't announced (or it has started). */
+export function daysToEpoch(now = new Date()): number | null {
+  if (!EPOCH.startsAt) return null;
+  const d = Math.ceil((new Date(EPOCH.startsAt).getTime() - now.getTime()) / 864e5);
+  return d > 0 ? d : null;
+}
 
 export function epochIsLive(now = new Date()): boolean {
   const mode = process.env.NEXT_PUBLIC_EPOCH_MODE;
