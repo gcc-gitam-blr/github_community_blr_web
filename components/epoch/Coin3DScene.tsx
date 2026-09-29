@@ -51,7 +51,11 @@ function Coin({ tex }: { tex: THREE.Texture }) {
   const bump = useReedingBump();
   const gold = useMemo(() => new THREE.MeshStandardMaterial({ color: "#f2b81c", metalness: 1, roughness: 0.28 }), []);
   const edge = useMemo(() => new THREE.MeshStandardMaterial({ color: "#e9a800", metalness: 1, roughness: 0.32, bumpMap: bump, bumpScale: 1.6 }), [bump]);
-  const face = useMemo(() => new THREE.MeshStandardMaterial({ map: tex, metalness: 0.85, roughness: 0.32, envMapIntensity: 1.1 }), [tex]);
+  // cylinder caps map UVs turned 90°; rotate each face so the emblem sits upright, mirrored-correct on both sides
+  const [front, back] = useMemo(() => {
+    const mk = (rot: number) => { const t = tex.clone(); t.center.set(0.5, 0.5); t.rotation = rot; t.needsUpdate = true; return new THREE.MeshStandardMaterial({ map: t, metalness: 0.85, roughness: 0.32, envMapIntensity: 1.1 }); };
+    return [mk(Math.PI / 2), mk(Math.PI / 2)];
+  }, [tex]);
 
   useFrame((s, dt) => {
     if (spin.current) spin.current.rotation.y += dt * 0.55;
@@ -65,7 +69,7 @@ function Coin({ tex }: { tex: THREE.Texture }) {
   return (
     <group ref={tilt}>
       <group ref={spin}>
-        <mesh rotation={[Math.PI / 2, 0, 0]} material={[edge, face, face]}>
+        <mesh rotation={[Math.PI / 2, 0, 0]} material={[edge, front, back]}>
           <cylinderGeometry args={[1, 1, 0.15, 128, 1]} />
         </mesh>
         {[0.078, -0.078].map((z) => (
