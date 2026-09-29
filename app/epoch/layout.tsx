@@ -4,14 +4,14 @@ import { EpochNav } from "@/components/epoch/EpochNav";
 import { EpochEntrance } from "@/components/epoch/EpochEntrance";
 
 export const metadata: Metadata = {
-  title: "EPOCH'26 — The tech fest where every commit counts",
-  description: "Register, collect Epoch Coins, scan stall QR codes, climb the leaderboard and spend your coins on rewards.",
+  title: "epoch_26 — GITAM Bengaluru's GitHub tech fest",
+  description: "Two days of workshops, competitions and 20+ booths on one economy: Epoch Coins. Get your ticket, recharge, spend, climb the board.",
 };
 
 export default function EpochLayout({ children }: { children: React.ReactNode }) {
   return (
     <EpochProvider>
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-night pb-28 text-white md:pb-0 print:bg-white print:text-black">
         <EpochNav />
         <main>{children}</main>
       </div>
