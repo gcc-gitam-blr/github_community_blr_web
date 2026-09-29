@@ -64,6 +64,15 @@ Things that are **empty until you fill them in** (the site hides them rather tha
 - **Dashboard wallet**: “Howdy” greeting, glass activity feed, Quick access column, left rail.
 - **Landing**: gradient headline, dark economy panel, colour-block booth categories that filter the list, dotted rules and a giant dotted call-to-action.
 
+## Stickers
+
+The Octodex stickers in `public/stickers` are generated from `public/GitHub_stickers` (47 MB, not committed) by `node scripts/stickers.cjs`. To use a different sticker, add it to the `PICK` list in that script and to `StickerName` in `components/ui/Sticker.tsx`.
+
+## Tests
+
+- `npm test` — the coin rules (demo store), the ask engine, and the **real Supabase SQL** run inside PGlite (Postgres in WASM).
+- `tests/e2e.epoch.mjs` — the whole coin flow clicked through the real pages (instructions at the top of the file).
+
 ## Epoch typeface
 
 Epoch is set in **Oddval Medium** ([Type Forward](https://typeforward.com/typefaces/oddval), licensed). Drop `Oddval-Medium.woff2` (or `.otf`/`.ttf`) into `public/fonts/` and the Epoch pages use it automatically; until then they fall back to Instrument Sans.
