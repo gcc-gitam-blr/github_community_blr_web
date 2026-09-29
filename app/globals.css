@@ -15,11 +15,15 @@
   --color-brand: #3fc84e;
   --color-link: #1230e0;
 
-  /* Epoch (fest) palette — after GitHub Universe: hairline green on white/black */
-  --color-epoch: #66f28a;
-  --color-epoch-line: #1f8a3b;
-  --color-epoch-night: #060d09;
-  --color-epoch-pink: #ff5fd2;
+  /* Epoch (fest): night ink + gold coin. Lilac/mint are borrowed from the club's git-graph nodes. */
+  --color-night: #0a0a14;
+  --color-night-2: #12121f;
+  --color-night-3: #1b1b2e;
+  --color-gold: #ffc933;
+  --color-gold-deep: #c98a00;
+  --color-gold-soft: #ffe28f;
+  --color-fog: #a3a4bd;
+  --color-edge: rgba(255, 255, 255, 0.09);
 
   --font-display: var(--font-outfit), system-ui, sans-serif;
   --font-sans: var(--font-inter), system-ui, sans-serif;
@@ -55,6 +59,18 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 800; letter-spac
 .graph .g-node:hover .g-node__in { transform: scale(1.14) rotate(6deg); transition: transform 0.35s var(--ease-out-expo); }
 @keyframes g-draw { to { stroke-dashoffset: 0; } }
 @keyframes g-pop { to { transform: scale(1); } }
+
+/* ---------- epoch: 3D coin, orbit, coin flow ---------- */
+@keyframes coin-spin { from { transform: rotateX(12deg) rotateY(0deg); } to { transform: rotateX(12deg) rotateY(360deg); } }
+@keyframes orbit { to { transform: rotate(360deg); } }
+@keyframes float-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes flow-dash { to { stroke-dashoffset: -24; } }
+.coin3d { transform-style: preserve-3d; animation: coin-spin 9s linear infinite; }
+.coin3d > * { position: absolute; inset: 0; border-radius: 9999px; }
+.flow-path { stroke-dasharray: 6 6; animation: flow-dash 1.2s linear infinite; }
+.epoch-noise::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.05; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+@media print { .no-print { display: none !important; } }
 
 /* neo-brutal hover used across cards/buttons */
 .lift { transition: transform 0.25s var(--ease-out-expo), box-shadow 0.25s var(--ease-out-expo); }
