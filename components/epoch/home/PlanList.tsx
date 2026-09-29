@@ -15,7 +15,7 @@ export function PlanList() {
       </div>
       <ol className="border-t border-hair">
         {d.items.map((it, i) => (
-          <li key={i} className={`grid grid-cols-[84px_1fr] gap-x-5 border-b border-hair py-5 sm:grid-cols-[130px_1fr_100px] ${it.kind === "Break" ? "opacity-50" : ""}`}>
+          <li key={i} className={`grid grid-cols-[84px_1fr] gap-x-5 border-b border-hair py-5 sm:grid-cols-[130px_1fr_100px] ${it.kind === "Break" ? "[&_h3]:font-normal [&_h3]:text-mute" : ""}`}>
             <span className="pt-0.5 text-[15px] tabular-nums text-mute">{it.time}{it.end ? ` – ${it.end}` : ""}</span>
             <div>
               <h3 className="text-[21px] font-medium tracking-[-0.02em]">{it.title}</h3>
