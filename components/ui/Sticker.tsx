@@ -1,5 +1,5 @@
 /* An Octodex sticker with a die-cut white border and a soft paper shadow.
-   Names map to files in public/stickers (see scripts/stickers.cjs). */
+   Names map to files in public/stickers (see scripts/stickers.mjs). */
 export type StickerName =
   | "octocat" | "agenda" | "welcome" | "professor" | "coder" | "jetpack" | "maker" | "support" | "heart" | "mentor"
   | "riveter" | "world" | "list" | "skate" | "swag" | "adventure" | "bouncer" | "film" | "shop" | "waldo" | "pop"

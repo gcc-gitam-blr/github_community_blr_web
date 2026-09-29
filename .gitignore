@@ -10,5 +10,5 @@ Thumbs.db
 next-env.d.ts
 *.tsbuildinfo
 
-# raw sticker source (47 MB); run `node scripts/stickers.cjs` to regenerate public/stickers
+# raw sticker source (47 MB); run `node scripts/stickers.mjs` to regenerate public/stickers
 public/GitHub_stickers/

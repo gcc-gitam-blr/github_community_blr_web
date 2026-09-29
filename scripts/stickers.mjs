@@ -1,6 +1,8 @@
 /* Turns the hand-picked Octodex stickers in public/GitHub_stickers (not committed, 47 MB)
-   into small WebP files in public/stickers. Run: node scripts/stickers.cjs */
-const sharp = require("sharp"), fs = require("fs"), path = require("path");
+   into small WebP files in public/stickers. Run: node scripts/stickers.mjs */
+import sharp from "sharp";
+import fs from "node:fs";
+import path from "node:path";
 const SRC = "public/GitHub_stickers", OUT = "public/stickers";
 const PICK = {
   octocat: "original.png", agenda: "agendacat.png", welcome: "welcometocat.png", professor: "Professortocat_v2.png",
@@ -11,7 +13,6 @@ const PICK = {
   deckfail: "deckfailcat.png", cherry: "cherryontop-o-cat.png", founder: "foundingfather_v2.png",
 };
 fs.mkdirSync(OUT, { recursive: true });
-(async () => {
   for (const [name, file] of Object.entries(PICK)) {
     const src = path.join(SRC, file);
     if (!fs.existsSync(src)) { console.warn("missing", file); continue; }
@@ -19,4 +20,3 @@ fs.mkdirSync(OUT, { recursive: true });
   }
   const kb = fs.readdirSync(OUT).reduce((s, f) => s + fs.statSync(path.join(OUT, f)).size, 0) / 1024;
   console.log(`${fs.readdirSync(OUT).length} stickers → ${OUT} (${kb.toFixed(0)} KB)`);
-})();
