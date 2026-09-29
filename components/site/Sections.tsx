@@ -159,27 +159,3 @@ export function Join() {
     </section>
   );
 }
-
-export function Footer() {
-  const org = CLUB.githubOrg ? `${CLUB.githubUrl}/${CLUB.githubOrg}` : "";
-  const links = [...(org ? [{ label: "GitHub", href: org }] : []), ...CLUB.socials.filter((s) => s.href && s.href !== "#")];
-  return (
-    <footer className="bg-ink pt-[64px] text-white">
-      <div className={`${wrap} flex flex-wrap justify-between gap-10 pb-[56px]`}>
-        <div>
-          <p className="font-display text-[28px] font-bold tracking-tight">GitHub Community Club <b className="rounded bg-brand px-2 font-black text-ink">BLR</b></p>
-          <p className="mt-2.5 text-[#98a29c]">{CLUB.university} · Built by students, for students.</p>
-        </div>
-        <ul className="flex flex-wrap items-start gap-x-[30px] gap-y-3 font-mono text-sm">
-          <li><a href="#events" className="text-[#d0d8d3] transition hover:text-brand">Events</a></li>
-          <li><EpochLink className="text-[#d0d8d3] transition hover:text-gold">Epoch</EpochLink></li>
-          {links.map((s) => <li key={s.label}><a href={s.href} target="_blank" rel="noopener" className="border-b border-transparent text-[#d0d8d3] transition hover:border-brand hover:text-brand">{s.label} ↗</a></li>)}
-        </ul>
-      </div>
-      <div className={`${wrap} flex flex-wrap justify-between gap-3 border-t border-[#23262d] py-[26px] font-mono text-[13.5px] text-[#737a76]`}>
-        <span>© {new Date().getFullYear()} GitHub Community Club BLR</span>
-        <span>Not officially affiliated with GitHub, Inc.</span>
-      </div>
-    </footer>
-  );
-}
