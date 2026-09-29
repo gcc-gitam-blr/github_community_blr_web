@@ -1,5 +1,4 @@
 import { GitGraph, type GNode } from "@/components/ui/GitGraph";
-import { Reveal } from "@/components/ui/Reveal";
 import { EpochLink } from "@/components/epoch/EpochLink";
 import { EpochCoin } from "@/components/epoch/EpochCoin";
 import { BOOTH_COUNT, EPOCH, STARTER_COINS } from "@/lib/epoch/config";
@@ -23,15 +22,15 @@ export function Hero() {
       <section id="top" className="relative overflow-hidden bg-[radial-gradient(60%_50%_at_82%_40%,rgba(180,139,230,.10),transparent_70%),radial-gradient(50%_50%_at_8%_90%,rgba(63,200,78,.08),transparent_70%)] pt-[clamp(112px,12vw,150px)]">
         <div className="mx-auto grid w-full max-w-[1240px] items-center gap-10 px-5 pb-[clamp(56px,7vw,96px)] md:px-[clamp(20px,5vw,72px)] lg:grid-cols-[1.25fr_.75fr]">
           <div className="min-w-0">
-            <Reveal><p className="mb-6 font-mono text-[13px] text-ink-2">GITAM University Bengaluru · GitHub Community Club</p></Reveal>
-            <Reveal delay={0.08}>
+            <p className="hero-fade mb-6 font-mono text-[13px] text-ink-2">GITAM University Bengaluru · GitHub Community Club</p>
+            <div className="hero-rise" style={{ "--d": "0.05s" } as React.CSSProperties}>
               <h1 className="text-[clamp(52px,7.4vw,108px)] leading-[0.94]">Learn.<br />Build.<br />Merge<span aria-hidden className="ml-[.1em] animate-blink tracking-[-0.08em]">&gt;_</span></h1>
-            </Reveal>
-            <Reveal delay={0.16}><p className="mt-8 max-w-[46ch] text-[clamp(18px,1.6vw,20px)] text-ink-2">A student community turning &ldquo;I want to code&rdquo; into pull requests, shipped projects and real open-source contributions — six events this year, and one flagship: Epoch.</p></Reveal>
-            <Reveal delay={0.24} className="mt-9 flex flex-wrap items-center gap-8">
+            </div>
+            <p className="hero-fade mt-8 max-w-[46ch] text-[clamp(18px,1.6vw,20px)] text-ink-2" style={{ "--d": "0.15s" } as React.CSSProperties}>A student community turning &ldquo;I want to code&rdquo; into pull requests, shipped projects and real open-source contributions — six events this year, and one flagship: Epoch.</p>
+            <div className="hero-fade mt-9 flex flex-wrap items-center gap-8" style={{ "--d": "0.25s" } as React.CSSProperties}>
               <a href="#join" className="lift rounded-md border-2 border-ink bg-ink px-[26px] py-[15px] font-display font-bold text-white">Join the club</a>
               <a href="#events" className="group inline-flex items-center gap-2 font-semibold text-link">See what&apos;s next <span className="transition-transform group-hover:translate-x-1.5">→</span></a>
-            </Reveal>
+            </div>
           </div>
           <div aria-hidden className="hidden justify-self-center lg:block"><GitGraph nodes={NODES} edges={EDGES} className="max-h-[560px] w-full min-w-[230px]" /></div>
         </div>
