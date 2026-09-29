@@ -5,7 +5,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
 import { animate } from "motion/react";
 import { Frame, Notice } from "./Frame";
-import { Coin, btnGhost, btnGold, card, mono } from "./Bits";
+import { Coin, btnInk, btnSoft, glass, label } from "./Bits";
 import { useEpoch } from "./EpochProvider";
 import { qr } from "@/lib/epoch/store";
 import { EPOCH, RECHARGE_POINTS, STARTER_COINS } from "@/lib/epoch/config";
@@ -16,7 +16,6 @@ function Balance({ value }: { value: number }) {
   useEffect(() => { const c = animate(n, value, { duration: 0.9, ease: "easeOut", onUpdate: (v) => setN(Math.round(v)) }); return () => c.stop(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [value]);
   return <>{n}</>;
 }
-const shortHash = (id: string) => id.replace(/[^a-z0-9]/gi, "").slice(0, 7).padEnd(7, "0");
 
 export function Wallet() {
   const { store, me, ready, refresh } = useEpoch(); const router = useRouter();
@@ -25,68 +24,56 @@ export function Wallet() {
   useEffect(() => { if (store && me) store.history().then(setTx); }, [store, me]);
   useEffect(() => { if (!me) return; const i = setInterval(() => void refresh(), 4000); return () => clearInterval(i); }, [me, refresh]); // near-real-time balance
 
-  if (!ready) return <Frame kicker="// wallet" title="Loading…"><div className="h-64" /></Frame>;
-  if (!me) return (
-    <Frame kicker="// wallet" title="No wallet yet.">
-      <p className="mb-6 max-w-[50ch] text-lg text-fog">Create a profile to get your pass and QR code.</p><Link href="/epoch/register" className={btnGold}>Get your ticket →</Link>
-    </Frame>
-  );
+  if (!ready) return <Frame title="Wallet"><div className="h-64" /></Frame>;
+  if (!me) return <Frame title="No wallet yet." sub="Create a profile to get your pass and QR code."><Link href="/epoch/register" className={btnInk}>Get your ticket</Link></Frame>;
 
   const used = new Set(tx.filter((t) => t.ref.startsWith("booth:recharge-")).map((t) => t.ref.slice(6)));
   const left = RECHARGE_POINTS.filter((p) => !used.has(p.id)).length;
 
   return (
-    <Frame kicker="// wallet" title={<>Hey, {me.name.split(" ")[0]}.</>} aside={<button className={btnGhost} onClick={async () => { await store?.signOut(); await refresh(); router.push("/epoch"); }}>Sign out</button>}>
-      {/* boarding-pass style ticket */}
-      <div className="relative grid overflow-hidden rounded-[2rem] bg-gradient-to-br from-gold via-[#ffd75e] to-[#ffb300] text-night shadow-[0_40px_100px_-30px_rgba(255,201,51,.45)] md:grid-cols-[1fr_auto]">
-        <div className="p-7 sm:p-10">
-          <div className="flex items-center justify-between"><span className={`${mono} font-bold`}>epoch_{EPOCH.edition} · attendee</span><span className={`${mono} rounded-full px-3 py-1 font-bold ${me.ticket ? "bg-night text-gold" : "bg-night/15"}`}>{me.ticket ? "✓ ticket verified" : "ticket pending"}</span></div>
-          <p className="mt-10 font-display text-4xl font-black tracking-tight sm:text-5xl">{me.name}</p>
-          <p className="font-mono text-sm opacity-70">@{me.handle}</p>
-          <div className="mt-10"><p className={`${mono} opacity-70`}>Balance</p>
-            <p className="flex items-center gap-3 font-display text-[clamp(64px,12vw,140px)] font-black leading-none tracking-tighter"><Coin size={72} /><Balance value={me.coins} /></p></div>
-        </div>
-        <div className="relative flex flex-col items-center justify-center gap-3 border-t-2 border-dashed border-night/40 p-7 md:border-l-2 md:border-t-0">
-          <span aria-hidden className="absolute -top-4 left-1/2 h-8 w-8 -translate-x-1/2 rounded-full bg-night md:-left-4 md:top-4 md:translate-x-0" />
-          <span aria-hidden className="absolute -bottom-4 left-1/2 h-8 w-8 -translate-x-1/2 rounded-full bg-night md:-left-4 md:bottom-4 md:top-auto md:translate-x-0" />
-          <div className="rounded-2xl bg-white p-3"><QRCodeSVG value={qr.user(me.id)} size={168} level="M" /></div>
-          <p className={`${mono} text-center opacity-70`}>Show at desk &amp; stalls</p>
-        </div>
+    <Frame title={`Hi, ${me.name.split(" ")[0]}.`} aside={<button className={btnSoft} onClick={async () => { await store?.signOut(); await refresh(); router.push("/epoch"); }}>Sign out</button>}>
+      <div className="grid gap-4 md:grid-cols-[1fr_auto]">
+        <section className={`${glass} p-8 sm:p-10`}>
+          <div className="flex items-center justify-between">
+            <span className={label}>@{me.handle}</span>
+            <span className={`rounded-full px-3.5 py-1 text-[13px] ${me.ticket ? "bg-ink text-white" : "bg-ink/[.07] text-mute"}`}>{me.ticket ? "Ticket verified" : "Ticket pending"}</span>
+          </div>
+          <p className={`${label} mt-12`}>Balance</p>
+          <p className="flex items-center gap-4 text-[clamp(72px,13vw,150px)] font-medium leading-none tracking-[-0.06em]"><Coin size={64} /><Balance value={me.coins} /></p>
+        </section>
+        <section className={`${glass} flex flex-col items-center justify-center gap-3 p-8`}>
+          <div className="rounded-2xl bg-white p-3"><QRCodeSVG value={qr.user(me.id)} size={160} level="M" /></div>
+          <p className={`${label} text-center`}>Show at the desk</p>
+        </section>
       </div>
 
       {!me.ticket && (
         <div className="mt-4"><Notice kind="info">
-          <b className="text-white">One step left.</b> Pay your ₹{EPOCH.ticketPriceINR} ticket{EPOCH.ticketUrl ? <> <a className="text-gold underline" href={EPOCH.ticketUrl} target="_blank" rel="noopener">via this link</a></> : " at the registration desk"}, then show the QR above. An organiser verifies it and {STARTER_COINS} {EPOCH.currency} appear here within seconds.
+          One step left: pay your ₹{EPOCH.ticketPriceINR} ticket{EPOCH.ticketUrl ? <> <a className="underline" href={EPOCH.ticketUrl} target="_blank" rel="noopener">here</a></> : " at the registration desk"} and show the QR. {STARTER_COINS} {EPOCH.currency} appear here within seconds.
         </Notice></div>
       )}
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <section className={`${card} p-7`}>
-          <div className="mb-6 flex items-end justify-between"><h2 className="text-3xl">Recharge points</h2><span className={`${mono} text-gold`}>{left} of {RECHARGE_POINTS.length} left</span></div>
-          <ul className="space-y-2.5">
-            {RECHARGE_POINTS.map((p) => (
-              <li key={p.id} className={`flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 ${used.has(p.id) ? "border-edge opacity-50" : "border-gold/40 bg-gold/5"}`}>
-                <span className="flex items-center gap-3"><span className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${used.has(p.id) ? "bg-white/10 text-fog" : "bg-gold text-night"}`}>{used.has(p.id) ? "✓" : "⚡"}</span>{p.name}</span>
-                <span className="font-mono text-sm text-gold">{used.has(p.id) ? "used" : `+${p.coins}`}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-4 text-sm text-fog">Each point can be used once per person.</p>
-        </section>
+      <section className="mt-16">
+        <div className="mb-5 flex items-baseline justify-between"><h2 className="text-[28px] font-medium tracking-[-0.03em]">Recharge points</h2><span className={label}>{left} of {RECHARGE_POINTS.length} left</span></div>
+        <ul className="flex flex-wrap gap-2.5">
+          {RECHARGE_POINTS.map((p) => (
+            <li key={p.id} className={`rounded-full border px-5 py-2.5 text-[15px] ${used.has(p.id) ? "border-hair text-mute line-through" : "border-ink/25 bg-white/60"}`}>{p.name} {used.has(p.id) ? "" : `· +${p.coins}`}</li>
+          ))}
+        </ul>
+      </section>
 
-        <section className={`${card} p-7`}>
-          <div className="mb-6 flex items-end justify-between"><h2 className="text-3xl">Ledger</h2><span className={`${mono} text-fog`}>earned {me.earned}</span></div>
-          <ul className="max-h-[420px] overflow-y-auto">
-            {tx.length === 0 && <li className="text-fog">No transactions yet.</li>}
-            {tx.map((t) => (
-              <li key={t.id} className="flex items-center justify-between gap-4 border-b border-edge py-3.5 last:border-0">
-                <div className="min-w-0"><p className="truncate font-medium">{t.reason}</p><p className="font-mono text-xs text-fog"><span className="text-gold/80">{shortHash(t.id)}</span> · {new Date(t.at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p></div>
-                <span className={`font-mono text-lg font-bold ${t.delta > 0 ? "text-mint" : "text-fog"}`} style={t.delta > 0 ? { color: "#4fd1a1" } : undefined}>{t.delta > 0 ? "+" : ""}{t.delta}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      </div>
+      <section className="mt-16">
+        <h2 className="mb-5 text-[28px] font-medium tracking-[-0.03em]">Ledger</h2>
+        <ul className="border-t border-hair">
+          {tx.length === 0 && <li className="py-5 text-mute">Nothing yet.</li>}
+          {tx.map((t) => (
+            <li key={t.id} className="flex items-baseline justify-between gap-6 border-b border-hair py-4">
+              <div className="min-w-0"><p className="truncate text-[17px]">{t.reason}</p><p className="text-sm text-mute">{new Date(t.at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p></div>
+              <span className={`text-[19px] font-medium tabular-nums ${t.delta > 0 ? "" : "text-mute"}`}>{t.delta > 0 ? "+" : "−"}{Math.abs(t.delta)}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
     </Frame>
   );
 }
