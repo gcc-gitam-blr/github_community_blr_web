@@ -34,7 +34,7 @@ export function Nav() {
             <a key={h} href={h} onClick={() => setOpen(false)} className="relative rounded-lg py-3 font-display text-3xl font-bold md:px-3.5 md:py-2 md:font-sans md:text-[15px] md:font-medium after:absolute after:inset-x-3.5 after:bottom-1 after:hidden after:h-0.5 after:origin-left after:scale-x-0 after:bg-ink after:transition-transform md:after:block hover:after:scale-x-100">{l}</a>
           ))}
           <EpochLink className="mt-2 inline-flex items-center gap-2 py-3 font-display text-3xl font-bold md:mt-0 md:px-3.5 md:py-2 md:font-sans md:text-[15px] md:font-semibold">
-            <span className="rounded bg-ink px-2 py-0.5 font-mono text-[13px] font-bold text-epoch">EPOCH</span>
+            <span className="rounded bg-ink px-2 py-0.5 font-mono text-[13px] font-bold text-gold">EPOCH</span>
             {live && <span className="h-2 w-2 animate-pulse-ring rounded-full bg-brand" title="Live now" />}
           </EpochLink>
         </nav>

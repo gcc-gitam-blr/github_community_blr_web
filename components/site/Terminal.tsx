@@ -32,12 +32,12 @@ export function Terminal() {
     const say = (...h: string[]) => push(...h.map((html) => ({ html })));
     switch (k) {
       case "help": return say(...["about  who we are", "tracks  the six branches", "events  upcoming events", "epoch  our annual fest", "log  commit history", "team  the maintainers", "join  jump to sign-up", "clear  clean the screen"].map((l) => { const [a, ...b] = l.split("  "); return `  ${c("text-brand", a.padEnd(8))}${b.join("")}`; }));
-      case "about": return say(CLUB.name, "Students in Bengaluru who learn, build and merge together.");
+      case "about": return say(CLUB.name, `${CLUB.university} · ${CLUB.year}`, "Students who learn, build and merge together.");
       case "tracks": return say(...CLUB.tracks.map((t) => `${c("text-node-purple", "◆")} ${t.title.padEnd(16)} ${c("text-[#6b7a70]", t.text.split(".")[0])}`));
       case "events": return say(...[...CLUB.events].sort((a, b) => a.date.localeCompare(b.date)).map((e) => `${c("text-[#f0b429]", e.date)}  ${e.title} ${c("text-[#6b7a70]", "— " + e.where)}`));
       case "log": return say(...LOG.map((l) => `${c("text-[#f0b429]", l.slice(0, 7))} ${l.slice(8)}`));
       case "team": return say(...CLUB.team.map((m) => `${c("text-brand", m.role.padEnd(16))} ${m.handle ? "@" + m.handle : c("text-[#6b7a70]", "open — could be you")}`));
-      case "epoch": say(`Opening ${c("text-epoch", EPOCH.name + "'" + EPOCH.edition)} — ${EPOCH.dates}…`); return void setTimeout(() => router.push("/epoch"), 600);
+      case "epoch": say(`Opening ${c("text-gold", EPOCH.name + "'" + EPOCH.edition)} — ${EPOCH.month}…`); return void setTimeout(() => router.push("/epoch"), 600);
       case "join": say(c("text-brand", "Taking you to the sign-up form…")); return void document.getElementById("join")?.scrollIntoView({ behavior: "smooth", block: "center" });
       case "clear": return setLines([]);
       case "whoami": return say("a future contributor.");
