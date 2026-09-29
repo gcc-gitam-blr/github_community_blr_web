@@ -69,7 +69,7 @@ function Palette({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        <ul role="listbox" className="mt-6 max-h-[52vh] overflow-y-auto rounded-[32px] border border-white/80 bg-white/75 p-2.5 shadow-[0_30px_80px_-35px_rgba(70,45,130,.55)] backdrop-blur-2xl">
+        <ul role="listbox" data-lenis-prevent className="mt-6 max-h-[52vh] overflow-y-auto rounded-[32px] border border-white/80 bg-white/75 p-2.5 shadow-[0_30px_80px_-35px_rgba(70,45,130,.55)] backdrop-blur-2xl">
           {!q && <li className="px-4 pb-1 pt-2 text-[13px] text-mute">Try: “how much is VR”, “recharge”, “hoodie”, “when is day 2”</li>}
           {hits.length === 0 && <li className="px-4 py-6 text-mute">Nothing found. Try “booths”, “ticket” or “merch”.</li>}
           {hits.map((h, n) => (
