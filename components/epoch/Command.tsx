@@ -29,7 +29,7 @@ export function Launcher({ variant = "bar", className = "" }: { variant?: "hero"
     <div className={`relative ${className}`}>
       {/* the soft colour glow that sits beneath the pill */}
       <span aria-hidden className={`pointer-events-none absolute inset-x-[16%] ${big ? "-bottom-4 h-8" : "-bottom-2 h-4"} animate-[glow_6s_ease-in-out_infinite] rounded-full bg-[linear-gradient(90deg,#7aa8ff,#5eead4,#a78bfa)] opacity-60 blur-xl`} />
-      <button onClick={open} aria-label="Search Epoch or ask a question" className={`relative flex w-full items-center gap-4 rounded-full border border-white/80 bg-white/70 text-left shadow-[0_18px_50px_-22px_rgba(70,45,130,.45),inset_0_1px_0_rgba(255,255,255,.9)] backdrop-blur-2xl transition hover:bg-white/85 ${big ? "h-[76px] pl-8 pr-4 text-[clamp(17px,2vw,21px)]" : "h-[52px] pl-6 pr-2.5 text-[15px]"}`}>
+      <button onClick={open} className={`relative flex w-full items-center gap-4 rounded-full border border-white/80 bg-white/70 text-left shadow-[0_18px_50px_-22px_rgba(70,45,130,.45),inset_0_1px_0_rgba(255,255,255,.9)] backdrop-blur-2xl transition hover:bg-white/85 ${big ? "h-[76px] pl-8 pr-4 text-[clamp(17px,2vw,21px)]" : "h-[52px] pl-6 pr-2.5 text-[15px]"}`}>
         <svg viewBox="0 0 24 24" width={big ? 26 : 20} height={big ? 26 : 20} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="flex-none text-mute" aria-hidden><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
         <span className="min-w-0 flex-1 truncate text-mute"><span className="hidden sm:inline">Search Epoch or </span>ask a question…</span>
         <kbd className={`${KEY} hidden sm:block`}>/</kbd>

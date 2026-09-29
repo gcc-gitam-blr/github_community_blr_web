@@ -29,7 +29,7 @@ export function Nav() {
         </EpochLink>
       )}
       <div className="mx-auto flex max-w-[1240px] items-center gap-10 px-5 py-4 md:px-[clamp(20px,5vw,72px)] md:py-5">
-        <a href={home ? "#top" : "/"} className="group flex items-center gap-3" aria-label="GitHub Community Club BLR — home">
+        <a href={home ? "#top" : "/"} className="group flex items-center gap-3" aria-label="GitHub Community BLR — home">
           <svg viewBox="0 0 40 40" className="h-10 w-10 transition-transform duration-500 group-hover:-rotate-[20deg] group-hover:scale-110" aria-hidden>
             <circle cx="20" cy="20" r="20" fill="#0b0b0f" />
             <path d="M14 11v18M14 17c0 6 12 2 12 9" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
