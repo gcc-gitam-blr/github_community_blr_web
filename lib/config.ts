@@ -10,28 +10,31 @@ export const CLUB = {
   name: "GitHub Community Club BLR",
   university: "GITAM University Bengaluru",
   year: "2026-27",
-  githubOrg: "", // e.g. "github-community-blr" — enables live repos
+  githubOrg: "", // e.g. "github-community-blr" — shows the Projects section with live repos
   githubUrl: "https://github.com",
-  email: "hello@example.com",
-  socials: [
-    { label: "GitHub", href: "https://github.com" },
-    { label: "Discord", href: "#" },
-    { label: "Instagram", href: "#" },
-    { label: "LinkedIn", href: "#" },
-  ],
+
+  // Where "Join the club" sends people. Set ONE of these:
+  //  - joinUrl: a Google Form / WhatsApp community / Linktree link (opens in a new tab)
+  //  - email:   a real club address (opens a pre-filled email)
+  // Until one is set the form says sign-ups aren't connected yet, instead of pretending to send.
+  joinUrl: "",
+  email: "",
+
+  // Only add real links. Empty = the footer hides the row.
+  socials: [] as { label: string; href: string }[],
   stats: [
     { value: 6, suffix: "", label: "Events in 2026-27" },
     { value: 21, suffix: "", label: "Booths at Epoch" },
     { value: 2, suffix: "", label: "Days of Epoch" },
     { value: 398, suffix: "", label: "Coins per ₹199 ticket" },
   ],
-  tracks: [
-    { id: "oss", shape: "diamond", color: "blue", title: "Open Source", text: "Fork it, fix it, ship your first pull request to a real project — with mentors reviewing every step." },
-    { id: "web", shape: "square", color: "purple", title: "Web & Apps", text: "From HTML to full-stack products. Build things people actually open on their phones." },
-    { id: "ai", shape: "ring", color: "mint", title: "AI & Data", text: "Copilots, models, notebooks and agents. Learn to build with the tools reshaping the industry." },
-    { id: "cloud", shape: "triangle", color: "blue", title: "Cloud & DevOps", text: "Actions, containers, pipelines. Automate everything, deploy on a Friday, sleep fine." },
-    { id: "sec", shape: "diamond", color: "purple", title: "Security", text: "Dependabot, secret scanning, CTFs. Think like an attacker, code like a defender." },
-    { id: "design", shape: "square", color: "mint", title: "Design & Docs", text: "Great READMEs, sharp UI, clear writing. The unglamorous skills that make projects win." },
+  learn: [
+    { id: "basics", shape: "diamond", color: "blue", title: "Git & GitHub basics", text: "Version control, repositories, and the everyday commands: init, add, commit, push, pull." },
+    { id: "pr", shape: "square", color: "purple", title: "Your first pull request", text: "Make a real contribution to a real project, with someone reviewing it alongside you." },
+    { id: "portfolio", shape: "ring", color: "mint", title: "Portfolio & READMEs", text: "Organise your repositories, write READMEs people read, and publish with GitHub Pages." },
+    { id: "oss", shape: "triangle", color: "blue", title: "Open source", text: "Branching strategies, resolving merge conflicts and contributing to projects that aren't yours." },
+    { id: "review", shape: "diamond", color: "purple", title: "Code review & CI", text: "Review code well, and use automated tests and checks to keep quality high." },
+    { id: "career", shape: "square", color: "mint", title: "GitHub for careers", text: "Use GitHub for internships, placements and a portfolio that speaks for you." },
   ] as { id: string; shape: Shape; color: NodeColor; title: string; text: string }[],
   events: [
     { date: "2026-10-05", type: "Workshop", title: "Learn GitHub & Make Your First Contribution", text: "Introduction to GitHub, repositories, commits, issues, pull requests — and your first contribution.", where: "GITAM Bengaluru", shape: "diamond", color: "blue" },
@@ -41,17 +44,7 @@ export const CLUB = {
     { date: "2027-02-08", type: "Workshop", title: "GitHub Profile Makeover", text: "Level up your profile, READMEs, repositories and project presentation for academic and professional use.", where: "GITAM Bengaluru", shape: "diamond", color: "purple" },
     { date: "2027-03-15", type: "Career", title: "GitHub for Careers & Technical Challenge", text: "How GitHub helps with internships, placements and portfolios — followed by a technical challenge.", where: "GITAM Bengaluru", shape: "square", color: "mint" },
   ] as { date: string; dateLabel?: string; href?: string; type: string; title: string; text: string; where: string; shape: Shape; color: NodeColor }[],
-  sampleRepos: [
-    { name: "club-website", description: "This very site. Next.js, open for contributions.", language: "TypeScript", stars: 0, url: "#" },
-    { name: "first-contributions", description: "A friendly playground for your first ever pull request.", language: "Markdown", stars: 0, url: "#" },
-    { name: "epoch-app", description: "Coins, QR scans and leaderboards for our fest.", language: "TypeScript", stars: 0, url: "#" },
-  ],
-  team: [
-    { role: "Club Lead", handle: "", note: "Vision, partnerships, keeps the lights on." },
-    { role: "Tech Lead", handle: "", note: "Reviews PRs, owns the infrastructure." },
-    { role: "Community Lead", handle: "", note: "Welcomes every newcomer, runs the events." },
-    { role: "Design Lead", handle: "", note: "Makes everything we ship look sharp." },
-  ],
+  team: [] as { role: string; handle: string; note: string }[], // add real people: { role: "Club Lead", handle: "github-handle", note: "…" }
   faq: [
     { q: "What is Epoch?", a: "Our flagship technical event in December: two days of workshops, coding competitions and 20+ interactive booths — run on its own currency, Epoch Coins." },
     { q: "How do Epoch Coins work?", a: "Your ticket converts to coins at 1 ₹ = 2 coins (₹199 → 398 coins, final price to be announced). Spend them at booths and on merch, and top up at recharge points." },
@@ -60,3 +53,6 @@ export const CLUB = {
     { q: "Who runs this?", a: "The GitHub Community Club at GITAM University Bengaluru — students organising for students." },
   ],
 };
+
+/** Short commit-style hash for an event. Used by the timeline and by the terminal's `git log`, so they match. */
+export const commitHash = (s: string) => { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h.toString(16).padStart(7, "0").slice(0, 7); };
