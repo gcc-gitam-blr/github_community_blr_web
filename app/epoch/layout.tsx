@@ -4,6 +4,7 @@ import { CommandProvider } from "@/components/epoch/Command";
 import { EpochNav } from "@/components/epoch/EpochNav";
 import { EpochEntrance } from "@/components/epoch/EpochEntrance";
 import { EpochMain } from "@/components/epoch/EpochMain";
+import { SiteFooter } from "@/components/site/SiteFooter";
 
 export const metadata: Metadata = {
   title: "epoch — GITAM Bengaluru's GitHub tech fest",
@@ -22,9 +23,11 @@ export default function EpochLayout({ children }: { children: React.ReactNode })
     <EpochProvider>
       <CommandProvider>
         <style dangerouslySetInnerHTML={{ __html: OddvalFace }} />
-        <div className="epoch-field min-h-screen pb-28 font-epoch text-ink md:pb-0 print:bg-white">
+        <div className="epoch-field flex min-h-screen flex-col font-epoch text-ink print:bg-white">
           <EpochNav />
           <EpochMain>{children}</EpochMain>
+          <div className="relative z-10 no-print font-sans"><SiteFooter sticker={false} /></div>
+          <div aria-hidden className="h-24 bg-[#010409] md:hidden" />{/* room for the phone tab bar */}
         </div>
         <EpochEntrance />
       </CommandProvider>

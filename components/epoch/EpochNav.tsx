@@ -23,6 +23,13 @@ export function EpochNav() {
   const landing = path === "/epoch";
   const staff = !!me && me.role !== "attendee";
   const [scrolled, setScrolled] = useState(false);
+  // the rail is fixed; fade it out once the footer scrolls into view so they never overlap
+  const [footerIn, setFooterIn] = useState(false);
+  useEffect(() => {
+    const f = document.querySelector("footer"); if (!f) return;
+    const io = new IntersectionObserver(([e]) => setFooterIn(e.isIntersecting), { rootMargin: "0px 0px -35% 0px" });
+    io.observe(f); return () => io.disconnect();
+  }, [path]);
   useEffect(() => { const on = () => setScrolled(window.scrollY > 520); on(); window.addEventListener("scroll", on, { passive: true }); return () => window.removeEventListener("scroll", on); }, []);
   const showBar = !landing || scrolled; // on the landing page the hero has its own big pill
 
@@ -45,7 +52,7 @@ export function EpochNav() {
 
       {/* dashboard rail (app screens, desktop) */}
       {!landing && (
-        <nav aria-label="Epoch" className="no-print fixed left-6 top-[104px] z-30 hidden w-[184px] lg:block">
+        <nav aria-label="Epoch" className={`no-print fixed left-6 top-[104px] z-30 hidden w-[184px] transition-opacity duration-300 lg:block ${footerIn ? "pointer-events-none opacity-0" : ""}`}>
           <ul className="space-y-1">
             {items.map((n) => {
               const on = path === n.h;
