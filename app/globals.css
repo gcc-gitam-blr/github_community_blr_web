@@ -6,7 +6,7 @@
   --color-soft: #f5f7f6;
   --color-ink: #0b0b0f;
   --color-ink-2: #3a3d44;
-  --color-ink-3: #737780;
+  --color-ink-3: #666a73; /* 5.2:1 on white */
   --color-line: #e4e8e6;
 
   --color-node-blue: #b9e0f7;
@@ -32,7 +32,7 @@
   --font-epoch: "Oddval", var(--font-mona), system-ui, sans-serif;
 
   --color-haze: #f6f3fb;
-  --color-mute: #6c6b7a;
+  --color-mute: #595866; /* 5.9:1 on Epoch paper */
   --color-hair: rgba(18, 18, 26, 0.09);
 
   --ease-out-expo: cubic-bezier(0.22, 1, 0.36, 1);
@@ -121,3 +121,9 @@ html.lenis, html.lenis body { height: auto; }
 .lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
 .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
 .lenis.lenis-smooth iframe { pointer-events: none; }
+
+/* ---------- hero entrance without waiting for JavaScript ---------- */
+@keyframes rise { from { transform: translateY(26px); } }
+@keyframes rise-fade { from { transform: translateY(14px); opacity: 0; } }
+.hero-rise { animation: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: var(--d, 0s); }
+.hero-fade { animation: rise-fade 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: var(--d, 0s); }
