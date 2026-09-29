@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { animate } from "motion/react";
 import { Notice } from "./Frame";
 import { Coin, btnInk, btnSoft, glass } from "./Bits";
@@ -15,7 +15,11 @@ import type { Tx } from "@/lib/epoch/types";
 
 function Balance({ value }: { value: number }) {
   const [n, setN] = useState(value);
-  useEffect(() => { const c = animate(n, value, { duration: 0.9, ease: "easeOut", onUpdate: (v) => setN(Math.round(v)) }); return () => c.stop(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [value]);
+  const shown = useRef(value); // the number on screen, so a new balance counts on from there
+  useEffect(() => {
+    const c = animate(shown.current, value, { duration: 0.9, ease: "easeOut", onUpdate: (v) => { shown.current = v; setN(Math.round(v)); } });
+    return () => c.stop();
+  }, [value]);
   return <>{n}</>;
 }
 const ago = (iso: string) => { const s = (Date.now() - new Date(iso).getTime()) / 1000; return s < 60 ? "just now" : s < 3600 ? `${Math.floor(s / 60)} min ago` : s < 86400 ? `${Math.floor(s / 3600)} hours ago` : new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" }); };
