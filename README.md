@@ -24,7 +24,7 @@ Epoch works out of the box in **demo mode** (data lives in your browser's localS
 ## Make it yours
 
 - Club content (events, tracks, team, FAQ, socials): [`lib/config.ts`](lib/config.ts)
-- Epoch settings (dates, welcome coins, stalls, rewards): [`lib/epoch/config.ts`](lib/epoch/config.ts)
+- Epoch settings (ticket price, booths, recharge points, merch, schedule): [`lib/epoch/config.ts`](lib/epoch/config.ts)
 
 Set `githubOrg` in `lib/config.ts` and the Projects section lists your real repos.
 
@@ -39,12 +39,18 @@ Set `githubOrg` in `lib/config.ts` and the Projects section lists your real repo
 
 **Epoch mode:** the *EPOCH* item in the nav and the black-disc page transition are always there; the live dot and countdown follow `opensAt`/`closesAt`. Force it with `NEXT_PUBLIC_EPOCH_MODE=live|off`.
 
-### How coins flow
+### How coins flow (from the original Epoch plan)
 
-- Attendee registers → +100 EPC welcome bonus.
-- Attendee scans a **stall QR** (`epoch:s:<id>`) → earns (or pays) that stall's amount, once per stall.
-- Organiser scans an **attendee wallet QR** (`epoch:u:<id>`) → awards or deducts coins manually.
-- Shop redeems coins for rewards; stock is decremented atomically.
+- **Ticket → coins.** ₹199 (working price) × 2 = **398 EPC**. The attendee registers, pays, then shows their wallet QR at the registration desk; an organiser scans it and presses *Verify ticket*. Coins are credited once — a second attempt is refused.
+- **Spend booths** (`epoch:b:<id>`) charge coins per session (VR = 40) and can be repeated, with a 20-second double-scan guard.
+- **Recharge points** pay **once per attendee, per point** (20 coins in the plan). The wallet shows how many are left.
+- **Merch stall** sells tees, hoodies and stickers for coins; stock is decremented atomically.
+- **Organiser desk** (`/epoch/admin`) prints the booth QR sheet; scanning a wallet also allows manual awards/deductions (competition prizes, refunds) with a reason in the ledger.
+- Attendees see balance, full ledger and remaining recharge points, refreshed every few seconds.
+
+> Only VR = 40 and the recharge reward = 20 come from the plan. Every other price, the ticket price and the recharge-point names are **placeholders** in `lib/epoch/config.ts` — confirm them.
+
+`npm test` runs the economy rules against the demo store.
 
 ## Deploy
 
