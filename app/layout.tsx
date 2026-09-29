@@ -8,7 +8,7 @@ const jbm = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jbm" });
 
 export const metadata: Metadata = {
   title: "GitHub Community Club BLR — Learn. Build. Merge.",
-  description: "The student developer community of our Bengaluru campus. Workshops, hackathons, open source — and Epoch, our annual fest.",
+  description: "The GitHub Community Club at GITAM University Bengaluru. Workshops, open source and Epoch, our flagship technical event.",
   openGraph: { title: "GitHub Community Club BLR", description: "Learn. Build. Merge.", type: "website" },
   icons: { icon: "/favicon.svg" },
 };
