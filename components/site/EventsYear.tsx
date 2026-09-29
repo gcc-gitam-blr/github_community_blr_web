@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { todayISO, useClientValue } from "@/lib/useClientValue";
 import { CLUB, commitHash } from "@/lib/config";
 import { EpochLink } from "@/components/epoch/EpochLink";
 import { Sticker } from "@/components/ui/Sticker";
@@ -31,12 +32,10 @@ export function EventsYear() {
     return { weeks, monthCols };
   }, []);
 
-  const [today, setToday] = useState("");
-  const [sel, setSel] = useState<Ev>(events[0]);
-  useEffect(() => {
-    const t = iso(new Date()); setToday(t);
-    setSel(events.find((e) => e.date >= t) ?? events[events.length - 1]); // default to what's next
-  }, [events]);
+  const today = useClientValue(todayISO, "");
+  const [picked, setSel] = useState<Ev | null>(null);
+  // until someone picks a day, show what's next (or the last event once the year is over)
+  const sel = picked ?? (today ? events.find((e) => e.date >= today) ?? events[events.length - 1] : events[0]);
 
   const eventFor = (day: string) => byDay.get(day) ?? (EPOCH_MONTH && day.startsWith(EPOCH_MONTH) ? events.find((e) => e.href) : undefined);
   const daysUntil = today ? Math.round((new Date(sel.date + "T00:00:00").getTime() - new Date(today + "T00:00:00").getTime()) / 864e5) : null;
