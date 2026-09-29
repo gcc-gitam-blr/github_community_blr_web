@@ -1,11 +1,13 @@
-import { CLUB, commitHash } from "@/lib/config";
-import { NodeIcon } from "@/components/ui/GitGraph";
+import { CLUB } from "@/lib/config";
 import { Reveal } from "@/components/ui/Reveal";
 import { EpochLink } from "@/components/epoch/EpochLink";
-import { CountUp } from "./CountUp";
+import { DiffStat } from "./DiffStat";
+import { EventsYear } from "./EventsYear";
+import { FaqIssues } from "./FaqIssues";
+import { LearnPath } from "./LearnPath";
+import { StickerLid } from "./StickerLid";
+import { Sticker } from "@/components/ui/Sticker";
 import { JoinCard } from "./JoinCard";
-import { SpotlightCard } from "./SpotlightCard";
-import { TimelineLine } from "./TimelineLine";
 
 export function Head({ tag, title, children, light = false }: { tag: string; title: React.ReactNode; children?: React.ReactNode; light?: boolean }) {
   return (
@@ -20,21 +22,16 @@ const pad = "py-[clamp(64px,8vw,112px)]";
 const wrap = "mx-auto w-full max-w-[1240px] px-5 md:px-[clamp(20px,5vw,72px)]";
 
 export function About() {
-  const tint = ["bg-node-blue", "bg-white", "bg-white", "bg-node-purple"];
   return (
     <section id="about" className={pad}>
-      <div className={`${wrap} grid items-center gap-[clamp(36px,6vw,96px)] lg:grid-cols-[1.2fr_1fr]`}>
-        <Head tag="// about" title={<>A community that <em className="hl">commits</em> to each other.</>}>
-          The GitHub Community Club at GITAM University Bengaluru exists for one reason: nobody should learn to code alone. Six events this year — from your first pull request to a full-scale technical month, Epoch — with a crew that helps every newcomer ship.
-        </Head>
-        <ul className="grid grid-cols-2 gap-4">
-          {CLUB.stats.map((s, i) => (
-            <Reveal as="li" key={s.label} delay={i * 0.08} className={`lift rounded-[18px] border-2 border-ink p-6 sm:p-7 ${tint[i]}`}>
-              <b className="block font-display text-[clamp(40px,5vw,64px)] font-black leading-none tracking-tighter"><CountUp to={s.value} suffix={s.suffix} /></b>
-              <span className="mt-1 block font-mono text-[12px] uppercase tracking-widest">{s.label}</span>
-            </Reveal>
-          ))}
-        </ul>
+      <div className={`${wrap} grid items-center gap-[clamp(36px,6vw,88px)] lg:grid-cols-[1fr_1fr]`}>
+        <div>
+          <Head tag="// about" title={<>A community that <em className="hl">commits</em> to each other.</>}>
+            The GitHub Community Club at GITAM University Bengaluru exists for one reason: nobody should learn to code alone. Six events this year — from your first pull request to a full-scale technical month, Epoch — with a crew that helps every newcomer ship.
+          </Head>
+          <Reveal delay={0.1}><DiffStat /></Reveal>
+        </div>
+        <Reveal delay={0.1}><StickerLid /></Reveal>
       </div>
     </section>
   );
@@ -45,51 +42,22 @@ export function Learn() {
   return (
     <section id="learn" className={`${pad} bg-soft`}>
       <div className={wrap}>
-        <Head tag="// what you'll learn" title={<>Real skills.<br />No gatekeeping.</>}>Six things every session builds toward — start from zero, leave with something on your GitHub.</Head>
-        <ul className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {CLUB.learn.map((t, i) => (
-            <Reveal as="li" key={t.id} delay={(i % 3) * 0.1}>
-              <SpotlightCard className="group flex min-h-[250px] flex-col gap-4 rounded-[18px] border border-line bg-white p-[30px_28px_32px]">
-                <span className="absolute right-6 top-6 font-mono text-[13px] text-ink-3">{String(i + 1).padStart(2, "0")}</span>
-                <span className="w-fit transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110"><NodeIcon shape={t.shape} color={t.color} size={48} /></span>
-                <h3 className="mt-auto text-[26px]">{t.title}</h3>
-                <p className="leading-[1.55] text-ink-2">{t.text}</p>
-              </SpotlightCard>
-            </Reveal>
-          ))}
-        </ul>
+        <div className="flex items-end justify-between gap-6">
+          <Head tag="// what you'll learn" title={<>One branch,<br />six commits.</>}>Start at <code className="font-mono text-[.9em]">git init</code>, finish with something you can tag and show. Every session in the year moves you one commit along.</Head>
+          <Sticker name="professor" size={150} tilt={6} className="mb-12 hidden md:block" alt="" />
+        </div>
+        <LearnPath />
       </div>
     </section>
   );
 }
 
 export function Events() {
-  const today = new Date().toISOString().slice(0, 10);
-  const list = [...CLUB.events].sort((a, b) => a.date.localeCompare(b.date));
   return (
     <section id="events" className={pad}>
       <div className={wrap}>
-        <Head tag="// events · 2026-27" title={<>Our commit history,<br />in the making.</>}>Every event is a commit on the club&apos;s timeline. Show up, and yours is on it too.</Head>
-        <TimelineLine>
-          {list.map((e, i) => (
-            <Reveal as="li" key={e.title} delay={i * 0.06} className={`group relative grid grid-cols-[36px_1fr] gap-[18px] sm:grid-cols-[44px_1fr] sm:gap-[34px] ${e.date < today ? "opacity-55" : ""}`}>
-              <span className="relative z-10 h-fit rounded-full bg-white transition-transform duration-500 group-hover:rotate-[14deg] group-hover:scale-110"><NodeIcon shape={e.shape} color={e.color} /></span>
-              <article className={`lift rounded-[18px] border-2 border-ink px-5 py-[22px] sm:px-[30px] sm:py-[26px] ${e.href ? "bg-[linear-gradient(120deg,#fff,#f4ecff_60%,#fff4cf)]" : "bg-white"}`}>
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5 font-mono text-[13px] text-ink-3">
-                  <span className="rounded border border-line bg-soft px-2 py-0.5 text-ink-2">{commitHash(e.title + e.date)}</span>
-                  <span>{e.dateLabel ?? new Date(e.date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
-                  <span className="rounded-full bg-brand px-2.5 py-0.5 font-bold text-ink">{e.type}</span>
-                </div>
-                <h3 className="mb-2 mt-3.5 text-[clamp(25px,3vw,30px)]">{e.title}</h3>
-                <p className="text-ink-2">{e.text}</p>
-                <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3">
-                  <p className="font-mono text-[13px]">📍 {e.where}</p>
-                  {e.href && <EpochLink href={e.href} className="rounded-full bg-ink px-4 py-2 font-mono text-[13px] font-bold text-gold transition hover:-translate-y-0.5">Enter Epoch →</EpochLink>}
-                </div>
-              </article>
-            </Reveal>
-          ))}
-        </TimelineLine>
+        <Head tag="// events · 2026-27" title={<>The year, as a<br />contribution graph.</>}>Every event is a green square. December is gold — that&apos;s Epoch. Pick a day to see what&apos;s on.</Head>
+        <EventsYear />
       </div>
     </section>
   );
@@ -164,20 +132,13 @@ export function Team() {
 
 export function Faq() {
   return (
-    <section id="faq" className={pad}>
-      <div className={`${wrap} grid items-start gap-[clamp(36px,6vw,96px)] lg:grid-cols-[.9fr_1.3fr]`}>
-        <div className="lg:sticky lg:top-28"><Head tag="// faq" title="Questions, answered." /></div>
-        <div>
-          {CLUB.faq.map((f) => (
-            <details key={f.q} className="group border-b-2 border-ink first:border-t-2">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-6 font-display text-[19px] font-bold tracking-tight sm:text-[23px] [&::-webkit-details-marker]:hidden">
-                {f.q}
-                <i className="relative h-[22px] w-[22px] flex-none before:absolute before:inset-x-0 before:top-2.5 before:h-[2.5px] before:bg-ink after:absolute after:inset-x-0 after:top-2.5 after:h-[2.5px] after:rotate-90 after:bg-ink after:transition-transform group-open:after:rotate-0" />
-              </summary>
-              <p className="max-w-[60ch] pb-7 pr-11 text-lg text-ink-2">{f.a}</p>
-            </details>
-          ))}
+    <section id="faq" className={`${pad} bg-soft`}>
+      <div className={`${wrap} grid items-start gap-[clamp(36px,6vw,88px)] lg:grid-cols-[.8fr_1.4fr]`}>
+        <div className="lg:sticky lg:top-28">
+          <Head tag="// faq" title="Questions, answered.">Closed issues from people who asked before you.</Head>
+          <Sticker name="support" size={130} tilt={-6} className="hidden lg:block" alt="" />
         </div>
+        <Reveal><FaqIssues /></Reveal>
       </div>
     </section>
   );
@@ -190,7 +151,8 @@ export function Join() {
       <div className={`${wrap} grid items-center gap-12 lg:grid-cols-[1.1fr_.9fr]`}>
         <Reveal>
           <h2 className="text-[clamp(44px,6.6vw,96px)] leading-[.95]">Your first commit is one click away<span className="animate-blink">&gt;_</span></h2>
-          <p className="mt-6 max-w-[40ch] text-[19px] text-ink/80">Tell us who you are and what you want to try first. We&apos;ll take it from there.</p>
+          <p className="mt-6 max-w-[40ch] text-[19px] text-ink/80">Open a pull request into the club: who you are, and what you want to try first. We&apos;ll review it with a welcome.</p>
+          <Sticker name="welcome" size={170} tilt={-5} className="mt-8 hidden lg:block" alt="" />
         </Reveal>
         <Reveal delay={0.1}><JoinCard /></Reveal>
       </div>

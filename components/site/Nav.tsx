@@ -5,7 +5,7 @@ import { epochIsLive } from "@/lib/epoch/config";
 import { CLUB } from "@/lib/config";
 import { EpochCoin } from "@/components/epoch/EpochCoin";
 
-const LINKS = [["About", "#about"], ["Learn", "#learn"], ["Events", "#events"], ["Terminal", "#terminal"], ["Projects", "#projects"], ["FAQ", "#faq"]].filter(([, h]) => h !== "#projects" || CLUB.githubOrg);
+const LINKS = [["About", "#about"], ["Learn", "#learn"], ["Events", "#events"], ["Projects", "#projects"], ["FAQ", "#faq"]].filter(([, h]) => h !== "#projects" || CLUB.githubOrg);
 const ORG_URL = CLUB.githubOrg ? `${CLUB.githubUrl}/${CLUB.githubOrg}` : "";
 
 export function Nav() {
