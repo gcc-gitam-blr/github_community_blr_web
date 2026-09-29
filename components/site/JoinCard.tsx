@@ -1,25 +1,33 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { CLUB } from "@/lib/config";
+import { EMAIL_RE, HANDLE_RE, cleanHandle, type JoinResult } from "@/lib/join";
 
-/* Club sign-up. Checks the GitHub handle live, lights the commit-line dots
-   as each step completes, then opens a pre-filled email to the club. */
+/* Club sign-up, shaped like a pull request. Checks the GitHub handle live, lights the
+   commit-line dots as each step completes, then saves the sign-up via /api/join
+   (falling back to the club's form link or email when no database is connected). */
+const IDLE = "No password needed — we only need to know who to welcome.";
+
 export function JoinCard() {
   const [handle, setHandle] = useState(""); const [email, setEmail] = useState(""); const [track, setTrack] = useState("");
-  const [handleOk, setHandleOk] = useState(false); const [avatar, setAvatar] = useState(""); const [busy, setBusy] = useState(false);
-  const [hint, setHint] = useState<{ t: string; k: "" | "good" | "bad" }>({ t: "No password needed — we only need to know who to welcome.", k: "" });
+  const [handleOk, setHandleOk] = useState(false); const [avatar, setAvatar] = useState("");
+  const [busy, setBusy] = useState(false); const [done, setDone] = useState(false);
+  const [hint, setHint] = useState<{ t: string; k: "" | "good" | "bad" }>({ t: IDLE, k: "" });
   const [errs, setErrs] = useState<Record<string, number>>({});
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const startedAt = useRef(0); const honeypot = useRef<HTMLInputElement>(null);
 
-  const emailOk = /^\S+@\S+\.\S+$/.test(email);
+  const emailOk = EMAIL_RE.test(email.trim());
   const steps = [handleOk, emailOk, !!track];
   const fill = (Math.max(0, steps.filter(Boolean).length - 1) / 2) * 100;
 
-  useEffect(() => {
+  // check the handle against GitHub as the person types (debounced)
+  const onHandle = (raw: string) => {
+    setHandle(raw); if (!startedAt.current) startedAt.current = Date.now();
     clearTimeout(timer.current); setHandleOk(false); setAvatar("");
-    const v = handle.trim().replace(/^@/, "");
-    if (!v) { setHint({ t: "No password needed — we only need to know who to welcome.", k: "" }); return; }
-    if (!/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i.test(v)) { setHint({ t: "That doesn't look like a GitHub username.", k: "bad" }); return; }
+    const v = cleanHandle(raw);
+    if (!v) { setHint({ t: IDLE, k: "" }); return; }
+    if (!HANDLE_RE.test(v)) { setHint({ t: "That doesn't look like a GitHub username.", k: "bad" }); return; }
     setHint({ t: "Looking you up on GitHub…", k: "" });
     timer.current = setTimeout(async () => {
       try {
@@ -30,23 +38,39 @@ export function JoinCard() {
         setAvatar(`${u.avatar_url}&s=60`); setHandleOk(true); setHint({ t: `Found you, ${u.name || u.login}! ✓`, k: "good" });
       } catch { setHandleOk(true); setHint({ t: "Couldn't reach GitHub, but that format looks good.", k: "" }); }
     }, 450);
-    return () => clearTimeout(timer.current);
-  }, [handle]);
+  };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const bad = [["handle", handleOk], ["email", emailOk], ["track", !!track]].filter(([, ok]) => !ok).map(([k]) => k as string);
     if (bad.length) { setErrs(Object.fromEntries(bad.map((k) => [k, Date.now()]))); setHint({ t: "Almost there — complete all three steps first.", k: "bad" }); return; }
-    const h = handle.replace(/^@/, "");
+    const h = cleanHandle(handle);
     const first = CLUB.events.find((ev) => ev.date === track)?.title;
-    if (CLUB.joinUrl) { // the club's own sign-up form or community link
+
+    setBusy(true);
+    let res: JoinResult;
+    try {
+      const r = await fetch("/api/join", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ handle: h, email, firstEvent: track, website: honeypot.current?.value, startedAt: startedAt.current }) });
+      res = await r.json();
+    } catch { res = { ok: false, error: "Network error.", fallback: true }; }
+    setBusy(false);
+
+    if (res.ok) {
+      setDone(true);
+      setHint({ t: res.status === "exists" ? `You're already on the list, @${h} — see you at the next event.` : `Merged! Welcome to the club, @${h}. We'll email you before ${first}.`, k: "good" });
+      return;
+    }
+    if (!res.fallback) { setHint({ t: res.error, k: "bad" }); return; }
+
+    // no database connected yet: use the club's form link or email instead
+    if (CLUB.joinUrl) {
       window.open(CLUB.joinUrl, "_blank", "noopener");
       setHint({ t: `Almost done, @${h} — finish signing up in the tab that just opened.`, k: "good" });
     } else if (CLUB.email) {
       const body = `Hi! I'd like to join.\n\nGitHub: @${h}\nEmail: ${email}\nI want to try first: ${first}`;
-      window.location.href = `mailto:${CLUB.email}?subject=${encodeURIComponent("Join GitHub Community Club BLR")}&body=${encodeURIComponent(body)}`;
+      window.location.assign(`mailto:${CLUB.email}?subject=${encodeURIComponent("Join GitHub Community Club BLR")}&body=${encodeURIComponent(body)}`);
       setHint({ t: `Thanks, @${h} — send the email that just opened and we'll be in touch.`, k: "good" });
-    } else { // nothing configured yet: say so rather than pretend it was sent
+    } else { // nothing configured: say so rather than pretend it was sent
       setHint({ t: "Sign-ups aren't connected yet — the club will open them soon. Follow the events below.", k: "bad" });
     }
   };
@@ -60,7 +84,7 @@ export function JoinCard() {
   const input = "min-w-0 flex-1 bg-transparent py-1 text-[17px] outline-none placeholder:text-[#a3a8a5]";
 
   return (
-    <form onSubmit={submit} noValidate className="rounded-[18px] border border-line bg-white p-8 shadow-[0_30px_80px_-30px_rgba(11,11,15,.25)] md:p-10">
+    <form onSubmit={submit} noValidate className="relative rounded-[18px] border border-line bg-white p-8 shadow-[0_30px_80px_-30px_rgba(11,11,15,.25)] md:p-10">
       {/* joining, as a pull request into the club */}
       <div className="mb-6">
         <div className="flex items-center gap-3">
@@ -72,13 +96,13 @@ export function JoinCard() {
         <p className="mt-3 flex flex-wrap items-center gap-1.5 font-mono text-[12.5px] text-ink-3">
           wants to merge into
           <span className="rounded-md bg-[#ddf4ff] px-2 py-0.5 text-link">club:main</span>from
-          <span className="break-all rounded-md bg-[#ddf4ff] px-2 py-0.5 text-link">{handle.replace(/^@/, "") || "you"}:first-commit</span>
+          <span className="break-all rounded-md bg-[#ddf4ff] px-2 py-0.5 text-link">{cleanHandle(handle) || "you"}:first-commit</span>
         </p>
       </div>
       <div className="relative grid gap-1 before:absolute before:bottom-[30px] before:left-2 before:top-[30px] before:w-0.5 before:bg-line after:absolute after:left-2 after:top-[30px] after:w-0.5 after:bg-ink after:transition-all after:duration-500 after:[height:calc((100%-60px)*var(--f))]" style={{ "--f": fill / 100 } as React.CSSProperties}>
         {row("handle", handleOk, <>
           <span className="sr-only">GitHub username</span><span className="-mr-2 text-ink-3">@</span>
-          <input className={input} value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="your-github-handle" autoComplete="off" spellCheck={false} />
+          <input className={input} value={handle} onChange={(e) => onHandle(e.target.value)} placeholder="your-github-handle" autoComplete="off" spellCheck={false} />
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {avatar && <img src={avatar} alt="" className="h-[30px] w-[30px] rounded-full border-2 border-ink" />}
         </>)}
@@ -96,7 +120,11 @@ export function JoinCard() {
         <span aria-hidden>{steps.every(Boolean) ? "✓" : "○"}</span>
         {steps.every(Boolean) ? "All checks passed — able to merge." : `${steps.filter((s) => !s).length} of 3 checks pending`}
       </p>
-      <button disabled={busy} className="lift w-full rounded-md border-2 border-ink bg-[#2ea043] py-5 font-display text-lg font-bold text-white">Merge pull request</button>
+      {/* honeypot: hidden from people, irresistible to bots */}
+      <input ref={honeypot} name="website" tabIndex={-1} autoComplete="off" aria-hidden className="absolute -left-[9999px] h-0 w-0 opacity-0" />
+      <button disabled={busy || done} className="lift w-full rounded-md border-2 border-ink bg-[#2ea043] py-5 font-display text-lg font-bold text-white disabled:opacity-70">
+        {done ? "✓ Merged" : busy ? "Merging…" : "Merge pull request"}
+      </button>
       <p className="mt-4 text-[13px] text-ink-3">We&apos;ll only use this to contact you about club events.</p>
     </form>
   );
