@@ -69,14 +69,10 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 800; letter-spac
 /* ---------- epoch: soft gradient field ---------- */
 .epoch-field {
   position: relative;
-  background:
-    radial-gradient(60% 55% at 10% 18%, #dccdf5 0%, transparent 70%),
-    radial-gradient(55% 50% at 92% 8%, #dbe8f8 0%, transparent 70%),
-    radial-gradient(70% 60% at 85% 90%, #f9dccf 0%, transparent 72%),
-    #f6f3fb;
-  background-attachment: fixed;
+  /* warm printed-programme paper: no gradients, just paper and grain */
+  background: #f4f1ea;
 }
-.epoch-field::after { content: ""; position: fixed; inset: 0; pointer-events: none; opacity: 0.35; mix-blend-mode: multiply; z-index: 0;
+.epoch-field::after { content: ""; position: fixed; inset: 0; pointer-events: none; opacity: 0.28; mix-blend-mode: multiply; z-index: 0;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.35 0 0 0 0 0.5 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 
 /* Epoch type: beat the club site's global heading rule (bold Outfit) */
