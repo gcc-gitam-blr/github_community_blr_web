@@ -80,8 +80,8 @@ export function AdminPage() {
     <Frame title="Organisers only.">
       <div className={`${glass} max-w-[560px] space-y-4 p-8`}>
         {store?.elevate ? (<>
-          <p className="text-mute">Demo mode: enter the organiser code (<code>NEXT_PUBLIC_EPOCH_ORGANISER_CODE</code>).</p>
-          <div className="flex gap-2"><input value={code} onChange={(e) => setCode(e.target.value)} placeholder="organiser code" className={`${field} !py-3`} /><button className={btnInk} onClick={async () => { const r = await store.elevate!(code); if (r.ok) await refresh(); else setErr(r.error); }}>Unlock</button></div>
+          <p className="text-mute">Demo mode: enter the organiser code (<code className="break-all">NEXT_PUBLIC_EPOCH_ORGANISER_CODE</code>).</p>
+          <div className="flex flex-wrap gap-2"><input value={code} onChange={(e) => setCode(e.target.value)} placeholder="organiser code" className={`${field} !py-3`} /><button className={btnInk} onClick={async () => { const r = await store.elevate!(code); if (r.ok) await refresh(); else setErr(r.error); }}>Unlock</button></div>
           {err && <Notice kind="err">{err}</Notice>}
         </>) : <p className="text-mute">Ask the club lead to set your role to <b className="font-medium text-ink">volunteer</b> or <b className="font-medium text-ink">admin</b> in Supabase.</p>}
       </div>
