@@ -2,8 +2,11 @@
 import { useEffect, useState } from "react";
 import { EpochLink } from "@/components/epoch/EpochLink";
 import { epochIsLive } from "@/lib/epoch/config";
+import { CLUB } from "@/lib/config";
+import { EpochCoin } from "@/components/epoch/EpochCoin";
 
-const LINKS = [["About", "#about"], ["Tracks", "#tracks"], ["Events", "#events"], ["Terminal", "#terminal"], ["Projects", "#projects"], ["FAQ", "#faq"]];
+const LINKS = [["About", "#about"], ["Learn", "#learn"], ["Events", "#events"], ["Terminal", "#terminal"], ["Projects", "#projects"], ["FAQ", "#faq"]].filter(([, h]) => h !== "#projects" || CLUB.githubOrg);
+const ORG_URL = CLUB.githubOrg ? `${CLUB.githubUrl}/${CLUB.githubOrg}` : "";
 
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
@@ -18,7 +21,7 @@ export function Nav() {
   }, []);
 
   return (
-    <header className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${scrolled ? "bg-white/80 shadow-[0_1px_0_var(--color-line)] backdrop-blur-xl" : ""}`}>
+    <header className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${scrolled ? "bg-white/95 shadow-[0_1px_0_var(--color-line)] backdrop-blur-xl" : ""}`}>
       <div className="mx-auto flex max-w-[1240px] items-center gap-10 px-5 py-4 md:px-[clamp(20px,5vw,72px)] md:py-5">
         <a href="#top" className="group flex items-center gap-3" aria-label="GitHub Community Club BLR — home">
           <svg viewBox="0 0 40 40" className="h-10 w-10 transition-transform duration-500 group-hover:-rotate-[20deg] group-hover:scale-110" aria-hidden>
@@ -34,13 +37,13 @@ export function Nav() {
             <a key={h} href={h} onClick={() => setOpen(false)} className="relative rounded-lg py-3 font-display text-3xl font-bold md:px-3.5 md:py-2 md:font-sans md:text-[15px] md:font-medium after:absolute after:inset-x-3.5 after:bottom-1 after:hidden after:h-0.5 after:origin-left after:scale-x-0 after:bg-ink after:transition-transform md:after:block hover:after:scale-x-100">{l}</a>
           ))}
           <EpochLink className="mt-2 inline-flex items-center gap-2 py-3 font-display text-3xl font-bold md:mt-0 md:px-3.5 md:py-2 md:font-sans md:text-[15px] md:font-semibold">
-            <span className="rounded bg-ink px-2 py-0.5 font-mono text-[13px] font-bold text-gold">EPOCH</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-ink py-0.5 pl-1 pr-2.5 font-mono text-[12px] font-bold text-gold"><EpochCoin size={20} detail={false} />EPOCH</span>
             {live && <span className="h-2 w-2 animate-pulse-ring rounded-full bg-brand" title="Live now" />}
           </EpochLink>
         </nav>
 
         <div className="ml-auto hidden items-center gap-5 md:ml-0 md:flex">
-          <a href="https://github.com" target="_blank" rel="noopener" className="text-[15px] font-medium hover:underline hover:underline-offset-4">GitHub</a>
+          {ORG_URL && <a href={ORG_URL} target="_blank" rel="noopener" className="text-[15px] font-medium hover:underline hover:underline-offset-4">GitHub</a>}
           <a href="#join" className="lift rounded-md border-2 border-ink bg-ink px-5 py-3 font-display text-[15px] font-bold text-white">Join the club</a>
         </div>
 
