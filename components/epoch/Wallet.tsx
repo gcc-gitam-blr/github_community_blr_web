@@ -44,7 +44,7 @@ export function Wallet() {
 
   return (
     <div className="relative">
-      <div className="relative mx-auto grid w-full max-w-[1180px] gap-10 px-6 pb-24 pt-28 md:px-10 xl:grid-cols-[minmax(0,660px)_260px] xl:justify-between">
+      <div className="relative mx-auto grid w-full max-w-[1180px] grid-cols-[minmax(0,1fr)] gap-10 px-6 pb-24 pt-28 md:px-10 xl:grid-cols-[minmax(0,660px)_260px] xl:justify-between">
         <div>
           <div className="text-center xl:text-left">
             <h1 className="text-[clamp(56px,9vw,108px)] font-medium leading-none tracking-[-0.06em]">Hi, {me.name.split(" ")[0]}</h1>

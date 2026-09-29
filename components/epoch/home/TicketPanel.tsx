@@ -32,14 +32,14 @@ function Ticket() {
           <p className="font-mono text-[10px] uppercase leading-tight tracking-[0.12em] text-[#8a7a55]">Epoch coins<br />at the desk</p>
         </div>
       </div>
-      <Sticker name="swag" size={92} tilt={14} className="absolute -right-5 -top-9" alt="" />
+      <Sticker name="swag" size={92} tilt={14} className="absolute -right-1 -top-9" alt="" />
     </div>
   );
 }
 
 export function TicketPanel() {
   return (
-    <section id="ticket" className="py-[clamp(72px,10vw,140px)]">
+    <section id="ticket" className="overflow-x-clip py-[clamp(72px,10vw,140px)]">
       <div className="mx-auto grid w-full max-w-[1120px] items-center gap-14 px-6 md:px-10 lg:grid-cols-[1fr_1fr]">
         <Reveal><Ticket /></Reveal>
         <div>
