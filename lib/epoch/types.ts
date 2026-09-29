@@ -6,18 +6,25 @@ export interface Profile {
   name: string;
   email: string;
   coins: number; // spendable balance
-  earned: number; // lifetime earned — drives the leaderboard
+  earned: number; // lifetime earned from recharge points & awards — drives the leaderboard
+  ticket: boolean; // true once the organiser desk has verified the ticket and credited coins
   role: Role;
   createdAt: string;
 }
 
-export interface Stall {
+/** A booth with a QR code. `spend` booths charge per session (repeatable);
+    `recharge` points pay out once per attendee. */
+export type BoothKind = "spend" | "recharge" | "free";
+export type BoothCategory = "Play" | "Make" | "Explore" | "Compete" | "Build";
+
+export interface Booth {
   id: string;
   name: string;
-  kind: "earn" | "spend";
-  coins: number; // reward (earn) or price (spend)
+  kind: BoothKind;
+  category: BoothCategory;
+  coins: number; // price per session (spend) or reward (recharge); 0 for free
   blurb: string;
-  zone: string;
+  optional?: boolean; // marked "(optional)" in the plan
 }
 
 export interface Reward {
@@ -33,7 +40,7 @@ export interface Tx {
   userId: string;
   delta: number;
   reason: string;
-  ref: string; // stall:<id> | reward:<id> | signup | admin
+  ref: string; // ticket | booth:<id> | reward:<id> | admin
   at: string;
 }
 
@@ -47,13 +54,15 @@ export interface EpochStore {
   me(): Promise<Profile | null>;
   register(input: RegisterInput): Promise<Result<{ profile: Profile }>>;
   signOut(): Promise<void>;
-  scanStall(stallId: string): Promise<Result<{ delta: number; balance: number; stall: Stall }>>;
+  scanBooth(boothId: string): Promise<Result<{ delta: number; balance: number; booth: Booth }>>;
   redeem(rewardId: string): Promise<Result<{ balance: number; reward: Reward }>>;
   history(): Promise<Tx[]>;
   leaderboard(limit?: number): Promise<Pick<Profile, "id" | "handle" | "name" | "earned">[]>;
-  stalls(): Promise<Stall[]>;
+  booths(): Promise<Booth[]>;
   rewards(): Promise<Reward[]>;
-  /** volunteers/admins: award coins to an attendee by scanning their wallet QR */
+  /** staff: verify an attendee's ticket and credit coins (price × rate), once */
+  issueTicket(userId: string): Promise<Result<{ profile: Profile }>>;
+  /** staff: manual award/deduct, e.g. competition prizes or refunds */
   award(userId: string, delta: number, reason: string): Promise<Result<{ profile: Profile }>>;
   lookup(userId: string): Promise<Profile | null>;
   /** demo mode only: unlock organiser tools with a shared code */
