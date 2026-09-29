@@ -25,12 +25,12 @@ export function Scanner({ onCode, paused }: { onCode: (text: string) => void; pa
   }, []);
 
   return (
-    <div className="relative overflow-hidden rounded-[18px] border-2 border-ink bg-ink">
+    <div className="relative overflow-hidden rounded-3xl border border-edge bg-black">
       <div id="epoch-reader" className="min-h-[300px] [&_video]:w-full" />
-      {starting && <p className={`${mono} absolute inset-0 grid place-items-center text-epoch`}>Starting camera…</p>}
-      {err && <p className={`${mono} absolute inset-0 grid place-items-center p-6 text-center text-epoch`}>{err}</p>}
+      {starting && <p className={`${mono} absolute inset-0 grid place-items-center text-gold`}>Starting camera…</p>}
+      {err && <p className={`${mono} absolute inset-0 grid place-items-center p-6 text-center text-gold`}>{err}</p>}
       {/* viewfinder corners */}
-      {[["left-4 top-4", "border-l-4 border-t-4"], ["right-4 top-4", "border-r-4 border-t-4"], ["left-4 bottom-4", "border-l-4 border-b-4"], ["right-4 bottom-4", "border-r-4 border-b-4"]].map(([p, b]) => <i key={p} className={`pointer-events-none absolute h-8 w-8 border-epoch ${p} ${b}`} />)}
+      {[["left-4 top-4", "border-l-4 border-t-4"], ["right-4 top-4", "border-r-4 border-t-4"], ["left-4 bottom-4", "border-l-4 border-b-4"], ["right-4 bottom-4", "border-r-4 border-b-4"]].map(([p, b]) => <i key={p} className={`pointer-events-none absolute h-8 w-8 border-gold ${p} ${b}`} />)}
     </div>
   );
 }
