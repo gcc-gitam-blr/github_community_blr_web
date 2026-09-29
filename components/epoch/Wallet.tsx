@@ -27,7 +27,7 @@ const kindOf = (t: Tx) => t.ref === "ticket" ? { s: "diamond", c: "blue", tag: "
 
 /* Wallet dashboard: greeting, balance + QR, activity feed, and a recharge checklist on the side. */
 export function Wallet() {
-  const { store, me, ready, refresh } = useEpoch(); const router = useRouter(); const { open } = useCommand();
+  const { store, me, ready, refresh, offline } = useEpoch(); const router = useRouter(); const { open } = useCommand();
   const [tx, setTx] = useState<Tx[]>([]);
   const [now, setNow] = useState(""); const [tab, setTab] = useState<"feed" | "recharge">("feed");
 
@@ -76,6 +76,7 @@ export function Wallet() {
             </div>
           </section>
 
+          {offline && <div className="mt-4"><Notice kind="info">You&apos;re offline — this is your last saved pass. The QR still works at the desk; your balance updates when you&apos;re back online.</Notice></div>}
           {!me.ticket && <div className="mt-4"><Notice kind="info">One step left: pay your ₹{EPOCH.ticketPriceINR} ticket{EPOCH.ticketUrl ? <> <a className="underline" href={EPOCH.ticketUrl} target="_blank" rel="noopener">here</a></> : " at the registration desk"} and show your QR. {STARTER_COINS} {EPOCH.currency} appear here within seconds.</Notice></div>}
 
           {/* feed */}
