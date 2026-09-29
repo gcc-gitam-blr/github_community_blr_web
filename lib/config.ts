@@ -22,20 +22,21 @@ export const CLUB = {
 
   // Only add real links. Empty = the footer hides the row.
   socials: [] as { label: string; href: string }[],
+  // shown as a `git diff --stat`; keep these to real numbers
   stats: [
-    { value: 6, suffix: "", label: "Events in 2026-27" },
-    { value: 21, suffix: "", label: "Booths at Epoch" },
-    { value: 2, suffix: "", label: "Days of Epoch" },
-    { value: 398, suffix: "", label: "Coins per ₹199 ticket" },
+    { value: 6, file: "events/2026-27.md", label: "Events in 2026-27" },
+    { value: 21, file: "epoch/booths.md", label: "Booths at Epoch" },
+    { value: 2, file: "epoch/days.md", label: "Days of Epoch" },
+    { value: 398, file: "epoch/coins-per-ticket", label: "Coins per ₹199 ticket" },
   ],
   learn: [
-    { id: "basics", shape: "diamond", color: "blue", title: "Git & GitHub basics", text: "Version control, repositories, and the everyday commands: init, add, commit, push, pull." },
-    { id: "pr", shape: "square", color: "purple", title: "Your first pull request", text: "Make a real contribution to a real project, with someone reviewing it alongside you." },
-    { id: "portfolio", shape: "ring", color: "mint", title: "Portfolio & READMEs", text: "Organise your repositories, write READMEs people read, and publish with GitHub Pages." },
-    { id: "oss", shape: "triangle", color: "blue", title: "Open source", text: "Branching strategies, resolving merge conflicts and contributing to projects that aren't yours." },
-    { id: "review", shape: "diamond", color: "purple", title: "Code review & CI", text: "Review code well, and use automated tests and checks to keep quality high." },
-    { id: "career", shape: "square", color: "mint", title: "GitHub for careers", text: "Use GitHub for internships, placements and a portfolio that speaks for you." },
-  ] as { id: string; shape: Shape; color: NodeColor; title: string; text: string }[],
+    { id: "basics", cmd: "git init", shape: "diamond", color: "blue", title: "Git & GitHub basics", text: "Version control, repositories, and the everyday commands: init, add, commit, push, pull." },
+    { id: "pr", cmd: "gh pr create", shape: "square", color: "purple", title: "Your first pull request", text: "Make a real contribution to a real project, with someone reviewing it alongside you." },
+    { id: "portfolio", cmd: "git push origin main", shape: "ring", color: "mint", title: "Portfolio & READMEs", text: "Organise your repositories, write READMEs people read, and publish with GitHub Pages." },
+    { id: "oss", cmd: "git merge upstream/main", shape: "triangle", color: "blue", title: "Open source", text: "Branching strategies, resolving merge conflicts and contributing to projects that aren't yours." },
+    { id: "review", cmd: "gh pr review --approve", shape: "diamond", color: "purple", title: "Code review & CI", text: "Review code well, and use automated tests and checks to keep quality high." },
+    { id: "career", cmd: "git tag v1.0.0", shape: "square", color: "mint", title: "GitHub for careers", text: "Use GitHub for internships, placements and a portfolio that speaks for you." },
+  ] as { id: string; cmd: string; shape: Shape; color: NodeColor; title: string; text: string }[],
   events: [
     { date: "2026-10-05", type: "Workshop", title: "Learn GitHub & Make Your First Contribution", text: "Introduction to GitHub, repositories, commits, issues, pull requests — and your first contribution.", where: "GITAM Bengaluru", shape: "diamond", color: "blue" },
     { date: "2026-10-12", type: "Open Source", title: "GIT Merge 26", text: "A GitHub and open-source event: learn Git, explore open source, make beginner-friendly contributions.", where: "GITAM Bengaluru", shape: "square", color: "purple" },
