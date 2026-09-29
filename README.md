@@ -12,6 +12,24 @@ Website for the GitHub Community Club, Bengaluru — **Learn. Build. Merge.** �
 | Backend | **Supabase** (Postgres + GitHub OAuth) | Shared coin balances across every phone. Optional — see below |
 | QR | `qrcode.react` (generate) + `html5-qrcode` (camera scan) | Wallet passes and stall codes |
 
+## Features at a glance
+
+- **Club site** — git-graph hero, contribution-graph calendar of the year, a page per event (laid out like a GitHub release, with its own calendar file, share image and schema.org data), FAQ as closed issues, joining as a pull request.
+- **Club sign-ups** — the Join form posts to `/api/join` (validated, rate-limited, honeypot) and stores rows in Supabase's `join_requests`; organisers see them on `/epoch/admin` with a CSV export. Without Supabase it falls back to `joinUrl` / `email`.
+- **Epoch** — coin economy with ticket verification, recharge points, booths, merch, leaderboard, QR scanning and a command bar (press `/`).
+- **Installable & offline** — Epoch has a web app manifest and a service worker: attendees can add the wallet to their home screen, and the wallet, QR pass and booths still open without signal.
+- **Calendar** — `/calendar.ics` (whole year) and `/events/<slug>/event.ics` (one event).
+- **Countdown banner** — set `EPOCH.startsAt` in `lib/epoch/config.ts` once dates are announced; during Epoch the banner says it's live.
+
+## Settings (environment variables)
+
+| Variable | What it does |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Live Epoch + stored club sign-ups. Empty = demo mode. |
+| `NEXT_PUBLIC_SITE_URL` | Optional custom domain. On Vercel the production domain is used automatically. |
+| `NEXT_PUBLIC_EPOCH_MODE` | `live` / `off` forces Epoch's live state. |
+| `NEXT_PUBLIC_ANALYTICS` | `on` loads cookie-free Vercel Analytics + Speed Insights (enable them in the Vercel dashboard first). |
+
 ## Run it
 
 ```bash
@@ -70,7 +88,8 @@ The Octodex stickers in `public/stickers` are generated from `public/GitHub_stic
 
 ## Tests
 
-- `npm test` — the coin rules (demo store), the ask engine, and the **real Supabase SQL** run inside PGlite (Postgres in WASM).
+- `npm test` — the coin rules (demo store), the ask engine, club sign-ups (validator + `/api/join`), and the **real Supabase SQL** run inside PGlite (Postgres in WASM).
+- CI (`.github/workflows/ci.yml`) runs type-check, lint, tests and the build on every push and pull request.
 - `tests/e2e.epoch.mjs` — the whole coin flow clicked through the real pages (instructions at the top of the file).
 
 ## Epoch typeface
