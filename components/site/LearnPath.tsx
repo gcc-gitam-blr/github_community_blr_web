@@ -22,7 +22,7 @@ export function LearnPath() {
         </div>
         <ol className="-mt-[46px] grid grid-cols-6">
           {steps.map((s, i) => (
-            <motion.li key={s.id} initial={reduce ? false : { opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ delay: 0.25 + i * 0.18 }} className="group flex flex-col items-center px-3 text-center">
+            <motion.li key={s.id} initial={reduce ? false : { opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ delay: 0.1 + i * 0.1 }} className="group flex flex-col items-center px-3 text-center">
               <span className="relative z-10 rounded-full bg-soft p-0.5 transition-transform duration-500 group-hover:-translate-y-1 group-hover:rotate-12"><NodeIcon shape={s.shape} color={s.color} size={42} /></span>
               <code className="mt-5 rounded-md bg-ink px-2 py-1 font-mono text-[11.5px] text-brand">{s.cmd}</code>
               <h3 className="mt-3 text-[20px] leading-tight">{s.title}</h3>
