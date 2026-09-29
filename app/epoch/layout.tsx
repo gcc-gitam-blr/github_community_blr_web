@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import type { Metadata } from "next";
 import { EpochProvider } from "@/components/epoch/EpochProvider";
 import { CommandProvider } from "@/components/epoch/Command";
@@ -14,17 +16,18 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "Epoch", statusBarStyle: "default" },
 };
 
-/* Oddval Medium is a licensed font. If you add it to /public/fonts the browser picks it up;
-   otherwise the request 404s quietly and Instrument Sans (the fallback) is used. */
-const OddvalFace = `
-@font-face { font-family: "Oddval"; font-weight: 400 600; font-display: swap;
-  src: url("/fonts/Oddval-Medium.woff2") format("woff2"), url("/fonts/Oddval-Medium.otf") format("opentype"), url("/fonts/Oddval-Medium.ttf") format("truetype"); }`;
+/* Oddval Medium is a licensed font. Drop it into /public/fonts and it's used automatically;
+   the @font-face is only emitted for files that exist, so there are no 404s before then. */
+const ODDVAL = ([["woff2", "woff2"], ["otf", "opentype"], ["ttf", "truetype"]] as const)
+  .filter(([ext]) => fs.existsSync(path.join(process.cwd(), "public", "fonts", `Oddval-Medium.${ext}`)))
+  .map(([ext, fmt]) => `url("/fonts/Oddval-Medium.${ext}") format("${fmt}")`);
+const OddvalFace = ODDVAL.length ? `@font-face { font-family: "Oddval"; font-weight: 400 600; font-display: swap; src: ${ODDVAL.join(", ")}; }` : "";
 
 export default function EpochLayout({ children }: { children: React.ReactNode }) {
   return (
     <EpochProvider>
       <CommandProvider>
-        <style dangerouslySetInnerHTML={{ __html: OddvalFace }} />
+        {OddvalFace && <style dangerouslySetInnerHTML={{ __html: OddvalFace }} />}
         <div className="epoch-field flex min-h-screen flex-col font-epoch text-ink print:bg-white">
           <EpochNav />
           <EpochMain>{children}</EpochMain>

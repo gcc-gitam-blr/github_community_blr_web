@@ -75,7 +75,7 @@ The Octodex stickers in `public/stickers` are generated from `public/GitHub_stic
 
 ## Epoch typeface
 
-Epoch is set in **Oddval Medium** ([Type Forward](https://typeforward.com/typefaces/oddval), licensed). Drop `Oddval-Medium.woff2` (or `.otf`/`.ttf`) into `public/fonts/` and the Epoch pages use it automatically; until then they fall back to Instrument Sans.
+Epoch is set in **Oddval Medium** ([Type Forward](https://typeforward.com/typefaces/oddval), licensed). Drop `Oddval-Medium.woff2` (or `.otf`/`.ttf`) into `public/fonts/` and the Epoch pages use it automatically; until then they use Mona Sans.
 
 ## Deploy
 

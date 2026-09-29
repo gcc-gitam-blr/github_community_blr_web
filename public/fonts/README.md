@@ -8,4 +8,4 @@ Drop your licensed **Oddval Medium** here as one of:
 - Oddval-Medium.otf
 - Oddval-Medium.ttf
 
-The Epoch pages pick it up automatically. Until then they use Instrument Sans.
+The Epoch pages pick it up automatically. Until then they use Mona Sans.
