@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Outfit } from "next/font/google";
+import { Inter, Instrument_Sans, JetBrains_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 
 const outfit = Outfit({ subsets: ["latin"], weight: ["600", "700", "800", "900"], variable: "--font-outfit" });
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const instrument = Instrument_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-instrument" }); // fallback for Oddval
 const jbm = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jbm" });
 
 export const metadata: Metadata = {
@@ -16,7 +17,7 @@ export const viewport: Viewport = { themeColor: "#ffffff" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${outfit.variable} ${inter.variable} ${jbm.variable}`}>
+    <html lang="en" className={`${outfit.variable} ${inter.variable} ${jbm.variable} ${instrument.variable}`}>
       <body className="min-h-screen antialiased">{children}</body>
     </html>
   );

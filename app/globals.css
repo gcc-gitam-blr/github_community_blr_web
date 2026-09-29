@@ -28,6 +28,12 @@
   --font-display: var(--font-outfit), system-ui, sans-serif;
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-mono: var(--font-jbm), ui-monospace, Consolas, monospace;
+  /* Epoch type: Oddval Medium if /public/fonts has it, otherwise Instrument Sans */
+  --font-epoch: "Oddval", var(--font-instrument), system-ui, sans-serif;
+
+  --color-haze: #f6f3fb;
+  --color-mute: #6c6b7a;
+  --color-hair: rgba(18, 18, 26, 0.09);
 
   --ease-out-expo: cubic-bezier(0.22, 1, 0.36, 1);
   --animate-marquee: marquee 40s linear infinite;
@@ -60,7 +66,23 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 800; letter-spac
 @keyframes g-draw { to { stroke-dashoffset: 0; } }
 @keyframes g-pop { to { transform: scale(1); } }
 
-/* ---------- epoch: 3D coin, orbit, coin flow ---------- */
+/* ---------- epoch: soft gradient field ---------- */
+.epoch-field {
+  position: relative;
+  background:
+    radial-gradient(60% 55% at 10% 18%, #dccdf5 0%, transparent 70%),
+    radial-gradient(55% 50% at 92% 8%, #dbe8f8 0%, transparent 70%),
+    radial-gradient(70% 60% at 85% 90%, #f9dccf 0%, transparent 72%),
+    #f6f3fb;
+  background-attachment: fixed;
+}
+.epoch-field::after { content: ""; position: fixed; inset: 0; pointer-events: none; opacity: 0.35; mix-blend-mode: multiply; z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.35 0 0 0 0 0.5 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+/* Epoch type: beat the club site's global heading rule (bold Outfit) */
+.epoch-field :is(h1, h2, h3, h4) { font-family: var(--font-epoch); font-weight: 500; letter-spacing: -0.04em; }
+
+/* ---------- epoch: coin ---------- */, orbit, coin flow ---------- */
 @keyframes coin-spin { from { transform: rotateX(12deg) rotateY(0deg); } to { transform: rotateX(12deg) rotateY(360deg); } }
 @keyframes orbit { to { transform: rotate(360deg); } }
 @keyframes float-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
