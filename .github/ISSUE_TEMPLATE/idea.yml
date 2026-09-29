@@ -1,0 +1,18 @@
+name: Idea
+description: A feature for the site, or an event or booth for the club
+labels: [idea]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of idea?
+      options: [Website feature, Event or workshop, Epoch booth or game, Something else]
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Tell us about it
+      description: Who is it for, and why would it be great?
+    validations:
+      required: true
