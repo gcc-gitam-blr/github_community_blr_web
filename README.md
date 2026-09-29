@@ -26,7 +26,12 @@ Epoch works out of the box in **demo mode** (data lives in your browser's localS
 - Club content (events, tracks, team, FAQ, socials): [`lib/config.ts`](lib/config.ts)
 - Epoch settings (ticket price, booths, recharge points, merch, schedule): [`lib/epoch/config.ts`](lib/epoch/config.ts)
 
-Set `githubOrg` in `lib/config.ts` and the Projects section lists your real repos.
+Things that are **empty until you fill them in** (the site hides them rather than showing fake content):
+
+- `joinUrl` or `email` — where "Join the club" sends people (a Google Form / WhatsApp link, or a real address). Until set, the form says sign-ups aren't connected yet.
+- `githubOrg` — shows the Projects section with live repos, plus the GitHub links in the nav and footer.
+- `team` — add real people and the "core team" section appears.
+- `socials` — add real links and the footer shows them.
 
 ## Epoch: going live for the fest
 
