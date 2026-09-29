@@ -70,6 +70,7 @@ export const BOOTHS: Booth[] = [
 ];
 
 export const RECHARGE_POINTS = BOOTHS.filter((b) => b.kind === "recharge");
+export const BOOTH_COUNT = 21; // interactive booths & experiences listed in the plan (incl. the Merchandise Stall)
 
 /* Merchandise Stall — the plan lists tees, hoodies and Octocat stickers. Prices are PLACEHOLDERS. */
 export const REWARDS: Reward[] = [
