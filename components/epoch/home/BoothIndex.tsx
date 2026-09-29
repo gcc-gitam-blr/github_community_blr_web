@@ -3,7 +3,9 @@ import { useState } from "react";
 import { BOOTHS } from "@/lib/epoch/config";
 import type { Booth } from "@/lib/epoch/types";
 
-const FILTERS = ["All", "Recharge", "Play", "Make", "Explore", "Compete"] as const;
+export const FILTERS = ["All", "Recharge", "Play", "Make", "Explore", "Compete"] as const;
+export type Filter = (typeof FILTERS)[number];
+export const inFilter = (b: Booth, f: Filter) => (f === "All" ? true : f === "Recharge" ? b.kind === "recharge" : b.kind !== "recharge" && b.category === f);
 
 function Price({ b }: { b: Booth }) {
   if (b.kind === "free") return <span className="text-mute">Free</span>;
@@ -11,15 +13,16 @@ function Price({ b }: { b: Booth }) {
   return <span>−{b.coins}<span className="text-mute"> / session</span></span>;
 }
 
-/* An index, not a grid of cards: name, one quiet line, price. */
-export function BoothIndex() {
-  const [f, setF] = useState<(typeof FILTERS)[number]>("All");
-  const list = BOOTHS.filter((b) => (f === "All" ? true : f === "Recharge" ? b.kind === "recharge" : b.kind !== "recharge" && b.category === f));
+/* An index, not a grid of cards: name, one quiet line, price. Controlled or self-managed. */
+export function BoothIndex({ value, onChange }: { value?: Filter; onChange?: (f: Filter) => void }) {
+  const [own, setOwn] = useState<Filter>("All");
+  const f = value ?? own; const set = onChange ?? setOwn;
+  const list = BOOTHS.filter((b) => inFilter(b, f));
   return (
     <div>
       <div role="tablist" aria-label="Filter booths" className="mb-8 flex flex-wrap gap-x-7 gap-y-2 text-[17px]">
         {FILTERS.map((x) => (
-          <button key={x} role="tab" aria-selected={f === x} onClick={() => setF(x)} className={`border-b-2 pb-1 transition ${f === x ? "border-ink text-ink" : "border-transparent text-mute hover:text-ink"}`}>{x === "Recharge" ? "Recharge points" : x}</button>
+          <button key={x} role="tab" aria-selected={f === x} onClick={() => set(x)} className={`border-b-2 pb-1 transition ${f === x ? "border-ink text-ink" : "border-transparent text-mute hover:text-ink"}`}>{x === "Recharge" ? "Recharge points" : x}</button>
         ))}
       </div>
       <ul className="border-t border-hair">
