@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
+import { useClientValue } from "@/lib/useClientValue";
 import { EpochLink } from "@/components/epoch/EpochLink";
 import { epochIsLive } from "@/lib/epoch/config";
 import { CLUB } from "@/lib/config";
@@ -8,17 +9,12 @@ import { EpochCoin } from "@/components/epoch/EpochCoin";
 const LINKS = [["About", "#about"], ["Learn", "#learn"], ["Events", "#events"], ["Projects", "#projects"], ["FAQ", "#faq"]].filter(([, h]) => h !== "#projects" || CLUB.githubOrg);
 const ORG_URL = CLUB.githubOrg ? `${CLUB.githubUrl}/${CLUB.githubOrg}` : "";
 
-export function Nav() {
-  const [scrolled, setScrolled] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [live, setLive] = useState(false);
+const onScroll = (cb: () => void) => { window.addEventListener("scroll", cb, { passive: true }); return () => window.removeEventListener("scroll", cb); };
 
-  useEffect(() => {
-    const on = () => setScrolled(window.scrollY > 12);
-    on(); window.addEventListener("scroll", on, { passive: true });
-    setLive(epochIsLive());
-    return () => window.removeEventListener("scroll", on);
-  }, []);
+export function Nav() {
+  const scrolled = useSyncExternalStore(onScroll, () => window.scrollY > 12, () => false);
+  const [open, setOpen] = useState(false);
+  const live = useClientValue(() => epochIsLive(), false);
 
   return (
     <header className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${scrolled ? "bg-white/95 shadow-[0_1px_0_var(--color-line)] backdrop-blur-xl" : ""}`}>
