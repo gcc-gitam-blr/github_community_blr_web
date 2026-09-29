@@ -56,7 +56,7 @@ export function EventsYear() {
             <div className="relative mb-1.5 ml-7 h-4 font-mono text-[11px] text-ink-3">
               {monthCols.map((m) => <span key={m.col + m.label} className="absolute" style={{ left: `calc(${m.col} * (var(--c) + 3px))` }}>{m.label}</span>)}
             </div>
-            <div className="flex gap-[3px]">
+            <div className="flex gap-[3px]" aria-hidden title="Tip: the list below does the same thing">
               <div className="mr-1 grid w-6 grid-rows-7 gap-[3px] font-mono text-[10px] leading-[var(--c)] text-ink-3"><span /><span>Mon</span><span /><span>Wed</span><span /><span>Fri</span><span /></div>
               {weeks.map((w, wi) => (
                 <div key={wi} className="grid grid-rows-7 gap-[3px]">
@@ -66,9 +66,9 @@ export function EventsYear() {
                     const isSel = e && e === sel && (exact || epoch);
                     const cls = !inYear(d) ? "bg-transparent" : exact && !epoch ? "bg-[#2ea043]" : epoch ? (exact ? "bg-[#e0a100]" : "bg-[#ffd966]") : "bg-[#ebeef0]";
                     return (
-                      <button key={key} type="button" disabled={!e} onClick={() => e && setSel(e)}
-                        title={e ? `${e.title} · ${fmt(e)}` : d.toDateString()} aria-label={e ? `${e.title}, ${fmt(e)}` : undefined} tabIndex={e ? 0 : -1}
-                        className={`h-[var(--c)] w-[var(--c)] rounded-[3px] transition ${cls} ${e ? "cursor-pointer hover:scale-150" : "cursor-default"} ${isSel ? "ring-2 ring-ink ring-offset-1" : ""} ${key === today ? "outline outline-2 outline-link outline-offset-1" : ""}`} />
+                      <span key={key} onClick={() => e && setSel(e)}
+                        title={e ? `${e.title} · ${fmt(e)}` : d.toDateString()}
+                        className={`block h-[var(--c)] w-[var(--c)] rounded-[3px] transition ${cls} ${e ? "cursor-pointer hover:scale-150" : "cursor-default"} ${isSel ? "ring-2 ring-ink ring-offset-1" : ""} ${key === today ? "outline outline-2 outline-link outline-offset-1" : ""}`} />
                     );
                   })}
                 </div>
