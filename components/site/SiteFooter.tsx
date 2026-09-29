@@ -1,11 +1,11 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { ArrowUpRightIcon, CalendarIcon, ChevronUpIcon, DotFillIcon, MailIcon, MarkGithubIcon } from "@primer/octicons-react";
 import { CLUB } from "@/lib/config";
 import { EPOCH } from "@/lib/epoch/config";
 import { Sticker } from "@/components/ui/Sticker";
 import { scrollToTarget } from "@/components/ui/SmoothScroll";
+import { useClientValue } from "@/lib/useClientValue";
 
 /* One footer for the whole site (club pages and Epoch). Links are only shown when they lead somewhere real. */
 const ORG = CLUB.githubOrg ? `${CLUB.githubUrl}/${CLUB.githubOrg}` : "";
@@ -24,15 +24,16 @@ const COLUMNS: { title: string; links: L[] }[] = [
   ] },
 ];
 
+function nextUpLine() {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const next = [...CLUB.events].sort((a, b) => a.date.localeCompare(b.date)).find((e) => new Date(e.date + "T00:00:00") >= today);
+  if (!next) return "That's a wrap for this year — see you next year.";
+  const d = Math.round((new Date(next.date + "T00:00:00").getTime() - today.getTime()) / 864e5);
+  return `Next: ${next.title} — ${d === 0 ? "today" : d === 1 ? "tomorrow" : `in ${d} days`}`;
+}
+
 function NextUp() {
-  const [line, setLine] = useState<string | null>(null);
-  useEffect(() => {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const next = [...CLUB.events].sort((a, b) => a.date.localeCompare(b.date)).find((e) => new Date(e.date + "T00:00:00") >= today);
-    if (!next) return setLine("That's a wrap for this year — see you next year.");
-    const d = Math.round((new Date(next.date + "T00:00:00").getTime() - today.getTime()) / 864e5);
-    setLine(`Next: ${next.title} — ${d === 0 ? "today" : d === 1 ? "tomorrow" : `in ${d} days`}`);
-  }, []);
+  const line = useClientValue(nextUpLine, null);
   return (
     <p className="flex items-center gap-2 text-[13px] text-[#9da7b3]" aria-live="polite">
       <span className="text-[#3fb950]"><DotFillIcon size={16} /></span>{line ?? " "}
