@@ -5,11 +5,13 @@ import { EpochNav } from "@/components/epoch/EpochNav";
 import { EpochEntrance } from "@/components/epoch/EpochEntrance";
 import { EpochMain } from "@/components/epoch/EpochMain";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { RegisterSW } from "@/components/epoch/RegisterSW";
 
 export const metadata: Metadata = {
   title: "epoch — GITAM Bengaluru's GitHub tech fest",
   description: "Two days of workshops, competitions and 20+ booths on one currency: Epoch Coins.",
-  icons: { icon: "/epoch-coin.svg" },
+  icons: { icon: "/epoch-coin.svg", apple: "/icons/apple-touch-icon.png" },
+  appleWebApp: { capable: true, title: "Epoch", statusBarStyle: "default" },
 };
 
 /* Oddval Medium is a licensed font. If you add it to /public/fonts the browser picks it up;
@@ -30,6 +32,7 @@ export default function EpochLayout({ children }: { children: React.ReactNode })
           <div aria-hidden className="h-24 bg-[#010409] md:hidden" />{/* room for the phone tab bar */}
         </div>
         <EpochEntrance />
+        <RegisterSW />
       </CommandProvider>
     </EpochProvider>
   );
