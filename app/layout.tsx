@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono, Mona_Sans } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SmoothScroll } from "@/components/ui/SmoothScroll";
 import { SITE_URL as SITE } from "@/lib/site";
 import "./globals.css";
@@ -8,6 +10,9 @@ import "./globals.css";
 const mona = Mona_Sans({ subsets: ["latin"], axes: ["wdth"], variable: "--font-mona", display: "swap" });
 const jbm = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jbm" });
 
+
+// Vercel Web Analytics + Speed Insights: cookie-free. Enable them in the Vercel dashboard, then set NEXT_PUBLIC_ANALYTICS=on.
+const ANALYTICS = process.env.NEXT_PUBLIC_ANALYTICS === "on";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
@@ -25,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen antialiased">
         <SmoothScroll />
         {children}
+        {ANALYTICS && <><Analytics /><SpeedInsights /></>}
       </body>
     </html>
   );
