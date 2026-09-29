@@ -24,16 +24,16 @@ export function EpochLink({ className = "", children, href = "/epoch" }: { class
         {origin && (
           <motion.div
             aria-hidden
-            className="fixed inset-0 z-[200] grid place-items-center bg-epoch-night"
+            className="fixed inset-0 z-[200] grid place-items-center bg-night"
             initial={{ clipPath: `circle(0px at ${origin.x}px ${origin.y}px)` }}
             animate={{ clipPath: `circle(150vmax at ${origin.x}px ${origin.y}px)` }}
             transition={{ duration: 0.75, ease: [0.76, 0, 0.24, 1] }}
           >
             <motion.span
               initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4, duration: 0.3 }}
-              className="font-display text-[clamp(56px,14vw,200px)] font-black tracking-tighter text-epoch"
+              className="font-display text-[clamp(56px,14vw,200px)] font-black lowercase tracking-[-0.07em] text-gold"
             >
-              {EPOCH.name}<span className="text-white">&apos;{EPOCH.edition}</span>
+              {EPOCH.name}<span className="text-white">_{EPOCH.edition}</span>
             </motion.span>
           </motion.div>
         )}
