@@ -1,6 +1,5 @@
 import { CLUB } from "@/lib/config";
 import { Reveal } from "@/components/ui/Reveal";
-import { EpochLink } from "@/components/epoch/EpochLink";
 import { DiffStat } from "./DiffStat";
 import { EventsYear } from "./EventsYear";
 import { FaqIssues } from "./FaqIssues";

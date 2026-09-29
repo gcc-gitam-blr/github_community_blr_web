@@ -1,6 +1,6 @@
 // Runs the demo store against a fake localStorage to check the economy rules from the plan.
 const mem: Record<string,string> = {};
-(globalThis as any).localStorage = { getItem:(k:string)=>mem[k]??null, setItem:(k:string,v:string)=>{mem[k]=v}, removeItem:(k:string)=>{delete mem[k]} };
+(globalThis as unknown as { localStorage: Pick<Storage, "getItem" | "setItem" | "removeItem"> }).localStorage = { getItem:(k:string)=>mem[k]??null, setItem:(k:string,v:string)=>{mem[k]=v}, removeItem:(k:string)=>{delete mem[k]} };
 import { localStore as s } from "../lib/epoch/local-store";
 import { STARTER_COINS, EPOCH } from "../lib/epoch/config";
 let fails = 0; const ok = (name:string, cond:boolean) => { console.log((cond?"PASS":"FAIL")+"  "+name); if(!cond) fails++; };
@@ -8,7 +8,6 @@ let fails = 0; const ok = (name:string, cond:boolean) => { console.log((cond?"PA
 (async () => {
   // organiser
   await s.register({handle:"org",name:"Org",email:"o@x.io"}); await s.elevate!(EPOCH.organiserCode);
-  const orgId = (await s.me())!.id;
   // attendee
   const a = await s.register({handle:"ada",name:"Ada",email:"a@x.io"}); if(!a.ok) throw 0;
   const ada = a.profile.id;
