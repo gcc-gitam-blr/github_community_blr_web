@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { Frame, Notice } from "./Frame";
-import { Coin, btnGhost, btnGold, card, field, mono } from "./Bits";
+import { Coin, btnInk, btnSoft, field, glass, label } from "./Bits";
 import { Scanner } from "./Scanner";
 import { useEpoch } from "./EpochProvider";
 import { qr } from "@/lib/epoch/store";
@@ -44,52 +44,51 @@ export function ScanPage() {
     setOut(r.ok ? { ok: true, title: `@${r.profile.handle}`, delta: amount, balance: r.profile.coins } : r); setTarget(null); setReason("");
   };
 
-  if (ready && !me) return <Frame kicker="// scan" title="Sign up first."><Link href="/epoch/register" className={btnGold}>Get your ticket →</Link></Frame>;
+  if (ready && !me) return <Frame title="Sign up first."><Link href="/epoch/register" className={btnInk}>Get your ticket</Link></Frame>;
 
   return (
-    <Frame kicker={staff ? "// scan · organiser" : "// scan"} title={<>Scan a <span className="text-gold">booth</span>.</>}>
-      <div className="grid gap-4 lg:grid-cols-2">
+    <Frame title="Scan a booth." sub={staff ? "Organiser mode: scan a wallet to verify a ticket or award coins." : "Point your camera at the QR on a booth."}>
+      <div className="grid gap-5 lg:grid-cols-2">
         <div className="space-y-4">
           <Scanner onCode={handle} paused={busy || !!out || !!target} />
           <form onSubmit={(e) => { e.preventDefault(); void handle(manual.trim()); setManual(""); }} className="flex gap-2">
-            <input value={manual} onChange={(e) => setManual(e.target.value)} placeholder="or paste a code: epoch:b:vr" className={`${field} !py-3 font-mono !text-sm`} />
-            <button className={btnGold}>Go</button>
+            <input value={manual} onChange={(e) => setManual(e.target.value)} placeholder="or paste a code, e.g. epoch:b:vr" className={`${field} !py-3 !text-[15px]`} />
+            <button className={btnInk}>Go</button>
           </form>
         </div>
 
-        <div className={`${card} p-7 sm:p-9`}>
+        <div className={`${glass} p-8 sm:p-10`}>
           {!out && !target && (
-            <div className="space-y-4 text-fog">
-              <p className={`${mono} text-gold`}>How it works</p>
-              <p className="text-lg">Point your camera at the QR on a booth. <b className="text-white">Recharge points</b> pay you coins — once each. <b className="text-white">Spend booths</b> charge a few coins per session.</p>
+            <div className="space-y-4 text-[17px] text-mute">
+              <p><b className="font-medium text-ink">Recharge points</b> pay you coins, once each. <b className="font-medium text-ink">Spend booths</b> charge a few coins per session.</p>
               {me && !me.ticket && !staff && <Notice kind="info">Your ticket isn&apos;t verified yet — show your wallet QR at the desk first.</Notice>}
-              {staff && <Notice kind="info">Organiser mode: scan an attendee&apos;s wallet QR to verify their ticket ({STARTER_COINS} {EPOCH.currency}) or award/deduct coins.</Notice>}
+              {staff && <Notice kind="info">Verifying a ticket credits {STARTER_COINS} {EPOCH.currency}, once.</Notice>}
             </div>
           )}
           <AnimatePresence mode="wait">
             {out && (
-              <motion.div key="out" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="text-center">
+              <motion.div key="out" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="text-center">
                 {out.ok ? (<>
-                  <motion.div initial={{ rotateY: 180, scale: 0 }} animate={{ rotateY: 0, scale: 1 }} transition={{ type: "spring", stiffness: 160, damping: 12 }} className="mx-auto w-fit"><Coin size={110} /></motion.div>
-                  <p className={`mt-4 font-display text-7xl font-black tracking-tighter ${out.delta > 0 ? "text-gold" : "text-white"}`}>{out.delta > 0 ? "+" : ""}{out.delta}</p>
-                  <p className="mt-2 text-xl font-semibold">{out.title}</p>
-                  <p className={`${mono} mt-1 text-fog`}>New balance {out.balance}</p>
-                </>) : (<><p className="text-5xl">⚠️</p><p className="mx-auto mt-3 max-w-[32ch] text-lg text-red-200">{out.error}</p></>)}
-                <button onClick={() => setOut(null)} className={`${btnGold} mt-7`}>Scan another</button>
+                  <motion.div initial={{ rotateY: 180, scale: 0 }} animate={{ rotateY: 0, scale: 1 }} transition={{ type: "spring", stiffness: 160, damping: 13 }} className="mx-auto w-fit"><Coin size={88} /></motion.div>
+                  <p className="mt-5 text-[80px] font-medium leading-none tracking-[-0.06em]">{out.delta > 0 ? "+" : "−"}{Math.abs(out.delta)}</p>
+                  <p className="mt-3 text-[19px]">{out.title}</p>
+                  <p className={`${label} mt-1`}>New balance {out.balance}</p>
+                </>) : <p className="mx-auto max-w-[30ch] text-[19px] text-red-800">{out.error}</p>}
+                <button onClick={() => setOut(null)} className={`${btnInk} mt-8`}>Scan another</button>
               </motion.div>
             )}
             {target && (
-              <motion.div key="t" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-                <div><p className={`${mono} text-gold`}>Attendee</p><p className="font-display text-4xl font-black tracking-tight">{target.name}</p><p className="font-mono text-sm text-fog">@{target.handle} · {target.coins} coins · ticket {target.ticket ? "verified" : "pending"}</p></div>
-                {!target.ticket && <button disabled={busy} onClick={verify} className={`${btnGold} w-full !py-4`}>Verify ticket → +{STARTER_COINS} {EPOCH.currency}</button>}
-                <div className="space-y-3 rounded-2xl border border-edge p-4">
-                  <p className={`${mono} text-fog`}>Manual award / deduct</p>
-                  <div className="flex gap-2">{[10, 20, 50, 100].map((n) => <button key={n} onClick={() => setAmount(n)} className={`flex-1 rounded-full border py-2 font-mono text-sm font-bold ${amount === n ? "border-gold bg-gold text-night" : "border-white/15 text-fog"}`}>+{n}</button>)}</div>
-                  <input type="number" value={amount} onChange={(e) => setAmount(+e.target.value)} className={`${field} !py-3 font-mono`} aria-label="Coins (negative to deduct)" />
-                  <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (e.g. Fail-Proof Code winner)" className={`${field} !py-3`} />
-                  <button disabled={busy || !amount} onClick={award} className={`${btnGhost} w-full`}>{amount >= 0 ? "Award" : "Deduct"} {Math.abs(amount)}</button>
+              <motion.div key="t" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+                <div><p className="text-[32px] font-medium leading-tight tracking-[-0.03em]">{target.name}</p><p className={label}>@{target.handle} · {target.coins} coins · ticket {target.ticket ? "verified" : "pending"}</p></div>
+                {!target.ticket && <button disabled={busy} onClick={verify} className={`${btnInk} w-full`}>Verify ticket · +{STARTER_COINS} {EPOCH.currency}</button>}
+                <div className="space-y-3 border-t border-hair pt-5">
+                  <p className={label}>Award or deduct</p>
+                  <div className="flex gap-2">{[10, 20, 50, 100].map((n) => <button key={n} onClick={() => setAmount(n)} className={`flex-1 rounded-full border py-2 text-sm ${amount === n ? "border-ink bg-ink text-white" : "border-hair"}`}>+{n}</button>)}</div>
+                  <input type="number" value={amount} onChange={(e) => setAmount(+e.target.value)} className={`${field} !py-3`} aria-label="Coins (negative to deduct)" />
+                  <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason, e.g. Fail-Proof Code winner" className={`${field} !py-3`} />
+                  <button disabled={busy || !amount} onClick={award} className={`${btnSoft} w-full`}>{amount >= 0 ? "Award" : "Deduct"} {Math.abs(amount)}</button>
                 </div>
-                <button onClick={() => setTarget(null)} className="text-sm text-fog underline">Cancel</button>
+                <button onClick={() => setTarget(null)} className="text-sm text-mute underline">Cancel</button>
               </motion.div>
             )}
           </AnimatePresence>
