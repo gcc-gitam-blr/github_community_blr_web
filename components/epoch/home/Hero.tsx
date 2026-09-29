@@ -2,18 +2,17 @@
 import Link from "next/link";
 import { motion } from "motion/react";
 import { QRCodeSVG } from "qrcode.react";
-import { useEffect, useState } from "react";
 import { btnInk } from "../Bits";
 import { Coin3D } from "../Coin3D";
 import { Launcher } from "../Command";
 import { useEpoch } from "../EpochProvider";
 import { EPOCH, STARTER_COINS } from "@/lib/epoch/config";
+import { useClientValue } from "@/lib/useClientValue";
 
 /* Plain and printed: one headline in solid ink, the command bar, the coin. */
 export function Hero() {
   const { me } = useEpoch();
-  const [url, setUrl] = useState("/epoch/register");
-  useEffect(() => setUrl(`${window.location.origin}/epoch/register`), []);
+  const url = useClientValue(() => `${window.location.origin}/epoch/register`, "/epoch/register");
 
   return (
     <section className="relative flex min-h-[min(100svh,960px)] items-center pb-24 pt-28">
