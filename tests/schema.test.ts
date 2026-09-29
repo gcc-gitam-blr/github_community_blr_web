@@ -64,5 +64,14 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   ok("leaderboard counts earnings (recharge + prize), not the ticket", lb.handle === "ada" && lb.earned === 120);
   ok("ledger has every movement", (await one<{ n: number }>("select count(*)::int n from txs where user_id = $1", [ADA])).n === 5);
 
+  // club sign-ups
+  await db.query("insert into join_requests (handle, email, first_event) values ('ada', 'Ada@Gitam.in', '2026-10-05')");
+  let dup = false; try { await db.query("insert into join_requests (handle, email, first_event) values ('ada2', 'ada@gitam.in', '2026-10-12')"); } catch (e) { dup = (e as { code?: string }).code === "23505"; }
+  ok("join_requests allows one sign-up per email (case-insensitive)", dup);
+  let badHandle = false; try { await db.query("insert into join_requests (handle, email, first_event) values ('-nope-', 'x@y.in', '2026-10-05')"); } catch { badHandle = true; }
+  ok("join_requests rejects an invalid GitHub handle", badHandle);
+  let badEmail = false; try { await db.query("insert into join_requests (handle, email, first_event) values ('bob', 'not-an-email', '2026-10-05')"); } catch { badEmail = true; }
+  ok("join_requests rejects an invalid email", badEmail);
+
   console.log(fails ? `\n${fails} FAILED` : "\nall schema checks passed"); process.exit(fails ? 1 : 0);
 })().catch((e) => { console.error("FAIL  crashed:", e.message); process.exit(1); });
