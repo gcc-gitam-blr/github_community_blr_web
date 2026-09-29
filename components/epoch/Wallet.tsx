@@ -5,7 +5,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
 import { animate } from "motion/react";
 import { Notice } from "./Frame";
-import { Coin, Streaks, btnInk, btnSoft, glass } from "./Bits";
+import { Coin, btnInk, btnSoft, glass } from "./Bits";
 import { NodeIcon } from "@/components/ui/GitGraph";
 import { useCommand } from "./Command";
 import { useEpoch } from "./EpochProvider";
@@ -21,7 +21,7 @@ function Balance({ value }: { value: number }) {
 const ago = (iso: string) => { const s = (Date.now() - new Date(iso).getTime()) / 1000; return s < 60 ? "just now" : s < 3600 ? `${Math.floor(s / 60)} min ago` : s < 86400 ? `${Math.floor(s / 3600)} hours ago` : new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" }); };
 const kindOf = (t: Tx) => t.ref === "ticket" ? { s: "diamond", c: "blue", tag: "Ticket" } : t.ref.startsWith("booth:recharge") ? { s: "triangle", c: "green", tag: "Recharge" } : t.ref.startsWith("booth:") ? { s: "ring", c: "purple", tag: "Booth" } : t.ref.startsWith("reward:") ? { s: "square", c: "mint", tag: "Merch" } : { s: "diamond", c: "purple", tag: "Award" };
 
-/* GitHub-dashboard mood: a soft “Howdy”, a glass feed with fading edges, a Quick access column. */
+/* Wallet dashboard: greeting, balance + QR, activity feed, and a recharge checklist on the side. */
 export function Wallet() {
   const { store, me, ready, refresh } = useEpoch(); const router = useRouter(); const { open } = useCommand();
   const [tx, setTx] = useState<Tx[]>([]);
@@ -44,17 +44,16 @@ export function Wallet() {
 
   return (
     <div className="relative">
-      <Streaks className="fixed -z-0" />
       <div className="relative mx-auto grid w-full max-w-[1180px] gap-10 px-6 pb-24 pt-28 md:px-10 xl:grid-cols-[minmax(0,660px)_260px] xl:justify-between">
         <div>
           <div className="text-center xl:text-left">
-            <h1 className="bg-gradient-to-b from-ink/70 to-ink/20 bg-clip-text text-[clamp(64px,10vw,120px)] font-medium leading-none tracking-[-0.06em] text-transparent">Howdy, {me.name.split(" ")[0]}</h1>
+            <h1 className="text-[clamp(56px,9vw,108px)] font-medium leading-none tracking-[-0.06em]">Hi, {me.name.split(" ")[0]}</h1>
             <p className="mt-3 text-[15px] text-mute">{now}</p>
           </div>
 
           <div className="mt-10 flex flex-wrap items-center gap-3">
             {(["feed", "recharge"] as const).map((k) => <button key={k} onClick={() => setTab(k)} className={`rounded-full border px-5 py-2.5 text-[15px] transition ${tab === k ? "border-white/90 bg-white/80 shadow-[0_8px_30px_-14px_rgba(70,45,130,.45)]" : "border-transparent text-mute hover:text-ink"}`}>{k === "feed" ? "Activity" : `Recharge · ${left} left`}</button>)}
-            <span className="ml-auto text-[14px] text-mute">✦ Based on your ledger</span>
+            
           </div>
 
           {/* balance card */}
@@ -76,7 +75,7 @@ export function Wallet() {
           {!me.ticket && <div className="mt-4"><Notice kind="info">One step left: pay your ₹{EPOCH.ticketPriceINR} ticket{EPOCH.ticketUrl ? <> <a className="underline" href={EPOCH.ticketUrl} target="_blank" rel="noopener">here</a></> : " at the registration desk"} and show your QR. {STARTER_COINS} {EPOCH.currency} appear here within seconds.</Notice></div>}
 
           {/* feed */}
-          <div className="mask-fade-b mt-5 space-y-4">
+          <div className="mt-5 space-y-3">
             {tab === "feed" && (tx.length === 0
               ? <div className={`${glass} p-7 text-mute`}>Nothing yet. Scan a recharge point to get your first entry.</div>
               : tx.map((t) => { const k = kindOf(t); return (
