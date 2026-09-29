@@ -1,41 +1,26 @@
 "use client";
 import { EPOCH } from "@/lib/epoch/config";
+import { EpochCoin } from "./EpochCoin";
 
-/** Flat coin: a gold disc with a git commit-node stamped in it. */
+/** Small inline coin (the proper SVG). */
 export function Coin({ size = 24 }: { size?: number }) {
-  return (
-    <svg viewBox="0 0 48 48" width={size} height={size} aria-hidden className="flex-none">
-      <circle cx="24" cy="24" r="23" fill="#c98a00" />
-      <circle cx="24" cy="24" r="21" fill="#ffc933" />
-      <circle cx="24" cy="24" r="16.5" fill="none" stroke="#c98a00" strokeWidth="1.6" strokeDasharray="2.5 3" />
-      <path d="M24 12v24" stroke="#7a4f00" strokeWidth="3" strokeLinecap="round" />
-      <circle cx="24" cy="24" r="6" fill="#ffe28f" stroke="#7a4f00" strokeWidth="3" />
-    </svg>
-  );
-}
-
-/** A real 3D coin: stacked discs give it thickness, and it turns slowly on its Y axis. */
-export function Coin3D({ size = 280 }: { size?: number }) {
-  const layers = 14, depth = size * 0.07;
-  const face = (side: 1 | -1) => (
-    <div style={{ transform: `translateZ(${(side * depth) / 2}px) ${side === -1 ? "rotateY(180deg)" : ""}`, backfaceVisibility: "hidden" }}>
-      <Coin size={size} />
-    </div>
-  );
-  return (
-    <div style={{ width: size, height: size, perspective: size * 4 }} aria-hidden>
-      <div className="coin3d relative h-full w-full">
-        {Array.from({ length: layers }, (_, i) => (
-          <div key={i} style={{ transform: `translateZ(${(i / (layers - 1) - 0.5) * depth}px)`, background: i % 2 ? "#c98a00" : "#e0a100" }} />
-        ))}
-        {face(1)}{face(-1)}
-      </div>
-    </div>
-  );
+  return <EpochCoin size={size} detail={false} />;
 }
 
 export function Wordmark({ className = "" }: { className?: string }) {
   return <span className={`font-epoch font-medium lowercase tracking-[-0.05em] ${className}`}>{EPOCH.name}</span>;
+}
+
+/** Thin diagonal light streaks with dot ends — the quiet texture behind the dashboard reference. */
+export function Streaks({ className = "" }: { className?: string }) {
+  return (
+    <svg aria-hidden viewBox="0 0 1200 800" preserveAspectRatio="none" className={`pointer-events-none absolute inset-0 h-full w-full ${className}`}>
+      <g stroke="#8b83a8" strokeOpacity=".22" strokeWidth="1" fill="none">
+        <path d="M-40 640 C 200 610 300 380 560 300" /><path d="M120 820 L 700 330" /><path d="M700 120 L 1240 -40" /><path d="M820 760 C 980 640 1060 560 1240 470" />
+      </g>
+      <g fill="#8b83a8" fillOpacity=".4"><circle cx="560" cy="300" r="4" /><circle cx="700" cy="330" r="4" /><circle cx="700" cy="120" r="3" /><circle cx="1240" cy="470" r="4" /></g>
+    </svg>
+  );
 }
 
 /* ---- primitives: quiet, soft, one accent ---- */
