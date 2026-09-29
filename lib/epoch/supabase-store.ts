@@ -1,12 +1,12 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { EPOCH } from "./config";
-import type { EpochStore, Profile, Reward, Stall, Tx } from "./types";
+import type { Booth, EpochStore, Profile, Reward, Tx } from "./types";
 
 let client: SupabaseClient | null = null;
 const sb = () => (client ??= createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!));
 
-type Row = { id: string; handle: string; name: string; email: string | null; coins: number; earned: number; role: Profile["role"]; created_at: string };
-const toProfile = (r: Row): Profile => ({ id: r.id, handle: r.handle, name: r.name, email: r.email ?? "", coins: r.coins, earned: r.earned, role: r.role, createdAt: r.created_at });
+type Row = { id: string; handle: string; name: string; email: string | null; coins: number; earned: number; ticket: boolean; role: Profile["role"]; created_at: string };
+const toProfile = (r: Row): Profile => ({ id: r.id, handle: r.handle, name: r.name, email: r.email ?? "", coins: r.coins, earned: r.earned, ticket: r.ticket, role: r.role, createdAt: r.created_at });
 const fail = (error: string) => ({ ok: false as const, error });
 
 export const supabaseStore: EpochStore = {
@@ -20,26 +20,26 @@ export const supabaseStore: EpochStore = {
   },
 
   /* Attendees sign in with GitHub. First call redirects to GitHub; once they're
-     back with a session, the same call creates their profile + welcome coins. */
+     back with a session, the same call creates their profile. */
   async register({ name }) {
     const { data: { user } } = await sb().auth.getUser();
     if (!user) {
       await sb().auth.signInWithOAuth({ provider: "github", options: { redirectTo: `${window.location.origin}/epoch/register` } });
       return fail("Redirecting to GitHub…");
     }
-    const { data, error } = await sb().rpc("register_profile", { p_name: name, p_welcome: EPOCH.welcomeCoins });
+    const { data, error } = await sb().rpc("register_profile", { p_name: name });
     if (error) return fail(error.message);
     return { ok: true, profile: toProfile(data as Row) };
   },
 
   async signOut() { await sb().auth.signOut(); },
 
-  async scanStall(stallId) {
-    const { data, error } = await sb().rpc("scan_stall", { p_stall: stallId });
+  async scanBooth(boothId) {
+    const { data, error } = await sb().rpc("scan_booth", { p_booth: boothId });
     if (error) return fail(error.message);
     if (!data.ok) return fail(data.error);
-    const stall = (await this.stalls()).find((s) => s.id === stallId)!;
-    return { ok: true, delta: data.delta, balance: data.balance, stall };
+    const booth = (await this.booths()).find((b) => b.id === boothId)!;
+    return { ok: true, delta: data.delta, balance: data.balance, booth };
   },
 
   async redeem(rewardId) {
@@ -51,7 +51,7 @@ export const supabaseStore: EpochStore = {
   },
 
   async history() {
-    const { data } = await sb().from("txs").select("*").order("at", { ascending: false }).limit(50);
+    const { data } = await sb().from("txs").select("*").order("at", { ascending: false }).limit(100);
     return (data ?? []).map((t): Tx => ({ id: String(t.id), userId: t.user_id, delta: t.delta, reason: t.reason, ref: t.ref, at: t.at }));
   },
 
@@ -60,8 +60,16 @@ export const supabaseStore: EpochStore = {
     return data ?? [];
   },
 
-  async stalls() { const { data } = await sb().from("stalls").select("*").order("kind").order("name"); return (data ?? []) as Stall[]; },
+  async booths() { const { data } = await sb().from("booths").select("*").order("kind", { ascending: false }).order("name"); return (data ?? []) as Booth[]; },
   async rewards() { const { data } = await sb().from("rewards").select("*").order("cost"); return (data ?? []) as Reward[]; },
+
+  async issueTicket(userId) {
+    const { data, error } = await sb().rpc("issue_ticket", { p_user: userId, p_price: EPOCH.ticketPriceINR, p_rate: EPOCH.coinsPerINR });
+    if (error) return fail(error.message);
+    if (!data.ok) return fail(data.error);
+    const profile = await this.lookup(userId);
+    return profile ? { ok: true, profile } : fail("Credited, but couldn't reload the profile.");
+  },
 
   async award(userId, delta, reason) {
     const { data, error } = await sb().rpc("award_coins", { p_user: userId, p_delta: delta, p_reason: reason });
