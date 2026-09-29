@@ -1,88 +1,87 @@
 "use client";
 import Link from "next/link";
+import { motion } from "motion/react";
 import { Reveal } from "@/components/ui/Reveal";
-import { Coin, btnGold, mono } from "./Bits";
-import { HomeHero } from "./home/HomeHero";
-import { CoinFlow } from "./home/CoinFlow";
-import { BoothExplorer } from "./home/BoothExplorer";
-import { PlanTimeline } from "./home/PlanTimeline";
+import { Coin, Coin3D, btnInk } from "./Bits";
+import { BoothIndex } from "./home/BoothIndex";
+import { PlanList } from "./home/PlanList";
 import { useEpoch } from "./EpochProvider";
-import { EPOCH, REWARDS, STARTER_COINS } from "@/lib/epoch/config";
+import { BOOTH_COUNT, EPOCH, RECHARGE_POINTS, REWARDS, STARTER_COINS } from "@/lib/epoch/config";
 
-const wrap = "mx-auto w-full max-w-[1280px] px-5 md:px-10";
+const wrap = "mx-auto w-full max-w-[1120px] px-6 md:px-10";
+const h2 = "text-[clamp(38px,6vw,76px)] font-medium leading-[1.02] tracking-[-0.045em]";
 
-function Head({ k, title, children }: { k: string; title: React.ReactNode; children?: React.ReactNode }) {
-  return (
-    <Reveal className="mb-12 max-w-[820px]">
-      <p className={`${mono} text-gold`}>{k}</p>
-      <h2 className="mt-4 text-[clamp(38px,6vw,76px)]">{title}</h2>
-      {children && <p className="mt-5 max-w-[60ch] text-lg text-fog">{children}</p>}
-    </Reveal>
-  );
-}
-
-const RULES = [
-  ["01", "Ticket → coins", `Your ticket (₹${EPOCH.ticketPriceINR} as the working price) converts at 1 ₹ = ${EPOCH.coinsPerINR} coins. That's ${STARTER_COINS} ${EPOCH.currency}, credited to your profile once the desk verifies it.`],
-  ["02", "Spend anywhere", "Booths, games and experiences each have a coin price — VR is 40 a session. Merch is buyable with coins too, so no cash at the stalls."],
-  ["03", "Recharge — once", `Ran low? Beat a mini-game at a recharge point for ${20} coins. Every point works once per person, so plan your route.`],
-  ["04", "Everything visible", "Your website profile shows balance, full transaction history, and how many recharge points you still have left. Updates in real time."],
+const IDEAS = [
+  ["Your ticket is your wallet", `₹${EPOCH.ticketPriceINR} becomes ${STARTER_COINS} ${EPOCH.currency}. The desk verifies it and the coins appear in your profile.`],
+  ["Spend at any booth", "VR, escape rooms, arcades, art, merch. Every experience has a coin price; nobody needs cash."],
+  ["Recharge, once", `Beat a mini-game at a recharge point to earn ${RECHARGE_POINTS[0].coins} more. Each point works once per person.`],
 ];
 
 export function EpochHome() {
   const { me } = useEpoch();
   return (
     <>
-      <HomeHero />
+      {/* hero: one message, one object */}
+      <section className="relative flex min-h-[min(100svh,980px)] items-center overflow-hidden pb-16 pt-28">
+        <div className={`${wrap} relative z-10`}>
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="mb-7 text-[17px] text-mute">{EPOCH.org} · {EPOCH.month}</motion.p>
+          <motion.h1 initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.75, duration: 1, ease: [0.22, 1, 0.36, 1] }} className="text-[clamp(60px,11vw,168px)] font-medium leading-[0.95] tracking-[-0.055em]">
+            Two days.<br />One currency.
+          </motion.h1>
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }} className="mt-9 max-w-[42ch] text-[clamp(18px,1.8vw,22px)] leading-snug text-mute">
+            Epoch is the GitHub Community Club&apos;s flagship event, played with coins. Your ticket becomes {STARTER_COINS} of them.
+          </motion.p>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.25 }} className="mt-10 flex flex-wrap items-center gap-6">
+            <Link href={me ? "/epoch/wallet" : "/epoch/register"} className={btnInk}>{me ? "Open my wallet" : "Get your ticket"}</Link>
+            <a href="#how" className="text-[17px] text-mute transition hover:text-ink">How it works ↓</a>
+          </motion.div>
+        </div>
+        <div aria-hidden className="pointer-events-none absolute bottom-[3%] right-[3%] hidden animate-[float-y_8s_ease-in-out_infinite] drop-shadow-[0_50px_60px_rgba(150,100,0,.28)] md:block lg:right-[6%]"><Coin3D size={270} /></div>
+      </section>
 
-      <section className="py-[clamp(70px,10vw,140px)]" id="economy">
+      <section id="how" className="py-[clamp(80px,12vw,170px)]">
         <div className={wrap}>
-          <Head k="// the economy" title={<>One currency.<br />Twenty-one places to use it.</>}>
-            No cash at the booths. Coins flow in from your ticket and from recharge points, and out to whatever you fancy.
-          </Head>
-          <Reveal className="rounded-[2rem] border border-edge bg-night-2/50 p-4 sm:p-8"><CoinFlow /></Reveal>
-          <ul className="mt-6 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            {RULES.map(([n, t, d], i) => (
-              <Reveal as="li" key={n} delay={i * 0.07} className="rounded-3xl border border-edge bg-night-2/70 p-7">
-                <span className={`${mono} text-gold`}>{n}</span>
-                <h3 className="mb-3 mt-8 text-2xl">{t}</h3><p className="text-[15px] text-fog">{d}</p>
+          <ul className="grid gap-12 md:grid-cols-3 md:gap-10">
+            {IDEAS.map(([t, d], i) => (
+              <Reveal as="li" key={t} delay={i * 0.08} className="border-t border-ink/15 pt-6">
+                <span className="text-sm text-mute">0{i + 1}</span>
+                <h3 className="mb-3 mt-6 text-[28px] font-medium leading-[1.1] tracking-[-0.035em]">{t}</h3>
+                <p className="text-[17px] text-mute">{d}</p>
               </Reveal>
             ))}
           </ul>
         </div>
       </section>
 
-      <section className="border-t border-edge py-[clamp(70px,10vw,140px)]" id="booths">
+      <section id="booths" className="py-[clamp(70px,10vw,140px)]">
         <div className={wrap}>
-          <Head k="// booths" title={<>Find your <span className="text-gold">kind of chaos</span>.</>}>VR, escape rooms, human snake &amp; ladder, a 3D printer, retro arcades — plus five recharge points to keep you in the game.</Head>
-          <BoothExplorer compact />
+          <Reveal className="mb-12"><h2 className={h2}>{BOOTH_COUNT} places<br />to spend it.</h2></Reveal>
+          <BoothIndex />
         </div>
       </section>
 
-      <section className="border-t border-edge py-[clamp(70px,10vw,140px)]" id="plan">
+      <section id="plan" className="py-[clamp(70px,10vw,140px)]">
         <div className={wrap}>
-          <Head k="// plan of action" title={<>Two days, <br />committed to history.</>}>Workshops in the morning, competitions running alongside, booths from 2 PM, and a closing ceremony on the second evening.</Head>
-          <PlanTimeline />
+          <Reveal className="mb-12"><h2 className={h2}>The plan.</h2></Reveal>
+          <PlanList />
         </div>
       </section>
 
-      <section className="border-t border-edge py-[clamp(70px,10vw,140px)]">
+      <section className="py-[clamp(70px,10vw,140px)]">
         <div className={wrap}>
-          <Head k="// merchandise stall" title={<>Wear your <span className="text-gold">commits</span>.</>}>Event-branded tees and hoodies, Octocat stickers — all payable in coins.</Head>
-          <ul className="grid gap-3 md:grid-cols-3">
-            {REWARDS.map((r, i) => (
-              <Reveal as="li" key={r.id} delay={i * 0.08} className="flex min-h-[260px] flex-col justify-between rounded-3xl border border-edge bg-gradient-to-br from-gold/15 to-transparent p-7">
-                <span className={`${mono} flex items-center gap-2 font-bold text-gold`}><Coin size={18} />{r.cost}</span>
-                <div><h3 className="text-3xl">{r.name}</h3><p className="mt-2 text-fog">{r.blurb}</p></div>
-              </Reveal>
+          <Reveal className="mb-10"><h2 className={h2}>Merch, in coins.</h2></Reveal>
+          <ul className="grid gap-6 border-t border-hair pt-8 sm:grid-cols-3">
+            {REWARDS.map((r) => (
+              <li key={r.id}><p className="text-[21px] font-medium tracking-[-0.02em]">{r.name}</p><p className="mt-1 flex items-center gap-2 text-[17px] text-mute"><Coin size={16} />{r.cost}</p></li>
             ))}
           </ul>
         </div>
       </section>
 
-      <section className="relative overflow-hidden border-t border-edge bg-gold py-[clamp(80px,12vw,160px)] text-night">
-        <div className={`${wrap} flex flex-col items-start gap-8`}>
-          <Reveal><h2 className="text-[clamp(44px,8vw,120px)] leading-[.92] text-night">Second zero<br />is coming.</h2></Reveal>
-          <Link href={me ? "/epoch/wallet" : "/epoch/register"} className={`${btnGold.replace("bg-gold", "bg-night").replace("text-night", "text-gold").replace("hover:bg-gold-soft", "hover:bg-night-3")}`}>{me ? "Open my wallet" : "Get your ticket"} →</Link>
+      <section className="py-[clamp(90px,14vw,200px)]">
+        <div className={`${wrap} flex flex-col items-start gap-10`}>
+          <Reveal><h2 className="text-[clamp(48px,9vw,132px)] font-medium leading-[0.95] tracking-[-0.055em]">See you at<br />second zero.</h2></Reveal>
+          <Link href={me ? "/epoch/wallet" : "/epoch/register"} className={btnInk}>{me ? "Open my wallet" : "Get your ticket"}</Link>
         </div>
       </section>
     </>
