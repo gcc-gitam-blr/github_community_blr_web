@@ -4,6 +4,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import { CountUp } from "./CountUp";
 import { SpotlightCard } from "./SpotlightCard";
 import { TimelineLine } from "./TimelineLine";
+import { EpochLink } from "@/components/epoch/EpochLink";
 
 export function Head({ no, title, children, light = false }: { no: string; title: React.ReactNode; children?: React.ReactNode; light?: boolean }) {
   return (
@@ -23,7 +24,7 @@ export function About() {
     <section id="about" className={pad}>
       <div className={`${wrap} grid items-center gap-[clamp(40px,6vw,100px)] lg:grid-cols-[1.2fr_1fr]`}>
         <Head no="01 / about" title={<>A community that <em className="hl">commits</em> to each other.</>}>
-          GitHub Community Club BLR exists for one reason: nobody should learn to code alone. We run workshops, hack nights and open-source sprints — and once a year, Epoch, our fest — and pair every newcomer with someone who&apos;s already been through it.
+          The GitHub Community Club at GITAM University Bengaluru exists for one reason: nobody should learn to code alone. Six events this year — from your first pull request to a full-scale technical month, Epoch — with a crew that helps every newcomer ship.
         </Head>
         <ul className="grid grid-cols-2 gap-4">
           {CLUB.stats.map((s, i) => (
@@ -76,12 +77,12 @@ export function Events() {
               <article className="lift rounded-[18px] border-2 border-ink bg-white px-5 py-[22px] sm:px-[30px] sm:py-[26px]">
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5 font-mono text-[13px] text-ink-3">
                   <span className="rounded border border-line bg-soft px-2 py-0.5 text-ink-2">{hash(e.title + e.date)}</span>
-                  <span>{new Date(e.date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
+                  <span>{e.dateLabel ?? new Date(e.date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
                   <span className="rounded-full bg-brand px-2.5 py-0.5 font-bold text-ink">{e.type}</span>
                 </div>
                 <h3 className="mb-2 mt-3.5 text-[clamp(25px,3vw,30px)]">{e.title}</h3>
                 <p className="text-ink-2">{e.text}</p>
-                <p className="mt-3.5 font-mono text-[13px]">📍 {e.where}</p>
+                <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3"><p className="font-mono text-[13px]">📍 {e.where}</p>{e.href && <EpochLink href={e.href} className="rounded-full bg-ink px-4 py-2 font-mono text-[13px] font-bold text-gold transition hover:-translate-y-0.5">Enter Epoch →</EpochLink>}</div>
               </article>
             </Reveal>
           ))}
