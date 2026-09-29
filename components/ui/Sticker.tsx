@@ -11,7 +11,7 @@ const DIECUT = "drop-shadow(2.5px 0 0 #fff) drop-shadow(-2.5px 0 0 #fff) drop-sh
 export function Sticker({ name, size = 120, tilt = 0, alt = "", className = "" }: { name: StickerName; size?: number; tilt?: number; alt?: string; className?: string }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={`/stickers/${name}.webp`} alt={alt} width={size} height={size} loading="lazy" draggable={false}
+    <img src={`/stickers/${name}${size <= 70 ? "-140" : size <= 120 ? "-240" : ""}.webp`} alt={alt} width={size} height={size} loading="lazy" draggable={false}
       style={{ width: size, height: size, objectFit: "contain", filter: DIECUT, transform: tilt ? `rotate(${tilt}deg)` : undefined }}
       className={`select-none ${className}`} />
   );

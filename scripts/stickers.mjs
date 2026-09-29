@@ -16,7 +16,10 @@ fs.mkdirSync(OUT, { recursive: true });
   for (const [name, file] of Object.entries(PICK)) {
     const src = path.join(SRC, file);
     if (!fs.existsSync(src)) { console.warn("missing", file); continue; }
-    await sharp(src).trim({ threshold: 1 }).resize(420, 420, { fit: "inside", withoutEnlargement: true }).webp({ quality: 86, alphaQuality: 90 }).toFile(path.join(OUT, name + ".webp"));
+    const base = sharp(src).trim({ threshold: 1 });
+    for (const [px, suffix] of [[420, ""], [240, "-240"], [140, "-140"]]) {
+      await base.clone().resize(px, px, { fit: "inside", withoutEnlargement: true }).webp({ quality: 86, alphaQuality: 90 }).toFile(path.join(OUT, name + suffix + ".webp"));
+    }
   }
   const kb = fs.readdirSync(OUT).reduce((s, f) => s + fs.statSync(path.join(OUT, f)).size, 0) / 1024;
   console.log(`${fs.readdirSync(OUT).length} stickers → ${OUT} (${kb.toFixed(0)} KB)`);
