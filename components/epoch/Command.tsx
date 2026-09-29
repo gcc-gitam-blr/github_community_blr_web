@@ -47,7 +47,6 @@ function Palette({ onClose }: { onClose: () => void }) {
   const ref = useRef<HTMLInputElement>(null);
   const hits = useMemo(() => search(q), [q]);
   useEffect(() => { ref.current?.focus(); }, []);
-  useEffect(() => setI(0), [q]);
 
   const go = (h?: Hit) => { if (!h) return; if (h.href) { onClose(); if (h.href.includes("#") && h.href.split("#")[0] === window.location.pathname) window.location.hash = h.href.split("#")[1]; else router.push(h.href); } };
   const onKey = (e: React.KeyboardEvent) => {
@@ -63,7 +62,7 @@ function Palette({ onClose }: { onClose: () => void }) {
           <span aria-hidden className="pointer-events-none absolute inset-x-[14%] -bottom-3 h-6 animate-[glow_6s_ease-in-out_infinite] rounded-full bg-[linear-gradient(90deg,#7aa8ff,#5eead4,#a78bfa)] opacity-70 blur-xl" />
           <div className="relative flex h-[72px] items-center gap-4 rounded-full border border-white/90 bg-white/85 pl-7 pr-3 shadow-[0_30px_80px_-30px_rgba(70,45,130,.6)] backdrop-blur-2xl">
             <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="flex-none text-mute" aria-hidden><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
-            <input ref={ref} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onKey} placeholder="Search booths, the plan… or ask “how much is VR?”" aria-label="Search" spellCheck={false} className="cmd-input min-w-0 flex-1 bg-transparent text-[19px] outline-none placeholder:text-mute/70" />
+            <input ref={ref} value={q} onChange={(e) => { setQ(e.target.value); setI(0); }} onKeyDown={onKey} placeholder="Search booths, the plan… or ask “how much is VR?”" aria-label="Search" spellCheck={false} className="cmd-input min-w-0 flex-1 bg-transparent text-[19px] outline-none placeholder:text-mute/70" />
             <kbd className={KEY}>esc</kbd>
             <Orb size={48} />
           </div>

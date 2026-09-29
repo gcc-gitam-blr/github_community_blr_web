@@ -17,6 +17,8 @@ export function EpochProvider({ children }: { children: React.ReactNode }) {
     setStore(s); setMe(await s.me()); setReady(true);
   }, []);
 
+  // initial load from the async store; state is set after an await, not synchronously
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void refresh(); }, [refresh]);
 
   return <EpochCtx.Provider value={{ store, me, ready, refresh }}>{children}</EpochCtx.Provider>;

@@ -40,6 +40,8 @@ function Studio() {
   useEffect(() => {
     const pm = new THREE.PMREMGenerator(gl);
     const env = pm.fromScene(new RoomEnvironment(), 0.04);
+    // three.js scene state, not React state — mutating it is the intended use
+    // eslint-disable-next-line react-hooks/immutability
     scene.environment = env.texture;
     return () => { scene.environment = null; env.dispose(); pm.dispose(); };
   }, [gl, scene]);

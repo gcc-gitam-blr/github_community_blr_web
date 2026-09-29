@@ -5,8 +5,8 @@ import { useEffect, useRef, useState } from "react";
 /** Camera QR scanner (html5-qrcode, loaded on demand). Calls onCode once per scan. */
 export function Scanner({ onCode, paused }: { onCode: (text: string) => void; paused?: boolean }) {
   const [err, setErr] = useState(""); const [starting, setStarting] = useState(true);
-  const cb = useRef(onCode); cb.current = onCode;
-  const pausedRef = useRef(paused); pausedRef.current = paused;
+  const cb = useRef(onCode); const pausedRef = useRef(paused);
+  useEffect(() => { cb.current = onCode; pausedRef.current = paused; }); // latest callbacks, updated after render
 
   useEffect(() => {
     let stop: (() => Promise<void>) | undefined; let dead = false;
