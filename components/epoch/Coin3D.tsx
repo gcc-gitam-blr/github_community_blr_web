@@ -1,6 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
-import { Component } from "react";
+import { Component, useEffect, useState } from "react";
 import { useClientValue } from "@/lib/useClientValue";
 import { EpochCoin } from "./EpochCoin";
 
@@ -23,10 +23,21 @@ class Boundary extends Component<{ fallback: React.ReactNode; children: React.Re
 /** The 3D coin. Falls back to the flat SVG coin when WebGL is unavailable or motion is reduced. */
 export function Coin3D({ size = 420 }: { size?: number }) {
   const ok = useClientValue(canRender3D, false);
+  // the flat coin shows first; the 3D engine only starts once the visitor interacts (moves, touches,
+  // scrolls or types), so it never competes with the page's first load
+  const [live, setLive] = useState(false);
+  useEffect(() => {
+    if (!ok) return;
+    const go = () => { setLive(true); off(); };
+    const evs = ["pointermove", "pointerdown", "wheel", "touchstart", "keydown", "scroll"] as const;
+    const off = () => evs.forEach((e) => window.removeEventListener(e, go));
+    evs.forEach((e) => window.addEventListener(e, go, { once: true, passive: true }));
+    return off;
+  }, [ok]);
   const flat = <EpochCoin size={size * 0.72} detail />;
   return (
     <div style={{ width: size, height: size }} className="grid place-items-center" aria-hidden>
-      {ok ? <Boundary fallback={flat}><Scene /></Boundary> : flat}
+      {ok && live ? <Boundary fallback={flat}><Scene /></Boundary> : flat}
     </div>
   );
 }
