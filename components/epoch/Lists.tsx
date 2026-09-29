@@ -4,14 +4,14 @@ import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
 import { Frame, Notice } from "./Frame";
 import { Coin, btnInk, btnSoft, field, glass, label } from "./Bits";
-import { BoothIndex } from "./home/BoothIndex";
+import { BoothSection } from "./home/BoothSection";
 import { useEpoch } from "./EpochProvider";
 import { qr } from "@/lib/epoch/store";
 import { BOOTHS, STARTER_COINS, EPOCH } from "@/lib/epoch/config";
 import type { Reward } from "@/lib/epoch/types";
 
 export function BoothsPage() {
-  return <Frame title="Where coins go." sub="Recharge points earn. Everything else spends."><BoothIndex /></Frame>;
+  return <Frame title="Where coins go." sub="Recharge points earn. Everything else spends."><BoothSection /></Frame>;
 }
 
 export function ShopPage() {
