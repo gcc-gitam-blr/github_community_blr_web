@@ -61,11 +61,19 @@ export function JoinCard() {
 
   return (
     <form onSubmit={submit} noValidate className="rounded-[18px] border border-line bg-white p-8 shadow-[0_30px_80px_-30px_rgba(11,11,15,.25)] md:p-10">
-      <div className="mb-6 flex items-center gap-[18px]">
-        <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-ink" aria-hidden>
-          <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M6 3v11M6 9c0 5 8 1 8 6M14 3v4M12 5h4" /></svg>
-        </span>
-        <h2 className="text-[34px]">Get started</h2>
+      {/* joining, as a pull request into the club */}
+      <div className="mb-6">
+        <div className="flex items-center gap-3">
+          <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-[#2ea043]" aria-hidden>
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="#fff"><path d="M1.5 3.25a2.25 2.25 0 113 2.122v5.256a2.251 2.251 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zm5.677-.177L9.573.677A.25.25 0 0110 .854V2.5h1A2.5 2.5 0 0113.5 5v5.628a2.251 2.251 0 11-1.5 0V5a1 1 0 00-1-1h-1v1.646a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354z" /></svg>
+          </span>
+          <h2 className="text-[30px]">Join the club <span className="font-sans text-[20px] font-normal text-ink-3">#new</span></h2>
+        </div>
+        <p className="mt-3 flex flex-wrap items-center gap-1.5 font-mono text-[12.5px] text-ink-3">
+          wants to merge into
+          <span className="rounded-md bg-[#ddf4ff] px-2 py-0.5 text-link">club:main</span>from
+          <span className="break-all rounded-md bg-[#ddf4ff] px-2 py-0.5 text-link">{handle.replace(/^@/, "") || "you"}:first-commit</span>
+        </p>
       </div>
       <div className="relative grid gap-1 before:absolute before:bottom-[30px] before:left-2 before:top-[30px] before:w-0.5 before:bg-line after:absolute after:left-2 after:top-[30px] after:w-0.5 after:bg-ink after:transition-all after:duration-500 after:[height:calc((100%-60px)*var(--f))]" style={{ "--f": fill / 100 } as React.CSSProperties}>
         {row("handle", handleOk, <>
@@ -84,7 +92,11 @@ export function JoinCard() {
         </>)}
       </div>
       <p role="status" aria-live="polite" className={`mb-5 ml-[34px] mt-3.5 min-h-[1.6em] text-[13.5px] ${hint.k === "bad" ? "text-red-600" : hint.k === "good" ? "font-semibold text-green-700" : "text-ink-3"}`}>{hint.t}</p>
-      <button disabled={busy} className="lift w-full rounded-md border-2 border-brand bg-brand py-5 font-display text-lg font-bold hover:border-ink">Join the club</button>
+      <p className={`mb-4 flex items-center gap-2 rounded-lg border px-3 py-2.5 text-[13.5px] ${steps.every(Boolean) ? "border-[#2ea043]/40 bg-[#dafbe1] text-[#1a7f37]" : "border-line bg-soft text-ink-3"}`}>
+        <span aria-hidden>{steps.every(Boolean) ? "✓" : "○"}</span>
+        {steps.every(Boolean) ? "All checks passed — able to merge." : `${steps.filter((s) => !s).length} of 3 checks pending`}
+      </p>
+      <button disabled={busy} className="lift w-full rounded-md border-2 border-ink bg-[#2ea043] py-5 font-display text-lg font-bold text-white">Merge pull request</button>
       <p className="mt-4 text-[13px] text-ink-3">We&apos;ll only use this to contact you about club events.</p>
     </form>
   );
