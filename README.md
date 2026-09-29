@@ -52,6 +52,10 @@ Set `githubOrg` in `lib/config.ts` and the Projects section lists your real repo
 
 `npm test` runs the economy rules against the demo store.
 
+## Epoch typeface
+
+Epoch is set in **Oddval Medium** ([Type Forward](https://typeforward.com/typefaces/oddval), licensed). Drop `Oddval-Medium.woff2` (or `.otf`/`.ttf`) into `public/fonts/` and the Epoch pages use it automatically; until then they fall back to Instrument Sans.
+
 ## Deploy
 
 Push to GitHub and import the repo on [Vercel](https://vercel.com) (add the env vars there).
