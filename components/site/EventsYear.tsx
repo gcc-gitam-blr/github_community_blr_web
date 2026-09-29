@@ -43,9 +43,9 @@ export function EventsYear() {
   const inYear = (d: Date) => d >= new Date(2026, 7, 1) && d <= new Date(2027, 6, 31);
 
   return (
-    <div className="grid gap-6">
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6">
       {/* the graph */}
-      <div className="rounded-[18px] border border-line bg-white p-5 sm:p-6">
+      <div className="min-w-0 rounded-[18px] border border-line bg-white p-5 sm:p-6">
         <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
           <p className="text-[15px]"><b className="font-display text-[20px]">{events.length} events</b> <span className="text-ink-3">in the {CLUB.year} academic year</span></p>
           <p className="font-mono text-[12px] text-ink-3">{CLUB.university}</p>
@@ -84,7 +84,7 @@ export function EventsYear() {
       </div>
 
       {/* selected event + the rest as compact rows */}
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_.9fr]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,.9fr)]">
         <article className={`relative overflow-hidden rounded-[18px] border-2 border-ink p-6 sm:p-8 ${sel.href ? "bg-[#fff6d6]" : "bg-white"}`} aria-live="polite">
           <Sticker name={sel.href ? "adventure" : "agenda"} size={96} tilt={8} className="absolute right-5 top-5 hidden sm:block" />
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-[13px] text-ink-3">

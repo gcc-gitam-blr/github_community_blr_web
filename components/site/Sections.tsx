@@ -24,7 +24,7 @@ const wrap = "mx-auto w-full max-w-[1240px] px-5 md:px-[clamp(20px,5vw,72px)]";
 export function About() {
   return (
     <section id="about" className={pad}>
-      <div className={`${wrap} grid items-center gap-[clamp(36px,6vw,88px)] lg:grid-cols-[1fr_1fr]`}>
+      <div className={`${wrap} grid grid-cols-[minmax(0,1fr)] items-center gap-[clamp(36px,6vw,88px)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]`}>
         <div>
           <Head tag="// about" title={<>A community that <em className="hl">commits</em> to each other.</>}>
             The GitHub Community Club at GITAM University Bengaluru exists for one reason: nobody should learn to code alone. Six events this year — from your first pull request to a full-scale technical month, Epoch — with a crew that helps every newcomer ship.
@@ -133,7 +133,7 @@ export function Team() {
 export function Faq() {
   return (
     <section id="faq" className={`${pad} bg-soft`}>
-      <div className={`${wrap} grid items-start gap-[clamp(36px,6vw,88px)] lg:grid-cols-[.8fr_1.4fr]`}>
+      <div className={`${wrap} grid grid-cols-[minmax(0,1fr)] items-start gap-[clamp(36px,6vw,88px)] lg:grid-cols-[minmax(0,.8fr)_minmax(0,1.4fr)]`}>
         <div className="lg:sticky lg:top-28">
           <Head tag="// faq" title="Questions, answered.">Closed issues from people who asked before you.</Head>
           <Sticker name="support" size={130} tilt={-6} className="hidden lg:block" alt="" />
@@ -148,7 +148,7 @@ export function Faq() {
 export function Join() {
   return (
     <section id="join" className="overflow-hidden border-t-2 border-ink bg-brand py-[clamp(64px,9vw,120px)]">
-      <div className={`${wrap} grid items-center gap-12 lg:grid-cols-[1.1fr_.9fr]`}>
+      <div className={`${wrap} grid grid-cols-[minmax(0,1fr)] items-center gap-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,.9fr)]`}>
         <Reveal>
           <h2 className="text-[clamp(44px,6.6vw,96px)] leading-[.95]">Your first commit is one click away<span className="animate-blink">&gt;_</span></h2>
           <p className="mt-6 max-w-[40ch] text-[19px] text-ink/80">Open a pull request into the club: who you are, and what you want to try first. We&apos;ll review it with a welcome.</p>
