@@ -2,6 +2,7 @@ import { Nav } from "@/components/site/Nav";
 import { Hero } from "@/components/site/Hero";
 import { About, Events, Faq, Join, Learn, Projects, Team } from "@/components/site/Sections";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { WhatIsGitHub } from "@/components/site/WhatIsGitHub";
 
 export default function Home() {
   return (
@@ -10,6 +11,7 @@ export default function Home() {
       <Nav />
       <main id="main">
         <Hero />
+        <WhatIsGitHub />
         <About />
         <Learn />
         <Events />
