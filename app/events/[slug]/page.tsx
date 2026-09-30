@@ -69,6 +69,9 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
             <div className="p-6 sm:p-8">
               <h2 className="text-[20px]">Release notes</h2>
               <p className="mt-3 max-w-[62ch] text-[17px] leading-relaxed text-ink-2">{e.text}</p>
+              {(e.luma || CLUB.lumaCalendar) && (
+                <a href={e.luma || CLUB.lumaCalendar} target="_blank" rel="noopener" className="mr-3 mt-6 inline-flex items-center gap-2 rounded-md bg-[#2ea043] px-5 py-3 font-display font-bold text-white">{e.luma ? "RSVP on Luma" : "See it on Luma"} ↗</a>
+              )}
               {e.href && (
                 <Link href={e.href} className="mt-6 inline-flex items-center gap-2 rounded-md bg-ink px-5 py-3 font-display font-bold text-[#ffc933]">Open Epoch →</Link>
               )}
