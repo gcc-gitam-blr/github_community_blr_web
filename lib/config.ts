@@ -10,7 +10,7 @@ export const CLUB = {
   name: "GitHub Community Club BLR",
   university: "GITAM University Bengaluru",
   year: "2026-27",
-  githubOrg: "", // e.g. "github-community-blr" — shows the Projects section with live repos
+  githubOrg: "github-community-gitam", // shows the Projects section with live repos
   githubUrl: "https://github.com",
 
   // Where "Join the club" sends people. Set ONE of these:
@@ -21,7 +21,17 @@ export const CLUB = {
   email: "",
 
   // Only add real links. Empty = the footer hides the row.
-  socials: [] as { label: string; href: string }[],
+  socials: [
+    { label: "Instagram", href: "https://www.instagram.com/github.gitamblr/" },
+    { label: "LinkedIn", href: "https://www.linkedin.com/company/githubcommunitygitam/" },
+  ] as { label: string; href: string }[],
+
+  // "What we do" on the About section
+  whatWeDo: [
+    { title: "Git & GitHub", text: "From your first commit to branches, pull requests and GitHub Actions — hands-on, at your own pace." },
+    { title: "Open source", text: "Find beginner-friendly issues, make real contributions, and learn how open-source teams work together." },
+    { title: "Workshops", text: "Practical sessions through the year: build and deploy projects, polish your profile, prepare for careers." },
+  ],
   // shown as a `git diff --stat`; keep these to real numbers
   stats: [
     { value: 6, file: "events/2026-27.md", label: "Events in 2026-27" },
