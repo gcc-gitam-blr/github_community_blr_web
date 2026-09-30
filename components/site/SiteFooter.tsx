@@ -6,6 +6,7 @@ import { EPOCH } from "@/lib/epoch/config";
 import { Sticker } from "@/components/ui/Sticker";
 import { scrollToTarget } from "@/components/ui/SmoothScroll";
 import { useClientValue } from "@/lib/useClientValue";
+import { SocialLinks } from "./SocialLinks";
 
 /* One footer for the whole site (club pages and Epoch). Links are only shown when they lead somewhere real. */
 const ORG = CLUB.githubOrg ? `${CLUB.githubUrl}/${CLUB.githubOrg}` : "";
@@ -57,8 +58,9 @@ export function SiteFooter({ sticker = true }: { sticker?: boolean }) {
               </svg>
               <span className="font-display text-[20px] font-bold tracking-tight">GitHub Community Club <span className="text-[#3fb950]">BLR</span></span>
             </Link>
-            <p className="mt-4 text-[15px] leading-relaxed text-[#9da7b3]">A student community at {CLUB.university}. Workshops, open source, and Epoch — our flagship technical month.</p>
+            <p className="mt-4 text-[15px] leading-relaxed text-[#9da7b3]">A student community at {CLUB.university}. We learn Git and GitHub, contribute to open source and run hands-on workshops.</p>
             <div className="mt-5"><NextUp /></div>
+            <div className="mt-6"><p className="mb-3 text-[13px] font-semibold text-[#e6edf3]">Follow the club</p><SocialLinks tone="dark" /></div>
           </div>
           <div className="w-full max-w-[380px] rounded-xl border border-[#30363d] bg-[#161b22] p-5">
             <p className="font-display text-[16px] font-semibold">Never miss an event</p>
