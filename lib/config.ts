@@ -21,7 +21,8 @@ export const CLUB = {
 
   // Events are published on Luma. Paste the club calendar link (e.g. "https://lu.ma/github-gitam")
   // to show "See all on Luma" buttons, and add `luma: "https://lu.ma/xyz"` to an event for its RSVP button.
-  lumaCalendar: "",
+  lumaCalendar: "https://luma.com/github_blr",
+  lumaEpochCalendar: "https://luma.com/epoch-gitam-blr",
   email: "",
 
   // Only add real links. Empty = the footer hides the row.
@@ -53,12 +54,12 @@ export const CLUB = {
     { id: "career", cmd: "git tag v1.0.0", shape: "square", color: "mint", title: "GitHub for careers", text: "Use GitHub for internships, placements and a portfolio that speaks for you." },
   ] as { id: string; cmd: string; shape: Shape; color: NodeColor; title: string; text: string }[],
   events: [
-    { date: "2026-10-05", type: "Workshop", title: "Learn GitHub & Make Your First Contribution", text: "Introduction to GitHub, repositories, commits, issues, pull requests — and your first contribution.", where: "GITAM Bengaluru", shape: "diamond", color: "blue" },
-    { date: "2026-10-12", type: "Open Source", title: "GIT Merge 26", text: "A GitHub and open-source event: learn Git, explore open source, make beginner-friendly contributions.", where: "GITAM Bengaluru", shape: "square", color: "purple" },
-    { date: "2026-12-01", dateLabel: "December 2026", type: "Flagship", title: "EPOCH — GitHub Technical Month", text: "The club's major technical event: challenges, project development, presentations, a project showcase — and the Epoch Coins economy.", where: "GITAM Bengaluru", shape: "triangle", color: "mint", href: "/epoch" },
-    { date: "2027-01-04", type: "Workshop", title: "Build & Deploy with GitHub", text: "Build a website, app or student project and publish it using GitHub and related tools.", where: "GITAM Bengaluru", shape: "ring", color: "blue" },
-    { date: "2027-02-08", type: "Workshop", title: "GitHub Profile Makeover", text: "Level up your profile, READMEs, repositories and project presentation for academic and professional use.", where: "GITAM Bengaluru", shape: "diamond", color: "purple" },
-    { date: "2027-03-15", type: "Career", title: "GitHub for Careers & Technical Challenge", text: "How GitHub helps with internships, placements and portfolios — followed by a technical challenge.", where: "GITAM Bengaluru", shape: "square", color: "mint" },
+    { date: "2026-10-05", type: "Workshop", title: "Learn GitHub & Make Your First Contribution", luma: "https://luma.com/exkd0eax", text: "Introduction to GitHub, repositories, commits, issues, pull requests — and your first contribution.", where: "GITAM Bengaluru", shape: "diamond", color: "blue" },
+    { date: "2026-10-12", type: "Open Source", title: "GIT Merge 26", luma: "https://luma.com/iztx970g", text: "A GitHub and open-source event: learn Git, explore open source, make beginner-friendly contributions.", where: "GITAM Bengaluru", shape: "square", color: "purple" },
+    { date: "2026-12-01", dateLabel: "December 2026", type: "Flagship", title: "EPOCH — GitHub Technical Month", luma: "https://luma.com/nxg57cad", text: "The club's major technical event: challenges, project development, presentations, a project showcase — and the Epoch Coins economy.", where: "GITAM Bengaluru", shape: "triangle", color: "mint", href: "/epoch" },
+    { date: "2027-01-04", type: "Workshop", title: "Build & Deploy with GitHub", luma: "https://luma.com/d74xiz76", text: "Build a website, app or student project and publish it using GitHub and related tools.", where: "GITAM Bengaluru", shape: "ring", color: "blue" },
+    { date: "2027-02-08", type: "Workshop", title: "GitHub Profile Makeover", luma: "https://luma.com/6y0tnxzm", text: "Level up your profile, READMEs, repositories and project presentation for academic and professional use.", where: "GITAM Bengaluru", shape: "diamond", color: "purple" },
+    { date: "2027-03-15", type: "Career", title: "GitHub for Careers & Technical Challenge", luma: "https://luma.com/a1bfax1o", text: "How GitHub helps with internships, placements and portfolios — followed by a technical challenge.", where: "GITAM Bengaluru", shape: "square", color: "mint" },
   ] as { date: string; dateLabel?: string; href?: string; luma?: string; type: string; title: string; text: string; where: string; shape: Shape; color: NodeColor }[],
   team: [] as { role: string; handle: string; note: string }[], // add real people: { role: "Club Lead", handle: "github-handle", note: "…" }
   faq: [
