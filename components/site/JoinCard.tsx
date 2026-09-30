@@ -99,7 +99,7 @@ export function JoinCard() {
           <span className="break-all rounded-md bg-[#ddf4ff] px-2 py-0.5 text-link">{cleanHandle(handle) || "you"}:first-commit</span>
         </p>
       </div>
-      <div className="relative grid gap-1 before:absolute before:bottom-[30px] before:left-2 before:top-[30px] before:w-0.5 before:bg-line after:absolute after:left-2 after:top-[30px] after:w-0.5 after:bg-ink after:transition-all after:duration-500 after:[height:calc((100%-60px)*var(--f))]" style={{ "--f": fill / 100 } as React.CSSProperties}>
+      <div className="relative grid grid-cols-[minmax(0,1fr)] gap-1 before:absolute before:bottom-[30px] before:left-2 before:top-[30px] before:w-0.5 before:bg-line after:absolute after:left-2 after:top-[30px] after:w-0.5 after:bg-ink after:transition-all after:duration-500 after:[height:calc((100%-60px)*var(--f))]" style={{ "--f": fill / 100 } as React.CSSProperties}>
         {row("handle", handleOk, <>
           <span className="sr-only">GitHub username</span><span className="-mr-2 text-ink-3">@</span>
           <input className={input} value={handle} onChange={(e) => onHandle(e.target.value)} placeholder="your-github-handle" autoComplete="off" spellCheck={false} />
@@ -109,7 +109,7 @@ export function JoinCard() {
         {row("email", emailOk, <><span className="sr-only">Email</span><input className={input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@college.edu" autoComplete="email" /></>)}
         {row("track", !!track, <>
           <span className="sr-only">What you want to try first</span>
-          <select className={`${input} cursor-pointer appearance-none ${track ? "" : "text-ink-3"}`} value={track} onChange={(e) => setTrack(e.target.value)}>
+          <select className={`${input} w-full cursor-pointer appearance-none truncate ${track ? "" : "text-ink-3"}`} value={track} onChange={(e) => setTrack(e.target.value)}>
             <option value="" disabled>What do you want to try first?</option>
             {CLUB.events.map((ev) => <option key={ev.date} value={ev.date}>{ev.title}</option>)}
           </select>
