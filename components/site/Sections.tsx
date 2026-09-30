@@ -1,11 +1,11 @@
 import { CLUB } from "@/lib/config";
 import { Reveal } from "@/components/ui/Reveal";
-import { DiffStat } from "./DiffStat";
 import { EventsYear } from "./EventsYear";
 import { FaqIssues } from "./FaqIssues";
 import { LearnPath } from "./LearnPath";
 import { StickerLid } from "./StickerLid";
 import { Sticker } from "@/components/ui/Sticker";
+import { SocialLinks } from "./SocialLinks";
 import { JoinCard } from "./JoinCard";
 
 export function Head({ tag, title, children, light = false }: { tag: string; title: React.ReactNode; children?: React.ReactNode; light?: boolean }) {
@@ -25,10 +25,20 @@ export function About() {
     <section id="about" className={pad}>
       <div className={`${wrap} grid grid-cols-[minmax(0,1fr)] items-center gap-[clamp(36px,6vw,88px)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]`}>
         <div>
-          <Head tag="// about" title={<>A community that <em className="hl">commits</em> to each other.</>}>
-            The GitHub Community Club at GITAM University Bengaluru exists for one reason: nobody should learn to code alone. Six events this year — from your first pull request to a full-scale technical month, Epoch — with a crew that helps every newcomer ship.
+          <Head tag="// about the club" title={<>A community that <em className="hl">commits</em> to each other.</>}>
+            We&apos;re the GitHub Community Club at GITAM University Bengaluru — students helping students learn the tools real software teams use. You don&apos;t need any experience: we start from the basics and build up together.
           </Head>
-          <Reveal delay={0.1}><DiffStat /></Reveal>
+          <Reveal delay={0.1}>
+            <p className="mb-4 font-mono text-[13px] text-ink-2">What we do</p>
+            <ul className="grid gap-3">
+              {CLUB.whatWeDo.map((w, i) => (
+                <li key={w.title} className="flex gap-4 rounded-[14px] border border-line bg-white p-4">
+                  <span className="grid h-10 w-10 flex-none place-items-center rounded-full border-2 border-ink font-mono text-[13px] font-bold" style={{ background: ["#b9e0f7", "#d9c8f7", "#bfeedd"][i] }}>{String(i + 1).padStart(2, "0")}</span>
+                  <div><h3 className="text-[19px]">{w.title}</h3><p className="mt-1 text-[15.5px] leading-snug text-ink-2">{w.text}</p></div>
+                </li>
+              ))}
+            </ul>
+          </Reveal>
         </div>
         <Reveal delay={0.1}><StickerLid /></Reveal>
       </div>
@@ -68,10 +78,11 @@ interface Repo { name: string; description: string | null; language: string | nu
 async function getRepos(): Promise<Repo[]> {
   if (!CLUB.githubOrg) return [];
   try {
-    const res = await fetch(`https://api.github.com/orgs/${CLUB.githubOrg}/repos?sort=updated&per_page=6`, { next: { revalidate: 3600 } });
+    const res = await fetch(`https://api.github.com/orgs/${CLUB.githubOrg}/repos?sort=updated&per_page=30`, { next: { revalidate: 3600 } });
     if (!res.ok) return [];
-    const j = (await res.json()) as { name: string; description: string | null; language: string | null; stargazers_count: number; html_url: string }[];
-    return j.map((r) => ({ name: r.name, description: r.description, language: r.language, stars: r.stargazers_count, url: r.html_url }));
+    const j = (await res.json()) as { name: string; description: string | null; language: string | null; stargazers_count: number; html_url: string; fork: boolean; archived: boolean }[];
+    // real projects only: no forks, archived repos or the org's .github settings repo
+    return j.filter((r) => !r.fork && !r.archived && !r.name.startsWith(".")).map((r) => ({ name: r.name, description: r.description, language: r.language, stars: r.stargazers_count, url: r.html_url }));
   } catch { return []; }
 }
 
@@ -81,7 +92,7 @@ export async function Projects() {
   return (
     <section id="projects" className={`${pad} bg-soft`}>
       <div className={wrap}>
-        <Head tag="// projects" title={<>Things we&apos;ve<br />actually shipped.</>}>Live from our GitHub organisation. Star one, fork one, break one.</Head>
+        <Head tag="// projects" title={<>Things we&apos;ve<br />actually shipped.</>}>Live from our GitHub organisation — the most recently updated. Star one, fork one, open a pull request.</Head>
         <ul className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {repos.slice(0, 6).map((r, i) => (
             <Reveal as="li" key={r.name} delay={(i % 3) * 0.08}>
@@ -96,6 +107,7 @@ export async function Projects() {
             </Reveal>
           ))}
         </ul>
+        <a href={`${CLUB.githubUrl}/${CLUB.githubOrg}`} target="_blank" rel="noopener" className="mt-8 inline-flex items-center gap-2 font-semibold text-link hover:underline">See all our repositories on GitHub →</a>
       </div>
     </section>
   );
@@ -151,6 +163,7 @@ export function Join() {
         <Reveal>
           <h2 className="text-[clamp(44px,6.6vw,96px)] leading-[.95]">Your first commit is one click away<span className="animate-blink">&gt;_</span></h2>
           <p className="mt-6 max-w-[40ch] text-[19px] text-ink/80">Open a pull request into the club: who you are, and what you want to try first. We&apos;ll review it with a welcome.</p>
+          <div className="mt-8"><p className="mb-3 font-mono text-[13px] text-ink">Or follow us for event updates:</p><SocialLinks /></div>
           <Sticker name="welcome" size={170} tilt={-5} className="mt-8 hidden lg:block" alt="" />
         </Reveal>
         <Reveal delay={0.1}><JoinCard /></Reveal>
