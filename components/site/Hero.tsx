@@ -24,9 +24,9 @@ export function Hero() {
           <div className="min-w-0">
             <p className="hero-fade mb-6 font-mono text-[13px] text-ink-2">GITAM University Bengaluru · GitHub Community Club</p>
             <div className="hero-rise" style={{ "--d": "0.05s" } as React.CSSProperties}>
-              <h1 className="text-[clamp(52px,7.4vw,108px)] leading-[0.94]">Learn.<br />Build.<br />Merge<span aria-hidden className="ml-[.1em] animate-blink tracking-[-0.08em]">&gt;_</span></h1>
+              <h1 className="text-[clamp(44px,6.4vw,94px)] leading-[0.94]">Code.<br />Collaborate.<br />Contribute<span aria-hidden className="ml-[.1em] animate-blink tracking-[-0.08em]">&gt;_</span></h1>
             </div>
-            <p className="hero-fade mt-8 max-w-[46ch] text-[clamp(18px,1.6vw,20px)] text-ink-2" style={{ "--d": "0.15s" } as React.CSSProperties}>A student community turning &ldquo;I want to code&rdquo; into pull requests, shipped projects and real open-source contributions — six events this year, and one flagship: Epoch.</p>
+            <p className="hero-fade mt-8 max-w-[46ch] text-[clamp(18px,1.6vw,20px)] text-ink-2" style={{ "--d": "0.15s" } as React.CSSProperties}>The GitHub Community Club at GITAM Bengaluru. We learn Git and GitHub together, contribute to open source, and run hands-on workshops — no experience needed.</p>
             <div className="hero-fade mt-9 flex flex-wrap items-center gap-8" style={{ "--d": "0.25s" } as React.CSSProperties}>
               <a href="#join" className="lift rounded-md border-2 border-ink bg-ink px-[26px] py-[15px] font-display font-bold text-white">Join the club</a>
               <a href="#events" className="group inline-flex items-center gap-2 font-semibold text-link">See what&apos;s next <span className="transition-transform group-hover:translate-x-1.5">→</span></a>

@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title: { default: "GitHub Community Club · GITAM Bengaluru", template: "%s · GitHub Community Club BLR" },
   description: "The GitHub Community Club at GITAM University Bengaluru. Workshops, open source and Epoch, our flagship technical event.",
-  openGraph: { title: "GitHub Community Club · GITAM Bengaluru", description: "Learn. Build. Merge. Six events this year and one flagship: Epoch.", type: "website", siteName: "GitHub Community Club BLR" },
+  openGraph: { title: "GitHub Community Club · GITAM Bengaluru", description: "Code. Collaborate. Contribute. Learn Git & GitHub, open source and hands-on workshops at GITAM Bengaluru.", type: "website", siteName: "GitHub Community Club BLR" },
   twitter: { card: "summary_large_image" },
   icons: { icon: "/favicon.svg" },
 };

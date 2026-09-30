@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 /* The preview card shown when the site link is shared (WhatsApp, LinkedIn, Discord…). */
-export const alt = "GitHub Community Club · GITAM Bengaluru — Learn. Build. Merge.";
+export const alt = "GitHub Community Club · GITAM Bengaluru — Code. Collaborate. Contribute.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -15,8 +15,8 @@ export default function OG() {
       <div style={{ width: "100%", height: "100%", display: "flex", background: "#ffffff", padding: 72, position: "relative", fontFamily: "sans-serif" }}>
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%" }}>
           <div style={{ display: "flex", fontSize: 26, color: "#3a3d44" }}>GITAM University Bengaluru · GitHub Community Club</div>
-          <div style={{ display: "flex", flexDirection: "column", fontSize: 128, fontWeight: 900, lineHeight: 0.95, letterSpacing: -4, color: "#0b0b0f" }}>
-            <span>Learn.</span><span>Build.</span><span>Merge&gt;_</span>
+          <div style={{ display: "flex", flexDirection: "column", fontSize: 104, fontWeight: 900, lineHeight: 0.95, letterSpacing: -4, color: "#0b0b0f" }}>
+            <span>Code.</span><span>Collaborate.</span><span>Contribute&gt;_</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 26 }}>
             <span style={{ background: "#0b0b0f", color: "#ffc933", padding: "8px 18px", borderRadius: 40, fontWeight: 700 }}>epoch_26</span>

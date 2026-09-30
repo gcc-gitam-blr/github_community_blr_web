@@ -1,6 +1,6 @@
 # GitHub Community Club BLR
 
-Website for the GitHub Community Club, Bengaluru — **Learn. Build. Merge.** — plus **Epoch**, our annual fest: registration, Epoch Coins, QR scanning, a shop and a live leaderboard.
+Website for the GitHub Community Club at GITAM University Bengaluru — **Code. Collaborate. Contribute.** — plus **Epoch**, our annual fest: registration, Epoch Coins, QR scanning, a shop and a live leaderboard.
 
 ## Stack
 
