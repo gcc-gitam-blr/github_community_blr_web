@@ -67,6 +67,7 @@ export function Events() {
       <div className={wrap}>
         <Head tag="// events · 2026-27" title={<>The year, as a<br />contribution graph.</>}>Every event is a green square. December is gold — that&apos;s Epoch. Pick a day to see what&apos;s on.</Head>
         <EventsYear />
+        {CLUB.lumaCalendar && <a href={CLUB.lumaCalendar} target="_blank" rel="noopener" className="mt-6 inline-flex items-center gap-2 font-semibold text-link hover:underline">See every event and RSVP on Luma ↗</a>}
       </div>
     </section>
   );
@@ -163,7 +164,8 @@ export function Join() {
         <Reveal>
           <h2 className="text-[clamp(44px,6.6vw,96px)] leading-[.95]">Your first commit is one click away<span className="animate-blink">&gt;_</span></h2>
           <p className="mt-6 max-w-[40ch] text-[19px] text-ink/80">Open a pull request into the club: who you are, and what you want to try first. We&apos;ll review it with a welcome.</p>
-          <div className="mt-8"><p className="mb-3 font-mono text-[13px] text-ink">Or follow us for event updates:</p><SocialLinks /></div>
+          {CLUB.joinUrl && <a href={CLUB.joinUrl} target="_blank" rel="noopener" className="lift mt-8 inline-flex items-center gap-2 rounded-md border-2 border-ink bg-white px-5 py-3 font-display font-bold">Join the WhatsApp community →</a>}
+          <div className="mt-8"><p className="mb-3 font-mono text-[13px] text-ink">Follow us for event updates:</p><SocialLinks /></div>
           <Sticker name="welcome" size={170} tilt={-5} className="mt-8 hidden lg:block" alt="" />
         </Reveal>
         <Reveal delay={0.1}><JoinCard /></Reveal>

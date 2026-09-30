@@ -65,7 +65,7 @@ export function JoinCard() {
     // no database connected yet: use the club's form link or email instead
     if (CLUB.joinUrl) {
       window.open(CLUB.joinUrl, "_blank", "noopener");
-      setHint({ t: `Almost done, @${h} — finish signing up in the tab that just opened.`, k: "good" });
+      setHint({ t: `Almost done, @${h} — join the club WhatsApp community in the tab that just opened.`, k: "good" });
     } else if (CLUB.email) {
       const body = `Hi! I'd like to join.\n\nGitHub: @${h}\nEmail: ${email}\nI want to try first: ${first}`;
       window.location.assign(`mailto:${CLUB.email}?subject=${encodeURIComponent("Join GitHub Community Club BLR")}&body=${encodeURIComponent(body)}`);
