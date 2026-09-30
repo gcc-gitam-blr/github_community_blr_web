@@ -68,6 +68,7 @@ export function Events() {
         <Head tag="// events · 2026-27" title={<>The year, as a<br />contribution graph.</>}>Every event is a green square. December is gold — that&apos;s Epoch. Pick a day to see what&apos;s on.</Head>
         <EventsYear />
         {CLUB.lumaCalendar && <a href={CLUB.lumaCalendar} target="_blank" rel="noopener" className="mt-6 inline-flex items-center gap-2 font-semibold text-link hover:underline">See every event and RSVP on Luma ↗</a>}
+        {CLUB.lumaEpochCalendar && <a href={CLUB.lumaEpochCalendar} target="_blank" rel="noopener" className="ml-6 mt-6 inline-flex items-center gap-2 font-semibold text-link hover:underline">Epoch on Luma ↗</a>}
       </div>
     </section>
   );
