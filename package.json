@@ -7,7 +7,8 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx tests/economy.test.ts && tsx tests/ask.test.ts && tsx tests/join.test.ts && tsx tests/email.test.ts && tsx tests/issues.test.ts && tsx tests/contact.test.ts && tsx tests/announcements.test.ts && tsx tests/feedback.test.ts && tsx tests/schema.test.ts"
+    "test": "tsx tests/economy.test.ts && tsx tests/ask.test.ts && tsx tests/join.test.ts && tsx tests/email.test.ts && tsx tests/issues.test.ts && tsx tests/contact.test.ts && tsx tests/announcements.test.ts && tsx tests/feedback.test.ts && tsx tests/schema.test.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@primer/octicons-react": "^19.38.0",
@@ -27,6 +28,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/mailparser": "^3.9.0",
     "@types/node": "^20",
