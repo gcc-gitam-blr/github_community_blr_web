@@ -6,7 +6,7 @@ import { defineConfig, devices } from "@playwright/test";
 const PORT = 3100;
 export default defineConfig({
   testDir: "./tests/e2e",
-  timeout: 45_000,
+  timeout: 60_000,
   expect: { timeout: 8_000 },
   fullyParallel: false, // the Epoch demo store lives in the browser; keep tests independent but orderly
   retries: process.env.CI ? 1 : 0,

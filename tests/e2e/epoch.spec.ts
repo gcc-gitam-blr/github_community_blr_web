@@ -78,7 +78,7 @@ test("the command bar answers a question about the VR booth", async ({ page }) =
   await page.getByRole("dialog").getByPlaceholder(/Search booths/).fill("how much is vr");
   await expect(page.getByRole("dialog").getByText("40 coins per session")).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("dialog")).toHaveCount(0, { timeout: 25_000 }); // the exit animation shares a thread with the 3D coin, which renders in software on CI
 });
 
 test("the booth groups show one group at a time", async ({ page }) => {
