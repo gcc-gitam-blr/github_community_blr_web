@@ -20,7 +20,7 @@ const settle = () => new Promise((r) => setTimeout(r, 300));
   const smtpPort = await new Promise<number>((r) => smtp.listen(0, "127.0.0.1", () => r((smtp.server.address() as AddressInfo).port)));
   const dbPort = await new Promise<number>((r) => fake.listen(0, "127.0.0.1", () => r((fake.address() as AddressInfo).port)));
   const { validateContact } = await import("../lib/contact");
-  const human = { startedAt: Date.now() - 20_000 };
+  const human = { elapsedMs: 20_000 };
   const good = { kind: "apply", name: "Ada Lovelace", email: "ada@gitam.in", handle: "@ada", message: "I'd love to help run events and design.", ...human };
 
   ok("a complete application is valid", validateContact(good) === null);
@@ -31,7 +31,7 @@ const settle = () => new Promise((r) => setTimeout(r, 300));
   ok("a 3001-character message is rejected", validateContact({ ...good, message: "x".repeat(3001) }) !== null);
   ok("a bad email is rejected", validateContact({ ...good, email: "ada@" }) !== null);
   ok("a filled honeypot is spam", validateContact({ ...good, website: "x" }) === "spam");
-  ok("an instant submit is spam", validateContact({ ...good, startedAt: Date.now() - 100 }) === "spam");
+  ok("an instant submit is spam", validateContact({ ...good, elapsedMs: 100 }) === "spam");
 
   Object.assign(process.env, { NEXT_PUBLIC_SITE_URL: "https://club.test", EMAIL_SECRET: "s" });
   const { POST } = await import("../app/api/contact/route");

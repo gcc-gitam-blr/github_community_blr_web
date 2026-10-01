@@ -16,7 +16,7 @@ export function ContactForm({ initial = "question" }: { initial?: Kind }) {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setErr("");
-    const input = { kind, ...v, website: honey.current?.value, startedAt: started.current };
+    const input = { kind, ...v, website: honey.current?.value, elapsedMs: started.current ? Date.now() - started.current : undefined };
     const bad = validateContact(input); if (bad && bad !== "spam") return setErr(bad);
     setState("sending");
     try {

@@ -9,12 +9,12 @@ export const KINDS = [
 ] as const;
 export type Kind = (typeof KINDS)[number]["id"];
 
-export interface ContactInput { kind: string; name: string; email: string; handle?: string; message: string; website?: string; startedAt?: number }
+export interface ContactInput { kind: string; name: string; email: string; handle?: string; message: string; website?: string; elapsedMs?: number }
 export type ContactResult = { ok: true } | { ok: false; error: string };
 
-export function validateContact(i: ContactInput, now = Date.now()): string | null {
+export function validateContact(i: ContactInput): string | null {
   if (i.website) return "spam"; // honeypot
-  if (i.startedAt && now - i.startedAt < MIN_FILL_MS) return "spam";
+  if (i.elapsedMs !== undefined && i.elapsedMs < MIN_FILL_MS) return "spam";
   if (!KINDS.some((k) => k.id === i.kind)) return "Pick what this is about.";
   const name = (i.name ?? "").trim();
   if (name.length < 2 || name.length > 80) return "Please enter your name.";

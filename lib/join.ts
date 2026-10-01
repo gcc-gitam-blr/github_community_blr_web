@@ -1,7 +1,7 @@
 import { CLUB } from "./config";
 
 /* Club sign-up rules, shared by the form (instant feedback) and the /api/join endpoint (the real check). */
-export interface JoinInput { handle: string; email: string; firstEvent: string; website?: string; startedAt?: number }
+export interface JoinInput { handle: string; email: string; firstEvent: string; website?: string; elapsedMs?: number /* time the visitor spent on the form */ }
 export type JoinResult = { ok: true; status: "created" | "exists" } | { ok: false; error: string; fallback?: boolean };
 
 export const HANDLE_RE = /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i; // GitHub's own username rule
@@ -10,9 +10,9 @@ export const MIN_FILL_MS = 2500; // humans take longer than this to fill three f
 
 export const cleanHandle = (h: string) => h.trim().replace(/^@/, "");
 
-export function validateJoin(i: JoinInput, now = Date.now()): string | null {
+export function validateJoin(i: JoinInput): string | null {
   if (i.website) return "spam"; // honeypot: a hidden field only bots fill in
-  if (i.startedAt && now - i.startedAt < MIN_FILL_MS) return "spam";
+  if (i.elapsedMs !== undefined && i.elapsedMs < MIN_FILL_MS) return "spam"; // measured in the browser, so a wrong device clock can't cause false alarms
   if (!HANDLE_RE.test(cleanHandle(i.handle ?? ""))) return "That doesn't look like a GitHub username.";
   if (!EMAIL_RE.test((i.email ?? "").trim())) return "That email doesn't look right.";
   if (!CLUB.events.some((e) => e.date === i.firstEvent)) return "Pick what you want to try first.";
