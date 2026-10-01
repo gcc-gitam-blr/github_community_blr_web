@@ -82,6 +82,13 @@ Things that are **empty until you fill them in** (the site hides them rather tha
 - **Dashboard wallet**: “Howdy” greeting, glass activity feed, Quick access column, left rail.
 - **Landing**: gradient headline, dark economy panel, colour-block booth categories that filter the list, dotted rules and a giant dotted call-to-action.
 
+## Photos (gallery)
+
+The home page shows a gallery once there are photos. To add them:
+1. Download the photos from Drive and put them on your computer in `photos-inbox/<event-name>/` — one folder per event (e.g. `photos-inbox/git-101-sept-2024/IMG_001.jpg`). Optional captions: `captions.json` in the folder, `{"IMG_001.jpg": "Mentors helping with a first pull request"}`.
+2. Run `node scripts/photos.mjs`. It fixes rotation, **removes hidden location/camera data**, makes three small WebP sizes, and fills `lib/gallery.json`.
+3. Commit `public/gallery` and `lib/gallery.json` (the raw `photos-inbox` is git-ignored). Only share photos of people who agreed.
+
 ## Stickers
 
 The Octodex stickers in `public/stickers` are generated from `public/GitHub_stickers` (47 MB, not committed) by `node scripts/stickers.mjs`. To use a different sticker, add it to the `PICK` list in that script and to `StickerName` in `components/ui/Sticker.tsx`.
