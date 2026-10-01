@@ -1,5 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import { cleanHandle, validateJoin, type JoinInput, type JoinResult } from "@/lib/join";
+import { sendEmail } from "@/lib/email/send";
+import { welcomeEmail } from "@/lib/email/templates";
+import { unsubscribeApiUrl, unsubscribeUrl } from "@/lib/email/token";
+import { EVENTS, eventDate, eventSlug } from "@/lib/events";
+import { SITE_URL } from "@/lib/site";
 
 /* POST /api/join — stores a club sign-up in Supabase (table join_requests).
    Without Supabase configured it answers { fallback: true } so the form can use joinUrl/email instead. */
@@ -33,5 +38,11 @@ export async function POST(req: Request) {
   const { error } = await db.from("join_requests").insert({ handle: cleanHandle(input.handle), email: input.email.trim().toLowerCase(), first_event: input.firstEvent });
   if (error?.code === "23505") return reply({ ok: true, status: "exists" }); // that email already signed up
   if (error) return reply({ ok: false, error: "Couldn't save that — please try again.", fallback: true }, 502);
+  // a welcome email, if email is set up. A failure here never fails the sign-up itself.
+  const email = input.email.trim().toLowerCase(), today = new Date().toISOString().slice(0, 10);
+  const first = EVENTS.find((e) => e.date === input.firstEvent), next = EVENTS.find((e) => e.date >= today);
+  const mail = welcomeEmail({ handle: cleanHandle(input.handle), firstEventTitle: first?.title, nextEvent: next && { title: next.title, date: eventDate(next), url: next.luma ?? `${SITE_URL}/events/${eventSlug(next)}` }, site: SITE_URL, unsubscribe: unsubscribeUrl(SITE_URL, email) });
+  const sent = await sendEmail(email, mail, { unsubscribe: unsubscribeApiUrl(SITE_URL, email) });
+  if (!sent.sent && sent.reason === "failed") console.error("welcome email failed:", sent.error);
   return reply({ ok: true, status: "created" }, 201);
 }

@@ -7,7 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx tests/economy.test.ts && tsx tests/ask.test.ts && tsx tests/join.test.ts && tsx tests/schema.test.ts"
+    "test": "tsx tests/economy.test.ts && tsx tests/ask.test.ts && tsx tests/join.test.ts && tsx tests/email.test.ts && tsx tests/schema.test.ts"
   },
   "dependencies": {
     "@primer/octicons-react": "^19.38.0",
@@ -19,6 +19,7 @@
     "lenis": "^1.3.26",
     "motion": "^13.4.6",
     "next": "16.3.7",
+    "nodemailer": "^10.0.13",
     "qrcode.react": "^4.2.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -27,12 +28,17 @@
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
     "@tailwindcss/postcss": "^4",
+    "@types/mailparser": "^3.9.0",
     "@types/node": "^20",
+    "@types/nodemailer": "^8.0.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/smtp-server": "^3.5.13",
     "@types/three": "^0.186.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.7",
+    "mailparser": "^3.9.33",
+    "smtp-server": "^3.19.16",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5"

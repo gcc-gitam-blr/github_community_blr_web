@@ -72,6 +72,14 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   ok("join_requests rejects an invalid GitHub handle", badHandle);
   let badEmail = false; try { await db.query("insert into join_requests (handle, email, first_event) values ('bob', 'not-an-email', '2026-10-07')"); } catch { badEmail = true; }
   ok("join_requests rejects an invalid email", badEmail);
+  // email: unsubscribe + broadcast log
+  await db.query("select unsubscribe_join('ADA@gitam.in')");
+  ok("unsubscribe_join marks the address unsubscribed, in any letter case", (await one<{ unsubscribed: boolean }>("select unsubscribed from join_requests where lower(email)='ada@gitam.in'")).unsubscribed === true);
+  await as(ORG);
+  await db.query("insert into broadcasts (sent_by, subject, recipients) values ($1, 'Hello everyone', 5)", [ORG]);
+  ok("an admin can log a broadcast", (await one<{ n: number }>("select count(*)::int n from broadcasts")).n === 1);
+  let tooShort = false; try { await db.query("insert into broadcasts (sent_by, subject, recipients) values ($1, 'x', 1)", [ORG]); } catch { tooShort = true; }
+  ok("a broadcast with a 1-letter subject is refused", tooShort);
 
   console.log(fails ? `\n${fails} FAILED` : "\nall schema checks passed"); process.exit(fails ? 1 : 0);
 })().catch((e) => { console.error("FAIL  crashed:", e.message); process.exit(1); });

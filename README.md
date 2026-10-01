@@ -92,6 +92,28 @@ The Octodex stickers in `public/stickers` are generated from `public/GitHub_stic
 - CI (`.github/workflows/ci.yml`) runs type-check, lint, tests and the build on every push and pull request.
 - `tests/e2e.epoch.mjs` — the whole coin flow clicked through the real pages (instructions at the top of the file).
 
+## Email: welcome message and organiser broadcasts
+
+When someone joins through the form, the site emails them a welcome (WhatsApp link, next event, what to do first).
+Admins can also email **every sign-up** from `/epoch/admin` → *Email everyone*. Every message carries a personal,
+signed unsubscribe link (and the one-click header Gmail shows as an "Unsubscribe" button).
+
+Epoch has **no passwords** — attendees sign in with GitHub — so there is no "forgot password" email to build.
+
+**Set it up with a Gmail account (free, about 5 minutes):**
+1. Use a club Gmail account (e.g. a shared one the core team controls) and turn on **2-Step Verification**.
+2. Go to <https://myaccount.google.com/apppasswords>, create an app password named "club website", copy the 16 letters.
+3. In Vercel → Settings → Environment Variables, add (Production, Preview, Development):
+   - `EMAIL_FROM` = `GitHub Community Club <your-club@gmail.com>`
+   - `SMTP_HOST` = `smtp.gmail.com`, `SMTP_PORT` = `465`
+   - `SMTP_USER` = `your-club@gmail.com`, `SMTP_PASS` = the 16-letter app password
+   - `EMAIL_SECRET` = any long random text
+4. In Supabase, re-run `supabase/schema.sql` (it only adds what's missing) and make yourself admin.
+5. Redeploy. Join the form once with your own email — the welcome should arrive within seconds.
+
+Gmail allows about 500 emails a day; the broadcast stops at 450 per send. For bigger lists, use Resend with a verified domain (`RESEND_API_KEY`).
+Without any of these settings the site works normally and just doesn't send email.
+
 ## Epoch typeface
 
 Epoch is set in **Oddval Medium** ([Type Forward](https://typeforward.com/typefaces/oddval), licensed). Drop `Oddval-Medium.woff2` (or `.otf`/`.ttf`) into `public/fonts/` and the Epoch pages use it automatically; until then they use Mona Sans.

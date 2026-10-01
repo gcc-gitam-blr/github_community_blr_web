@@ -198,3 +198,26 @@ alter table join_requests enable row level security;
 create policy "anyone can sign up" on join_requests for insert to anon, authenticated with check (true);
 create policy "staff read sign-ups" on join_requests for select using (my_role() in ('volunteer','admin'));
 grant insert on join_requests to anon, authenticated;
+
+-- ============================================================
+-- Email: welcome + organiser broadcasts (see lib/email, app/api/join, app/api/broadcast)
+-- ============================================================
+alter table join_requests add column if not exists unsubscribed boolean not null default false;
+
+-- Anyone with a valid signed link can unsubscribe (the site checks the signature before calling this).
+create or replace function unsubscribe_join(p_email text) returns void language sql security definer as $$
+  update join_requests set unsubscribed = true where lower(email) = lower(p_email);
+$$;
+grant execute on function unsubscribe_join(text) to anon, authenticated;
+
+-- A record of every broadcast: who sent what, to how many.
+create table if not exists broadcasts (
+  id bigint generated always as identity primary key,
+  sent_by uuid references profiles on delete set null,
+  subject text not null check (length(subject) between 3 and 200),
+  recipients int not null default 0,
+  created_at timestamptz not null default now()
+);
+alter table broadcasts enable row level security;
+create policy "staff read broadcasts" on broadcasts for select using (my_role() in ('volunteer','admin'));
+create policy "admins log broadcasts" on broadcasts for insert with check (my_role() = 'admin' and sent_by = auth.uid());
