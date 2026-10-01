@@ -7,6 +7,7 @@ import { Hero } from "./home/Hero";
 import { TicketPanel } from "./home/TicketPanel";
 import { BoothSection } from "./home/BoothSection";
 import { PlanList } from "./home/PlanList";
+import { Sponsors } from "./home/Sponsors";
 import { useEpoch } from "./EpochProvider";
 import { BOOTH_COUNT, REWARDS } from "@/lib/epoch/config";
 
@@ -61,6 +62,8 @@ export function EpochHome() {
           </ul>
         </div>
       </section>
+
+      <Sponsors />
 
       <section className="relative overflow-hidden bg-ink py-[clamp(80px,11vw,150px)] text-white">
         <div className={`${wrap} relative flex flex-col items-start gap-9`}>
