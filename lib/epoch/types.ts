@@ -71,4 +71,6 @@ export interface EpochStore {
   elevate?(code: string): Promise<Result>;
   /** staff, live (Supabase) mode only: club sign-ups from the home page */
   joinRequests?(): Promise<JoinRequest[]>;
+  /** admin, live mode only: email every subscribed sign-up */
+  broadcast?(subject: string, message: string): Promise<Result<{ sent: number; failed: number; total: number }>>;
 }
