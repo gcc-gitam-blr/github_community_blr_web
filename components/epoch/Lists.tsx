@@ -8,7 +8,7 @@ import { BoothSection } from "./home/BoothSection";
 import { useEpoch } from "./EpochProvider";
 import { qr } from "@/lib/epoch/store";
 import { BOOTHS, STARTER_COINS, EPOCH } from "@/lib/epoch/config";
-import type { ClubMessage, JoinRequest, Reward } from "@/lib/epoch/types";
+import type { ClubMessage, EventFeedback, JoinRequest, Reward } from "@/lib/epoch/types";
 import { KINDS } from "@/lib/contact";
 import { CLUB } from "@/lib/config";
 
@@ -93,6 +93,7 @@ export function AdminPage() {
     <Frame title="Organiser desk." sub={`Verify tickets (${STARTER_COINS} ${EPOCH.currency}, once), award prizes, and print the booth QR sheet.`} aside={<div className="no-print flex gap-2"><Link href="/epoch/scan" className={btnInk}>Scan a wallet</Link><button onClick={() => window.print()} className={btnSoft}>Print QR sheet</button></div>}>
       <SignUps />
       <Inbox />
+      <FeedbackSummary />
       <h2 className="no-print mb-4 mt-12 text-[28px] font-medium tracking-[-0.03em]">Booth QR codes</h2>
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 print:grid-cols-3">
         {printable.map((b) => (
@@ -196,6 +197,42 @@ function Inbox() {
               <p className="mt-2 whitespace-pre-wrap text-[15.5px] leading-relaxed">{m.message}</p>
             </li>
           ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/* Anonymous feedback from the event pages: average rating per event, and what people wrote. */
+function FeedbackSummary() {
+  const { store } = useEpoch();
+  const [rows, setRows] = useState<EventFeedback[] | null>(null);
+  useEffect(() => { store?.feedback?.().then(setRows); }, [store]);
+  if (!store?.feedback) return null;
+  const events = CLUB.events.map((e) => ({ e, list: (rows ?? []).filter((f) => f.event === e.date) })).filter((x) => x.list.length);
+  return (
+    <section className={`${glass} no-print mb-4 p-6 sm:p-8`}>
+      <h2 className="text-[28px] font-medium tracking-[-0.03em]">Event feedback</h2>
+      <p className={`${label} mb-4`}>Anonymous. Collected on each event&apos;s page after the date.</p>
+      {rows === null ? <p className="text-mute">Loading…</p> : events.length === 0 ? <p className="text-mute">No feedback yet.</p> : (
+        <ul className="space-y-6">
+          {events.map(({ e, list }) => {
+            const avg = list.reduce((s, f) => s + f.rating, 0) / list.length;
+            return (
+              <li key={e.date}>
+                <p className="flex flex-wrap items-baseline gap-x-3 text-[19px] font-medium">{e.title}<span className="text-[15px] font-normal text-mute">★ {avg.toFixed(1)} · {list.length} response{list.length === 1 ? "" : "s"}</span></p>
+                <ul className="mt-2 max-h-[220px] space-y-2 overflow-y-auto" data-lenis-prevent>
+                  {list.filter((f) => f.liked || f.improve).map((f) => (
+                    <li key={f.id} className="rounded-xl bg-ink/[.04] px-4 py-3 text-[14.5px] leading-relaxed">
+                      <span className="font-mono text-[12px] text-mute">{"★".repeat(f.rating)}</span>
+                      {f.liked && <p><b className="font-medium">Liked:</b> {f.liked}</p>}
+                      {f.improve && <p><b className="font-medium">Improve:</b> {f.improve}</p>}
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>
