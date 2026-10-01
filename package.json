@@ -7,7 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx tests/economy.test.ts && tsx tests/ask.test.ts && tsx tests/join.test.ts && tsx tests/email.test.ts && tsx tests/issues.test.ts && tsx tests/schema.test.ts"
+    "test": "tsx tests/economy.test.ts && tsx tests/ask.test.ts && tsx tests/join.test.ts && tsx tests/email.test.ts && tsx tests/issues.test.ts && tsx tests/contact.test.ts && tsx tests/schema.test.ts"
   },
   "dependencies": {
     "@primer/octicons-react": "^19.38.0",

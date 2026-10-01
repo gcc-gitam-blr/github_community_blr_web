@@ -25,11 +25,12 @@ const viaSmtp: Transport = async (to, mail, headers) => {
   await t.sendMail({ from: process.env.EMAIL_FROM, to, subject: mail.subject, html: mail.html, text: mail.text, headers });
 };
 
-export async function sendEmail(to: string, mail: Mail, opts: { unsubscribe?: string; transport?: Transport } = {}): Promise<SendResult> {
+export async function sendEmail(to: string, mail: Mail, opts: { unsubscribe?: string; replyTo?: string; transport?: Transport } = {}): Promise<SendResult> {
   const transport = opts.transport ?? (process.env.RESEND_API_KEY ? viaResend : process.env.SMTP_HOST ? viaSmtp : null);
   if (!transport || !(opts.transport || emailConfigured())) return { sent: false, reason: "not-configured" };
   // lets Gmail/Outlook show their own "Unsubscribe" button
   const headers: Record<string, string> = opts.unsubscribe ? { "List-Unsubscribe": `<${opts.unsubscribe}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } : {};
+  if (opts.replyTo) headers["Reply-To"] = opts.replyTo;
   try { await transport(to, mail, headers); return { sent: true }; }
   catch (e) { return { sent: false, reason: "failed", error: e instanceof Error ? e.message : String(e) }; }
 }

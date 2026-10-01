@@ -221,3 +221,21 @@ create table if not exists broadcasts (
 alter table broadcasts enable row level security;
 create policy "staff read broadcasts" on broadcasts for select using (my_role() in ('volunteer','admin'));
 create policy "admins log broadcasts" on broadcasts for insert with check (my_role() = 'admin' and sent_by = auth.uid());
+
+-- ============================================================
+-- "Get involved" messages: core-team applications, sponsors, speakers, questions.
+-- Anyone may send one (the site validates and rate-limits first); only staff can read them.
+-- ============================================================
+create table if not exists messages (
+  id bigint generated always as identity primary key,
+  kind text not null check (kind in ('apply','sponsor','speaker','question')),
+  name text not null check (length(name) between 2 and 80),
+  email text not null check (length(email) <= 254 and email ~ '^[^\s@]+@[^\s@]+\.[^\s@]+$'),
+  handle text check (handle is null or handle ~* '^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9])){0,38}$'),
+  message text not null check (length(message) between 10 and 3000),
+  created_at timestamptz not null default now()
+);
+alter table messages enable row level security;
+create policy "anyone can send a message" on messages for insert to anon, authenticated with check (true);
+create policy "staff read messages" on messages for select using (my_role() in ('volunteer','admin'));
+grant insert on messages to anon, authenticated;

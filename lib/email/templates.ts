@@ -57,6 +57,33 @@ ${wa ? button(wa, "Join the WhatsApp community") : ""}
   return { subject: "Welcome to the GitHub Community Club 🎉", html, text };
 }
 
+/** To the club inbox: someone used the Get involved form. */
+export function contactNotification(i: { kindLabel: string; name: string; email: string; handle?: string; message: string; site: string }): Mail {
+  const inner = `<h1 style="font-size:20px;margin:0 0 14px">New message: ${esc(i.kindLabel)}</h1>
+<p style="margin:0 0 4px"><b>${esc(i.name)}</b> · <a href="mailto:${esc(i.email)}" style="color:#0969da">${esc(i.email)}</a></p>
+${i.handle ? `<p style="margin:0 0 14px">GitHub: <a href="https://github.com/${esc(i.handle)}" style="color:#0969da">@${esc(i.handle)}</a></p>` : ""}
+<div style="white-space:pre-wrap;background:#f6f8fa;border-radius:8px;padding:14px 16px">${esc(i.message)}</div>
+<p style="color:#59636e;font-size:14px">Reply to this email to answer them directly.</p>`;
+  return { subject: `[${i.kindLabel}] ${i.name}`, html: frame(`${i.name} sent a message`, inner, i.site), text: `${i.kindLabel}
+From: ${i.name} <${i.email}>${i.handle ? `
+GitHub: @${i.handle}` : ""}
+
+${i.message}` };
+}
+
+/** To the sender: a short "we got it". */
+export function contactAck(i: { name: string; kindLabel: string; site: string }): Mail {
+  const first = i.name.trim().split(/s+/)[0];
+  const html = frame("We got your message", `<h1 style="font-size:22px;margin:0 0 12px">Thanks, ${esc(first)} — we got it.</h1>
+<p>Your message (<i>${esc(i.kindLabel)}</i>) reached the GitHub Community Club team. A real person will reply, usually within a few days.</p>
+<p>Meanwhile, our WhatsApp community is the quickest way to see what's happening.</p>
+${CLUB.joinUrl ? button(CLUB.joinUrl, "Join the WhatsApp community") : ""}
+<p style="margin-bottom:0">— The GitHub Community Club team</p>`, i.site);
+  return { subject: "We got your message", html, text: `Thanks, ${first} — we got your message (${i.kindLabel}). A real person will reply, usually within a few days.
+
+${CLUB.name} · ${i.site}` };
+}
+
 export interface BroadcastInput { subject: string; message: string; site: string; unsubscribe: string }
 
 /** A message from the organisers. Blank lines start new paragraphs; URLs become links. */

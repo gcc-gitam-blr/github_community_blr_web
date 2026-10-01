@@ -124,7 +124,7 @@ export function Team() {
   return (
     <section id="team" className={pad}>
       <div className={wrap}>
-        <Head tag="// core team" title="The maintainers.">Students like you, who decided to stop waiting and start organising.</Head>
+        <Head tag="// core team" title="The maintainers.">Students like you, who decided to stop waiting and start organising. <Link href="/get-involved?kind=apply" className="font-semibold text-link underline">Want to join them?</Link></Head>
         <ul className="grid gap-x-5 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
           {CLUB.team.map((m, i) => (
             <Reveal as="li" key={m.role} delay={i * 0.08} className="group">

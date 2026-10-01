@@ -80,6 +80,14 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   ok("an admin can log a broadcast", (await one<{ n: number }>("select count(*)::int n from broadcasts")).n === 1);
   let tooShort = false; try { await db.query("insert into broadcasts (sent_by, subject, recipients) values ($1, 'x', 1)", [ORG]); } catch { tooShort = true; }
   ok("a broadcast with a 1-letter subject is refused", tooShort);
+  // get-involved messages
+  await as(ADA);
+  await db.query("insert into messages (kind, name, email, handle, message) values ('apply','Ada','ada@gitam.in','ada','I would like to help run events.')");
+  ok("anyone can send a message", (await one<{ n: number }>("select count(*)::int n from messages")).n === 1);
+  let badKind = false; try { await db.query("insert into messages (kind, name, email, message) values ('spam','Ada','a@b.in','a long enough message')"); } catch { badKind = true; }
+  ok("an unknown message kind is refused", badKind);
+  let shortMsg = false; try { await db.query("insert into messages (kind, name, email, message) values ('question','Ada','a@b.in','hi')"); } catch { shortMsg = true; }
+  ok("a too-short message is refused", shortMsg);
 
   console.log(fails ? `\n${fails} FAILED` : "\nall schema checks passed"); process.exit(fails ? 1 : 0);
 })().catch((e) => { console.error("FAIL  crashed:", e.message); process.exit(1); });
