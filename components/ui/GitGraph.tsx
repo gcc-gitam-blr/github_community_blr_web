@@ -36,7 +36,7 @@ function edgePath(a: { x: number; y: number }, b: { x: number; y: number }, r = 
   return `M${a.x} ${a.y} V${ym - r} Q${a.x} ${ym} ${a.x + s * r} ${ym} H${b.x - s * r} Q${b.x} ${ym} ${b.x} ${ym + r} V${b.y}`;
 }
 
-export function GitGraph({ nodes, edges, dx = 82, dy = 100, pad = 44, className = "" }: { nodes: GNode[]; edges: [string, string][]; dx?: number; dy?: number; pad?: number; className?: string }) {
+export function GitGraph({ nodes, edges, dx = 82, dy = 100, pad = 44, className = "", decorative = false }: { nodes: GNode[]; edges: [string, string][]; dx?: number; dy?: number; pad?: number; className?: string; decorative?: boolean }) {
   const ref = useRef<SVGSVGElement>(null);
   const [seen, setSeen] = useState(false);
 
@@ -57,7 +57,7 @@ export function GitGraph({ nodes, edges, dx = 82, dy = 100, pad = 44, className 
         {paths.map((p, k) => <path key={k} d={p.d} pathLength={1} className="g-edge" style={{ "--i": p.i } as React.CSSProperties} />)}
       </g>
       {nodes.map((n) => (
-        <g key={n.id} className="g-node" transform={`translate(${pos[n.id].x} ${pos[n.id].y})`} style={{ "--i": n.row } as React.CSSProperties} tabIndex={0}>
+        <g key={n.id} className="g-node" transform={`translate(${pos[n.id].x} ${pos[n.id].y})`} style={{ "--i": n.row } as React.CSSProperties} tabIndex={decorative ? undefined : 0}>
           <g className="g-node__in">
             <circle r={22} fill={NODE_COLORS[n.color]} stroke="#0b0b0f" strokeWidth={4} />
             <Glyph shape={n.shape} />
