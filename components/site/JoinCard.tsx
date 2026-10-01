@@ -126,7 +126,7 @@ export function JoinCard() {
       </p>
       {/* honeypot: hidden from people, irresistible to bots */}
       <input ref={honeypot} name="website" tabIndex={-1} autoComplete="off" aria-hidden className="absolute -left-[9999px] h-0 w-0 opacity-0" />
-      <button disabled={busy || done} className="lift w-full rounded-md border-2 border-ink bg-[#2ea043] py-5 font-display text-lg font-bold text-white disabled:opacity-70">
+      <button disabled={busy || done} className="lift w-full rounded-md border-2 border-ink bg-[#1a7f37] py-5 font-display text-lg font-bold text-white disabled:opacity-70">
         {done ? "✓ Merged" : busy ? "Merging…" : "Merge pull request"}
       </button>
       <p className="mt-4 text-[13px] text-ink-3">We&apos;ll only use this to contact you about club events. <a href="/privacy" className="underline underline-offset-2">Privacy</a></p>
