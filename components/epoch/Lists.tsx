@@ -8,7 +8,8 @@ import { BoothSection } from "./home/BoothSection";
 import { useEpoch } from "./EpochProvider";
 import { qr } from "@/lib/epoch/store";
 import { BOOTHS, STARTER_COINS, EPOCH } from "@/lib/epoch/config";
-import type { JoinRequest, Reward } from "@/lib/epoch/types";
+import type { ClubMessage, JoinRequest, Reward } from "@/lib/epoch/types";
+import { KINDS } from "@/lib/contact";
 import { CLUB } from "@/lib/config";
 
 export function BoothsPage() {
@@ -91,6 +92,7 @@ export function AdminPage() {
   return (
     <Frame title="Organiser desk." sub={`Verify tickets (${STARTER_COINS} ${EPOCH.currency}, once), award prizes, and print the booth QR sheet.`} aside={<div className="no-print flex gap-2"><Link href="/epoch/scan" className={btnInk}>Scan a wallet</Link><button onClick={() => window.print()} className={btnSoft}>Print QR sheet</button></div>}>
       <SignUps />
+      <Inbox />
       <h2 className="no-print mb-4 mt-12 text-[28px] font-medium tracking-[-0.03em]">Booth QR codes</h2>
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 print:grid-cols-3">
         {printable.map((b) => (
@@ -165,6 +167,36 @@ function SignUps() {
             {result && <Notice kind={result.k}>{result.t}</Notice>}
           </div>
         </div>
+      )}
+    </section>
+  );
+}
+
+/* Messages from the "Get involved" form: core-team applications, sponsors, speakers, questions. */
+function Inbox() {
+  const { store } = useEpoch();
+  const [rows, setRows] = useState<ClubMessage[] | null>(null);
+  const [kind, setKind] = useState("all");
+  useEffect(() => { store?.messages?.().then(setRows); }, [store]);
+  if (!store?.messages) return null;
+  const kindLabel = (k: string) => KINDS.find((x) => x.id === k)?.label ?? k;
+  const shown = (rows ?? []).filter((m) => kind === "all" || m.kind === kind);
+  return (
+    <section className={`${glass} no-print mb-4 p-6 sm:p-8`}>
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div><h2 className="text-[28px] font-medium tracking-[-0.03em]">Messages</h2><p className={label}>From the “Get involved” page. Reply by email — they&apos;re also sent to the club inbox if email is set up.</p></div>
+        <div className="flex flex-wrap gap-2">{[["all", "All"], ...KINDS.map((k) => [k.id, k.label])].map(([id, l]) => <button key={id} onClick={() => setKind(id)} className={`rounded-full border px-3.5 py-1.5 text-[13px] ${kind === id ? "border-ink bg-ink text-white" : "border-hair"}`}>{l}</button>)}</div>
+      </div>
+      {rows === null ? <p className="text-mute">Loading…</p> : shown.length === 0 ? <p className="text-mute">No messages yet.</p> : (
+        <ul className="max-h-[420px] divide-y divide-hair overflow-y-auto" data-lenis-prevent>
+          {shown.map((m) => (
+            <li key={m.id} className="py-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-2"><p className="font-medium">{m.name} <span className="ml-2 rounded-full bg-ink/[.07] px-2.5 py-0.5 text-[12px] font-normal">{kindLabel(m.kind)}</span></p><span className="text-[13px] text-mute">{new Date(m.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span></div>
+              <p className="mt-0.5 text-[14px] text-mute"><a className="underline underline-offset-2" href={`mailto:${m.email}`}>{m.email}</a>{m.handle && <> · <a className="underline underline-offset-2" href={`https://github.com/${m.handle}`} target="_blank" rel="noopener">@{m.handle}</a></>}</p>
+              <p className="mt-2 whitespace-pre-wrap text-[15.5px] leading-relaxed">{m.message}</p>
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   );

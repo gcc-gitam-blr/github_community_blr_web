@@ -84,6 +84,11 @@ export const supabaseStore: EpochStore = {
     return (data ?? []).map((r) => ({ id: String(r.id), handle: r.handle, email: r.email, firstEvent: r.first_event, createdAt: r.created_at }));
   },
 
+  async messages() {
+    const { data } = await sb().from("messages").select("*").order("created_at", { ascending: false }).limit(500);
+    return (data ?? []).map((m) => ({ id: String(m.id), kind: m.kind, name: m.name, email: m.email, handle: m.handle ?? "", message: m.message, createdAt: m.created_at }));
+  },
+
   async broadcast(subject, message) {
     const { data: { session } } = await sb().auth.getSession();
     if (!session) return fail("Sign in first.");
