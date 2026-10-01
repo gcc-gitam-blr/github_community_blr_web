@@ -99,7 +99,7 @@ const settle = () => new Promise((r) => setTimeout(r, 300));
   const { POST: join } = await import("../app/api/join/route");
   const { POST: broadcast } = await import("../app/api/broadcast/route");
   const { POST: unsub } = await import("../app/api/unsubscribe/route");
-  const human = { startedAt: Date.now() - 20_000 };
+  const human = { elapsedMs: 20_000 };
 
   inbox.length = 0;
   let r = await join(postJson("http://x/api/join", { handle: "ada", email: "Ada@Gitam.in", firstEvent: "2026-10-07", ...human }, { "x-forwarded-for": "9.9.9.1" }));

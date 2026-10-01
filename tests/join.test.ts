@@ -4,7 +4,7 @@ import { POST } from "../app/api/join/route";
 
 let fails = 0; const ok = (n: string, c: boolean) => { console.log((c ? "PASS" : "FAIL") + "  " + n); if (!c) fails++; };
 const EVENT = "2026-10-07";
-const good = { handle: "ada", email: "ada@gitam.in", firstEvent: EVENT, startedAt: Date.now() - 10_000 };
+const good = { handle: "ada", email: "ada@gitam.in", firstEvent: EVENT, elapsedMs: 10_000 };
 const post = (body: unknown, ip = "1.1.1.1") => POST(new Request("http://x/api/join", { method: "POST", headers: { "content-type": "application/json", "x-forwarded-for": ip }, body: JSON.stringify(body) }));
 
 (async () => {
@@ -15,7 +15,7 @@ const post = (body: unknown, ip = "1.1.1.1") => POST(new Request("http://x/api/j
   ok("a bad email is rejected", validateJoin({ ...good, email: "ada@" }) !== null);
   ok("an event that isn't on the calendar is rejected", validateJoin({ ...good, firstEvent: "2030-01-01" }) !== null);
   ok("a filled honeypot is flagged as spam", validateJoin({ ...good, website: "http://spam" }) === "spam");
-  ok(`a form filled in under ${MIN_FILL_MS} ms is flagged as spam`, validateJoin({ ...good, startedAt: Date.now() - 200 }) === "spam");
+  ok(`a form filled in under ${MIN_FILL_MS} ms is flagged as spam`, validateJoin({ ...good, elapsedMs: 200 }) === "spam");
 
   let r = await post({ ...good, email: "nope" }, "2.2.2.2");
   ok("endpoint rejects invalid input with 422", r.status === 422 && (await r.json()).ok === false);
