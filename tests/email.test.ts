@@ -39,6 +39,7 @@ const listen = (s: { listen: (p: number, h: string, cb: () => void) => unknown; 
 
 const postJson = (url: string, body: unknown, headers: Record<string, string> = {}) => new Request(url, { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) });
 const raw = (m: ParsedMail, name: string) => m.headerLines.find((h) => h.key === name)?.line.split(":").slice(1).join(":").trim() ?? "";
+const toOf = (m: ParsedMail) => (m.to && !Array.isArray(m.to) ? m.to.text : "");
 const settle = () => new Promise((r) => setTimeout(r, 300));
 
 (async () => {
@@ -75,7 +76,7 @@ const settle = () => new Promise((r) => setTimeout(r, 300));
   Object.assign(process.env, { EMAIL_FROM: "GitHub Community Club <club@test>", SMTP_HOST: "127.0.0.1", SMTP_PORT: String(smtpPort), SMTP_USER: "club@test", SMTP_PASS: "app-password" });
   const r1 = await sendEmail("ada@gitam.in", w, { unsubscribe: "https://club.test/api/unsubscribe?e=a" });
   ok("SMTP: an email is delivered", r1.sent && inbox.length === 1);
-  ok("SMTP: subject, sender and recipient are right", inbox[0]?.subject?.startsWith("Welcome to the GitHub Community Club") === true && inbox[0].to && "text" in inbox[0].to && inbox[0].to.text === "ada@gitam.in" && inbox[0].from?.text.includes("club@test") === true);
+  ok("SMTP: subject, sender and recipient are right", inbox[0]?.subject?.startsWith("Welcome to the GitHub Community Club") === true && toOf(inbox[0]) === "ada@gitam.in" && inbox[0].from?.text.includes("club@test") === true);
   ok("SMTP: has HTML and text parts and List-Unsubscribe headers", !!inbox[0]?.html && !!inbox[0].text && raw(inbox[0], "list-unsubscribe").includes("/api/unsubscribe") && raw(inbox[0], "list-unsubscribe-post") === "List-Unsubscribe=One-Click");
   process.env.SMTP_PASS = "wrong";
   const bad = await sendEmail("ada@gitam.in", w);
@@ -83,11 +84,11 @@ const settle = () => new Promise((r) => setTimeout(r, 300));
   process.env.SMTP_PASS = "app-password";
 
   // --- Resend path (fetch is mocked) ---
-  const realFetch = globalThis.fetch; let resendCall: { url: string; body: Record<string, unknown>; auth: string } | null = null;
+  const realFetch = globalThis.fetch; const resend: { url: string; body: Record<string, unknown>; auth: string }[] = [];
   delete process.env.SMTP_HOST; process.env.RESEND_API_KEY = "re_test";
-  globalThis.fetch = (async (u: string, init: RequestInit) => { resendCall = { url: String(u), body: JSON.parse(String(init.body)), auth: String((init.headers as Record<string, string>).Authorization) }; return new Response("{}", { status: 200 }); }) as typeof fetch;
+  globalThis.fetch = (async (u: string, init: RequestInit) => { resend.push({ url: String(u), body: JSON.parse(String(init.body)), auth: String((init.headers as Record<string, string>).Authorization) }); return new Response("{}", { status: 200 }); }) as typeof fetch;
   const r2 = await sendEmail("ada@gitam.in", w, { unsubscribe: "https://club.test/x" });
-  ok("Resend: posts to the API with the key and the right fields", r2.sent && resendCall?.url === "https://api.resend.com/emails" && resendCall.auth === "Bearer re_test" && resendCall.body.to === "ada@gitam.in" && !!resendCall.body.html);
+  ok("Resend: posts to the API with the key and the right fields", r2.sent && resend[0]?.url === "https://api.resend.com/emails" && resend[0].auth === "Bearer re_test" && resend[0].body.to === "ada@gitam.in" && !!resend[0].body.html);
   globalThis.fetch = (async () => new Response("nope", { status: 403 })) as typeof fetch;
   const r3 = await sendEmail("ada@gitam.in", w);
   ok("Resend: an API error is reported, not thrown", !r3.sent && r3.reason === "failed");
@@ -104,7 +105,7 @@ const settle = () => new Promise((r) => setTimeout(r, 300));
   let r = await join(postJson("http://x/api/join", { handle: "ada", email: "Ada@Gitam.in", firstEvent: "2026-10-07", ...human }, { "x-forwarded-for": "9.9.9.1" }));
   await settle();
   ok("join: a new sign-up is stored and answered 201", r.status === 201 && db.joins.length === 1 && db.joins[0].email === "ada@gitam.in");
-  ok("join: exactly one welcome email arrives, addressed to them", inbox.length === 1 && inbox[0].to && "text" in inbox[0].to && inbox[0].to.text === "ada@gitam.in");
+  ok("join: exactly one welcome email arrives, addressed to them", inbox.length === 1 && toOf(inbox[0]) === "ada@gitam.in");
   ok("join: the welcome mentions their handle and chosen first event", inbox[0]?.text?.includes("@ada") === true && inbox[0].text.includes("Learn GitHub & Make Your First Contribution"));
   const link = inbox[0]?.text?.match(/Unsubscribe: (\S+)/)?.[1] ?? "";
   ok("join: the unsubscribe link in the email is signed and valid", verifyToken("ada@gitam.in", new URL(link).searchParams.get("t") ?? ""));
