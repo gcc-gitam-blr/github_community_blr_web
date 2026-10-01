@@ -32,6 +32,10 @@ export const CLUB = {
     { label: "WhatsApp", href: "https://chat.whatsapp.com/K1F5XOMfRavHEduanpxtSg" },
   ] as { label: string; href: string }[],
 
+  // A message shown above the site header (dismissible). Remove it, or let `until` pass, to hide it.
+  // Example: { id: "git-merge", text: "GIT Merge 26 is this Monday — RSVP on Luma", href: "https://luma.com/iztx970g", from: "2026-10-05", until: "2026-10-12" }
+  announcements: [] as { id: string; text: string; href?: string; from?: string; until?: string }[],
+
   // "What we do" on the About section
   whatWeDo: [
     { title: "Git & GitHub", text: "From your first commit to branches, pull requests and GitHub Actions — hands-on, at your own pace." },

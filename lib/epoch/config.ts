@@ -31,6 +31,10 @@ export const EPOCH = {
   organiserCode: process.env.NEXT_PUBLIC_EPOCH_ORGANISER_CODE || "epoch-admin", // demo mode only
 };
 
+/* Epoch sponsors. Empty until the club has some; the section then appears on the Epoch page.
+   { name: "Acme", url: "https://acme.example", logo: "/sponsors/acme.svg" (optional), tier: "Gold" } */
+export const SPONSORS = [] as { name: string; url: string; logo?: string; tier?: string }[];
+
 export const STARTER_COINS = EPOCH.starterCoins;
 /** "₹199" once decided, otherwise "To be announced". */
 export const priceLabel = () => (EPOCH.ticketPriceINR ? `₹${EPOCH.ticketPriceINR}` : "To be announced");
