@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CLUB } from "@/lib/config";
 import { Reveal } from "@/components/ui/Reveal";
 import { EventsYear } from "./EventsYear";
@@ -56,6 +57,7 @@ export function Learn() {
           <Sticker name="professor" size={150} tilt={6} className="mb-12 hidden md:block" alt="" />
         </div>
         <LearnPath />
+        <p className="mt-12 flex flex-wrap gap-x-8 gap-y-2 text-[17px]"><Link href="/learn" className="font-semibold text-link hover:underline">Free resources &amp; a Git cheat sheet →</Link><Link href="/contribute" className="font-semibold text-link hover:underline">Find a beginner-friendly issue →</Link></p>
       </div>
     </section>
   );
