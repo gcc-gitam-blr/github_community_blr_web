@@ -123,17 +123,18 @@ export function Team() {
     <section id="team" className={pad}>
       <div className={wrap}>
         <Head tag="// core team" title="The maintainers.">Students like you, who decided to stop waiting and start organising.</Head>
-        <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <ul className="grid gap-x-5 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
           {CLUB.team.map((m, i) => (
             <Reveal as="li" key={m.role} delay={i * 0.08} className="group">
               <div className={`grid aspect-square place-items-center overflow-hidden rounded-[18px] border-2 border-ink transition duration-500 group-hover:-translate-x-1 group-hover:-translate-y-1 group-hover:-rotate-[1.5deg] group-hover:shadow-[8px_8px_0_#0b0b0f] ${bg[i % 4]}`}>
                 {m.handle
                   // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={`https://github.com/${m.handle}.png?size=400`} alt={`${m.role} @${m.handle}`} loading="lazy" className="h-full w-full object-cover" />
+                  ? <img src={`https://github.com/${m.handle}.png?size=400`} alt={`${m.name}, ${m.role}`} loading="lazy" className="h-full w-full object-cover" />
                   : <svg viewBox="0 0 40 40" className="w-[46%]" fill="none" stroke="#0b0b0f" strokeWidth="3" strokeLinecap="round"><circle cx="20" cy="14" r="7" /><path d="M6 36c1-8 7-12 14-12s13 4 14 12" /></svg>}
               </div>
-              <h3 className="mb-1 mt-[18px] text-2xl">{m.role}</h3>
-              {m.handle && <a href={`https://github.com/${m.handle}`} className="font-mono text-[13px] text-link">@{m.handle}</a>}
+              <h3 className="mb-1 mt-[18px] text-2xl">{m.name}</h3>
+              <p className="font-mono text-[13px] text-ink-2">{m.role}</p>
+              {m.handle && <a href={`https://github.com/${m.handle}`} target="_blank" rel="noopener" className="font-mono text-[13px] text-link hover:underline">@{m.handle}</a>}
               <p className="mt-2 text-[15px] text-ink-2">{m.note}</p>
             </Reveal>
           ))}

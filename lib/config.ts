@@ -61,7 +61,18 @@ export const CLUB = {
     { date: "2027-02-08", type: "Workshop", title: "GitHub Profile Makeover", luma: "https://luma.com/6y0tnxzm", text: "Level up your profile, READMEs, repositories and project presentation for academic and professional use.", where: "GITAM Bengaluru", shape: "diamond", color: "purple" },
     { date: "2027-03-15", type: "Career", title: "GitHub for Careers & Technical Challenge", luma: "https://luma.com/a1bfax1o", text: "How GitHub helps with internships, placements and portfolios — followed by a technical challenge.", where: "GITAM Bengaluru", shape: "square", color: "mint" },
   ] as { date: string; dateLabel?: string; href?: string; luma?: string; type: string; title: string; text: string; where: string; shape: Shape; color: NodeColor }[],
-  team: [] as { role: string; handle: string; note: string }[], // add real people: { role: "Club Lead", handle: "github-handle", note: "…" }
+  // PLACEHOLDER NAMES — swap for the real core team. `handle` is a GitHub username (its avatar and
+  // link appear automatically); leave it "" to show a neutral silhouette and no link.
+  team: [
+    { name: "Aarav Menon", role: "Club Lead", handle: "", note: "Sets the direction, keeps the club running, and says yes to good ideas." },
+    { name: "Diya Raman", role: "Tech Lead", handle: "", note: "Reviews pull requests and looks after this website." },
+    { name: "Kabir Nair", role: "Events Lead", handle: "", note: "Plans the workshops, books the rooms, and runs the day." },
+    { name: "Meera Iyer", role: "Open Source Lead", handle: "", note: "Finds first issues and mentors first pull requests." },
+    { name: "Rohan Das", role: "Community Lead", handle: "", note: "Welcomes every newcomer and runs the WhatsApp community." },
+    { name: "Ananya Rao", role: "Design Lead", handle: "", note: "Makes everything the club ships look and feel good." },
+    { name: "Ishaan Gupta", role: "Outreach Lead", handle: "", note: "Connects the club with other clubs, speakers and sponsors." },
+    { name: "Sana Khan", role: "Content Lead", handle: "", note: "Writes the posts, recaps and guides." },
+  ] as { name: string; role: string; handle: string; note: string }[],
   faq: [
     { q: "What is Epoch?", a: "Our flagship technical event in December: two days of workshops, coding competitions and 20+ interactive booths — run on its own currency, Epoch Coins." },
     { q: "How do Epoch Coins work?", a: "Everyone starts with 398 Epoch Coins, credited at check-in. Spend them at booths and on merch, and top up at recharge points. The ticket price (if any) hasn't been decided yet." },
