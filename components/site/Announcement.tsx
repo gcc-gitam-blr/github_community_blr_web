@@ -20,7 +20,7 @@ export function Announcement() {
   if (!a || gone.includes(a.id) || dismissed.split(",").includes(a.id)) return null;
   const dismiss = () => { setGone((g) => [...g, a.id]); try { localStorage.setItem(KEY, JSON.stringify([...seen(), a.id])); } catch { /* storage blocked */ } };
   return (
-    <div role="region" aria-label="Announcement" className={`flex items-center justify-center gap-3 bg-[#2ea043] px-4 py-2 text-center text-[13.5px] font-medium text-white`}>
+    <div role="region" aria-label="Announcement" className={`flex items-center justify-center gap-3 bg-[#1a7f37] px-4 py-2 text-center text-[13.5px] font-medium text-white`}>
       {a.href ? <a href={a.href} target={a.href.startsWith("http") ? "_blank" : undefined} rel="noopener" className="underline-offset-4 hover:underline">{a.text} →</a> : <span>{a.text}</span>}
       <button onClick={dismiss} aria-label="Dismiss announcement" className="grid h-6 w-6 flex-none place-items-center rounded-full hover:bg-white/20"><XIcon size={14} /></button>
     </div>

@@ -32,7 +32,7 @@ export function Hero() {
               <a href="#events" className="group inline-flex items-center gap-2 font-semibold text-link">See what&apos;s next <span className="transition-transform group-hover:translate-x-1.5">→</span></a>
             </div>
           </div>
-          <div aria-hidden className="hidden justify-self-center lg:block"><GitGraph nodes={NODES} edges={EDGES} className="max-h-[560px] w-full min-w-[230px]" /></div>
+          <div aria-hidden className="hidden justify-self-center lg:block"><GitGraph decorative nodes={NODES} edges={EDGES} className="max-h-[560px] w-full min-w-[230px]" /></div>
         </div>
       </section>
 

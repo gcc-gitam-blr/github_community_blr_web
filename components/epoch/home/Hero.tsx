@@ -40,7 +40,7 @@ export function Hero() {
         <p className="font-mono text-[12.5px] text-mute">{EPOCH.dates}</p>
         <div className="hidden items-center gap-3 md:flex">
           <p className="text-right font-mono text-[12px] leading-tight text-mute">register on<br />your phone</p>
-          <div className="rounded-md bg-white p-1.5 shadow-sm"><QRCodeSVG value={url} size={52} level="L" /></div>
+          <div className="rounded-md bg-white p-1.5 shadow-sm"><QRCodeSVG title="QR code for the Epoch ticket link" value={url} size={52} level="L" /></div>
         </div>
       </div>
     </section>
