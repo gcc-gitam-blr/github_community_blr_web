@@ -31,14 +31,14 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
 
   await as(ADA);
   ok("a booth scan before the ticket is verified is refused", !(await call("scan_booth", ["vr"])).ok);
-  ok("an attendee can't verify tickets", !(await call("issue_ticket", [ADA, 199, 2])).ok);
+  ok("an attendee can't verify tickets", !(await call("issue_ticket", [ADA, 398])).ok);
   ok("an attendee can't award coins", !(await call("award_coins", [ADA, 1000, "free money"])).ok);
 
   await db.query("update profiles set role = 'admin' where id = $1", [ORG]);
   await as(ORG);
-  ok("organiser verifies the ticket", (await call("issue_ticket", [ADA, 199, 2])).ok);
-  ok("the ticket credits 398 (₹199 × 2)", (await coins(ADA)) === 398);
-  ok("a second verification is refused", !(await call("issue_ticket", [ADA, 199, 2])).ok && (await coins(ADA)) === 398);
+  ok("organiser verifies the ticket", (await call("issue_ticket", [ADA, 398])).ok);
+  ok("check-in credits the 398 starter coins", (await coins(ADA)) === 398);
+  ok("a second verification is refused", !(await call("issue_ticket", [ADA, 398])).ok && (await coins(ADA)) === 398);
 
   await as(ADA);
   const vr = await call("scan_booth", ["vr"]);
@@ -65,12 +65,12 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   ok("ledger has every movement", (await one<{ n: number }>("select count(*)::int n from txs where user_id = $1", [ADA])).n === 5);
 
   // club sign-ups
-  await db.query("insert into join_requests (handle, email, first_event) values ('ada', 'Ada@Gitam.in', '2026-10-05')");
+  await db.query("insert into join_requests (handle, email, first_event) values ('ada', 'Ada@Gitam.in', '2026-10-07')");
   let dup = false; try { await db.query("insert into join_requests (handle, email, first_event) values ('ada2', 'ada@gitam.in', '2026-10-12')"); } catch (e) { dup = (e as { code?: string }).code === "23505"; }
   ok("join_requests allows one sign-up per email (case-insensitive)", dup);
-  let badHandle = false; try { await db.query("insert into join_requests (handle, email, first_event) values ('-nope-', 'x@y.in', '2026-10-05')"); } catch { badHandle = true; }
+  let badHandle = false; try { await db.query("insert into join_requests (handle, email, first_event) values ('-nope-', 'x@y.in', '2026-10-07')"); } catch { badHandle = true; }
   ok("join_requests rejects an invalid GitHub handle", badHandle);
-  let badEmail = false; try { await db.query("insert into join_requests (handle, email, first_event) values ('bob', 'not-an-email', '2026-10-05')"); } catch { badEmail = true; }
+  let badEmail = false; try { await db.query("insert into join_requests (handle, email, first_event) values ('bob', 'not-an-email', '2026-10-07')"); } catch { badEmail = true; }
   ok("join_requests rejects an invalid email", badEmail);
 
   console.log(fails ? `\n${fails} FAILED` : "\nall schema checks passed"); process.exit(fails ? 1 : 0);

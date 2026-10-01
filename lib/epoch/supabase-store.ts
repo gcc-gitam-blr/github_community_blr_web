@@ -64,7 +64,7 @@ export const supabaseStore: EpochStore = {
   async rewards() { const { data } = await sb().from("rewards").select("*").order("cost"); return (data ?? []) as Reward[]; },
 
   async issueTicket(userId) {
-    const { data, error } = await sb().rpc("issue_ticket", { p_user: userId, p_price: EPOCH.ticketPriceINR, p_rate: EPOCH.coinsPerINR });
+    const { data, error } = await sb().rpc("issue_ticket", { p_user: userId, p_coins: EPOCH.starterCoins });
     if (error) return fail(error.message);
     if (!data.ok) return fail(data.error);
     const profile = await this.lookup(userId);

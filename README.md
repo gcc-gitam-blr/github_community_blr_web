@@ -64,7 +64,7 @@ Things that are **empty until you fill them in** (the site hides them rather tha
 
 ### How coins flow (from the original Epoch plan)
 
-- **Ticket → coins.** ₹199 (working price) × 2 = **398 EPC**. The attendee registers, pays, then shows their wallet QR at the registration desk; an organiser scans it and presses *Verify ticket*. Coins are credited once — a second attempt is refused.
+- **Check-in → coins.** Everyone gets **398 EPC** (`EPOCH.starterCoins`). The attendee registers, then shows their wallet QR at the registration desk; an organiser scans it and presses *Verify ticket*. Coins are credited once — a second attempt is refused. The ticket price is undecided (it may be free): set `EPOCH.ticketPriceINR` when it's fixed and the site will show it.
 - **Spend booths** (`epoch:b:<id>`) charge coins per session (VR = 40) and can be repeated, with a 20-second double-scan guard.
 - **Recharge points** pay **once per attendee, per point** (20 coins in the plan). The wallet shows how many are left.
 - **Merch stall** sells tees, hoodies and stickers for coins; stock is decremented atomically.

@@ -16,7 +16,7 @@ let fails = 0; const ok = (name:string, cond:boolean) => { console.log((cond?"PA
   ok("attendee cannot issue tickets", !(await s.issueTicket(ada)).ok);
 
   await s.register({handle:"org",name:"Org",email:"o@x.io"}); // log back in as organiser
-  const t = await s.issueTicket(ada); ok(`ticket credits ${STARTER_COINS} coins (₹${EPOCH.ticketPriceINR} × ${EPOCH.coinsPerINR})`, t.ok && t.profile.coins===398);
+  const t = await s.issueTicket(ada); ok(`check-in credits ${STARTER_COINS} coins`, t.ok && t.profile.coins===398);
   ok("ticket can only be issued once", !(await s.issueTicket(ada)).ok);
 
   await s.register({handle:"ada",name:"Ada",email:"a@x.io"});
