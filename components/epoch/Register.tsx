@@ -26,7 +26,7 @@ export function Register() {
   };
 
   return (
-    <Frame title="Get your ticket." sub={`Create a profile, pay ₹${EPOCH.ticketPriceINR}, and show your QR at the desk. ${STARTER_COINS} ${EPOCH.currency} land in your wallet.`}>
+    <Frame title="Get your ticket." sub={`Create a profile and show your QR at the registration desk. ${STARTER_COINS} ${EPOCH.currency} land in your wallet.`}>
       <form onSubmit={submit} noValidate className={`${glass} mx-auto max-w-[560px] space-y-6 p-8 sm:p-10`}>
         {me && <Notice kind="ok">You&apos;re already in as @{me.handle}. <Link className="underline" href="/epoch/wallet">Open wallet</Link></Notice>}
         {!remote && <label className="block"><span className={`${label} mb-2 block`}>GitHub handle</span><input className={field} value={f.handle} onChange={set("handle")} placeholder="@your-handle" autoComplete="off" /></label>}

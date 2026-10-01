@@ -77,7 +77,7 @@ export function Wallet() {
           </section>
 
           {offline && <div className="mt-4"><Notice kind="info">You&apos;re offline — this is your last saved pass. The QR still works at the desk; your balance updates when you&apos;re back online.</Notice></div>}
-          {!me.ticket && <div className="mt-4"><Notice kind="info">One step left: pay your ₹{EPOCH.ticketPriceINR} ticket{EPOCH.ticketUrl ? <> <a className="underline" href={EPOCH.ticketUrl} target="_blank" rel="noopener">here</a></> : " at the registration desk"} and show your QR. {STARTER_COINS} {EPOCH.currency} appear here within seconds.</Notice></div>}
+          {!me.ticket && <div className="mt-4"><Notice kind="info">One step left: {EPOCH.ticketUrl ? <><a className="underline" href={EPOCH.ticketUrl} target="_blank" rel="noopener">get your ticket here</a>, then show</> : "show"} your QR at the registration desk. {STARTER_COINS} {EPOCH.currency} appear here within seconds.</Notice></div>}
 
           {/* feed */}
           <div className="mt-5 space-y-3">
