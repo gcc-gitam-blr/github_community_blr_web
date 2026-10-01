@@ -125,7 +125,7 @@ export function JoinCard() {
       <button disabled={busy || done} className="lift w-full rounded-md border-2 border-ink bg-[#2ea043] py-5 font-display text-lg font-bold text-white disabled:opacity-70">
         {done ? "✓ Merged" : busy ? "Merging…" : "Merge pull request"}
       </button>
-      <p className="mt-4 text-[13px] text-ink-3">We&apos;ll only use this to contact you about club events.</p>
+      <p className="mt-4 text-[13px] text-ink-3">We&apos;ll only use this to contact you about club events. <a href="/privacy" className="underline underline-offset-2">Privacy</a></p>
     </form>
   );
 }

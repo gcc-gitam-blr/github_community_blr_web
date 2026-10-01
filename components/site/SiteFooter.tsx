@@ -97,6 +97,7 @@ export function SiteFooter({ sticker = true }: { sticker?: boolean }) {
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <span className="flex items-center gap-2"><MarkGithubIcon size={16} />© {new Date().getFullYear()} GitHub Community Club · {CLUB.university}</span>
             <Link href="/epoch" className="hover:text-[#4493f8]">{EPOCH.name}_{EPOCH.edition}</Link>
+            <Link href="/privacy" className="hover:text-[#4493f8]">Privacy</Link>
             <a href="/calendar.ics" download className="hover:text-[#4493f8]">Calendar (.ics)</a>
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
