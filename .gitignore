@@ -15,3 +15,7 @@ public/GitHub_stickers/
 
 # raw event photos stay on your computer; run `node scripts/photos.mjs` to publish processed ones
 photos-inbox/
+
+# Playwright output
+test-results/
+playwright-report/

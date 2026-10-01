@@ -96,7 +96,8 @@ The Octodex stickers in `public/stickers` are generated from `public/GitHub_stic
 ## Tests
 
 - `npm test` — the coin rules (demo store), the ask engine, club sign-ups (validator + `/api/join`), and the **real Supabase SQL** run inside PGlite (Postgres in WASM).
-- CI (`.github/workflows/ci.yml`) runs type-check, lint, tests and the build on every push and pull request.
+- `npm run test:e2e` — **browser tests** (Playwright): the whole Epoch coin flow, the offline wallet, the join/contact forms, security headers, and that no page scrolls sideways on a phone. Build first (`npm run build`); locally it uses your installed Edge.
+- CI (`.github/workflows/ci.yml`) runs type-check, lint, unit tests, the build and the browser tests on every push and pull request.
 - `tests/e2e.epoch.mjs` — the whole coin flow clicked through the real pages (instructions at the top of the file).
 
 ## Email: welcome message and organiser broadcasts

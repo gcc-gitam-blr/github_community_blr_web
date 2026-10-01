@@ -30,7 +30,6 @@ for (const dir of fs.readdirSync(INBOX, { withFileTypes: true }).filter((d) => d
   for (const [i, f] of files.entries()) {
     const id = `${event}-${String(i + 1).padStart(2, "0")}`;
     const input = sharp(path.join(INBOX, dir.name, f), { failOn: "none" }).rotate(); // .rotate() applies EXIF orientation; output has no metadata
-    const meta = await input.clone().metadata();
     for (const { w, s } of SIZES) await input.clone().resize({ width: w, withoutEnlargement: true }).webp({ quality: 80 }).toFile(path.join(OUT, event, `${i + 1}-${s}.webp`));
     const outMeta = await sharp(path.join(OUT, event, `${i + 1}-lg.webp`)).metadata();
     photos.push({ id, event, eventTitle: title(dir.name), index: i + 1, w: outMeta.width, h: outMeta.height, alt: captions[f] ?? `${title(dir.name)} — photo ${i + 1}`, caption: captions[f] ?? "" });
