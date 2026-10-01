@@ -6,6 +6,7 @@ import Link from "next/link";
 import { EpochLink } from "@/components/epoch/EpochLink";
 import { eventSlug } from "@/lib/events";
 import { Sticker } from "@/components/ui/Sticker";
+import { Upcoming } from "./Upcoming";
 
 /* The academic year as a GitHub contribution graph. Event days are green,
    Epoch's month is gold. Pick a day (or a row) to see what's on. */
@@ -98,7 +99,7 @@ export function EventsYear() {
           <p className="mt-3 max-w-[52ch] text-[17px] text-ink-2">{sel.text}</p>
           <div className="mt-6 flex flex-wrap items-center gap-4">
             <p className="font-mono text-[13px]">📍 {sel.where}</p>
-            {sel.luma && <a href={sel.luma} target="_blank" rel="noopener" className="rounded-full bg-ink px-4 py-2 font-mono text-[13px] font-bold text-white transition hover:-translate-y-0.5">RSVP on Luma ↗</a>}
+            {sel.luma && <Upcoming date={sel.date}><a href={sel.luma} target="_blank" rel="noopener" className="rounded-full bg-ink px-4 py-2 font-mono text-[13px] font-bold text-white transition hover:-translate-y-0.5">RSVP on Luma ↗</a></Upcoming>}
             <Link href={`/events/${eventSlug(sel)}`} className="rounded-full border-2 border-ink px-4 py-2 font-mono text-[13px] font-bold transition hover:bg-ink hover:text-white">Event page →</Link>
             {sel.href && <EpochLink href={sel.href} className="rounded-full bg-ink px-5 py-2.5 font-mono text-[13px] font-bold text-[#ffc933] transition hover:-translate-y-0.5">Enter Epoch →</EpochLink>}
           </div>
