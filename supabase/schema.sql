@@ -239,3 +239,19 @@ alter table messages enable row level security;
 create policy "anyone can send a message" on messages for insert to anon, authenticated with check (true);
 create policy "staff read messages" on messages for select using (my_role() in ('volunteer','admin'));
 grant insert on messages to anon, authenticated;
+
+-- ============================================================
+-- Event feedback: anonymous, one row per submission. Anyone may send; only staff can read.
+-- ============================================================
+create table if not exists event_feedback (
+  id bigint generated always as identity primary key,
+  event text not null check (length(event) <= 20),
+  rating int not null check (rating between 1 and 5),
+  liked text check (liked is null or length(liked) <= 1000),
+  improve text check (improve is null or length(improve) <= 1000),
+  created_at timestamptz not null default now()
+);
+alter table event_feedback enable row level security;
+create policy "anyone can send feedback" on event_feedback for insert to anon, authenticated with check (true);
+create policy "staff read feedback" on event_feedback for select using (my_role() in ('volunteer','admin'));
+grant insert on event_feedback to anon, authenticated;
