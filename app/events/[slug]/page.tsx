@@ -11,6 +11,7 @@ import { EVENTS, eventDate, eventSlug, eventTag, findEvent } from "@/lib/events"
 import { SITE_URL } from "@/lib/site";
 import { ShareButton } from "./ShareButton";
 import { LatestBadge } from "./LatestBadge";
+import { FeedbackForm } from "./FeedbackForm";
 
 /* Each event is a "release" of the club: a tag, release notes, and assets (calendar file, link). */
 export const dynamicParams = false;
@@ -87,6 +88,15 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
             </div>
           </article>
         </div>
+
+        {e.recap && (
+          <section className="mt-6 rounded-[12px] border border-line bg-white p-6 sm:p-8">
+            <h2 className="text-[24px]">Recap</h2>
+            <p className="mt-2 max-w-[62ch] whitespace-pre-line text-[17px] leading-relaxed text-ink-2">{e.recap.text}</p>
+            {e.recap.slides && <a href={e.recap.slides} target="_blank" rel="noopener" className="mt-4 inline-block font-semibold text-link hover:underline">Slides and materials ↗</a>}
+          </section>
+        )}
+        {!e.dateLabel && <FeedbackForm date={e.date} title={e.title} />}
 
         {/* older / newer, like navigating releases */}
         <nav aria-label="More events" className="mt-10 grid gap-3 sm:grid-cols-2">
