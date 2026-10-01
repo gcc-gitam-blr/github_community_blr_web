@@ -22,7 +22,7 @@ export default async function GetInvolved({ searchParams }: { searchParams: Prom
             <p className="mt-5 max-w-[46ch] text-[19px] text-ink-2">The club is run by students and grows with whoever shows up. Tell us how you&apos;d like to help — or just say hello.</p>
             <ul className="mt-8 space-y-3 text-[16px] text-ink-2">
               <li><b className="text-ink">Core team</b> — a few hours a week, real responsibility, great for your portfolio.</li>
-              <li><b className="text-ink">Sponsors &amp; partners</b> — reach hundreds of student developers at Epoch and our sessions.</li>
+              <li><b className="text-ink">Sponsors &amp; partners</b> — meet student developers at Epoch and our sessions.</li>
               <li><b className="text-ink">Speakers</b> — share what you know with people who want to learn it.</li>
             </ul>
             {CLUB.joinUrl && <a href={CLUB.joinUrl} target="_blank" rel="noopener" className="mt-8 inline-block font-semibold text-link hover:underline">Prefer chat? Join our WhatsApp community →</a>}
