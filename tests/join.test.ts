@@ -3,7 +3,7 @@ import { MIN_FILL_MS, validateJoin } from "../lib/join";
 import { POST } from "../app/api/join/route";
 
 let fails = 0; const ok = (n: string, c: boolean) => { console.log((c ? "PASS" : "FAIL") + "  " + n); if (!c) fails++; };
-const EVENT = "2026-10-05";
+const EVENT = "2026-10-07";
 const good = { handle: "ada", email: "ada@gitam.in", firstEvent: EVENT, startedAt: Date.now() - 10_000 };
 const post = (body: unknown, ip = "1.1.1.1") => POST(new Request("http://x/api/join", { method: "POST", headers: { "content-type": "application/json", "x-forwarded-for": ip }, body: JSON.stringify(body) }));
 
