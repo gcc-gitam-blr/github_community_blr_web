@@ -60,6 +60,6 @@ ok("sticker stock drops from 200 to 199", (await text()).includes("199 left"));
 // 7. wallet + leaderboard reflect it all
 await go("/epoch/wallet"); await sleep(1500); await shot("e2e-wallet");
 t = await text(); ok("wallet shows 338 and 4 of 5 recharge points left", t.includes("338") && t.includes("4 left"));
-ok("ledger lists ticket, VR, recharge and purchase", ["Ticket ₹199", "Virtual Reality Merge Zone", "Tech Trivia Point", "Bought Octocat Sticker Pack"].every((s) => t.includes(s)));
+ok("ledger lists ticket, VR, recharge and purchase", ["Check-in → 398", "Virtual Reality Merge Zone", "Tech Trivia Point", "Bought Octocat Sticker Pack"].every((s) => t.includes(s)));
 await go("/epoch/leaderboard"); t = await text(); ok("leaderboard ranks Ada by 20 earned (spending doesn't count)", t.includes("Ada Lovelace") && /Ada Lovelace[\s\S]*20/.test(t));
 console.log(fails ? `\n${fails} FAILED` : "\nall end-to-end checks passed"); process.exit(fails ? 1 : 0);

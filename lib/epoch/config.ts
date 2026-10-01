@@ -13,9 +13,11 @@ export const EPOCH = {
   dates: "December 2026 · dates to be announced",
   venue: "GITAM University, Bengaluru",
 
-  // Ticket & coins — from the plan: ₹199 example, 1 INR = 2 coins (=> 398 coins).
-  ticketPriceINR: 199, // "exact price subject to finalisation"
-  coinsPerINR: 2,
+  // Coins. Everyone gets `starterCoins` when the desk checks them in. The plan's example was
+  // ₹199 → 398 coins, but the club hasn't decided the ticket price (it may be free), so the price
+  // is separate and unset: set `ticketPriceINR` to a number only when it's decided, and the site shows it.
+  starterCoins: 398,
+  ticketPriceINR: null as number | null,
   currency: "EPC",
   ticketUrl: "", // paste your payment / registration link (Razorpay, Google Form…). Empty = pay at the desk.
 
@@ -29,7 +31,9 @@ export const EPOCH = {
   organiserCode: process.env.NEXT_PUBLIC_EPOCH_ORGANISER_CODE || "epoch-admin", // demo mode only
 };
 
-export const STARTER_COINS = EPOCH.ticketPriceINR * EPOCH.coinsPerINR;
+export const STARTER_COINS = EPOCH.starterCoins;
+/** "₹199" once decided, otherwise "To be announced". */
+export const priceLabel = () => (EPOCH.ticketPriceINR ? `₹${EPOCH.ticketPriceINR}` : "To be announced");
 
 /** Days until Epoch starts, or null when the date isn't announced (or it has started). */
 export function daysToEpoch(now = new Date()): number | null {

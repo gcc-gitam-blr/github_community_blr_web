@@ -25,7 +25,7 @@ export function Hero() {
             Two days.<br />One currency.
           </h1>
           <p style={{ "--d": "0.8s" } as React.CSSProperties} className="hero-fade mt-7 max-w-[44ch] text-[clamp(18px,1.7vw,21px)] leading-snug text-mute">
-            Epoch is our flagship technical event. Your ₹{EPOCH.ticketPriceINR} ticket becomes {STARTER_COINS} Epoch Coins — spend them at the booths, win more at recharge points.
+            Epoch is our flagship technical event. Everyone starts with {STARTER_COINS} Epoch Coins — spend them at the booths, win more at recharge points.
           </p>
           <div style={{ "--d": "0.95s" } as React.CSSProperties} className="hero-fade mt-10 max-w-[600px]"><Launcher variant="hero" /></div>
           <div style={{ "--d": "1.1s" } as React.CSSProperties} className="hero-fade mt-9 flex flex-wrap items-center gap-6">

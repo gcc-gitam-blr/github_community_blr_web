@@ -3,7 +3,7 @@
 -- All coin movement happens inside SECURITY DEFINER functions, so a tampered client can't mint coins.
 --
 -- Economy (from the Epoch plan):
---   • ticket (₹199 example) × 2 coins/INR credited once by the organiser desk
+--   • starter coins (398 by default) credited once by the organiser desk at check-in
 --   • recharge points pay out ONCE per attendee each
 --   • spend booths charge per session (repeatable, with a short double-scan cooldown)
 
@@ -74,17 +74,17 @@ begin
   return me;
 end $$;
 
--- organiser desk: verify the ticket, credit price × rate coins. Once per attendee.
-create or replace function issue_ticket(p_user uuid, p_price int default 199, p_rate int default 2)
+-- organiser desk: check the attendee in and credit their starter coins. Once per attendee.
+create or replace function issue_ticket(p_user uuid, p_coins int default 398)
 returns json language plpgsql security definer as $$
-declare t profiles; amt int := p_price * p_rate;
+declare t profiles; amt int := p_coins;
 begin
   if my_role() not in ('volunteer','admin') then return json_build_object('ok', false, 'error', 'Organiser access required.'); end if;
   select * into t from profiles where id = p_user for update;
   if not found then return json_build_object('ok', false, 'error', 'Unknown attendee QR.'); end if;
   if t.ticket then return json_build_object('ok', false, 'error', t.name || ' already has a verified ticket.'); end if;
   update profiles set ticket = true, coins = coins + amt where id = t.id;
-  insert into txs (user_id, delta, reason, ref) values (t.id, amt, 'Ticket ₹' || p_price || ' → ' || amt || ' EPC', 'ticket');
+  insert into txs (user_id, delta, reason, ref) values (t.id, amt, 'Check-in → ' || amt || ' EPC', 'ticket');
   return json_build_object('ok', true);
 end $$;
 
