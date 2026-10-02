@@ -1,3 +1,4 @@
+import type { CrewRole } from "./crew";
 /* ============================================================
    EDIT ME — everything the public site shows lives here.
    Epoch (the fest) has its own config in lib/epoch/config.ts.
@@ -66,32 +67,47 @@ export const CLUB = {
     { date: "2027-02-08", type: "Workshop", title: "GitHub Profile Makeover", luma: "https://luma.com/6y0tnxzm", text: "Level up your profile, READMEs, repositories and project presentation for academic and professional use.", where: "GITAM Bengaluru", shape: "diamond", color: "purple" },
     { date: "2027-03-15", type: "Career", title: "GitHub for Careers & Technical Challenge", luma: "https://luma.com/a1bfax1o", text: "How GitHub helps with internships, placements and portfolios — followed by a technical challenge.", where: "GITAM Bengaluru", shape: "square", color: "mint" },
   ] as { date: string; dateLabel?: string; href?: string; luma?: string; recap?: { text: string; slides?: string }; type: string; title: string; text: string; where: string; shape: Shape; color: NodeColor }[],
-  // The core team. `photo` is a square image made by scripts/team-photos.mjs (photos-inbox/team → public/team).
-  // `handle` is a GitHub username: it adds a link, and their GitHub avatar when there's no photo. Leave "" if unknown.
-  // "mentor" people sit in the Mentors band at the top; "lead" and "tech" people each get a full card (leads first).
-  // `past` is an optional second line under the role (e.g. a previous role).
+  // The team. `photo` is a square image made by scripts/team-photos.mjs (photos-inbox/team → public/team).
+  // `handle` is a GitHub username (adds a link, and their avatar when there's no photo — set githubAvatar: false if their
+  // GitHub picture is still the default pattern). Leave "" if unknown.
+  //  group "mentor": the Mentors row (owner: true marks the people who run operations and policy)
+  //  group "lead":   the top row of five, equal and larger
+  //  group "member": everyone else, six to a row
+  // `crew` is their technical role and level (lib/crew.ts explains the roles); `tags` are extra hats like Tech or Media.
   team: [
-    { name: "Chakrawarthy", role: "Mentor · Tech & Design", past: "Former President", group: "mentor", handle: "lechakrawarthy" },
-    { name: "Lakshmi", role: "Mentor · Operations", group: "mentor", handle: "" },
-    { name: "Monisha S", role: "President", group: "lead", handle: "", photo: "/team/monisha-s.webp" },
-    { name: "Dhigveerraju G", role: "Vice President", group: "lead", handle: "", photo: "/team/dhigveerraju-g.webp" },
-    { name: "Supriya", role: "Secretary", group: "lead", handle: "" },
-    { name: "T Sai Ruchitha", role: "Design Lead", group: "lead", handle: "", photo: "/team/t-sai-ruchitha.webp" },
-    { name: "Chandrika", role: "External Relations Head", group: "lead", handle: "", photo: "/team/chandrika.webp" },
-    { name: "Geethika", role: "Member of Technical Staff", group: "tech", handle: "", photo: "/team/geethika.webp" },
-    { name: "Aravind K", role: "Member of Technical Staff", group: "tech", handle: "", photo: "/team/aravind-k.webp" },
-    { name: "Vishnu Teja", role: "Member of Technical Staff", group: "tech", handle: "" },
-    { name: "Venkat Madhu", role: "Member of Technical Staff", group: "tech", handle: "" },
-    { name: "Bhavana", role: "Member of Technical Staff", group: "tech", handle: "" },
-    { name: "Niharika", role: "Member of Technical Staff", group: "tech", handle: "" },
-  ] as { name: string; role: string; group: "mentor" | "lead" | "tech"; handle: string; photo?: string; past?: string }[],
-  // The people who built this website — shown like a repository's Contributors list. `handle` adds their GitHub avatar and link.
+    { name: "Chakrawarthy", role: "Mentor · Tech & Design", past: "Former President, 2024-25", group: "mentor", owner: true, handle: "lechakrawarthy" },
+    { name: "Lakshmi", role: "Mentor · Operations", past: "Former Inclusion & Events Head", group: "mentor", owner: true, handle: "lkshi0406", githubAvatar: false },
+    { name: "Greeshmitha", role: "Mentor", past: "Former President, 2025-26", group: "mentor", handle: "", photo: "/team/greeshmitha.webp" },
+    { name: "Rohit", role: "Mentor", past: "Former Vice-President, 2025-26", group: "mentor", handle: "" },
+
+    { name: "Monisha S", role: "President", crew: [{ role: "custodian", level: 1 }], group: "lead", handle: "", photo: "/team/monisha-s.webp" },
+    { name: "Dhigveerraju G", role: "Vice President", crew: [{ role: "gatekeeper", level: 1 }], group: "lead", handle: "", photo: "/team/dhigveerraju-g.webp" },
+    { name: "Supriya K S", role: "Secretary", crew: [{ role: "security", level: 1 }], group: "lead", handle: "", photo: "/team/supriya-k-s.webp" },
+    { name: "T Sai Ruchitha", role: "Design Lead", crew: [{ role: "pipeline", level: 1 }], group: "lead", handle: "", photo: "/team/t-sai-ruchitha.webp" },
+    { name: "Chandrika", role: "External Relations Head", crew: [{ role: "gatekeeper", level: 1 }], group: "lead", handle: "", photo: "/team/chandrika.webp" },
+
+    { name: "Geethika", tags: ["Tech"], crew: [{ role: "alchemist", level: 1 }], group: "member", handle: "", photo: "/team/geethika.webp" },
+    { name: "Aravind K", tags: ["Tech"], crew: [{ role: "custodian", level: 1 }], group: "member", handle: "", photo: "/team/aravind-k.webp" },
+    { name: "Vishnu Teja", tags: ["Tech"], crew: [{ role: "pipeline", level: 1 }], group: "member", handle: "", photo: "/team/vishnu-teja.webp" },
+    { name: "Venkata Madhu K", tags: ["Tech"], crew: [{ role: "security", level: 1 }], group: "member", handle: "", photo: "/team/venkatamadhu-k.webp" },
+    { name: "Bhavana", tags: ["Tech", "Non-tech"], crew: [{ role: "explorer", level: 1 }], group: "member", handle: "" },
+    { name: "Niharika", tags: ["Tech", "Media"], crew: [{ role: "alchemist", level: 1 }], group: "member", handle: "" },
+    { name: "Apsara", tags: ["Media"], group: "member", handle: "" },
+    { name: "Lokesh", tags: ["Media"], group: "member", handle: "" },
+    { name: "Manogna", tags: ["Media"], group: "member", handle: "" },
+  ] as { name: string; role?: string; past?: string; group: "mentor" | "lead" | "member"; owner?: boolean; crew?: CrewRole[]; tags?: string[]; handle: string; photo?: string; githubAvatar?: boolean }[],
+  // People who shaped the club — past presidents, former members, and members who've helped along the way.
   contributors: [
     { name: "Chakrawarthy", handle: "lechakrawarthy" },
-    { name: "Lakshmi", handle: "" },
+    { name: "Lakshmi", handle: "lkshi0406", githubAvatar: false },
+    { name: "Greeshmitha", handle: "", photo: "/team/greeshmitha.webp" },
     { name: "Rohit", handle: "" },
-    { name: "Greeshmitha", handle: "" },
-  ] as { name: string; handle: string }[],
+    { name: "Afreen", handle: "", photo: "/team/afreen.webp" },
+    { name: "Devi Priya", handle: "", photo: "/team/devi-priya.webp" },
+    { name: "Harshitha Reddy", handle: "", photo: "/team/harshitha-reddy.webp" },
+    { name: "Sreya", handle: "", photo: "/team/sreya.webp" },
+    { name: "Raja Sree", handle: "", photo: "/team/raja-sree.webp" },
+  ] as { name: string; handle: string; photo?: string; githubAvatar?: boolean }[],
   faq: [
     { q: "What is Epoch?", a: "Our flagship technical event in December: two days of workshops, coding competitions and 20+ interactive booths — run on its own currency, Epoch Coins." },
     { q: "How do Epoch Coins work?", a: "Everyone starts with 398 Epoch Coins, credited at check-in. Spend them at booths and on merch, and top up at recharge points. The ticket price (if any) hasn't been decided yet." },
