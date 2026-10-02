@@ -151,3 +151,11 @@ test("stickers on the laptop lid can be dragged, and stay on the lid", async ({ 
   expect(b.x + b.width).toBeLessThanOrEqual(box.x + box.width + 1);
   expect(b.y + b.height).toBeLessThanOrEqual(box.y + box.height + 1);
 });
+
+test("GitHub Changelog headlines link only to GitHub's own changelog (and hide if the feed is down)", async ({ page }) => {
+  for (const path of ["/", "/updates"]) {
+    await page.goto(path);
+    const links = await page.locator("#gh-changelog ~ * a, [aria-labelledby=gh-changelog] ol a").evaluateAll((as) => as.map((a) => a.getAttribute("href")!));
+    for (const h of links) expect(h, path).toMatch(/^https:\/\/github\.blog\/changelog\//);
+  }
+});
