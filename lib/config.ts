@@ -107,6 +107,9 @@ export const CLUB = {
     { name: "Harshitha Reddy", handle: "", photo: "/team/harshitha-reddy.webp" },
     { name: "Sreya", handle: "", photo: "/team/sreya.webp" },
     { name: "Raja Sree", handle: "", photo: "/team/raja-sree.webp" },
+    { name: "Sai Laghuvar", handle: "" },
+    { name: "Nikhil", handle: "" },
+    { name: "Venkat Sai", handle: "" },
   ] as { name: string; handle: string; photo?: string; githubAvatar?: boolean }[],
   faq: [
     { q: "What is Epoch?", a: "Our flagship technical event in December: two days of workshops, coding competitions and 20+ interactive booths — run on its own currency, Epoch Coins." },
