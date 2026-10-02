@@ -1,4 +1,4 @@
--- Epoch backend. Run once in the Supabase SQL editor.
+-- Epoch + club backend. Run it in the Supabase SQL editor (or `npm run connect`). Safe to run again after updates.
 -- Auth: enable the GitHub provider (Authentication → Providers) — attendees sign in with GitHub.
 -- All coin movement happens inside SECURITY DEFINER functions, so a tampered client can't mint coins.
 --
@@ -51,10 +51,15 @@ alter table txs enable row level security;
 create or replace function my_role() returns text language sql security definer stable as
 $$ select role from profiles where id = auth.uid() $$;
 
+drop policy if exists "read own profile" on profiles;
 create policy "read own profile" on profiles for select using (auth.uid() = id);
+drop policy if exists "staff read profiles" on profiles;
 create policy "staff read profiles" on profiles for select using (my_role() in ('volunteer','admin'));
+drop policy if exists "read booths" on booths;
 create policy "read booths" on booths for select using (true);
+drop policy if exists "read rewards" on rewards;
 create policy "read rewards" on rewards for select using (true);
+drop policy if exists "read own txs" on txs;
 create policy "read own txs" on txs for select using (auth.uid() = user_id);
 
 -- public leaderboard: no emails, no balances
@@ -195,7 +200,9 @@ create table if not exists join_requests (
 );
 create unique index if not exists join_requests_one_per_email on join_requests (lower(email));
 alter table join_requests enable row level security;
+drop policy if exists "anyone can sign up" on join_requests;
 create policy "anyone can sign up" on join_requests for insert to anon, authenticated with check (true);
+drop policy if exists "staff read sign-ups" on join_requests;
 create policy "staff read sign-ups" on join_requests for select using (my_role() in ('volunteer','admin'));
 grant insert on join_requests to anon, authenticated;
 
@@ -219,7 +226,9 @@ create table if not exists broadcasts (
   created_at timestamptz not null default now()
 );
 alter table broadcasts enable row level security;
+drop policy if exists "staff read broadcasts" on broadcasts;
 create policy "staff read broadcasts" on broadcasts for select using (my_role() in ('volunteer','admin'));
+drop policy if exists "admins log broadcasts" on broadcasts;
 create policy "admins log broadcasts" on broadcasts for insert with check (my_role() = 'admin' and sent_by = auth.uid());
 
 -- ============================================================
@@ -236,7 +245,9 @@ create table if not exists messages (
   created_at timestamptz not null default now()
 );
 alter table messages enable row level security;
+drop policy if exists "anyone can send a message" on messages;
 create policy "anyone can send a message" on messages for insert to anon, authenticated with check (true);
+drop policy if exists "staff read messages" on messages;
 create policy "staff read messages" on messages for select using (my_role() in ('volunteer','admin'));
 grant insert on messages to anon, authenticated;
 
@@ -252,6 +263,8 @@ create table if not exists event_feedback (
   created_at timestamptz not null default now()
 );
 alter table event_feedback enable row level security;
+drop policy if exists "anyone can send feedback" on event_feedback;
 create policy "anyone can send feedback" on event_feedback for insert to anon, authenticated with check (true);
+drop policy if exists "staff read feedback" on event_feedback;
 create policy "staff read feedback" on event_feedback for select using (my_role() in ('volunteer','admin'));
 grant insert on event_feedback to anon, authenticated;
