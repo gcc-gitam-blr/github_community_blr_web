@@ -159,3 +159,12 @@ test("GitHub Changelog headlines link only to GitHub's own changelog (and hide i
     for (const h of links) expect(h, path).toMatch(/^https:\/\/github\.blog\/changelog\//);
   }
 });
+
+test("admin and certificates without a database: clear messages, no crashes", async ({ page, request }) => {
+  await page.goto("/admin");
+  await expect(page.getByText(/database isn.t connected/)).toBeVisible();
+  expect((await page.goto("/certificates/00000000-0000-0000-0000-000000000000"))?.status()).toBe(404);
+  expect((await request.post("/api/certificates", { data: { event: "2026-10-07" } })).status()).toBeGreaterThanOrEqual(400);
+  const robots = await (await request.get("/robots.txt")).text();
+  expect(robots).toContain("Disallow: /admin");
+});

@@ -112,7 +112,7 @@ export function AdminPage() {
 }
 
 /* Club at a glance: sign-ups per week, what people want to try first, messages and feedback. */
-function ClubStatsPanel() {
+export function ClubStatsPanel() {
   const { store } = useEpoch();
   const [s, setS] = useState<ClubStats | null>(null);
   useEffect(() => {
@@ -175,7 +175,7 @@ function ClubStatsPanel() {
 }
 
 /* Club sign-ups from the home page's "Join the club" form (live mode only), with a CSV export. */
-function SignUps() {
+export function SignUps() {
   const { store } = useEpoch();
   const [rows, setRows] = useState<JoinRequest[] | null>(null);
   useEffect(() => { store?.joinRequests?.().then(setRows); }, [store]);
@@ -239,7 +239,7 @@ function SignUps() {
 }
 
 /* Messages from the "Get involved" form: core-team applications, sponsors, speakers, questions. */
-function Inbox() {
+export function Inbox() {
   const { store } = useEpoch();
   const [rows, setRows] = useState<ClubMessage[] | null>(null);
   const [kind, setKind] = useState("all");
@@ -269,7 +269,7 @@ function Inbox() {
 }
 
 /* Anonymous feedback from the event pages: average rating per event, and what people wrote. */
-function FeedbackSummary() {
+export function FeedbackSummary() {
   const { store } = useEpoch();
   const [rows, setRows] = useState<EventFeedback[] | null>(null);
   useEffect(() => { store?.feedback?.().then(setRows); }, [store]);

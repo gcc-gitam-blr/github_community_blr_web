@@ -274,3 +274,49 @@ create policy "anyone can send feedback" on event_feedback for insert to anon, a
 drop policy if exists "staff read feedback" on event_feedback;
 create policy "staff read feedback" on event_feedback for select using (my_role() in ('volunteer','admin'));
 grant insert on event_feedback to anon, authenticated;
+
+-- ============================================================
+-- Attendance and certificates (the /admin dashboard)
+-- Organisers record who actually came to an event — imported from Luma's check-in list, picked from
+-- sign-ups, or added by hand. Only these people get a certificate. Anyone can verify a certificate
+-- by its id (the link in the email); names and events are shown, emails never are.
+-- ============================================================
+create table if not exists attendance (
+  id uuid primary key default gen_random_uuid(),
+  event text not null,                 -- the event's date in lib/config.ts, e.g. '2026-10-07'
+  name text not null check (char_length(name) between 2 and 80),
+  email text not null check (email = lower(email)),
+  handle text,
+  emailed_at timestamptz,              -- when the certificate email went out
+  added_by uuid default auth.uid(),
+  created_at timestamptz not null default now(),
+  unique (event, email)
+);
+alter table attendance enable row level security;
+drop policy if exists "staff manage attendance" on attendance;
+create policy "staff manage attendance" on attendance for all
+  using (my_role() in ('volunteer','admin')) with check (my_role() in ('volunteer','admin'));
+grant select, insert, update, delete on attendance to authenticated;
+
+create or replace function certificate(p_id uuid)
+returns table (name text, event text, handle text, issued timestamptz)
+language sql security definer stable as
+$$ select name, event, handle, coalesce(emailed_at, created_at) from attendance where id = p_id $$;
+grant execute on function certificate(uuid) to anon, authenticated;
+
+-- Admins give people organiser access by GitHub handle (they must have signed in once).
+create or replace function set_role(p_handle text, p_role text)
+returns json language plpgsql security definer as $$
+declare h text := lower(ltrim(trim(p_handle), '@'));
+begin
+  if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins can change roles.'); end if;
+  if p_role not in ('attendee','volunteer','admin') then return json_build_object('ok', false, 'error', 'Unknown role.'); end if;
+  if exists (select 1 from profiles where id = auth.uid() and lower(handle) = h) then
+    return json_build_object('ok', false, 'error', 'You can''t change your own role — ask another admin.');
+  end if;
+  update profiles set role = p_role where lower(handle) = h;
+  if not found then return json_build_object('ok', false, 'error', 'Nobody with that GitHub username has signed in yet. Ask them to sign in at /admin once.'); end if;
+  return json_build_object('ok', true);
+end $$;
+revoke execute on function set_role(text, text) from public, anon;
+grant execute on function set_role(text, text) to authenticated;
