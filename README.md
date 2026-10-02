@@ -50,8 +50,8 @@ Everything is saved in `.env.local` (never committed). To make someone an organi
 
 Browsers' phishing filters sometimes flag new `*.supabase.co` sign-in pages. To keep people on your own domain the whole way:
 
-1. In your GitHub OAuth App, set the **Authorization callback URL** to `https://<your-site>/api/auth/github/callback`.
-2. In Vercel, add `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` (from that OAuth App) and `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API Keys — server only, never `NEXT_PUBLIC_`). Redeploy.
+1. Create a **second** GitHub OAuth App (github.com/settings/developers) with the **Authorization callback URL** `https://<your-site>/api/auth/github/callback`. Keep the first one in Supabase — it's still used for previews and `localhost`.
+2. In Vercel, add `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` (from the new OAuth App) and `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API Keys — server only, never `NEXT_PUBLIC_`). Redeploy.
 
 It works on the production address. Preview deployments and `localhost` automatically use Supabase's own GitHub sign-in instead.
 
