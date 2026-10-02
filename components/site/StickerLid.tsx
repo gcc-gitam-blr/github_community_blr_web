@@ -19,7 +19,10 @@ const LAYOUT: { name: StickerName; x: number; y: number; size: number; tilt: num
 /** Drag inside the lid: moves the sticker with the CSS `translate` property, kept within the lid's edges. */
 function drag(e: React.PointerEvent<HTMLDivElement>, lid: HTMLDivElement | null) {
   if (!lid || e.button !== 0) return;
-  const el = e.currentTarget, box = lid.getBoundingClientRect(), r = el.getBoundingClientRect();
+  const el = e.currentTarget, r = el.getBoundingClientRect();
+  // keep clear of the lid's border, with room for the sticker to tilt back when it's dropped
+  const o = lid.getBoundingClientRect(), m = lid.clientLeft + 6;
+  const box = { left: o.left + m, top: o.top + m, right: o.right - m, bottom: o.bottom - m };
   const [tx, ty] = (el.style.translate || "0px 0px").split(" ").map((v) => parseFloat(v) || 0);
   const sx = e.clientX, sy = e.clientY;
   el.setPointerCapture(e.pointerId); el.classList.add("dragging");
