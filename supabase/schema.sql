@@ -1,9 +1,9 @@
--- Epoch backend. Run once in the Supabase SQL editor.
+-- Epoch + club backend. Run it in the Supabase SQL editor (or `npm run connect`). Safe to run again after updates.
 -- Auth: enable the GitHub provider (Authentication → Providers) — attendees sign in with GitHub.
 -- All coin movement happens inside SECURITY DEFINER functions, so a tampered client can't mint coins.
 --
 -- Economy (from the Epoch plan):
---   • ticket (₹199 example) × 2 coins/INR credited once by the organiser desk
+--   • starter coins (398 by default) credited once by the organiser desk at check-in
 --   • recharge points pay out ONCE per attendee each
 --   • spend booths charge per session (repeatable, with a short double-scan cooldown)
 
@@ -51,10 +51,15 @@ alter table txs enable row level security;
 create or replace function my_role() returns text language sql security definer stable as
 $$ select role from profiles where id = auth.uid() $$;
 
+drop policy if exists "read own profile" on profiles;
 create policy "read own profile" on profiles for select using (auth.uid() = id);
+drop policy if exists "staff read profiles" on profiles;
 create policy "staff read profiles" on profiles for select using (my_role() in ('volunteer','admin'));
+drop policy if exists "read booths" on booths;
 create policy "read booths" on booths for select using (true);
+drop policy if exists "read rewards" on rewards;
 create policy "read rewards" on rewards for select using (true);
+drop policy if exists "read own txs" on txs;
 create policy "read own txs" on txs for select using (auth.uid() = user_id);
 
 -- public leaderboard: no emails, no balances
@@ -74,17 +79,17 @@ begin
   return me;
 end $$;
 
--- organiser desk: verify the ticket, credit price × rate coins. Once per attendee.
-create or replace function issue_ticket(p_user uuid, p_price int default 199, p_rate int default 2)
+-- organiser desk: check the attendee in and credit their starter coins. Once per attendee.
+create or replace function issue_ticket(p_user uuid, p_coins int default 398)
 returns json language plpgsql security definer as $$
-declare t profiles; amt int := p_price * p_rate;
+declare t profiles; amt int := p_coins;
 begin
   if my_role() not in ('volunteer','admin') then return json_build_object('ok', false, 'error', 'Organiser access required.'); end if;
   select * into t from profiles where id = p_user for update;
   if not found then return json_build_object('ok', false, 'error', 'Unknown attendee QR.'); end if;
   if t.ticket then return json_build_object('ok', false, 'error', t.name || ' already has a verified ticket.'); end if;
   update profiles set ticket = true, coins = coins + amt where id = t.id;
-  insert into txs (user_id, delta, reason, ref) values (t.id, amt, 'Ticket ₹' || p_price || ' → ' || amt || ' EPC', 'ticket');
+  insert into txs (user_id, delta, reason, ref) values (t.id, amt, 'Check-in → ' || amt || ' EPC', 'ticket');
   return json_build_object('ok', true);
 end $$;
 
@@ -195,6 +200,71 @@ create table if not exists join_requests (
 );
 create unique index if not exists join_requests_one_per_email on join_requests (lower(email));
 alter table join_requests enable row level security;
+drop policy if exists "anyone can sign up" on join_requests;
 create policy "anyone can sign up" on join_requests for insert to anon, authenticated with check (true);
+drop policy if exists "staff read sign-ups" on join_requests;
 create policy "staff read sign-ups" on join_requests for select using (my_role() in ('volunteer','admin'));
 grant insert on join_requests to anon, authenticated;
+
+-- ============================================================
+-- Email: welcome + organiser broadcasts (see lib/email, app/api/join, app/api/broadcast)
+-- ============================================================
+alter table join_requests add column if not exists unsubscribed boolean not null default false;
+
+-- Anyone with a valid signed link can unsubscribe (the site checks the signature before calling this).
+create or replace function unsubscribe_join(p_email text) returns void language sql security definer as $$
+  update join_requests set unsubscribed = true where lower(email) = lower(p_email);
+$$;
+grant execute on function unsubscribe_join(text) to anon, authenticated;
+
+-- A record of every broadcast: who sent what, to how many.
+create table if not exists broadcasts (
+  id bigint generated always as identity primary key,
+  sent_by uuid references profiles on delete set null,
+  subject text not null check (length(subject) between 3 and 200),
+  recipients int not null default 0,
+  created_at timestamptz not null default now()
+);
+alter table broadcasts enable row level security;
+drop policy if exists "staff read broadcasts" on broadcasts;
+create policy "staff read broadcasts" on broadcasts for select using (my_role() in ('volunteer','admin'));
+drop policy if exists "admins log broadcasts" on broadcasts;
+create policy "admins log broadcasts" on broadcasts for insert with check (my_role() = 'admin' and sent_by = auth.uid());
+
+-- ============================================================
+-- "Get involved" messages: core-team applications, sponsors, speakers, questions.
+-- Anyone may send one (the site validates and rate-limits first); only staff can read them.
+-- ============================================================
+create table if not exists messages (
+  id bigint generated always as identity primary key,
+  kind text not null check (kind in ('apply','sponsor','speaker','question')),
+  name text not null check (length(name) between 2 and 80),
+  email text not null check (length(email) <= 254 and email ~ '^[^\s@]+@[^\s@]+\.[^\s@]+$'),
+  handle text check (handle is null or handle ~* '^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9])){0,38}$'),
+  message text not null check (length(message) between 10 and 3000),
+  created_at timestamptz not null default now()
+);
+alter table messages enable row level security;
+drop policy if exists "anyone can send a message" on messages;
+create policy "anyone can send a message" on messages for insert to anon, authenticated with check (true);
+drop policy if exists "staff read messages" on messages;
+create policy "staff read messages" on messages for select using (my_role() in ('volunteer','admin'));
+grant insert on messages to anon, authenticated;
+
+-- ============================================================
+-- Event feedback: anonymous, one row per submission. Anyone may send; only staff can read.
+-- ============================================================
+create table if not exists event_feedback (
+  id bigint generated always as identity primary key,
+  event text not null check (length(event) <= 20),
+  rating int not null check (rating between 1 and 5),
+  liked text check (liked is null or length(liked) <= 1000),
+  improve text check (improve is null or length(improve) <= 1000),
+  created_at timestamptz not null default now()
+);
+alter table event_feedback enable row level security;
+drop policy if exists "anyone can send feedback" on event_feedback;
+create policy "anyone can send feedback" on event_feedback for insert to anon, authenticated with check (true);
+drop policy if exists "staff read feedback" on event_feedback;
+create policy "staff read feedback" on event_feedback for select using (my_role() in ('volunteer','admin'));
+grant insert on event_feedback to anon, authenticated;

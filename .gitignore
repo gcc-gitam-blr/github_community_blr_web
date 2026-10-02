@@ -12,3 +12,10 @@ next-env.d.ts
 
 # raw sticker source (47 MB); run `node scripts/stickers.mjs` to regenerate public/stickers
 public/GitHub_stickers/
+
+# raw event photos stay on your computer; run `node scripts/photos.mjs` to publish processed ones
+photos-inbox/
+
+# Playwright output
+test-results/
+playwright-report/

@@ -6,6 +6,9 @@ import { EMAIL_RE, HANDLE_RE, cleanHandle, type JoinResult } from "@/lib/join";
 /* Club sign-up, shaped like a pull request. Checks the GitHub handle live, lights the
    commit-line dots as each step completes, then saves the sign-up via /api/join
    (falling back to the club's form link or email when no database is connected). */
+/* milliseconds since a stamp, measured on the visitor's own clock (never compared with the server's) */
+const stamp = () => performance.now() || 1;
+const since = (t: number) => (t ? performance.now() - t : undefined);
 const IDLE = "No password needed — we only need to know who to welcome.";
 
 export function JoinCard() {
@@ -23,7 +26,7 @@ export function JoinCard() {
 
   // check the handle against GitHub as the person types (debounced)
   const onHandle = (raw: string) => {
-    setHandle(raw); if (!startedAt.current) startedAt.current = Date.now();
+    setHandle(raw); if (!startedAt.current) startedAt.current = stamp();
     clearTimeout(timer.current); setHandleOk(false); setAvatar("");
     const v = cleanHandle(raw);
     if (!v) { setHint({ t: IDLE, k: "" }); return; }
@@ -47,10 +50,11 @@ export function JoinCard() {
     const h = cleanHandle(handle);
     const first = CLUB.events.find((ev) => ev.date === track)?.title;
 
+    const elapsedMs = since(startedAt.current); // time spent on the form
     setBusy(true);
     let res: JoinResult;
     try {
-      const r = await fetch("/api/join", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ handle: h, email, firstEvent: track, website: honeypot.current?.value, startedAt: startedAt.current }) });
+      const r = await fetch("/api/join", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ handle: h, email, firstEvent: track, website: honeypot.current?.value, elapsedMs }) });
       res = await r.json();
     } catch { res = { ok: false, error: "Network error.", fallback: true }; }
     setBusy(false);
@@ -122,10 +126,10 @@ export function JoinCard() {
       </p>
       {/* honeypot: hidden from people, irresistible to bots */}
       <input ref={honeypot} name="website" tabIndex={-1} autoComplete="off" aria-hidden className="absolute -left-[9999px] h-0 w-0 opacity-0" />
-      <button disabled={busy || done} className="lift w-full rounded-md border-2 border-ink bg-[#2ea043] py-5 font-display text-lg font-bold text-white disabled:opacity-70">
+      <button disabled={busy || done} className="lift w-full rounded-md border-2 border-ink bg-[#1a7f37] py-5 font-display text-lg font-bold text-white disabled:opacity-70">
         {done ? "✓ Merged" : busy ? "Merging…" : "Merge pull request"}
       </button>
-      <p className="mt-4 text-[13px] text-ink-3">We&apos;ll only use this to contact you about club events.</p>
+      <p className="mt-4 text-[13px] text-ink-3">We&apos;ll only use this to contact you about club events. <a href="/privacy" className="underline underline-offset-2">Privacy</a></p>
     </form>
   );
 }

@@ -32,7 +32,7 @@ export function Hero() {
               <a href="#events" className="group inline-flex items-center gap-2 font-semibold text-link">See what&apos;s next <span className="transition-transform group-hover:translate-x-1.5">→</span></a>
             </div>
           </div>
-          <div aria-hidden className="hidden justify-self-center lg:block"><GitGraph nodes={NODES} edges={EDGES} className="max-h-[560px] w-full min-w-[230px]" /></div>
+          <div aria-hidden className="hidden justify-self-center lg:block"><GitGraph decorative nodes={NODES} edges={EDGES} className="max-h-[560px] w-full min-w-[230px]" /></div>
         </div>
       </section>
 
@@ -44,7 +44,7 @@ export function Hero() {
             <div><p className="font-display text-[32px] font-black lowercase leading-none tracking-[-0.05em]">{EPOCH.name}_{EPOCH.edition}</p><p className="mt-1 font-mono text-[12px] text-[#a9b3ad]">{EPOCH.month} · GITAM Bengaluru</p></div>
           </div>
           <ul className="flex flex-1 flex-wrap gap-x-8 gap-y-2 font-mono text-[13px] text-[#d0d8d3]">
-            <li><b className="text-gold">₹{EPOCH.ticketPriceINR} → {STARTER_COINS}</b> coins</li>
+            <li><b className="text-gold">{STARTER_COINS}</b> starter coins</li>
             <li><b className="text-gold">{BOOTH_COUNT}</b> booths</li>
             <li><b className="text-gold">2</b> days</li>
             <li className="hidden sm:block">workshops · contests · one economy</li>

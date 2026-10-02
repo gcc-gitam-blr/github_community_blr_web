@@ -14,7 +14,7 @@ export default function OG() {
           <div style={{ display: "flex", flexDirection: "column", fontSize: 112, fontWeight: 500, lineHeight: 0.95, letterSpacing: -5, color: "#0b0b0f" }}>
             <span>Two days.</span><span>One currency.</span>
           </div>
-          <div style={{ display: "flex", fontSize: 30, color: "#3a3d44" }}>₹{EPOCH.ticketPriceINR} ticket → {STARTER_COINS} Epoch Coins · {EPOCH.month}</div>
+          <div style={{ display: "flex", fontSize: 30, color: "#3a3d44" }}>{STARTER_COINS} Epoch Coins for everyone · {EPOCH.month}</div>
         </div>
         {/* the coin */}
         <div style={{ width: 300, height: 300, borderRadius: 300, background: "#c98a00", display: "flex", alignItems: "center", justifyContent: "center" }}>

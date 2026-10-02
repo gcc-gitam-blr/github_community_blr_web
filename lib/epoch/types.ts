@@ -46,6 +46,10 @@ export interface Tx {
 
 export interface JoinRequest { id: string; handle: string; email: string; firstEvent: string; createdAt: string }
 
+export interface ClubMessage { id: string; kind: string; name: string; email: string; handle: string; message: string; createdAt: string }
+
+export interface EventFeedback { id: string; event: string; rating: number; liked: string; improve: string; createdAt: string }
+
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
 export interface RegisterInput { handle: string; name: string; email: string }
@@ -71,4 +75,10 @@ export interface EpochStore {
   elevate?(code: string): Promise<Result>;
   /** staff, live (Supabase) mode only: club sign-ups from the home page */
   joinRequests?(): Promise<JoinRequest[]>;
+  /** staff, live (Supabase) mode only: anonymous event feedback */
+  feedback?(): Promise<EventFeedback[]>;
+  /** staff, live (Supabase) mode only: "Get involved" messages */
+  messages?(): Promise<ClubMessage[]>;
+  /** admin, live mode only: email every subscribed sign-up */
+  broadcast?(subject: string, message: string): Promise<Result<{ sent: number; failed: number; total: number }>>;
 }

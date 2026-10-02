@@ -8,8 +8,10 @@ import { BoothSection } from "./home/BoothSection";
 import { useEpoch } from "./EpochProvider";
 import { qr } from "@/lib/epoch/store";
 import { BOOTHS, STARTER_COINS, EPOCH } from "@/lib/epoch/config";
-import type { JoinRequest, Reward } from "@/lib/epoch/types";
+import type { ClubMessage, EventFeedback, JoinRequest, Reward } from "@/lib/epoch/types";
+import { KINDS } from "@/lib/contact";
 import { CLUB } from "@/lib/config";
+import { clubStats, type ClubStats } from "@/lib/stats";
 
 export function BoothsPage() {
   return <Frame title="Where coins go." sub="Recharge points earn. Everything else spends."><BoothSection /></Frame>;
@@ -90,7 +92,10 @@ export function AdminPage() {
 
   return (
     <Frame title="Organiser desk." sub={`Verify tickets (${STARTER_COINS} ${EPOCH.currency}, once), award prizes, and print the booth QR sheet.`} aside={<div className="no-print flex gap-2"><Link href="/epoch/scan" className={btnInk}>Scan a wallet</Link><button onClick={() => window.print()} className={btnSoft}>Print QR sheet</button></div>}>
+      <ClubStatsPanel />
       <SignUps />
+      <Inbox />
+      <FeedbackSummary />
       <h2 className="no-print mb-4 mt-12 text-[28px] font-medium tracking-[-0.03em]">Booth QR codes</h2>
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 print:grid-cols-3">
         {printable.map((b) => (
@@ -106,12 +111,85 @@ export function AdminPage() {
   );
 }
 
+/* Club at a glance: sign-ups per week, what people want to try first, messages and feedback. */
+function ClubStatsPanel() {
+  const { store } = useEpoch();
+  const [s, setS] = useState<ClubStats | null>(null);
+  useEffect(() => {
+    if (!store?.joinRequests) return;
+    Promise.all([store.joinRequests(), store.messages?.() ?? [], store.feedback?.() ?? []]).then(([j, m, f]) => setS(clubStats(j, m, f)));
+  }, [store]);
+  const eventName = (d: string) => CLUB.events.find((e) => e.date === d)?.title ?? d;
+  const kindName = (k: string) => KINDS.find((x) => x.id === k)?.label ?? k;
+
+  if (!store?.joinRequests) return (
+    <section className={`${glass} no-print mb-4 p-6 sm:p-8`}>
+      <h2 className="text-[28px] font-medium tracking-[-0.03em]">Club at a glance</h2>
+      <p className="mt-2 text-mute">Sign-up, message and feedback numbers show here once the database is connected. Run <code>npm run connect</code> (5 minutes, see the README).</p>
+    </section>
+  );
+  if (!s) return <section className={`${glass} no-print mb-4 h-48 p-8`} aria-busy="true" />;
+  const peak = Math.max(1, ...s.weeks.map((w) => w.count)), top = Math.max(1, ...s.firstEvents.map((e) => e.count));
+  const tile = (title: string, value: React.ReactNode, note: string) => (
+    <div className="rounded-2xl border border-hair bg-white/60 p-5"><p className={label}>{title}</p><p className="mt-1 text-[40px] font-medium leading-none tracking-[-0.04em]">{value}</p><p className="mt-2 text-[14px] text-mute">{note}</p></div>
+  );
+
+  return (
+    <section className={`${glass} no-print mb-4 p-6 sm:p-8`} aria-labelledby="stats-h">
+      <h2 id="stats-h" className="mb-5 text-[28px] font-medium tracking-[-0.03em]">Club at a glance</h2>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {tile("Sign-ups", s.signUps, `+${s.thisWeek} in the last 7 days`)}
+        {tile("Messages", s.messages.reduce((a, m) => a + m.count, 0), s.messages.length ? s.messages.map((m) => `${m.count} ${kindName(m.kind).toLowerCase()}`).join(" · ") : "None yet")}
+        {tile("Feedback", s.feedback.average ?? "—", s.feedback.count ? `average of ${s.feedback.count} rating${s.feedback.count === 1 ? "" : "s"}, out of 5` : "No ratings yet")}
+      </div>
+      <div className="mt-6 grid gap-8 md:grid-cols-2">
+        <figure>
+          <figcaption className={`${label} mb-3`}>Sign-ups per week</figcaption>
+          <ol className="flex h-36 items-end gap-2" aria-label="Sign-ups per week, last 8 weeks">
+            {s.weeks.map((w) => (
+              <li key={w.start} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5" title={`Week of ${w.start}: ${w.count}`}>
+                <span className="text-[12px] text-mute">{w.count || ""}</span>
+                <span className={`w-full rounded-md ${w.count ? "bg-[#2da44e]" : "bg-hair"}`} style={{ height: `${Math.max(4, (w.count / peak) * 100)}%` }} />
+                <span className="text-[11px] text-mute">{new Date(w.start + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+                <span className="sr-only">{w.count} sign-ups</span>
+              </li>
+            ))}
+          </ol>
+        </figure>
+        <figure>
+          <figcaption className={`${label} mb-3`}>What they want to try first</figcaption>
+          {s.firstEvents.length === 0 ? <p className="text-mute">No sign-ups yet.</p> : (
+            <ul className="space-y-2.5">
+              {s.firstEvents.map((e) => (
+                <li key={e.event} className="text-[14.5px]">
+                  <div className="flex justify-between gap-3"><span className="truncate">{eventName(e.event)}</span><span className="text-mute">{e.count}</span></div>
+                  <div className="mt-1 h-2 rounded-full bg-hair"><div className="h-2 rounded-full bg-ink" style={{ width: `${(e.count / top) * 100}%` }} /></div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </figure>
+      </div>
+    </section>
+  );
+}
+
 /* Club sign-ups from the home page's "Join the club" form (live mode only), with a CSV export. */
 function SignUps() {
   const { store } = useEpoch();
   const [rows, setRows] = useState<JoinRequest[] | null>(null);
   useEffect(() => { store?.joinRequests?.().then(setRows); }, [store]);
   const eventName = (d: string) => CLUB.events.find((e) => e.date === d)?.title ?? d;
+  const { me } = useEpoch();
+  const [subject, setSubject] = useState(""); const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false); const [result, setResult] = useState<{ k: "ok" | "err"; t: string } | null>(null);
+  const send = async () => {
+    if (!store?.broadcast) return;
+    if (!window.confirm(`Email ${rows?.length ?? 0} people? This can't be undone.`)) return;
+    setSending(true); setResult(null);
+    const r = await store.broadcast(subject, message); setSending(false);
+    if (r.ok) { setResult({ k: "ok", t: `Sent to ${r.sent} of ${r.total}${r.failed ? ` (${r.failed} failed)` : ""}.` }); setSubject(""); setMessage(""); } else setResult({ k: "err", t: r.error });
+  };
 
   const csv = () => {
     const q = (s: string) => `"${s.replace(/"/g, '""')}"`;
@@ -144,6 +222,84 @@ function SignUps() {
             </table>
           </div>
         )}
+      {store?.broadcast && me?.role === "admin" && (
+        <div className="mt-8 border-t border-hair pt-6">
+          <h3 className="text-[22px] font-medium tracking-[-0.02em]">Email everyone</h3>
+          <p className={`${label} mb-4`}>Goes to every sign-up who hasn&apos;t unsubscribed. Each email has an unsubscribe link automatically.</p>
+          <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject, e.g. GIT Merge 26 is this Monday" className={`${field} mb-3 !py-3`} aria-label="Subject" maxLength={120} />
+          <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder={"Write your message. A blank line starts a new paragraph; links become clickable."} rows={6} className={`${field} !py-3`} aria-label="Message" maxLength={5000} />
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <button disabled={sending || subject.trim().length < 3 || message.trim().length < 10} onClick={send} className={btnInk}>{sending ? "Sending…" : `Send to ${rows?.length ?? 0} people`}</button>
+            {result && <Notice kind={result.k}>{result.t}</Notice>}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+/* Messages from the "Get involved" form: core-team applications, sponsors, speakers, questions. */
+function Inbox() {
+  const { store } = useEpoch();
+  const [rows, setRows] = useState<ClubMessage[] | null>(null);
+  const [kind, setKind] = useState("all");
+  useEffect(() => { store?.messages?.().then(setRows); }, [store]);
+  if (!store?.messages) return null;
+  const kindLabel = (k: string) => KINDS.find((x) => x.id === k)?.label ?? k;
+  const shown = (rows ?? []).filter((m) => kind === "all" || m.kind === kind);
+  return (
+    <section className={`${glass} no-print mb-4 p-6 sm:p-8`}>
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div><h2 className="text-[28px] font-medium tracking-[-0.03em]">Messages</h2><p className={label}>From the “Get involved” page. Reply by email — they&apos;re also sent to the club inbox if email is set up.</p></div>
+        <div className="flex flex-wrap gap-2">{[["all", "All"], ...KINDS.map((k) => [k.id, k.label])].map(([id, l]) => <button key={id} onClick={() => setKind(id)} className={`rounded-full border px-3.5 py-1.5 text-[13px] ${kind === id ? "border-ink bg-ink text-white" : "border-hair"}`}>{l}</button>)}</div>
+      </div>
+      {rows === null ? <p className="text-mute">Loading…</p> : shown.length === 0 ? <p className="text-mute">No messages yet.</p> : (
+        <ul className="max-h-[420px] divide-y divide-hair overflow-y-auto" data-lenis-prevent>
+          {shown.map((m) => (
+            <li key={m.id} className="py-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-2"><p className="font-medium">{m.name} <span className="ml-2 rounded-full bg-ink/[.07] px-2.5 py-0.5 text-[12px] font-normal">{kindLabel(m.kind)}</span></p><span className="text-[13px] text-mute">{new Date(m.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span></div>
+              <p className="mt-0.5 text-[14px] text-mute"><a className="underline underline-offset-2" href={`mailto:${m.email}`}>{m.email}</a>{m.handle && <> · <a className="underline underline-offset-2" href={`https://github.com/${m.handle}`} target="_blank" rel="noopener">@{m.handle}</a></>}</p>
+              <p className="mt-2 whitespace-pre-wrap text-[15.5px] leading-relaxed">{m.message}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/* Anonymous feedback from the event pages: average rating per event, and what people wrote. */
+function FeedbackSummary() {
+  const { store } = useEpoch();
+  const [rows, setRows] = useState<EventFeedback[] | null>(null);
+  useEffect(() => { store?.feedback?.().then(setRows); }, [store]);
+  if (!store?.feedback) return null;
+  const events = CLUB.events.map((e) => ({ e, list: (rows ?? []).filter((f) => f.event === e.date) })).filter((x) => x.list.length);
+  return (
+    <section className={`${glass} no-print mb-4 p-6 sm:p-8`}>
+      <h2 className="text-[28px] font-medium tracking-[-0.03em]">Event feedback</h2>
+      <p className={`${label} mb-4`}>Anonymous. Collected on each event&apos;s page after the date.</p>
+      {rows === null ? <p className="text-mute">Loading…</p> : events.length === 0 ? <p className="text-mute">No feedback yet.</p> : (
+        <ul className="space-y-6">
+          {events.map(({ e, list }) => {
+            const avg = list.reduce((s, f) => s + f.rating, 0) / list.length;
+            return (
+              <li key={e.date}>
+                <p className="flex flex-wrap items-baseline gap-x-3 text-[19px] font-medium">{e.title}<span className="text-[15px] font-normal text-mute">★ {avg.toFixed(1)} · {list.length} response{list.length === 1 ? "" : "s"}</span></p>
+                <ul className="mt-2 max-h-[220px] space-y-2 overflow-y-auto" data-lenis-prevent>
+                  {list.filter((f) => f.liked || f.improve).map((f) => (
+                    <li key={f.id} className="rounded-xl bg-ink/[.04] px-4 py-3 text-[14.5px] leading-relaxed">
+                      <span className="font-mono text-[12px] text-mute">{"★".repeat(f.rating)}</span>
+                      {f.liked && <p><b className="font-medium">Liked:</b> {f.liked}</p>}
+                      {f.improve && <p><b className="font-medium">Improve:</b> {f.improve}</p>}
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </section>
   );
 }

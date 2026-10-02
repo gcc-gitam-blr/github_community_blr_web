@@ -19,6 +19,7 @@ export const CLUB = {
   // Until one is set the form says sign-ups aren't connected yet, instead of pretending to send.
   joinUrl: "https://chat.whatsapp.com/K1F5XOMfRavHEduanpxtSg", // the club WhatsApp community
 
+  // After an event, add `recap: { text: "What happened…", slides: "https://…" }` to its entry to show a Recap on its page.
   // Events are published on Luma. Paste the club calendar link (e.g. "https://lu.ma/github-gitam")
   // to show "See all on Luma" buttons, and add `luma: "https://lu.ma/xyz"` to an event for its RSVP button.
   lumaCalendar: "https://luma.com/github_blr",
@@ -32,6 +33,10 @@ export const CLUB = {
     { label: "WhatsApp", href: "https://chat.whatsapp.com/K1F5XOMfRavHEduanpxtSg" },
   ] as { label: string; href: string }[],
 
+  // A message shown above the site header (dismissible). Remove it, or let `until` pass, to hide it.
+  // Example: { id: "git-merge", text: "GIT Merge 26 is this Monday — RSVP on Luma", href: "https://luma.com/iztx970g", from: "2026-10-05", until: "2026-10-12" }
+  announcements: [] as { id: string; text: string; href?: string; from?: string; until?: string }[],
+
   // "What we do" on the About section
   whatWeDo: [
     { title: "Git & GitHub", text: "From your first commit to branches, pull requests and GitHub Actions — hands-on, at your own pace." },
@@ -43,7 +48,7 @@ export const CLUB = {
     { value: 6, file: "events/2026-27.md", label: "Events in 2026-27" },
     { value: 21, file: "epoch/booths.md", label: "Booths at Epoch" },
     { value: 2, file: "epoch/days.md", label: "Days of Epoch" },
-    { value: 398, file: "epoch/coins-per-ticket", label: "Coins per ₹199 ticket" },
+    { value: 398, file: "epoch/starter-coins", label: "Starter coins per attendee" },
   ],
   learn: [
     { id: "basics", cmd: "git init", shape: "diamond", color: "blue", title: "Git & GitHub basics", text: "Version control, repositories, and the everyday commands: init, add, commit, push, pull." },
@@ -54,17 +59,28 @@ export const CLUB = {
     { id: "career", cmd: "git tag v1.0.0", shape: "square", color: "mint", title: "GitHub for careers", text: "Use GitHub for internships, placements and a portfolio that speaks for you." },
   ] as { id: string; cmd: string; shape: Shape; color: NodeColor; title: string; text: string }[],
   events: [
-    { date: "2026-10-05", type: "Workshop", title: "Learn GitHub & Make Your First Contribution", luma: "https://luma.com/exkd0eax", text: "Introduction to GitHub, repositories, commits, issues, pull requests — and your first contribution.", where: "GITAM Bengaluru", shape: "diamond", color: "blue" },
+    { date: "2026-10-07", type: "Workshop", title: "Learn GitHub & Make Your First Contribution", luma: "https://luma.com/exkd0eax", text: "Introduction to GitHub, repositories, commits, issues, pull requests — and your first contribution.", where: "GITAM Bengaluru", shape: "diamond", color: "blue" },
     { date: "2026-10-12", type: "Open Source", title: "GIT Merge 26", luma: "https://luma.com/iztx970g", text: "A GitHub and open-source event: learn Git, explore open source, make beginner-friendly contributions.", where: "GITAM Bengaluru", shape: "square", color: "purple" },
     { date: "2026-12-01", dateLabel: "December 2026", type: "Flagship", title: "EPOCH — GitHub Technical Month", luma: "https://luma.com/nxg57cad", text: "The club's major technical event: challenges, project development, presentations, a project showcase — and the Epoch Coins economy.", where: "GITAM Bengaluru", shape: "triangle", color: "mint", href: "/epoch" },
     { date: "2027-01-04", type: "Workshop", title: "Build & Deploy with GitHub", luma: "https://luma.com/d74xiz76", text: "Build a website, app or student project and publish it using GitHub and related tools.", where: "GITAM Bengaluru", shape: "ring", color: "blue" },
     { date: "2027-02-08", type: "Workshop", title: "GitHub Profile Makeover", luma: "https://luma.com/6y0tnxzm", text: "Level up your profile, READMEs, repositories and project presentation for academic and professional use.", where: "GITAM Bengaluru", shape: "diamond", color: "purple" },
     { date: "2027-03-15", type: "Career", title: "GitHub for Careers & Technical Challenge", luma: "https://luma.com/a1bfax1o", text: "How GitHub helps with internships, placements and portfolios — followed by a technical challenge.", where: "GITAM Bengaluru", shape: "square", color: "mint" },
-  ] as { date: string; dateLabel?: string; href?: string; luma?: string; type: string; title: string; text: string; where: string; shape: Shape; color: NodeColor }[],
-  team: [] as { role: string; handle: string; note: string }[], // add real people: { role: "Club Lead", handle: "github-handle", note: "…" }
+  ] as { date: string; dateLabel?: string; href?: string; luma?: string; recap?: { text: string; slides?: string }; type: string; title: string; text: string; where: string; shape: Shape; color: NodeColor }[],
+  // PLACEHOLDER NAMES — swap for the real core team. `handle` is a GitHub username (its avatar and
+  // link appear automatically); leave it "" to show a neutral silhouette and no link.
+  team: [
+    { name: "Aarav Menon", role: "Club Lead", handle: "", note: "Sets the direction, keeps the club running, and says yes to good ideas." },
+    { name: "Diya Raman", role: "Tech Lead", handle: "", note: "Reviews pull requests and looks after this website." },
+    { name: "Kabir Nair", role: "Events Lead", handle: "", note: "Plans the workshops, books the rooms, and runs the day." },
+    { name: "Meera Iyer", role: "Open Source Lead", handle: "", note: "Finds first issues and mentors first pull requests." },
+    { name: "Rohan Das", role: "Community Lead", handle: "", note: "Welcomes every newcomer and runs the WhatsApp community." },
+    { name: "Ananya Rao", role: "Design Lead", handle: "", note: "Makes everything the club ships look and feel good." },
+    { name: "Ishaan Gupta", role: "Outreach Lead", handle: "", note: "Connects the club with other clubs, speakers and sponsors." },
+    { name: "Sana Khan", role: "Content Lead", handle: "", note: "Writes the posts, recaps and guides." },
+  ] as { name: string; role: string; handle: string; note: string }[],
   faq: [
     { q: "What is Epoch?", a: "Our flagship technical event in December: two days of workshops, coding competitions and 20+ interactive booths — run on its own currency, Epoch Coins." },
-    { q: "How do Epoch Coins work?", a: "Your ticket converts to coins at 1 ₹ = 2 coins (₹199 → 398 coins, final price to be announced). Spend them at booths and on merch, and top up at recharge points." },
+    { q: "How do Epoch Coins work?", a: "Everyone starts with 398 Epoch Coins, credited at check-in. Spend them at booths and on merch, and top up at recharge points. The ticket price (if any) hasn't been decided yet." },
     { q: "Can I earn more coins?", a: "Yes. Recharge points run mini-games — trivia, quick coding puzzles — worth around 20 coins. Each recharge point works once per person." },
     { q: "Do I need to know how to code?", a: "No. The year starts with a beginner session, Learn GitHub & Make Your First Contribution, and every event is built to be approachable." },
     { q: "How do I join, and where are events announced?", a: "Fill in the Join form on this page and hop into our WhatsApp community — that's where we share dates, workshops and RSVP links. Follow us on Instagram and LinkedIn too." },

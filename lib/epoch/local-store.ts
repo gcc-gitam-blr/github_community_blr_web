@@ -100,7 +100,7 @@ export const localStore: EpochStore = {
     if (!t) return { ok: false, error: "Unknown attendee QR." };
     if (t.ticket) return { ok: false, error: `${t.name} already has a verified ticket.` };
     t.ticket = true;
-    credit(t, STARTER_COINS, `Ticket ₹${EPOCH.ticketPriceINR} → ${STARTER_COINS} ${EPOCH.currency}`, "ticket", false);
+    credit(t, STARTER_COINS, `Check-in → ${STARTER_COINS} ${EPOCH.currency}`, "ticket", false);
     all[t.id] = t; write(K.users, all);
     return { ok: true, profile: t };
   },

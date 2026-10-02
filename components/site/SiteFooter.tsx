@@ -7,13 +7,14 @@ import { Sticker } from "@/components/ui/Sticker";
 import { scrollToTarget } from "@/components/ui/SmoothScroll";
 import { useClientValue } from "@/lib/useClientValue";
 import { SocialLinks } from "./SocialLinks";
+import gallery from "@/lib/gallery.json";
 
 /* One footer for the whole site (club pages and Epoch). Links are only shown when they lead somewhere real. */
 const ORG = CLUB.githubOrg ? `${CLUB.githubUrl}/${CLUB.githubOrg}` : "";
 
 type L = { label: string; href: string; ext?: boolean };
 const COLUMNS: { title: string; links: L[] }[] = [
-  { title: "Club", links: [{ label: "About", href: "/#about" }, { label: "What you'll learn", href: "/#learn" }, { label: "Events 2026-27", href: "/#events" }, { label: "FAQ", href: "/#faq" }, { label: "Join the club", href: "/#join" }] },
+  { title: "Club", links: [{ label: "About", href: "/#about" }, { label: "What you'll learn", href: "/#learn" }, { label: "Learn hub", href: "/learn" }, { label: "Contribute", href: "/contribute" }, { label: "Get involved", href: "/get-involved" }, { label: "Updates", href: "/updates" }, { label: "Events 2026-27", href: "/#events" }, { label: "Team", href: "/#team" }, ...(gallery.length ? [{ label: "Gallery", href: "/#gallery" }] : []), { label: "FAQ", href: "/#faq" }, { label: "Join the club", href: "/#join" }] },
   { title: "Epoch", links: [{ label: "Overview", href: "/epoch" }, { label: "How coins work", href: "/epoch#ticket" }, { label: "Booths", href: "/epoch/booths" }, { label: "The plan", href: "/epoch#plan" }, { label: "Merch shop", href: "/epoch/shop" }, { label: "Leaderboard", href: "/epoch/leaderboard" }] },
   { title: "Learn on GitHub", links: [{ label: "GitHub Skills", href: "https://skills.github.com", ext: true }, { label: "GitHub Docs", href: "https://docs.github.com", ext: true }, { label: "Student Developer Pack", href: "https://education.github.com/pack", ext: true }, { label: "GitHub Community", href: "https://github.com/community", ext: true }] },
   { title: "Get involved", links: [
@@ -96,6 +97,7 @@ export function SiteFooter({ sticker = true }: { sticker?: boolean }) {
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <span className="flex items-center gap-2"><MarkGithubIcon size={16} />© {new Date().getFullYear()} GitHub Community Club · {CLUB.university}</span>
             <Link href="/epoch" className="hover:text-[#4493f8]">{EPOCH.name}_{EPOCH.edition}</Link>
+            <Link href="/privacy" className="hover:text-[#4493f8]">Privacy</Link>
             <a href="/calendar.ics" download className="hover:text-[#4493f8]">Calendar (.ics)</a>
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">

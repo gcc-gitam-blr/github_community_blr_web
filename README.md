@@ -21,6 +21,23 @@ Website for the GitHub Community Club at GITAM University Bengaluru — **Code. 
 - **Calendar** — `/calendar.ics` (whole year) and `/events/<slug>/event.ics` (one event).
 - **Countdown banner** — set `EPOCH.startsAt` in `lib/epoch/config.ts` once dates are announced; during Epoch the banner says it's live.
 
+## Switch on messages, sign-ups and email (5 minutes)
+
+Until this is done the site still works: **Join** sends people to the WhatsApp community and **Get involved** hands the message to the club Instagram DM.
+To store sign-ups and messages and send email for real, run once:
+
+```bash
+npm run connect
+```
+
+It asks for three things and checks each one before moving on:
+
+1. **Supabase** (free): project URL + anon key (Project Settings → API), then the *Session pooler* connection string (Connect button). It creates every table. Safe to run again after updates.
+2. **Gmail**: the club address + an [App Password](https://myaccount.google.com/apppasswords). It sends you a test email.
+3. **Vercel** (optional): a [token](https://vercel.com/account/tokens), and it saves the same settings on the live site. Redeploy once afterwards.
+
+Everything is saved in `.env.local` (never committed). To make someone an organiser after they sign in to Epoch once: `npm run connect -- admin <github-handle>`.
+
 ## Settings (environment variables)
 
 | Variable | What it does |
@@ -64,7 +81,7 @@ Things that are **empty until you fill them in** (the site hides them rather tha
 
 ### How coins flow (from the original Epoch plan)
 
-- **Ticket → coins.** ₹199 (working price) × 2 = **398 EPC**. The attendee registers, pays, then shows their wallet QR at the registration desk; an organiser scans it and presses *Verify ticket*. Coins are credited once — a second attempt is refused.
+- **Check-in → coins.** Everyone gets **398 EPC** (`EPOCH.starterCoins`). The attendee registers, then shows their wallet QR at the registration desk; an organiser scans it and presses *Verify ticket*. Coins are credited once — a second attempt is refused. The ticket price is undecided (it may be free): set `EPOCH.ticketPriceINR` when it's fixed and the site will show it.
 - **Spend booths** (`epoch:b:<id>`) charge coins per session (VR = 40) and can be repeated, with a 20-second double-scan guard.
 - **Recharge points** pay **once per attendee, per point** (20 coins in the plan). The wallet shows how many are left.
 - **Merch stall** sells tees, hoodies and stickers for coins; stock is decremented atomically.
@@ -82,6 +99,13 @@ Things that are **empty until you fill them in** (the site hides them rather tha
 - **Dashboard wallet**: “Howdy” greeting, glass activity feed, Quick access column, left rail.
 - **Landing**: gradient headline, dark economy panel, colour-block booth categories that filter the list, dotted rules and a giant dotted call-to-action.
 
+## Photos (gallery)
+
+The home page shows a gallery once there are photos. To add them:
+1. Download the photos from Drive and put them on your computer in `photos-inbox/<event-name>/` — one folder per event (e.g. `photos-inbox/git-101-sept-2024/IMG_001.jpg`). Optional captions: `captions.json` in the folder, `{"IMG_001.jpg": "Mentors helping with a first pull request"}`.
+2. Run `node scripts/photos.mjs`. It fixes rotation, **removes hidden location/camera data**, makes three small WebP sizes, and fills `lib/gallery.json`.
+3. Commit `public/gallery` and `lib/gallery.json` (the raw `photos-inbox` is git-ignored). Only share photos of people who agreed.
+
 ## Stickers
 
 The Octodex stickers in `public/stickers` are generated from `public/GitHub_stickers` (47 MB, not committed) by `node scripts/stickers.mjs`. To use a different sticker, add it to the `PICK` list in that script and to `StickerName` in `components/ui/Sticker.tsx`.
@@ -89,8 +113,31 @@ The Octodex stickers in `public/stickers` are generated from `public/GitHub_stic
 ## Tests
 
 - `npm test` — the coin rules (demo store), the ask engine, club sign-ups (validator + `/api/join`), and the **real Supabase SQL** run inside PGlite (Postgres in WASM).
-- CI (`.github/workflows/ci.yml`) runs type-check, lint, tests and the build on every push and pull request.
+- `npm run test:e2e` — **browser tests** (Playwright): the whole Epoch coin flow, the offline wallet, the join/contact forms, security headers, and that no page scrolls sideways on a phone. Build first (`npm run build`); locally it uses your installed Edge.
+- CI (`.github/workflows/ci.yml`) runs type-check, lint, unit tests, the build and the browser tests on every push and pull request.
 - `tests/e2e.epoch.mjs` — the whole coin flow clicked through the real pages (instructions at the top of the file).
+
+## Email: welcome message and organiser broadcasts
+
+When someone joins through the form, the site emails them a welcome (WhatsApp link, next event, what to do first).
+Admins can also email **every sign-up** from `/epoch/admin` → *Email everyone*. Every message carries a personal,
+signed unsubscribe link (and the one-click header Gmail shows as an "Unsubscribe" button).
+
+Epoch has **no passwords** — attendees sign in with GitHub — so there is no "forgot password" email to build.
+
+**Set it up with a Gmail account (free, about 5 minutes):**
+1. Use a club Gmail account (e.g. a shared one the core team controls) and turn on **2-Step Verification**.
+2. Go to <https://myaccount.google.com/apppasswords>, create an app password named "club website", copy the 16 letters.
+3. In Vercel → Settings → Environment Variables, add (Production, Preview, Development):
+   - `EMAIL_FROM` = `GitHub Community Club <your-club@gmail.com>`
+   - `SMTP_HOST` = `smtp.gmail.com`, `SMTP_PORT` = `465`
+   - `SMTP_USER` = `your-club@gmail.com`, `SMTP_PASS` = the 16-letter app password
+   - `EMAIL_SECRET` = any long random text
+4. In Supabase, re-run `supabase/schema.sql` (it only adds what's missing) and make yourself admin.
+5. Redeploy. Join the form once with your own email — the welcome should arrive within seconds.
+
+Gmail allows about 500 emails a day; the broadcast stops at 450 per send. For bigger lists, use Resend with a verified domain (`RESEND_API_KEY`).
+Without any of these settings the site works normally and just doesn't send email.
 
 ## Epoch typeface
 

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CLUB } from "@/lib/config";
 import { Reveal } from "@/components/ui/Reveal";
 import { EventsYear } from "./EventsYear";
@@ -7,6 +8,8 @@ import { StickerLid } from "./StickerLid";
 import { Sticker } from "@/components/ui/Sticker";
 import { SocialLinks } from "./SocialLinks";
 import { JoinCard } from "./JoinCard";
+import { UpdateTag } from "./UpdateTag";
+import { getUpdates, updateDate } from "@/lib/updates";
 
 export function Head({ tag, title, children, light = false }: { tag: string; title: React.ReactNode; children?: React.ReactNode; light?: boolean }) {
   return (
@@ -56,8 +59,32 @@ export function Learn() {
           <Sticker name="professor" size={150} tilt={6} className="mb-12 hidden md:block" alt="" />
         </div>
         <LearnPath />
+        <p className="mt-12 flex flex-wrap gap-x-8 gap-y-2 text-[17px]"><Link href="/learn" className="font-semibold text-link hover:underline">Free resources &amp; a Git cheat sheet →</Link><Link href="/contribute" className="font-semibold text-link hover:underline">Find a beginner-friendly issue →</Link></p>
       </div>
     </section>
+  );
+}
+
+/** The two newest posts from content/updates, under the calendar. */
+function LatestUpdates() {
+  const posts = getUpdates().slice(0, 2);
+  if (!posts.length) return null;
+  return (
+    <div className="mt-10">
+      <div className="flex items-baseline justify-between gap-4 border-b border-line pb-3">
+        <h3 className="font-mono text-[13px] font-normal text-ink-3">{"// latest updates"}</h3>
+        <Link href="/updates" className="text-[14.5px] font-semibold text-link hover:underline">All updates →</Link>
+      </div>
+      <ul className="grid md:grid-cols-2 md:gap-8">
+        {posts.map((p) => (
+          <li key={p.slug} className="border-b border-line py-5 md:border-0">
+            <p className="flex items-center gap-3 text-[13.5px] text-ink-2"><time dateTime={p.date}>{updateDate(p.date)}</time><UpdateTag tag={p.tag} /></p>
+            <Link href={`/updates/${p.slug}`} className="mt-2 block font-display text-[21px] font-bold leading-snug hover:underline hover:underline-offset-4">{p.title}</Link>
+            <p className="mt-1.5 text-[15.5px] leading-relaxed text-ink-2">{p.summary}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -67,6 +94,7 @@ export function Events() {
       <div className={wrap}>
         <Head tag="// events · 2026-27" title={<>The year, as a<br />contribution graph.</>}>Every event is a green square. December is gold — that&apos;s Epoch. Pick a day to see what&apos;s on.</Head>
         <EventsYear />
+        <LatestUpdates />
         {CLUB.lumaCalendar && <a href={CLUB.lumaCalendar} target="_blank" rel="noopener" className="mt-6 inline-flex items-center gap-2 font-semibold text-link hover:underline">See every event and RSVP on Luma ↗</a>}
         {CLUB.lumaEpochCalendar && <a href={CLUB.lumaEpochCalendar} target="_blank" rel="noopener" className="ml-6 mt-6 inline-flex items-center gap-2 font-semibold text-link hover:underline">Epoch on Luma ↗</a>}
       </div>
@@ -122,18 +150,19 @@ export function Team() {
   return (
     <section id="team" className={pad}>
       <div className={wrap}>
-        <Head tag="// core team" title="The maintainers.">Students like you, who decided to stop waiting and start organising.</Head>
-        <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <Head tag="// core team" title="The maintainers.">Students like you, who decided to stop waiting and start organising. <Link href="/get-involved?kind=apply" className="font-semibold text-link underline">Want to join them?</Link></Head>
+        <ul className="grid gap-x-5 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
           {CLUB.team.map((m, i) => (
             <Reveal as="li" key={m.role} delay={i * 0.08} className="group">
               <div className={`grid aspect-square place-items-center overflow-hidden rounded-[18px] border-2 border-ink transition duration-500 group-hover:-translate-x-1 group-hover:-translate-y-1 group-hover:-rotate-[1.5deg] group-hover:shadow-[8px_8px_0_#0b0b0f] ${bg[i % 4]}`}>
                 {m.handle
                   // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={`https://github.com/${m.handle}.png?size=400`} alt={`${m.role} @${m.handle}`} loading="lazy" className="h-full w-full object-cover" />
+                  ? <img src={`https://github.com/${m.handle}.png?size=400`} alt={`${m.name}, ${m.role}`} loading="lazy" className="h-full w-full object-cover" />
                   : <svg viewBox="0 0 40 40" className="w-[46%]" fill="none" stroke="#0b0b0f" strokeWidth="3" strokeLinecap="round"><circle cx="20" cy="14" r="7" /><path d="M6 36c1-8 7-12 14-12s13 4 14 12" /></svg>}
               </div>
-              <h3 className="mb-1 mt-[18px] text-2xl">{m.role}</h3>
-              {m.handle && <a href={`https://github.com/${m.handle}`} className="font-mono text-[13px] text-link">@{m.handle}</a>}
+              <h3 className="mb-1 mt-[18px] text-2xl">{m.name}</h3>
+              <p className="font-mono text-[13px] text-ink-2">{m.role}</p>
+              {m.handle && <a href={`https://github.com/${m.handle}`} target="_blank" rel="noopener" className="font-mono text-[13px] text-link hover:underline">@{m.handle}</a>}
               <p className="mt-2 text-[15px] text-ink-2">{m.note}</p>
             </Reveal>
           ))}

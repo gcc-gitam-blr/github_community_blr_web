@@ -20,7 +20,7 @@ export default function OG() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 26 }}>
             <span style={{ background: "#0b0b0f", color: "#ffc933", padding: "8px 18px", borderRadius: 40, fontWeight: 700 }}>epoch_26</span>
-            <span style={{ color: "#3a3d44" }}>December 2026 · ₹199 → 398 coins</span>
+            <span style={{ color: "#3a3d44" }}>December 2026 · 398 Epoch Coins for everyone</span>
           </div>
         </div>
         {/* the git graph */}
