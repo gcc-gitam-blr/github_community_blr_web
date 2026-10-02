@@ -16,22 +16,41 @@ const LAYOUT: { name: StickerName; x: number; y: number; size: number; tilt: num
   { name: "professor", x: 24, y: 60, size: 94, tilt: -12, alt: "Professor Octocat" },
 ];
 
-/** Drag inside the lid: moves the sticker with the CSS `translate` property, kept within the lid's edges. */
+/** Past an edge the sticker follows less and less (rubber-banding), like Apple's scroll views:
+    a hard stop feels frozen, growing resistance feels like "there's nothing more here". */
+const rubber = (over: number, dim: number, c = 0.55) => (over * dim * c) / (dim + c * Math.abs(over));
+const soft = (d: number, lo: number, hi: number, dim: number) => (d < lo ? lo - rubber(lo - d, dim) : d > hi ? hi + rubber(d - hi, dim) : d);
+
+/** Drag inside the lid with the CSS `translate` property. It stays glued to the finger where you grabbed it,
+    resists past the lid's edges, and springs back inside when you let go. One finger at a time. */
 function drag(e: React.PointerEvent<HTMLDivElement>, lid: HTMLDivElement | null) {
-  if (!lid || e.button !== 0) return;
-  const el = e.currentTarget, r = el.getBoundingClientRect();
+  const el = e.currentTarget;
+  if (!lid || e.button !== 0 || el.dataset.dragging) return;
+  el.getAnimations().forEach((a) => a.cancel()); // grabbing it mid spring-back takes over from where it is
+  const r = el.getBoundingClientRect();
   // keep clear of the lid's border, with room for the sticker to tilt back when it's dropped
   const o = lid.getBoundingClientRect(), m = lid.clientLeft + 6;
   const box = { left: o.left + m, top: o.top + m, right: o.right - m, bottom: o.bottom - m };
   const [tx, ty] = (el.style.translate || "0px 0px").split(" ").map((v) => parseFloat(v) || 0);
+  const lo = { x: box.left - r.left, y: box.top - r.top }, hi = { x: box.right - r.right, y: box.bottom - r.bottom };
   const sx = e.clientX, sy = e.clientY;
-  el.setPointerCapture(e.pointerId); el.classList.add("dragging");
-  const move = (m: PointerEvent) => {
-    const dx = Math.min(box.right - r.right, Math.max(box.left - r.left, m.clientX - sx));
-    const dy = Math.min(box.bottom - r.bottom, Math.max(box.top - r.top, m.clientY - sy));
+  let dx = 0, dy = 0;
+  el.setPointerCapture(e.pointerId); el.classList.add("dragging"); el.dataset.dragging = "1";
+  const move = (p: PointerEvent) => {
+    if (p.pointerId !== e.pointerId) return;
+    dx = soft(p.clientX - sx, lo.x, hi.x, o.width); dy = soft(p.clientY - sy, lo.y, hi.y, o.height);
     el.style.translate = `${tx + dx}px ${ty + dy}px`;
   };
-  const up = () => { el.classList.remove("dragging"); el.removeEventListener("pointermove", move); el.removeEventListener("pointerup", up); el.removeEventListener("pointercancel", up); };
+  const up = (p: PointerEvent) => {
+    if (p.pointerId !== e.pointerId) return;
+    el.classList.remove("dragging"); delete el.dataset.dragging;
+    el.removeEventListener("pointermove", move); el.removeEventListener("pointerup", up); el.removeEventListener("pointercancel", up);
+    const fx = Math.min(hi.x, Math.max(lo.x, dx)), fy = Math.min(hi.y, Math.max(lo.y, dy));
+    if (fx === dx && fy === dy) return;
+    const from = el.style.translate, to = `${tx + fx}px ${ty + fy}px`;
+    el.style.translate = to;
+    if (!matchMedia("(prefers-reduced-motion: reduce)").matches) el.animate([{ translate: from }, { translate: to }], { duration: 380, easing: "cubic-bezier(0.23, 1, 0.32, 1)" });
+  };
   el.addEventListener("pointermove", move); el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
 }
 

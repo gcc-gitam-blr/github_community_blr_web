@@ -138,15 +138,19 @@ test("every link inside the update posts leads somewhere that exists", async ({ 
   }
 });
 
-test("stickers on the laptop lid can be dragged, and stay on the lid", async ({ page }) => {
+test("stickers on the laptop lid can be dragged, rubber-band at the edges, and settle on the lid", async ({ page }) => {
   await page.goto("/");
   const lid = page.locator("figure.reveal-group").first();
   await lid.scrollIntoViewIfNeeded(); await expect(lid).toHaveClass(/\bin\b/);
   const sticker = lid.locator(".pop").first(); await page.waitForTimeout(1200);
   const a = (await sticker.boundingBox())!;
   await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2); await page.mouse.down();
-  await page.mouse.move(a.x + 2000, a.y + 2000, { steps: 6 }); await page.mouse.up();
-  const b = (await sticker.boundingBox())!, box = (await lid.locator("> div").first().boundingBox())!;
+  await page.mouse.move(a.x + 2000, a.y + 2000, { steps: 6 });
+  const box = (await lid.locator("> div").first().boundingBox())!, held = (await sticker.boundingBox())!;
+  expect(held.x + held.width).toBeGreaterThan(box.x + box.width); // dragged past the edge it gives a little…
+  expect(held.x - a.x).toBeLessThan(1000);                       // …but resists: far less than the 2000px pulled
+  await page.mouse.up(); await page.waitForTimeout(700);           // then springs back inside
+  const b = (await sticker.boundingBox())!;
   expect(b.x).toBeGreaterThan(a.x + 50);
   expect(b.x + b.width).toBeLessThanOrEqual(box.x + box.width + 1);
   expect(b.y + b.height).toBeLessThanOrEqual(box.y + box.height + 1);
