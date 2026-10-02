@@ -219,7 +219,7 @@ test("the team: mentors, the five leads, everyone else, and their crew roles", a
   await expect(team.getByText(/merge conflicts newer members run into/)).toBeVisible();
   await expect(team.getByText(/first pull request/).first()).toBeVisible(); // Onboarding Forge is explained too
   await expect(team.getByText("Non-tech")).toHaveCount(0);
-  await expect(team.getByRole("heading", { name: /Contributors/ })).toContainText("16");
+  await expect(team.getByRole("heading", { name: /Contributors/ })).toContainText("17");
   for (const src of ["/team/monisha-s.webp", "/team/supriya-k-s-sm.webp", "/team/greeshmitha.webp", "/team/raja-sree-sm.webp", "/brand/club-mark.png"]) expect((await request.get(src)).status(), src).toBe(200);
 });
 
