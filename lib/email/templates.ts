@@ -94,3 +94,18 @@ export function broadcastEmail(i: BroadcastInput): Mail {
   const text = `${i.subject}\n\n${i.message.trim()}\n\n— The GitHub Community Club team\n\n${CLUB.name} · ${i.site}\nUnsubscribe: ${i.unsubscribe}`;
   return { subject: i.subject, html, text };
 }
+
+export interface CertificateInput { name: string; eventTitle: string; url: string; linkedin: string; site: string }
+
+/** Sent by an admin after an event, only to people marked as attended. */
+export function certificateEmail(i: CertificateInput): Mail {
+  const html = frame(`Your certificate for ${i.eventTitle}`, `
+<h1 style="font-size:24px;line-height:1.25;margin:0 0 12px">Thanks for coming, ${esc(i.name.split(" ")[0])} 🎉</h1>
+<p>Here's your certificate of participation for <b>${esc(i.eventTitle)}</b>. Open it to download a PDF or print it.</p>
+${button(i.url, "View your certificate")}
+<p>Add it to your LinkedIn profile in one click: <a href="${i.linkedin}" style="color:#0969da">Add to LinkedIn</a>.</p>
+<p style="color:#59636e;font-size:14px">Anyone can check it's genuine at the link above — it stays online.</p>
+<p>See you at the next one!</p>`, i.site);
+  const text = `Thanks for coming, ${i.name.split(" ")[0]}!\n\nYour certificate of participation for ${i.eventTitle}:\n${i.url}\n\nAdd it to LinkedIn: ${i.linkedin}\n\nSee you at the next one!\n— ${CLUB.name}`;
+  return { subject: `Your certificate: ${i.eventTitle}`, html, text };
+}
