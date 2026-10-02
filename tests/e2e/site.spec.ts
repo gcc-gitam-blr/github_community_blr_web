@@ -137,3 +137,17 @@ test("every link inside the update posts leads somewhere that exists", async ({ 
     for (const h of links) expect((await request.get(h)).status(), `${p} → ${h}`).toBeLessThan(400);
   }
 });
+
+test("stickers on the laptop lid can be dragged, and stay on the lid", async ({ page }) => {
+  await page.goto("/");
+  const lid = page.locator("figure.reveal-group").first();
+  await lid.scrollIntoViewIfNeeded(); await expect(lid).toHaveClass(/\bin\b/);
+  const sticker = lid.locator(".pop").first(); await page.waitForTimeout(1200);
+  const a = (await sticker.boundingBox())!;
+  await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2); await page.mouse.down();
+  await page.mouse.move(a.x + 2000, a.y + 2000, { steps: 6 }); await page.mouse.up();
+  const b = (await sticker.boundingBox())!, box = (await lid.locator("> div").first().boundingBox())!;
+  expect(b.x).toBeGreaterThan(a.x + 50);
+  expect(b.x + b.width).toBeLessThanOrEqual(box.x + box.width + 1);
+  expect(b.y + b.height).toBeLessThanOrEqual(box.y + box.height + 1);
+});
