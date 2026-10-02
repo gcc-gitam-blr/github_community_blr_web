@@ -35,6 +35,15 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   ok("a booth scan before the ticket is verified is refused", !(await call("scan_booth", ["vr"])).ok);
   ok("an attendee can't verify tickets", !(await call("issue_ticket", [ADA, 398])).ok);
   ok("an attendee can't award coins", !(await call("award_coins", [ADA, 1000, "free money"])).ok);
+  // someone with no profile (not signed in, or signed in but not registered) has no role at all
+  await as("");
+  ok("an anonymous visitor can't verify tickets", !(await call("issue_ticket", [ADA, 398])).ok);
+  ok("an anonymous visitor can't award coins", !(await call("award_coins", [ADA, 1000, "free money"])).ok);
+  await db.query(`insert into auth.users values ('00000000-0000-0000-0000-00000000000c', 'c@x.in', '{"user_name":"cee"}')`);
+  await as("00000000-0000-0000-0000-00000000000c");
+  ok("a signed-in user without a profile can't award coins", !(await call("award_coins", [ADA, 1000, "free money"])).ok);
+  ok("…and nobody got coins from those attempts", (await coins(ADA)) === 0);
+  await as(ADA);
 
   await db.query("update profiles set role = 'admin' where id = $1", [ORG]);
   await as(ORG);
