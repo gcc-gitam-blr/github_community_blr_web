@@ -1,6 +1,11 @@
 "use client";
 import { useRef, useState } from "react";
 import { KINDS, validateContact, type Kind } from "@/lib/contact";
+import { CLUB } from "@/lib/config";
+
+// Instagram DMs open straight from ig.me/m/<account>; used while the club inbox isn't switched on.
+const insta = CLUB.socials.find((s) => s.label === "Instagram")?.href.match(/instagram\.com\/([^/?#]+)/)?.[1];
+const DM_URL = insta ? `https://ig.me/m/${insta}` : CLUB.joinUrl;
 
 /* The Get involved form: pick what it's about, then say who you are. */
 const field = "w-full rounded-lg border border-line bg-white px-4 py-3 text-[16px] outline-none transition focus:border-ink";
@@ -8,7 +13,8 @@ const field = "w-full rounded-lg border border-line bg-white px-4 py-3 text-[16p
 export function ContactForm({ initial = "question" }: { initial?: Kind }) {
   const [kind, setKind] = useState<Kind>(initial);
   const [v, setV] = useState({ name: "", email: "", handle: "", message: "" });
-  const [state, setState] = useState<"idle" | "sending" | "done">("idle");
+  const [state, setState] = useState<"idle" | "sending" | "done" | "handoff">("idle");
+  const [copied, setCopied] = useState(false);
   const [err, setErr] = useState("");
   const started = useRef(0); const honey = useRef<HTMLInputElement>(null);
   const cur = KINDS.find((k) => k.id === kind)!;
@@ -22,9 +28,27 @@ export function ContactForm({ initial = "question" }: { initial?: Kind }) {
     try {
       const r = await fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
       const j = await r.json();
-      if (j.ok) setState("done"); else { setErr(j.error ?? "Something went wrong."); setState("idle"); }
+      if (j.ok) setState("done"); else if (j.fallback && DM_URL) setState("handoff"); else { setErr(j.error ?? "Something went wrong."); setState("idle"); }
     } catch { setErr("Network error — please try again."); setState("idle"); }
   };
+
+  const text = `Hi! (${cur.label})\n\n${v.message.trim()}\n\n— ${v.name.trim()}, ${v.email.trim()}${v.handle.trim() ? `, GitHub @${v.handle.trim().replace(/^@/, "")}` : ""}`;
+  const copy = async () => { try { await navigator.clipboard.writeText(text); setCopied(true); } catch { setCopied(false); } };
+  const where = insta ? "Instagram" : "WhatsApp";
+
+  // the inbox isn't switched on: don't lose the message, hand it to a chat a person reads
+  if (state === "handoff") return (
+    <div role="status" className="rounded-[18px] border-2 border-ink bg-white p-6 sm:p-8">
+      <h2 className="text-[28px]">One more step — send it to us on {where}</h2>
+      <p className="mt-2 text-[16px] text-ink-2">Our website inbox isn&apos;t switched on yet, so this hasn&apos;t reached anyone. Copy your message and paste it in the chat that opens. A real person reads every one.</p>
+      <pre className="mt-5 max-h-60 overflow-auto whitespace-pre-wrap rounded-lg border border-line bg-[#f6f8fa] p-4 font-mono text-[13.5px] leading-relaxed">{text}</pre>
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <a href={DM_URL} target="_blank" rel="noopener" onClick={copy} className="rounded-md bg-ink px-5 py-3 font-display font-bold text-white">Copy &amp; open {where} ↗</a>
+        <button type="button" onClick={copy} className="rounded-md border-2 border-ink px-5 py-3 font-display font-bold">{copied ? "Copied ✓" : "Copy only"}</button>
+        <button type="button" onClick={() => setState("idle")} className="px-2 py-3 text-[14.5px] text-ink-2 underline underline-offset-4">Edit message</button>
+      </div>
+    </div>
+  );
 
   if (state === "done") return (
     <div role="status" className="rounded-[18px] border-2 border-ink bg-[#dafbe1] p-8">
