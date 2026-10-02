@@ -48,8 +48,10 @@ alter table booths enable row level security;
 alter table rewards enable row level security;
 alter table txs enable row level security;
 
+-- 'none' (never null) for visitors without a profile: `null not in (...)` is not true in SQL, so a null role
+-- would slip past the organiser checks below.
 create or replace function my_role() returns text language sql security definer stable as
-$$ select role from profiles where id = auth.uid() $$;
+$$ select coalesce((select role from profiles where id = auth.uid()), 'none') $$;
 
 drop policy if exists "read own profile" on profiles;
 create policy "read own profile" on profiles for select using (auth.uid() = id);
@@ -151,6 +153,10 @@ begin
   insert into txs (user_id, delta, reason, ref) values (t.id, p_delta, coalesce(nullif(p_reason,''), 'Organiser award'), 'admin');
   return json_build_object('ok', true);
 end $$;
+
+-- Belt and braces: visitors who aren't signed in can't even call the coin functions.
+revoke execute on function issue_ticket(uuid, int), award_coins(uuid, int, text), scan_booth(text), redeem_reward(text), register_profile(text) from public, anon;
+grant execute on function issue_ticket(uuid, int), award_coins(uuid, int, text), scan_booth(text), redeem_reward(text), register_profile(text) to authenticated;
 
 -- Seed: recharge points and spend booths (mirrors lib/epoch/config.ts — costs other than VR=40 and recharge=20 are placeholders)
 insert into booths (id, name, kind, category, coins, blurb, optional) values

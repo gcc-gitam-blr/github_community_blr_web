@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { EPOCH } from "./config";
 import type { Booth, EpochStore, Profile, Reward, Tx } from "./types";
+import { PENDING_NAME } from "./pending";
 
 let client: SupabaseClient | null = null;
 const sb = () => (client ??= createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!));
@@ -9,10 +10,29 @@ type Row = { id: string; handle: string; name: string; email: string | null; coi
 const toProfile = (r: Row): Profile => ({ id: r.id, handle: r.handle, name: r.name, email: r.email ?? "", coins: r.coins, earned: r.earned, ticket: r.ticket, role: r.role, createdAt: r.created_at });
 const fail = (error: string) => ({ ok: false as const, error });
 
+/* Back from "Sign in with GitHub" (/api/auth/github): the URL fragment carries a one-time token, or an error.
+   Swap the token for a session once, and tidy the address bar. `back` is true when we just returned from GitHub. */
+export type LoginResult = { back: boolean; error: string | null };
+let finished: Promise<LoginResult> | null = null;
+export const finishLogin = () => (finished ??= (async () => {
+  if (typeof window === "undefined") return { back: false, error: null };
+  const h = new URLSearchParams(window.location.hash.slice(1));
+  const token = h.get("sb_token"), err = h.get("login_error");
+  if (!token && !err) return { back: false, error: null };
+  history.replaceState(null, "", window.location.pathname + window.location.search);
+  if (err) return { back: true, error: err };
+  const { error } = await sb().auth.verifyOtp({ token_hash: token!, type: "email" });
+  return { back: true, error: error ? "That sign-in didn't finish — please try again." : null };
+})());
+/** Sends the browser to GitHub; it comes back to `next` signed in. */
+export const startLogin = (next = window.location.pathname) => { window.location.href = new URL(`/api/auth/github?next=${encodeURIComponent(next)}`, window.location.origin).href; }; // a server route: full navigation
+
 export const supabaseStore: EpochStore = {
   mode: "supabase",
+  loginResult: () => finishLogin(),
 
   async me() {
+    await finishLogin();
     const { data: { user } } = await sb().auth.getUser();
     if (!user) return null;
     const { data } = await sb().from("profiles").select("*").eq("id", user.id).maybeSingle();
@@ -22,9 +42,11 @@ export const supabaseStore: EpochStore = {
   /* Attendees sign in with GitHub. First call redirects to GitHub; once they're
      back with a session, the same call creates their profile. */
   async register({ name }) {
+    await finishLogin();
     const { data: { user } } = await sb().auth.getUser();
     if (!user) {
-      await sb().auth.signInWithOAuth({ provider: "github", options: { redirectTo: `${window.location.origin}/epoch/register` } });
+      try { sessionStorage.setItem(PENDING_NAME, name); } catch { /* finishing automatically is a convenience */ }
+      startLogin("/epoch/register");
       return fail("Redirecting to GitHub…");
     }
     const { data, error } = await sb().rpc("register_profile", { p_name: name });
