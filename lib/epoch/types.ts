@@ -71,6 +71,8 @@ export interface EpochStore {
   /** staff: manual award/deduct, e.g. competition prizes or refunds */
   award(userId: string, delta: number, reason: string): Promise<Result<{ profile: Profile }>>;
   lookup(userId: string): Promise<Profile | null>;
+  /** live mode: the outcome of coming back from "Sign in with GitHub" (back = just returned) */
+  loginResult?(): Promise<{ back: boolean; error: string | null }>;
   /** demo mode only: unlock organiser tools with a shared code */
   elevate?(code: string): Promise<Result>;
   /** staff, live (Supabase) mode only: club sign-ups from the home page */
