@@ -23,7 +23,7 @@ export default function UpdatesPage() {
         <p className="font-mono text-[13px] text-ink-3">{"// updates"}</p>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-4 border-b border-line pb-6">
           <h1 className="text-[clamp(36px,5vw,56px)] leading-[1.02]">What&apos;s new at the club</h1>
-          <a href="/updates/feed.xml" className="inline-flex items-center gap-2 rounded-md border border-line px-3.5 py-2 text-[14px] font-semibold transition hover:border-ink"><RssIcon size={16} />Follow with RSS</a>
+          <a href="/updates/feed.xml" className="press inline-flex items-center gap-2 rounded-md border border-line px-3.5 py-2 text-[14px] font-semibold transition hover:border-ink"><RssIcon size={16} />Follow with RSS</a>
         </div>
 
         <ol className="mt-4">

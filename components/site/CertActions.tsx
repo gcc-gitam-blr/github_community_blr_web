@@ -10,7 +10,7 @@ export function CertActions({ linkedin }: { linkedin: string }) {
   return (
     <div className="no-print flex flex-wrap items-center justify-center gap-3">
       <button onClick={() => window.print()} className="rounded-md bg-ink px-5 py-3 font-display font-bold text-white">Download PDF</button>
-      <a href={linkedin} target="_blank" rel="noopener" className="rounded-md bg-[#0a66c2] px-5 py-3 font-display font-bold text-white">Add to LinkedIn ↗</a>
+      <a href={linkedin} target="_blank" rel="noopener" className="press rounded-md bg-[#0a66c2] px-5 py-3 font-display font-bold text-white">Add to LinkedIn ↗</a>
     </div>
   );
 }

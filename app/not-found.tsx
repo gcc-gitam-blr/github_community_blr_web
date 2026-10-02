@@ -14,7 +14,7 @@ export default function NotFound() {
           <h1 className="mt-3 text-[clamp(36px,5vw,64px)]">404 — this branch doesn&apos;t exist.</h1>
           <p className="mt-4 max-w-[46ch] text-[18px] text-ink-2">The page may have moved, or the link had a typo. Let&apos;s get you back on main.</p>
           <div className="mt-8 flex flex-wrap items-center gap-4">
-            <Link href="/" className="rounded-md bg-ink px-5 py-3 font-mono text-[14px] font-bold text-white">git checkout main</Link>
+            <Link href="/" className="press rounded-md bg-ink px-5 py-3 font-mono text-[14px] font-bold text-white">git checkout main</Link>
             <Link href="/epoch" className="font-semibold text-link">Go to Epoch →</Link>
           </div>
         </div>

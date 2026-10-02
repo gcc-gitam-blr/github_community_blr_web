@@ -54,7 +54,7 @@ export function Nav() {
         </nav>
 
         <div className="ml-auto hidden items-center gap-5 lg:ml-0 lg:flex">
-          <a href={to("#join")} className="lift whitespace-nowrap rounded-md border-2 border-ink bg-ink px-5 py-3 font-display text-[15px] font-bold text-white">Join the club</a>
+          <a href={to("#join")} className="press lift whitespace-nowrap rounded-md border-2 border-ink bg-ink px-5 py-3 font-display text-[15px] font-bold text-white">Join the club</a>
         </div>
 
         <button className="relative ml-auto h-11 w-11 lg:hidden" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} onClick={() => setOpen(!open)}>

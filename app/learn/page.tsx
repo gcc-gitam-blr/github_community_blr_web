@@ -53,7 +53,7 @@ export default function Learn() {
 
         <div className="mt-20 rounded-[18px] border-2 border-ink bg-[#dafbe1] p-6 sm:flex sm:items-center sm:justify-between sm:p-8">
           <p className="max-w-[56ch] text-[18px]"><b>Ready to try it for real?</b> Our workshops start from zero, and the <Link href="/contribute" className="font-semibold text-link underline">contribute page</Link> shows beginner-friendly issues you can fix today.</p>
-          <Link href="/#join" className="mt-4 inline-flex rounded-md bg-ink px-5 py-3 font-display font-bold text-white sm:mt-0">Join the club</Link>
+          <Link href="/#join" className="press mt-4 inline-flex rounded-md bg-ink px-5 py-3 font-display font-bold text-white sm:mt-0">Join the club</Link>
         </div>
       </main>
       <SiteFooter />

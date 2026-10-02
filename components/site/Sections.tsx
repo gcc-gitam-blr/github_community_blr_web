@@ -154,7 +154,7 @@ export function Team() {
         <ul className="grid gap-x-5 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
           {CLUB.team.map((m, i) => (
             <Reveal as="li" key={m.role} delay={i * 0.08} className="group">
-              <div className={`grid aspect-square place-items-center overflow-hidden rounded-[18px] border-2 border-ink transition duration-500 group-hover:-translate-x-1 group-hover:-translate-y-1 group-hover:-rotate-[1.5deg] group-hover:shadow-[8px_8px_0_#0b0b0f] ${bg[i % 4]}`}>
+              <div className={`grid aspect-square place-items-center overflow-hidden rounded-[18px] border-2 border-ink transition duration-300 ease-out group-hover:-translate-x-1 group-hover:-translate-y-1 group-hover:-rotate-[1.5deg] group-hover:shadow-[8px_8px_0_#0b0b0f] ${bg[i % 4]}`}>
                 {m.handle
                   // eslint-disable-next-line @next/next/no-img-element
                   ? <img src={`https://github.com/${m.handle}.png?size=400`} alt={`${m.name}, ${m.role}`} loading="lazy" className="h-full w-full object-cover" />
@@ -194,7 +194,7 @@ export function Join() {
         <Reveal>
           <h2 className="text-[clamp(44px,6.6vw,96px)] leading-[.95]">Your first commit is one click away<span className="animate-blink">&gt;_</span></h2>
           <p className="mt-6 max-w-[40ch] text-[19px] text-ink/80">Open a pull request into the club: who you are, and what you want to try first. We&apos;ll review it with a welcome.</p>
-          {CLUB.joinUrl && <a href={CLUB.joinUrl} target="_blank" rel="noopener" className="lift mt-8 inline-flex items-center gap-2 rounded-md border-2 border-ink bg-white px-5 py-3 font-display font-bold">Join the WhatsApp community →</a>}
+          {CLUB.joinUrl && <a href={CLUB.joinUrl} target="_blank" rel="noopener" className="press lift mt-8 inline-flex items-center gap-2 rounded-md border-2 border-ink bg-white px-5 py-3 font-display font-bold">Join the WhatsApp community →</a>}
           <div className="mt-8"><p className="mb-3 font-mono text-[13px] text-ink">Follow us for event updates:</p><SocialLinks /></div>
           <Sticker name="welcome" size={170} tilt={-5} className="mt-8 hidden lg:block" alt="" />
         </Reveal>

@@ -49,7 +49,7 @@ export function Hero() {
             <li><b className="text-gold">2</b> days</li>
             <li className="hidden sm:block">workshops · contests · one economy</li>
           </ul>
-          <EpochLink className="rounded-full bg-[#ffc933] px-6 py-3 font-display text-[15px] font-bold text-ink transition hover:-translate-y-0.5 hover:bg-[#ffe28f]">Enter Epoch →</EpochLink>
+          <EpochLink className="press rounded-full bg-[#ffc933] px-6 py-3 font-display text-[15px] font-bold text-ink transition hover:-translate-y-0.5 hover:bg-[#ffe28f]">Enter Epoch →</EpochLink>
         </div>
       </section>
     </>

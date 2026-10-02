@@ -20,7 +20,7 @@ export function LearnPath() {
         <ol className="stagger -mt-[46px] grid grid-cols-6">
           {steps.map((s, i) => (
             <li key={s.id} style={{ "--sd": `${0.1 + i * 0.1}s` } as React.CSSProperties} className="group flex flex-col items-center px-3 text-center">
-              <span className="relative z-10 rounded-full bg-soft p-0.5 transition-transform duration-500 group-hover:-translate-y-1 group-hover:rotate-12"><NodeIcon shape={s.shape} color={s.color} size={42} /></span>
+              <span className="relative z-10 rounded-full bg-soft p-0.5 transition-transform duration-300 ease-out group-hover:-translate-y-1 group-hover:rotate-12"><NodeIcon shape={s.shape} color={s.color} size={42} /></span>
               <code className="mt-5 rounded-md bg-ink px-2 py-1 font-mono text-[11.5px] text-brand">{s.cmd}</code>
               <h3 className="mt-3 text-[20px] leading-tight">{s.title}</h3>
               <p className="mt-2 text-[14.5px] leading-snug text-ink-2">{s.text}</p>
