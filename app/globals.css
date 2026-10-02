@@ -127,3 +127,22 @@ html.lenis, html.lenis body { height: auto; }
 @keyframes rise-fade { from { transform: translateY(14px); opacity: 0; } }
 .hero-rise { animation: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: var(--d, 0s); }
 .hero-fade { animation: rise-fade 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: var(--d, 0s); }
+
+/* ---------- Markdown posts (club updates): GitHub's README rhythm in the club's type ---------- */
+.post { font-size: 17px; line-height: 1.7; color: var(--color-ink-2); }
+.post > * + * { margin-top: 1em; }
+.post h2 { margin-top: 1.8em; padding-bottom: .3em; border-bottom: 1px solid var(--color-line); font-size: 24px; line-height: 1.25; color: var(--color-ink); }
+.post h3 { margin-top: 1.5em; font-size: 19px; color: var(--color-ink); }
+.post strong { color: var(--color-ink); font-weight: 650; }
+.post a { color: var(--color-link); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.post a:hover { text-decoration-thickness: 2px; }
+.post ul, .post ol { padding-left: 1.4em; }
+.post ul { list-style: disc; }
+.post ol { list-style: decimal; }
+.post li + li { margin-top: .35em; }
+.post li::marker { color: var(--color-ink-3); }
+.post code { border-radius: 6px; background: var(--color-soft); padding: .15em .4em; font-family: var(--font-mono); font-size: .86em; color: var(--color-ink); }
+.post table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; font-size: 15.5px; }
+.post th, .post td { border: 1px solid var(--color-line); padding: 8px 13px; text-align: left; vertical-align: top; }
+.post th { background: var(--color-soft); color: var(--color-ink); font-weight: 600; }
+.post tr:nth-child(2n) td { background: #fbfcfb; }
