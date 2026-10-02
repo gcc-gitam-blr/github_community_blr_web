@@ -46,9 +46,8 @@ test("the smallest phones (320px): the home page and Epoch fit, including the ti
     await page.goto(path); await page.waitForTimeout(600);
     const { scroll, client, culprits } = await page.evaluate(() => {
       const vw = document.documentElement.clientWidth;
-      const inFixed = (e: Element | null): boolean => !!e && (getComputedStyle(e).position === "fixed" || inFixed(e.parentElement));
-      // name what sticks out, so a failure says where to look
-      const culprits = [...document.querySelectorAll("body *")].filter((e) => e.getBoundingClientRect().right > vw + 0.5 && !inFixed(e))
+      // name what sticks out (fixed bars count too), so a failure says where to look
+      const culprits = [...document.querySelectorAll("body *")].filter((e) => e.getBoundingClientRect().right > vw + 0.5)
         .slice(0, 6).map((e) => `${e.tagName}.${String((e as HTMLElement).className).slice(0, 60)} → ${e.getBoundingClientRect().right.toFixed(1)}`);
       return { scroll: document.documentElement.scrollWidth, client: vw, culprits };
     });
