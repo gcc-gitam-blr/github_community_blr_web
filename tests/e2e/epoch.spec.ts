@@ -34,6 +34,7 @@ test("a full Epoch day: check-in, spend, recharge, shop, ledger", async ({ page 
   await expect(page.getByText("Wrong organiser code")).toBeVisible();
   await page.getByPlaceholder("organiser code").fill("epoch-admin"); await page.getByRole("button", { name: "Unlock" }).click();
   await expect(page.getByRole("heading", { name: /Organiser desk/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Club at a glance" })).toBeVisible(); // demo mode explains how to connect the database
   await scan(page, `epoch:u:${adaId}`);
   await expect(page.getByText(/Ada Lovelace/)).toBeVisible();
   await page.getByRole("button", { name: /Verify ticket/ }).click();
