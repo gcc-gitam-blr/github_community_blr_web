@@ -21,6 +21,23 @@ Website for the GitHub Community Club at GITAM University Bengaluru — **Code. 
 - **Calendar** — `/calendar.ics` (whole year) and `/events/<slug>/event.ics` (one event).
 - **Countdown banner** — set `EPOCH.startsAt` in `lib/epoch/config.ts` once dates are announced; during Epoch the banner says it's live.
 
+## Switch on messages, sign-ups and email (5 minutes)
+
+Until this is done the site still works: **Join** sends people to the WhatsApp community and **Get involved** hands the message to the club Instagram DM.
+To store sign-ups and messages and send email for real, run once:
+
+```bash
+npm run connect
+```
+
+It asks for three things and checks each one before moving on:
+
+1. **Supabase** (free): project URL + anon key (Project Settings → API), then the *Session pooler* connection string (Connect button). It creates every table. Safe to run again after updates.
+2. **Gmail**: the club address + an [App Password](https://myaccount.google.com/apppasswords). It sends you a test email.
+3. **Vercel** (optional): a [token](https://vercel.com/account/tokens), and it saves the same settings on the live site. Redeploy once afterwards.
+
+Everything is saved in `.env.local` (never committed). To make someone an organiser after they sign in to Epoch once: `npm run connect -- admin <github-handle>`.
+
 ## Settings (environment variables)
 
 | Variable | What it does |
