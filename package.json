@@ -7,8 +7,9 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx tests/economy.test.ts && tsx tests/ask.test.ts && tsx tests/join.test.ts && tsx tests/email.test.ts && tsx tests/issues.test.ts && tsx tests/contact.test.ts && tsx tests/announcements.test.ts && tsx tests/feedback.test.ts && tsx tests/schema.test.ts",
-    "test:e2e": "playwright test"
+    "test": "tsx tests/economy.test.ts && tsx tests/ask.test.ts && tsx tests/join.test.ts && tsx tests/email.test.ts && tsx tests/issues.test.ts && tsx tests/contact.test.ts && tsx tests/announcements.test.ts && tsx tests/feedback.test.ts && tsx tests/schema.test.ts && tsx tests/connect.test.ts",
+    "test:e2e": "playwright test",
+    "connect": "tsx scripts/connect.ts"
   },
   "dependencies": {
     "@primer/octicons-react": "^19.38.0",
@@ -29,11 +30,13 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
     "@electric-sql/pglite": "^0.5.8",
+    "@electric-sql/pglite-socket": "^0.2.11",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/mailparser": "^3.9.0",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.2",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/smtp-server": "^3.5.13",
@@ -41,6 +44,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.7",
     "mailparser": "^3.9.33",
+    "pg": "^8.23.1",
     "smtp-server": "^3.19.16",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
