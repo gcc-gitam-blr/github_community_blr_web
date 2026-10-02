@@ -11,6 +11,7 @@ import { BOOTHS, STARTER_COINS, EPOCH } from "@/lib/epoch/config";
 import type { ClubMessage, EventFeedback, JoinRequest, Reward } from "@/lib/epoch/types";
 import { KINDS } from "@/lib/contact";
 import { CLUB } from "@/lib/config";
+import { clubStats, type ClubStats } from "@/lib/stats";
 
 export function BoothsPage() {
   return <Frame title="Where coins go." sub="Recharge points earn. Everything else spends."><BoothSection /></Frame>;
@@ -91,6 +92,7 @@ export function AdminPage() {
 
   return (
     <Frame title="Organiser desk." sub={`Verify tickets (${STARTER_COINS} ${EPOCH.currency}, once), award prizes, and print the booth QR sheet.`} aside={<div className="no-print flex gap-2"><Link href="/epoch/scan" className={btnInk}>Scan a wallet</Link><button onClick={() => window.print()} className={btnSoft}>Print QR sheet</button></div>}>
+      <ClubStatsPanel />
       <SignUps />
       <Inbox />
       <FeedbackSummary />
@@ -106,6 +108,69 @@ export function AdminPage() {
         ))}
       </ul>
     </Frame>
+  );
+}
+
+/* Club at a glance: sign-ups per week, what people want to try first, messages and feedback. */
+function ClubStatsPanel() {
+  const { store } = useEpoch();
+  const [s, setS] = useState<ClubStats | null>(null);
+  useEffect(() => {
+    if (!store?.joinRequests) return;
+    Promise.all([store.joinRequests(), store.messages?.() ?? [], store.feedback?.() ?? []]).then(([j, m, f]) => setS(clubStats(j, m, f)));
+  }, [store]);
+  const eventName = (d: string) => CLUB.events.find((e) => e.date === d)?.title ?? d;
+  const kindName = (k: string) => KINDS.find((x) => x.id === k)?.label ?? k;
+
+  if (!store?.joinRequests) return (
+    <section className={`${glass} no-print mb-4 p-6 sm:p-8`}>
+      <h2 className="text-[28px] font-medium tracking-[-0.03em]">Club at a glance</h2>
+      <p className="mt-2 text-mute">Sign-up, message and feedback numbers show here once the database is connected. Run <code>npm run connect</code> (5 minutes, see the README).</p>
+    </section>
+  );
+  if (!s) return <section className={`${glass} no-print mb-4 h-48 p-8`} aria-busy="true" />;
+  const peak = Math.max(1, ...s.weeks.map((w) => w.count)), top = Math.max(1, ...s.firstEvents.map((e) => e.count));
+  const tile = (title: string, value: React.ReactNode, note: string) => (
+    <div className="rounded-2xl border border-hair bg-white/60 p-5"><p className={label}>{title}</p><p className="mt-1 text-[40px] font-medium leading-none tracking-[-0.04em]">{value}</p><p className="mt-2 text-[14px] text-mute">{note}</p></div>
+  );
+
+  return (
+    <section className={`${glass} no-print mb-4 p-6 sm:p-8`} aria-labelledby="stats-h">
+      <h2 id="stats-h" className="mb-5 text-[28px] font-medium tracking-[-0.03em]">Club at a glance</h2>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {tile("Sign-ups", s.signUps, `+${s.thisWeek} in the last 7 days`)}
+        {tile("Messages", s.messages.reduce((a, m) => a + m.count, 0), s.messages.length ? s.messages.map((m) => `${m.count} ${kindName(m.kind).toLowerCase()}`).join(" · ") : "None yet")}
+        {tile("Feedback", s.feedback.average ?? "—", s.feedback.count ? `average of ${s.feedback.count} rating${s.feedback.count === 1 ? "" : "s"}, out of 5` : "No ratings yet")}
+      </div>
+      <div className="mt-6 grid gap-8 md:grid-cols-2">
+        <figure>
+          <figcaption className={`${label} mb-3`}>Sign-ups per week</figcaption>
+          <ol className="flex h-36 items-end gap-2" aria-label="Sign-ups per week, last 8 weeks">
+            {s.weeks.map((w) => (
+              <li key={w.start} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5" title={`Week of ${w.start}: ${w.count}`}>
+                <span className="text-[12px] text-mute">{w.count || ""}</span>
+                <span className={`w-full rounded-md ${w.count ? "bg-[#2da44e]" : "bg-hair"}`} style={{ height: `${Math.max(4, (w.count / peak) * 100)}%` }} />
+                <span className="text-[11px] text-mute">{new Date(w.start + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+                <span className="sr-only">{w.count} sign-ups</span>
+              </li>
+            ))}
+          </ol>
+        </figure>
+        <figure>
+          <figcaption className={`${label} mb-3`}>What they want to try first</figcaption>
+          {s.firstEvents.length === 0 ? <p className="text-mute">No sign-ups yet.</p> : (
+            <ul className="space-y-2.5">
+              {s.firstEvents.map((e) => (
+                <li key={e.event} className="text-[14.5px]">
+                  <div className="flex justify-between gap-3"><span className="truncate">{eventName(e.event)}</span><span className="text-mute">{e.count}</span></div>
+                  <div className="mt-1 h-2 rounded-full bg-hair"><div className="h-2 rounded-full bg-ink" style={{ width: `${(e.count / top) * 100}%` }} /></div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </figure>
+      </div>
+    </section>
   );
 }
 
