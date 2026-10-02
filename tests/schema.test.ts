@@ -105,5 +105,37 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   let r6 = false; try { await db.query("insert into event_feedback (event, rating) values ('2026-10-07', 6)"); } catch { r6 = true; }
   ok("a rating of 6 is refused by the database", r6);
 
+  // ---- attendance, certificates and roles (the /admin dashboard) ----
+  await db.query("update profiles set role = 'attendee' where id = $1", [ADA]);
+  // run as the API's database role, so row-level security applies like on Supabase
+  const asApi = async <T,>(uid: string, sql: string, p: unknown[] = []) => {
+    await as(uid); await db.exec("set role authenticated");
+    try { return { rows: (await db.query<T>(sql, p)).rows, error: null as string | null }; }
+    catch (e) { return { rows: [] as T[], error: (e as Error).message }; }
+    finally { await db.exec("reset role"); }
+  };
+  await db.exec("grant usage on schema public to authenticated; grant select on profiles to authenticated;");
+  const add = (uid: string, email: string) => asApi(uid, "insert into attendance (event, name, email) values ('2026-10-07', 'Ada Lovelace', $1) returning id", [email]);
+  ok("an attendee can't add attendance", !!(await add(ADA, "ada@gitam.in")).error);
+  ok("an attendee can't read attendance", (await asApi(ADA, "select * from attendance")).rows.length === 0);
+  const added = await add(ORG, "ada@gitam.in");
+  ok("an organiser can add attendance", !added.error && added.rows.length === 1);
+  ok("the same person can't be added twice to one event", !!(await add(ORG, "ada@gitam.in")).error);
+  ok("emails must be stored lowercase", !!(await add(ORG, "Ada@GITAM.in")).error);
+  const certId = (added.rows[0] as { id: string }).id;
+  const cert = await asApi<Record<string, unknown>>("", "select * from certificate($1)", [certId]);
+  ok("anyone can verify a certificate by its id", cert.rows.length === 1 && cert.rows[0].name === "Ada Lovelace" && cert.rows[0].event === "2026-10-07");
+  ok("…without seeing the email address", !("email" in (cert.rows[0] ?? {})));
+  ok("an unknown certificate id finds nothing", (await asApi("", "select * from certificate('00000000-0000-0000-0000-000000000099')")).rows.length === 0);
+
+  const role = async (uid: string, handle: string, r: string) => (await asApi<{ r: { ok: boolean; error?: string } }>(uid, "select set_role($1, $2) r", [handle, r])).rows[0]?.r;
+  ok("an attendee can't hand out roles", !(await role(ADA, "ada", "admin"))?.ok);
+  ok("an admin makes someone a volunteer (any @/case)", (await role(ORG, "@ADA", "volunteer"))?.ok === true && (await one<{ role: string }>("select role from profiles where id = $1", [ADA])).role === "volunteer");
+  ok("a volunteer can now read attendance", (await asApi(ADA, "select * from attendance")).rows.length === 1);
+  ok("a volunteer still can't hand out roles", !(await role(ADA, "org", "attendee"))?.ok);
+  ok("admins can't change their own role", /own role/.test((await role(ORG, "org", "attendee"))?.error ?? ""));
+  ok("an unknown handle is explained", /signed in yet/.test((await role(ORG, "nobody-here", "volunteer"))?.error ?? ""));
+  ok("a made-up role is refused", !(await role(ORG, "ada", "superuser"))?.ok);
+
   console.log(fails ? `\n${fails} FAILED` : "\nall schema checks passed"); process.exit(fails ? 1 : 0);
 })().catch((e) => { console.error("FAIL  crashed:", e.message); process.exit(1); });
