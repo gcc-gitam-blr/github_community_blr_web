@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { SearchIcon } from "@primer/octicons-react";
 import { baseIndex, search, type Entry } from "@/lib/search";
 
@@ -58,7 +59,8 @@ export function SiteSearch() {
         <kbd className="hidden rounded border border-line bg-white/80 px-1.5 font-mono text-[11.5px] text-ink-3 xl:inline">/</kbd>
       </button>
 
-      {open && (
+      {/* rendered at the end of <body> so the glass header can't trap the full-screen dialog in its own box */}
+      {open && createPortal(
         <div className={`fixed inset-0 z-[60] ${open === "click" ? "search-in" : ""}`} onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
           <div className="search-scrim pointer-events-none absolute inset-0 bg-[rgba(11,11,15,.28)]" aria-hidden />
           <div role="dialog" aria-modal="true" aria-label="Search the site" onKeyDown={onKey}
@@ -87,7 +89,8 @@ export function SiteSearch() {
             </ul>
             <p className="hidden gap-4 border-t border-line bg-soft px-4 py-2 text-[12px] text-ink-3 sm:flex"><span><kbd className="font-mono">↑ ↓</kbd> move</span><span><kbd className="font-mono">↵</kbd> open</span><span><kbd className="font-mono">esc</kbd> close</span></p>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
