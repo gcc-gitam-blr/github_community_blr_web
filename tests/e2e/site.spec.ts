@@ -180,3 +180,20 @@ test("the header shows where you are: path segment and current link", async ({ p
   await expect(page.locator("header .branch-seg")).toHaveText("events");
   await expect(nav.getByRole("link", { name: "Events" })).toHaveAttribute("aria-current", "page");
 });
+
+test("site search: / opens it, results are keyboard-driven, Enter goes there, Esc closes", async ({ page }) => {
+  await page.goto("/");
+  await page.keyboard.press("/");
+  const box = page.getByRole("combobox", { name: "Search the site" });
+  await expect(box).toBeFocused();
+  await box.fill("stash");
+  await expect(page.getByRole("option").first()).toContainText("git stash");
+  await page.keyboard.press("Enter");
+  await page.waitForURL(/\/learn\?q=git%20stash/);
+  await expect(page.locator("#cheat ~ div code")).toHaveCount(2); // the cheat sheet opens already filtered
+  await page.keyboard.press("Control+k");
+  await page.getByRole("combobox", { name: "Search the site" }).fill("december");
+  await expect(page.getByRole("option", { name: /Epoch is coming in December/ })).toBeVisible(); // update posts come from /search.json
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
