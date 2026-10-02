@@ -67,9 +67,9 @@ export function ScanPage() {
           )}
           <AnimatePresence mode="wait">
             {out && (
-              <motion.div key="out" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="text-center">
+              <motion.div key="out" initial={{ opacity: 0, transform: "scale(0.96)" }} animate={{ opacity: 1, transform: "scale(1)" }} exit={{ opacity: 0 }} className="text-center">
                 {out.ok ? (<>
-                  <motion.div initial={{ rotateY: 180, scale: 0 }} animate={{ rotateY: 0, scale: 1 }} transition={{ type: "spring", stiffness: 160, damping: 13 }} className="mx-auto w-fit"><Coin size={88} /></motion.div>
+                  <motion.div initial={{ transform: "rotateY(180deg) scale(0.5)", opacity: 0 }} animate={{ transform: "rotateY(0deg) scale(1)", opacity: 1 }} transition={{ type: "spring", stiffness: 160, damping: 13 }} className="mx-auto w-fit"><Coin size={88} /></motion.div>
                   <p className="mt-5 text-[80px] font-medium leading-none tracking-[-0.06em]">{out.delta > 0 ? "+" : "−"}{Math.abs(out.delta)}</p>
                   <p className="mt-3 text-[19px]">{out.title}</p>
                   <p className={`${label} mt-1`}>New balance {out.balance}</p>
@@ -78,7 +78,7 @@ export function ScanPage() {
               </motion.div>
             )}
             {target && (
-              <motion.div key="t" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+              <motion.div key="t" initial={{ opacity: 0, transform: "translateY(12px)" }} animate={{ opacity: 1, transform: "translateY(0px)" }} className="space-y-5">
                 <div><p className="text-[32px] font-medium leading-tight tracking-[-0.03em]">{target.name}</p><p className={label}>@{target.handle} · {target.coins} coins · ticket {target.ticket ? "verified" : "pending"}</p></div>
                 {!target.ticket && <button disabled={busy} onClick={verify} className={`${btnInk} w-full`}>Verify ticket · +{STARTER_COINS} {EPOCH.currency}</button>}
                 <div className="space-y-3 border-t border-hair pt-5">
