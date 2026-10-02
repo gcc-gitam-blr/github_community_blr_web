@@ -19,3 +19,8 @@ photos-inbox/
 # Playwright output
 test-results/
 playwright-report/
+
+# team photos: only the processed, metadata-free WebP files are published (scripts/team-photos.mjs);
+# originals dropped here by mistake are never committed
+public/team/*
+!public/team/*.webp
