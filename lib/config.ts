@@ -72,7 +72,7 @@ export const CLUB = {
   // GitHub picture is still the default pattern). Leave "" if unknown.
   //  group "mentor": the Mentors row (owner: true marks the people who run operations and policy)
   //  group "lead":   the top row of five, equal and larger
-  //  group "member": everyone else, six to a row
+  //  group "member": everyone else, six to a row, in a fresh random order on every visit (no ranking implied)
   // `crew` is their technical role and level (lib/crew.ts explains the roles); `tags` are extra hats like Tech or Media.
   team: [
     { name: "Chakrawarthy", role: "Mentor · Tech & Design", past: "Former President, 2024-25", group: "mentor", owner: true, handle: "lechakrawarthy" },
@@ -90,13 +90,13 @@ export const CLUB = {
     { name: "Aravind K", tags: ["Tech"], crew: [{ role: "custodian", level: 1 }], group: "member", handle: "", photo: "/team/aravind-k.webp" },
     { name: "Vishnu Teja", tags: ["Tech"], crew: [{ role: "pipeline", level: 1 }], group: "member", handle: "", photo: "/team/vishnu-teja.webp" },
     { name: "Venkata Madhu K", tags: ["Tech"], crew: [{ role: "security", level: 1 }], group: "member", handle: "", photo: "/team/venkatamadhu-k.webp" },
-    { name: "Bhavana", tags: ["Tech", "Non-tech"], crew: [{ role: "explorer", level: 1 }], group: "member", handle: "" },
+    { name: "Bhavana", tags: ["Tech"], crew: [{ role: "explorer", level: 1 }], group: "member", handle: "" },
     { name: "Niharika", tags: ["Tech", "Media"], crew: [{ role: "alchemist", level: 1 }], group: "member", handle: "" },
-    { name: "Apsara", tags: ["Media"], group: "member", handle: "" },
-    { name: "Lokesh", tags: ["Media"], group: "member", handle: "" },
-    { name: "Manogna", tags: ["Media"], group: "member", handle: "" },
+    { name: "Apsara", tags: ["Tech"], crew: [{ role: "scout", level: 1 }], group: "member", handle: "" },
+    { name: "Lokesh", tags: ["Tech"], crew: [{ role: "forge", level: 1 }], group: "member", handle: "" },
+    { name: "Manogna", tags: ["Tech"], crew: [{ role: "scout", level: 1 }], group: "member", handle: "" },
   ] as { name: string; role?: string; past?: string; group: "mentor" | "lead" | "member"; owner?: boolean; crew?: CrewRole[]; tags?: string[]; handle: string; photo?: string; githubAvatar?: boolean }[],
-  // People who shaped the club — past presidents, former members, and members who've helped along the way.
+  // People who've shaped the club over the years (past leads, alumni, and members who've pitched in).
   contributors: [
     { name: "Chakrawarthy", handle: "lechakrawarthy" },
     { name: "Lakshmi", handle: "lkshi0406", githubAvatar: false },
