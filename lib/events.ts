@@ -35,3 +35,10 @@ export function icsFor(events: ClubEvent[], name: string, url?: string) {
 
 export const icsResponse = (ics: string, filename: string) =>
   new Response(ics, { headers: { "Content-Type": "text/calendar; charset=utf-8", "Content-Disposition": `attachment; filename="${filename}"` } });
+
+/** The next event on or after `today` (YYYY-MM-DD), and how many days away it is. */
+export function nextEvent(today: string): { event: ClubEvent; days: number } | null {
+  const e = EVENTS.find((x) => x.date >= today);
+  if (!e) return null;
+  return { event: e, days: Math.round((Date.parse(e.date + "T00:00:00Z") - Date.parse(today + "T00:00:00Z")) / 864e5) };
+}
