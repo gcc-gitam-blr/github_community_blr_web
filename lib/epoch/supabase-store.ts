@@ -9,6 +9,8 @@ const sb = () => (client ??= createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,
 type Row = { id: string; handle: string; name: string; email: string | null; coins: number; earned: number; ticket: boolean; role: Profile["role"]; created_at: string };
 const toProfile = (r: Row): Profile => ({ id: r.id, handle: r.handle, name: r.name, email: r.email ?? "", coins: r.coins, earned: r.earned, ticket: r.ticket, role: r.role, createdAt: r.created_at });
 const fail = (error: string) => ({ ok: false as const, error });
+/** The shared browser client, for the /admin dashboard. */
+export const supabase = () => sb();
 
 /* Back from "Sign in with GitHub" (/api/auth/github): the URL fragment carries a one-time token, or an error.
    Swap the token for a session once, and tidy the address bar. `back` is true when we just returned from GitHub. */
