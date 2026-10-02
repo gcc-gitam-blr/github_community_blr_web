@@ -168,3 +168,15 @@ test("admin and certificates without a database: clear messages, no crashes", as
   const robots = await (await request.get("/robots.txt")).text();
   expect(robots).toContain("Disallow: /admin");
 });
+
+test("the header shows where you are: path segment and current link", async ({ page }) => {
+  await page.goto("/updates");
+  const nav = page.getByRole("navigation", { name: "Primary" });
+  await expect(nav.getByRole("link", { name: "Updates" })).toHaveAttribute("aria-current", "page");
+  await expect(page.locator("header .branch-seg")).toHaveText("updates");
+  await page.goto("/");
+  await expect(page.locator("header .branch-seg")).toHaveText("main");
+  await page.evaluate(() => document.getElementById("events")!.scrollIntoView());
+  await expect(page.locator("header .branch-seg")).toHaveText("events");
+  await expect(nav.getByRole("link", { name: "Events" })).toHaveAttribute("aria-current", "page");
+});
