@@ -26,3 +26,15 @@ test("Epoch shows the tab bar with a scan button", async ({ page }) => {
   await tabs.getByRole("link", { name: "Scan" }).click();
   await expect(page).toHaveURL(/\/epoch\/scan/);
 });
+
+test("the phone menu: focus moves in, the page stops scrolling, Esc closes and returns focus", async ({ page }) => {
+  await page.goto("/updates");
+  const button = page.getByRole("button", { name: "Open menu" });
+  await button.click();
+  await expect(page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: /Learn/ })).toBeFocused();
+  expect(await page.evaluate(() => document.documentElement.style.overflow)).toBe("hidden");
+  await expect(page.getByRole("link", { name: /Updates/ }).first()).toHaveAttribute("aria-current", "page");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "Open menu" })).toBeFocused();
+  expect(await page.evaluate(() => document.documentElement.style.overflow)).toBe("");
+});
