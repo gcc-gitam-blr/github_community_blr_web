@@ -7,6 +7,7 @@ import { CLUB } from "@/lib/config";
 import { certNumber, certificateUrl, eventByDate, linkedinUrl } from "@/lib/certificates";
 import { eventDate } from "@/lib/events";
 import { SITE_URL } from "@/lib/site";
+import { ClubMark } from "@/components/ui/ClubMark";
 
 /* A certificate of participation, and its public proof: whoever opens this link sees who it was issued to and for
    which event, read straight from the club's attendance records. Prints as one A4 landscape page. */
@@ -27,13 +28,6 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return { title: `${c.name} — ${title}`, description: `Certificate of participation issued by ${CLUB.name}.`, robots: { index: false } };
 }
 
-const Mark = ({ className = "" }: { className?: string }) => (
-  <svg viewBox="0 0 40 40" className={className} aria-hidden>
-    <circle cx="20" cy="20" r="20" fill="#0b0b0f" />
-    <path d="M14 11v18M14 17c0 6 12 2 12 9" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
-    <g fill="#0b0b0f" stroke="#fff" strokeWidth="2.6"><circle cx="14" cy="11" r="3.2" /><circle cx="14" cy="29" r="3.2" /><circle cx="26" cy="27" r="3.2" /></g>
-  </svg>
-);
 
 export default async function CertificatePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -58,7 +52,7 @@ export default async function CertificatePage({ params }: { params: Promise<{ id
           </svg>
 
           <header className="flex items-center gap-3 pl-[4%]">
-            <Mark className="h-[clamp(28px,4.4vw,44px)] w-auto" />
+            <ClubMark size={44} className="max-sm:!h-8 max-sm:!w-8" />
             <div className="leading-tight">
               <p className="font-display text-[clamp(13px,1.8vw,19px)] font-bold">{CLUB.name}</p>
               <p className="text-[clamp(10px,1.2vw,13px)] text-ink-2">{CLUB.university}</p>

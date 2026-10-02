@@ -60,10 +60,8 @@ export function StickerLid() {
     <Reveal as="figure" group className="relative">
       <div ref={lid} className="relative aspect-[16/11] w-full overflow-hidden rounded-[26px] border-[6px] border-[#2b2e35] bg-[linear-gradient(145deg,#4a4f59,#2d3038_55%,#24272e)] shadow-[0_40px_60px_-30px_rgba(11,11,15,.55),inset_0_1px_0_rgba(255,255,255,.12)]">
         {/* the logo in the middle of the lid */}
-        <svg viewBox="0 0 40 40" aria-hidden className="absolute left-1/2 top-1/2 h-14 w-14 -translate-x-1/2 -translate-y-1/2 opacity-40">
-          <path d="M14 11v18M14 17c0 6 12 2 12 9" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
-          <g fill="#2d3038" stroke="#fff" strokeWidth="2.6"><circle cx="14" cy="11" r="3.2" /><circle cx="14" cy="29" r="3.2" /><circle cx="26" cy="27" r="3.2" /></g>
-        </svg>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/club-mark.png" alt="" aria-hidden width={56} height={56} draggable={false} className="pointer-events-none absolute left-1/2 top-1/2 h-14 w-14 -translate-x-1/2 -translate-y-1/2 select-none opacity-30" />
         {LAYOUT.map((s, i) => (
           <div key={s.name} onPointerDown={(e) => drag(e, lid.current)}
             className="pop absolute cursor-grab touch-none select-none active:cursor-grabbing"

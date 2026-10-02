@@ -6,6 +6,7 @@ import { ClubStatsPanel, FeedbackSummary, Inbox, SignUps } from "@/components/ep
 import { ensureProfile, signedInUser } from "@/lib/admin/client";
 import { Attendance } from "./Attendance";
 import { People } from "./People";
+import { ClubMark } from "@/components/ui/ClubMark";
 
 /* The club's admin dashboard. Who may see it is decided by the database (profiles.role), not by this page:
    signed out → "Sign in with GitHub"; signed in but not an organiser → ask an admin; organisers → the dashboard. */
@@ -28,7 +29,7 @@ function Shell({ children, who, onSignOut }: { children: React.ReactNode; who?: 
       <header className="border-b border-line bg-white">
         <div className="mx-auto flex max-w-[1240px] items-center gap-4 px-5 py-4">
           <Link href="/" className="flex items-center gap-2.5 font-display text-[16px] font-semibold">
-            <svg viewBox="0 0 40 40" className="h-8 w-8" aria-hidden><circle cx="20" cy="20" r="20" fill="#0b0b0f" /><path d="M14 11v18M14 17c0 6 12 2 12 9" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" /><g fill="#0b0b0f" stroke="#fff" strokeWidth="2.6"><circle cx="14" cy="11" r="3.2" /><circle cx="14" cy="29" r="3.2" /><circle cx="26" cy="27" r="3.2" /></g></svg>
+            <ClubMark size={32} />
             <span className="hidden sm:inline">GitHub Community</span> <b className="rounded bg-brand px-1.5 font-black">BLR</b>
           </Link>
           <span className="rounded-full border border-line px-2.5 py-0.5 font-mono text-[12px] text-ink-2">admin</span>
