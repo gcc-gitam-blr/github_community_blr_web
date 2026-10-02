@@ -214,9 +214,11 @@ test("the team: mentors, the five leads, everyone else, and their crew roles", a
   }
   for (const name of ["Geethika", "Aravind K", "Vishnu Teja", "Venkata Madhu K", "Bhavana", "Niharika", "Apsara", "Lokesh", "Manogna"]) await expect(team.getByRole("heading", { name })).toBeVisible();
   // the crew roles, as assigned
-  for (const [label, n] of [["Git Custodian I", 2], ["Code Gatekeeper I", 2], ["Pipeline Architect I", 2], ["Secrets & Security Officer I", 2], ["Issue Alchemist I", 2], ["Stack Explorer I", 1]] as const) await expect(team.getByText(label, { exact: true })).toHaveCount(n);
+  for (const [label, n] of [["Git Custodian I", 2], ["Code Gatekeeper I", 2], ["Pipeline Architect I", 2], ["Secrets & Security Officer I", 2], ["Issue Alchemist I", 2], ["Stack Explorer I", 1], ["Tech Scout I", 2], ["Onboarding Forge I", 1]] as const) await expect(team.getByText(label, { exact: true })).toHaveCount(n);
   await team.getByText("How our tech roles work").click();
   await expect(team.getByText(/merge conflicts newer members run into/)).toBeVisible();
+  await expect(team.getByText(/first pull request/).first()).toBeVisible(); // Onboarding Forge is explained too
+  await expect(team.getByText("Non-tech")).toHaveCount(0);
   await expect(team.getByRole("heading", { name: /Contributors/ })).toContainText("9");
   for (const src of ["/team/monisha-s.webp", "/team/supriya-k-s-sm.webp", "/team/greeshmitha.webp", "/team/raja-sree-sm.webp", "/brand/club-mark.png"]) expect((await request.get(src)).status(), src).toBe(200);
 });
@@ -231,4 +233,11 @@ test("the Epoch link and search open full-screen, not inside the glass header", 
   const wipe = await page.locator(".epoch-wipe").boundingBox();
   expect(wipe!.height).toBeGreaterThan(500);
   await page.waitForURL("**/epoch");
+});
+
+test("opening a #link lands there and stays (the smooth scroll doesn't snap back to the top)", async ({ page }) => {
+  await page.goto("/#events");
+  await page.waitForTimeout(1500); // well after the page has started up
+  expect(await page.evaluate(() => document.getElementById("events")!.getBoundingClientRect().top)).toBeLessThan(200);
+  await expect(page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Events" })).toHaveAttribute("aria-current", "page");
 });
