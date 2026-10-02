@@ -32,9 +32,9 @@ export function BoothSection() {
           const on = x.id === g.id; const n = BOOTHS.filter(x.test).length;
           return (
             <button key={x.id} role="tab" aria-selected={on} onClick={() => setG(x)} style={{ background: on ? x.tint : undefined }}
-              className={`group relative flex items-center gap-3 overflow-visible rounded-[20px] border-2 p-3 pr-4 text-left transition ${on ? "border-ink" : "border-ink/10 bg-white hover:border-ink/40"}`}>
+              className={`group relative flex flex-col items-start gap-2 overflow-visible rounded-[20px] border-2 p-3 pr-4 text-left transition min-[400px]:flex-row min-[400px]:items-center min-[400px]:gap-3 ${on ? "border-ink" : "border-ink/10 bg-white hover:border-ink/40"}`}>
               <Sticker name={x.sticker} size={58} tilt={on ? -8 : 0} className="flex-none transition-transform duration-300 group-hover:-rotate-6" alt="" />
-              <span className="min-w-0"><span className="block text-[17px] font-medium leading-tight tracking-[-0.02em]">{x.label}</span><span className="font-mono text-[12px] text-mute">{n} booths</span></span>
+              <span className="min-w-0"><span className="block text-[17px] font-medium leading-tight tracking-[-0.02em] [overflow-wrap:anywhere]">{x.label}</span><span className="font-mono text-[12px] text-mute">{n} booths</span></span>
             </button>
           );
         })}
