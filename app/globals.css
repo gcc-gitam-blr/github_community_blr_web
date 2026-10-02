@@ -225,3 +225,19 @@ html.lenis, html.lenis body { height: auto; }
 .search-in .search-panel { animation: search-panel 150ms var(--ease-out); transform-origin: 50% 0; }
 @media (prefers-reduced-motion: reduce) { .search-in .search-panel { animation: search-scrim 120ms ease; } }
 .search-input:focus-visible { outline: none; } /* the open dialog already shows where typing goes */
+
+/* ---------- phone menu (components/site/MobileMenu.tsx): dim to focus, drop from under the header ---------- */
+.phone-menu { position: fixed; inset: var(--top, 64px) 0 0; z-index: 45; visibility: hidden; transition: visibility 0s linear 180ms; }
+.phone-menu[data-open="true"] { visibility: visible; transition: none; }
+.phone-menu__scrim { position: absolute; inset: 0; background: rgba(11, 11, 15, .28); opacity: 0; transition: opacity 180ms var(--ease-out); }
+.phone-menu[data-open="true"] .phone-menu__scrim { opacity: 1; transition-duration: 220ms; }
+.phone-menu__panel { position: relative; max-height: calc(100dvh - var(--top, 64px)); overflow-y: auto; overscroll-behavior: contain; background: #fff;
+  border-radius: 0 0 22px 22px; padding: 8px 20px calc(20px + env(safe-area-inset-bottom)); box-shadow: 0 30px 60px -30px rgba(11, 11, 15, .45);
+  transform: translateY(-10px); opacity: 0; transition: transform 180ms var(--ease-out), opacity 180ms var(--ease-out); }
+.phone-menu[data-open="true"] .phone-menu__panel { transform: none; opacity: 1; transition: transform 260ms var(--ease-drawer), opacity 200ms var(--ease-out); }
+/* the links cascade in (not out — closing should be immediate) */
+.phone-menu__panel li { opacity: 0; transform: translateY(-4px); }
+.phone-menu[data-open="true"] .phone-menu__panel li { opacity: 1; transform: none; transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out); transition-delay: calc(40ms + var(--i, 0) * 30ms); }
+@media (prefers-reduced-motion: reduce) {
+  .phone-menu__panel, .phone-menu__panel li { transform: none !important; }
+}
