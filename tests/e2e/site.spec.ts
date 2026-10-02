@@ -112,3 +112,28 @@ test("with no inbox switched on, Get involved hands the message to Instagram ins
   await page.getByRole("button", { name: "Copy only" }).click();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain("Git internals");
 });
+
+test("updates: the list, a post, the home page and the RSS feed agree", async ({ page, request }) => {
+  await page.goto("/updates");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("What's new");
+  await page.getByRole("link", { name: /Start here: Learn GitHub/ }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Start here");
+  await expect(page.getByRole("link", { name: /RSVP on Luma/ })).toHaveAttribute("href", "https://luma.com/exkd0eax");
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: /Start here: Learn GitHub/ })).toBeVisible();
+  const rss = await request.get("/updates/feed.xml");
+  expect(rss.headers()["content-type"]).toContain("rss+xml");
+  const xml = await rss.text();
+  expect((xml.match(/<item>/g) ?? []).length).toBeGreaterThanOrEqual(4);
+  expect(xml).not.toMatch(/href="\/[^/]/); // links inside the feed are absolute
+});
+
+test("every link inside the update posts leads somewhere that exists", async ({ page, request }) => {
+  await page.goto("/updates");
+  const posts = await page.locator("main ol a[href^='/updates/']").evaluateAll((as) => [...new Set(as.map((a) => a.getAttribute("href")!))]);
+  for (const p of posts) {
+    await page.goto(p);
+    const links = await page.locator(".post a[href^='/']").evaluateAll((as) => as.map((a) => a.getAttribute("href")!.split("#")[0] || "/"));
+    for (const h of links) expect((await request.get(h)).status(), `${p} → ${h}`).toBeLessThan(400);
+  }
+});
