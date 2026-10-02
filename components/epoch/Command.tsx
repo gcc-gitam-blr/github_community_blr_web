@@ -41,7 +41,9 @@ export function Launcher({ variant = "bar", className = "" }: { variant?: "hero"
 
 const KIND: Record<Hit["kind"], string> = { page: "Page", booth: "Booth", plan: "Plan", merch: "Merch", answer: "Answer" };
 
-function Palette({ onClose }: { onClose: () => void }) {
+/* Opened from the keyboard it appears instantly — a shortcut used all day must never feel slow.
+   Opened with a click it springs in briefly. Transforms are full strings so they stay smooth under load. */
+function Palette({ onClose, instant }: { onClose: () => void; instant: boolean }) {
   const router = useRouter();
   const [q, setQ] = useState(""); const [i, setI] = useState(0);
   const ref = useRef<HTMLInputElement>(null);
@@ -56,8 +58,8 @@ function Palette({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <motion.div className="fixed inset-0 z-[120] flex items-start justify-center bg-[#ece7f6]/55 px-4 pt-[14vh] backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={onClose}>
-      <motion.div role="dialog" aria-modal="true" aria-label="Search Epoch" className="w-full max-w-[680px]" initial={{ y: -16, scale: 0.97 }} animate={{ y: 0, scale: 1 }} exit={{ y: -10, opacity: 0 }} transition={{ type: "spring", stiffness: 300, damping: 28 }} onMouseDown={(e) => e.stopPropagation()}>
+    <motion.div className="fixed inset-0 z-[120] flex items-start justify-center bg-[#ece7f6]/55 px-4 pt-[14vh] backdrop-blur-md" initial={instant ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.12 } }} onMouseDown={onClose}>
+      <motion.div role="dialog" aria-modal="true" aria-label="Search Epoch" className="w-full max-w-[680px]" initial={instant ? false : { transform: "translateY(-12px) scale(0.97)", opacity: 0 }} animate={{ transform: "translateY(0px) scale(1)", opacity: 1 }} exit={{ transform: "translateY(-6px) scale(0.99)", opacity: 0, transition: { duration: 0.12 } }} transition={{ type: "spring", duration: 0.3, bounce: 0 }} onMouseDown={(e) => e.stopPropagation()}>
         <div className="relative">
           <span aria-hidden className="pointer-events-none absolute inset-x-[14%] -bottom-3 h-6 animate-[glow_6s_ease-in-out_infinite] rounded-full bg-[linear-gradient(90deg,#7aa8ff,#5eead4,#a78bfa)] opacity-70 blur-xl" />
           <div className="relative flex h-[72px] items-center gap-4 rounded-full border border-white/90 bg-white/85 pl-7 pr-3 shadow-[0_30px_80px_-30px_rgba(70,45,130,.6)] backdrop-blur-2xl">
@@ -87,20 +89,20 @@ function Palette({ onClose }: { onClose: () => void }) {
 }
 
 export function CommandProvider({ children }: { children: React.ReactNode }) {
-  const [on, setOn] = useState(false);
-  const open = useCallback(() => setOn(true), []);
+  const [on, setOn] = useState<null | "key" | "click">(null);
+  const open = useCallback(() => setOn("click"), []);
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null; const typing = t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
-      if ((e.key === "/" && !typing) || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k")) { e.preventDefault(); setOn(true); }
-      else if (e.key === "Escape") setOn(false);
+      if ((e.key === "/" && !typing) || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k")) { e.preventDefault(); setOn("key"); }
+      else if (e.key === "Escape") setOn(null);
     };
     window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
   }, []);
   return (
     <Ctx.Provider value={{ open }}>
       {children}
-      <AnimatePresence>{on && <Palette onClose={() => setOn(false)} />}</AnimatePresence>
+      <AnimatePresence>{on && <Palette instant={on === "key"} onClose={() => setOn(null)} />}</AnimatePresence>
     </Ctx.Provider>
   );
 }

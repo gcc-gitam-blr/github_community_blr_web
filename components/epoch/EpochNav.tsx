@@ -70,7 +70,7 @@ export function EpochNav() {
       )}
 
       {/* phone tab bar */}
-      <nav aria-label="Epoch tabs" className={`no-print fixed inset-x-4 bottom-4 z-40 grid grid-cols-5 items-center rounded-[28px] px-2 py-2 md:hidden ${glassBar}`}>
+      <nav aria-label="Epoch tabs" className={`no-print fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-40 grid grid-cols-5 items-center rounded-[28px] px-2 py-2 md:hidden ${glassBar}`}>
         {[ITEMS[1], ITEMS[2]].map((n) => <Link key={n.h} href={n.h} className={`flex flex-col items-center gap-0.5 py-1.5 text-[11px] ${path === n.h ? "text-ink" : "text-mute"}`}><Icon d={n.i} s={22} />{n.l}</Link>)}
         <Link href="/epoch/scan" className="-mt-6 mx-auto grid h-14 w-14 place-items-center rounded-full bg-ink text-white shadow-[0_12px_30px_-8px_rgba(18,18,26,.6)]" aria-label="Scan"><Icon d={ITEMS[4].i} s={24} /></Link>
         <Link href="/epoch/leaderboard" className={`flex flex-col items-center gap-0.5 py-1.5 text-[11px] ${path === "/epoch/leaderboard" ? "text-ink" : "text-mute"}`}><Icon d={ITEMS[3].i} s={22} />Board</Link>
