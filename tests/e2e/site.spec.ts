@@ -203,20 +203,22 @@ test("site search: / opens it, results are keyboard-driven, Enter goes there, Es
 
 
 
-test("the team: mentors, core team and technical staff as equal cards, and who built the site", async ({ page, request }) => {
+test("the team: mentors, the five leads, everyone else, and their crew roles", async ({ page, request }) => {
   await page.goto("/");
   const team = page.locator("#team");
   await team.scrollIntoViewIfNeeded();
-  await expect(team.getByText("Mentor · Tech & Design")).toBeVisible();
-  await expect(team.getByText("Mentor · Operations")).toBeVisible();
-  for (const [name, role] of [["Monisha S", "President"], ["Dhigveerraju G", "Vice President"], ["Supriya", "Secretary"], ["T Sai Ruchitha", "Design Lead"], ["Chandrika", "External Relations Head"]]) {
+  for (const line of ["Mentor · Tech & Design", "Former President, 2024-25", "Former Inclusion & Events Head", "Former President, 2025-26", "Former Vice-President, 2025-26"]) await expect(team.getByText(line)).toBeVisible();
+  for (const [name, role] of [["Monisha S", "President"], ["Dhigveerraju G", "Vice President"], ["Supriya K S", "Secretary"], ["T Sai Ruchitha", "Design Lead"], ["Chandrika", "External Relations Head"]]) {
     await expect(team.getByRole("heading", { name })).toBeVisible();
     await expect(team.getByText(role, { exact: true })).toBeVisible();
   }
-  for (const name of ["Geethika", "Aravind K", "Vishnu Teja", "Venkat Madhu", "Bhavana", "Niharika"]) await expect(team.getByRole("heading", { name })).toBeVisible();
-  await expect(team.getByText("Member of Technical Staff", { exact: true })).toHaveCount(6);
-  await expect(team.getByRole("heading", { name: /Contributors/ })).toContainText("4");
-  for (const src of ["/team/monisha-s.webp", "/team/chandrika-sm.webp", "/team/aravind-k.webp", "/brand/club-mark.png", "/brand/favicon-32.png"]) expect((await request.get(src)).status(), src).toBe(200);
+  for (const name of ["Geethika", "Aravind K", "Vishnu Teja", "Venkata Madhu K", "Bhavana", "Niharika", "Apsara", "Lokesh", "Manogna"]) await expect(team.getByRole("heading", { name })).toBeVisible();
+  // the crew roles, as assigned
+  for (const [label, n] of [["Git Custodian I", 2], ["Code Gatekeeper I", 2], ["Pipeline Architect I", 2], ["Secrets & Security Officer I", 2], ["Issue Alchemist I", 2], ["Stack Explorer I", 1]] as const) await expect(team.getByText(label, { exact: true })).toHaveCount(n);
+  await team.getByText("How our tech roles work").click();
+  await expect(team.getByText(/merge conflicts newer members run into/)).toBeVisible();
+  await expect(team.getByRole("heading", { name: /Contributors/ })).toContainText("9");
+  for (const src of ["/team/monisha-s.webp", "/team/supriya-k-s-sm.webp", "/team/greeshmitha.webp", "/team/raja-sree-sm.webp", "/brand/club-mark.png"]) expect((await request.get(src)).status(), src).toBe(200);
 });
 
 test("the Epoch link and search open full-screen, not inside the glass header", async ({ page }) => {
