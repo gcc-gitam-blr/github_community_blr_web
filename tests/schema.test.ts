@@ -23,6 +23,8 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   `);
   await db.exec(fs.readFileSync("supabase/schema.sql", "utf8"));
   ok("schema.sql runs cleanly on Postgres", true);
+  await db.exec(fs.readFileSync("supabase/schema.sql", "utf8"));
+  ok("schema.sql can be run again (updates re-apply without errors)", (await one<{ n: number }>("select count(*)::int n from booths")).n > 0);
 
   await as(ADA); await db.query("select register_profile('Ada Lovelace')");
   await as(ORG); await db.query("select register_profile('Organiser')");
