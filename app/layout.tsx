@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image" },
   icons: { icon: "/favicon.svg" },
 };
-export const viewport: Viewport = { themeColor: "#ffffff" };
+export const viewport: Viewport = { themeColor: "#ffffff", viewportFit: "cover" }; // cover: lets fixed bars use env(safe-area-inset-*)
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { EpochProvider } from "@/components/epoch/EpochProvider";
 import { CommandProvider } from "@/components/epoch/Command";
 import { EpochNav } from "@/components/epoch/EpochNav";
@@ -8,6 +8,9 @@ import { EpochEntrance } from "@/components/epoch/EpochEntrance";
 import { EpochMain } from "@/components/epoch/EpochMain";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { RegisterSW } from "@/components/epoch/RegisterSW";
+
+// the browser bar matches Epoch's paper instead of the club's white
+export const viewport: Viewport = { themeColor: "#f4f1ea", viewportFit: "cover" };
 
 export const metadata: Metadata = {
   title: "epoch — GITAM Bengaluru's GitHub tech fest",
@@ -32,7 +35,7 @@ export default function EpochLayout({ children }: { children: React.ReactNode })
           <EpochNav />
           <EpochMain>{children}</EpochMain>
           <div className="relative z-10 no-print font-sans"><SiteFooter sticker={false} /></div>
-          <div aria-hidden className="h-24 bg-[#010409] md:hidden" />{/* room for the phone tab bar */}
+          <div aria-hidden className="h-[calc(6rem+env(safe-area-inset-bottom))] bg-[#010409] md:hidden" />{/* room for the phone tab bar */}
         </div>
         <EpochEntrance />
         <RegisterSW />
