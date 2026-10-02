@@ -40,12 +40,12 @@ export function EpochNav() {
       {/* top bar: brand · glass command pill · balance */}
       <header className="no-print fixed inset-x-0 top-0 z-40 flex items-center gap-3 px-4 py-4 md:px-7">
         <Link href="/epoch" className={`flex h-[52px] items-center gap-2.5 rounded-full pl-2.5 pr-5 ${glassBar}`} aria-label="Epoch home"><Coin size={34} /><Wordmark className="text-[22px]" /></Link>
-        <div className={`mx-auto hidden w-full max-w-[520px] transition-all duration-500 md:block ${showBar ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-3 opacity-0"}`}><Launcher /></div>
+        <div className={`mx-auto hidden w-full max-w-[520px] transition-[translate,opacity] duration-300 ease-out md:block ${showBar ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-3 opacity-0"}`}><Launcher /></div>
         <div className="ml-auto flex items-center gap-2 md:ml-0">
           <button onClick={open} aria-label="Search" className={`grid h-[52px] w-[52px] place-items-center rounded-full md:hidden ${glassBar}`}><Icon d="M11 4a7 7 0 100 14 7 7 0 000-14zM20 20l-3.5-3.5" /></button>
           {me
             ? <Link href="/epoch/wallet" className="flex h-[52px] items-center gap-2 rounded-full bg-ink pl-3 pr-5 text-[15px] font-medium text-white"><Coin size={28} />{me.coins}</Link>
-            : <Link href="/epoch/register" className="flex h-[52px] items-center rounded-full bg-ink px-6 text-[15px] font-medium text-white">Get ticket</Link>}
+            : <Link href="/epoch/register" className="press flex h-[52px] items-center rounded-full bg-ink px-6 text-[15px] font-medium text-white">Get ticket</Link>}
           <Link href="/" className="hidden px-3 text-sm text-mute hover:text-ink lg:block">Club site</Link>
         </div>
       </header>
