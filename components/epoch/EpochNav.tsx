@@ -6,6 +6,8 @@ import { useEpoch } from "./EpochProvider";
 import { Coin, Wordmark } from "./Bits";
 import { Launcher, useCommand } from "./Command";
 import { BOOTH_COUNT } from "@/lib/epoch/config";
+import { ClubMark } from "@/components/ui/ClubMark";
+import { EPOCH_SEEN } from "@/components/site/EpochNudge";
 
 const ITEMS = [
   { l: "Wallet", h: "/epoch/wallet", i: "M3 7h18v12H3zM3 7l3-3h12l3 3M16 13h2" },
@@ -31,6 +33,8 @@ export function EpochNav() {
     io.observe(f); return () => io.disconnect();
   }, [path]);
   useEffect(() => { const on = () => setScrolled(window.scrollY > 520); on(); window.addEventListener("scroll", on, { passive: true }); return () => window.removeEventListener("scroll", on); }, []);
+  // they've found Epoch: the club site's phone nudge can stop pointing here
+  useEffect(() => { try { localStorage.setItem(EPOCH_SEEN, "1"); } catch { /* storage blocked */ } }, []);
   const showBar = !landing || scrolled; // on the landing page the hero has its own big pill
 
   const items = [...ITEMS, ...(staff ? [{ l: "Desk", h: "/epoch/admin", i: "M4 6h16v12H4zM8 10h8M8 14h5" }] : [])];
@@ -39,13 +43,15 @@ export function EpochNav() {
     <>
       {/* top bar: brand · glass command pill · balance */}
       <header className="no-print fixed inset-x-0 top-0 z-40 flex items-center gap-3 px-4 py-4 md:px-7">
+        {/* phones: the way back to the club site (desktop has the "Club site" link on the right) */}
+        <Link href="/" aria-label="Back to the club site" className={`press grid h-[52px] w-[52px] flex-none place-items-center rounded-full lg:hidden ${glassBar}`}><ClubMark size={34} /></Link>
         <Link href="/epoch" className={`flex h-[52px] items-center gap-2.5 rounded-full pl-2.5 pr-5 ${glassBar}`} aria-label="Epoch home"><Coin size={34} /><Wordmark className="text-[22px]" /></Link>
         <div className={`mx-auto hidden w-full max-w-[520px] transition-[translate,opacity] duration-300 ease-out md:block ${showBar ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-3 opacity-0"}`}><Launcher /></div>
         <div className="ml-auto flex items-center gap-2 md:ml-0">
           <button onClick={open} aria-label="Search" className={`grid h-[52px] w-[52px] place-items-center rounded-full md:hidden ${glassBar}`}><Icon d="M11 4a7 7 0 100 14 7 7 0 000-14zM20 20l-3.5-3.5" /></button>
           {me
             ? <Link href="/epoch/wallet" className="flex h-[52px] items-center gap-2 rounded-full bg-ink pl-3 pr-5 text-[15px] font-medium text-white"><Coin size={28} />{me.coins}</Link>
-            : <Link href="/epoch/register" className="press flex h-[52px] items-center rounded-full bg-ink px-6 text-[15px] font-medium text-white">Get ticket</Link>}
+            : <Link href="/epoch/register" className="press flex h-[52px] items-center whitespace-nowrap rounded-full bg-ink px-4 text-[15px] font-medium text-white sm:px-6">Get ticket</Link>}
           <Link href="/" className="hidden px-3 text-sm text-mute hover:text-ink lg:block">Club site</Link>
         </div>
       </header>
