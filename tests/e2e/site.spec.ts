@@ -98,3 +98,17 @@ test.describe("club site", () => {
     expect((await request.post("/api/broadcast", { data: {} })).status()).toBeGreaterThanOrEqual(400);
   });
 });
+
+test("with no inbox switched on, Get involved hands the message to Instagram instead of losing it", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("/get-involved");
+  await page.getByLabel("Your name").fill("Ada Lovelace");
+  await page.getByLabel("Email").fill("ada@gitam.in");
+  await page.locator("textarea").fill("We'd love to run a workshop on Git internals.");
+  await page.waitForTimeout(3500); // humans take a few seconds; the spam check knows that
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.getByRole("heading", { name: /send it to us on Instagram/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Copy & open Instagram/ })).toHaveAttribute("href", "https://ig.me/m/github.gitamblr");
+  await page.getByRole("button", { name: "Copy only" }).click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain("Git internals");
+});
