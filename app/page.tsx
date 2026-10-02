@@ -1,6 +1,7 @@
 import { Nav } from "@/components/site/Nav";
 import { Hero } from "@/components/site/Hero";
-import { About, Events, Faq, Join, Learn, Projects, Team } from "@/components/site/Sections";
+import { About, Events, Faq, Join, Learn, Projects } from "@/components/site/Sections";
+import { Team } from "@/components/site/Team";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { WhatIsGitHub } from "@/components/site/WhatIsGitHub";
 import { GitHubChangelog } from "@/components/site/GitHubChangelog";
