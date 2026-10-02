@@ -217,3 +217,11 @@ html.lenis, html.lenis body { height: auto; }
   @keyframes branch-seg-fade { from { opacity: 0; } }
   .branch-mark { transition: none; }
 }
+
+/* ---------- site search (components/site/SiteSearch.tsx) — only animates when opened with a click ---------- */
+@keyframes search-scrim { from { opacity: 0; } }
+@keyframes search-panel { from { opacity: 0; transform: translateY(-6px) scale(.98); } }
+.search-in .search-scrim { animation: search-scrim 150ms var(--ease-out); }
+.search-in .search-panel { animation: search-panel 150ms var(--ease-out); transform-origin: 50% 0; }
+@media (prefers-reduced-motion: reduce) { .search-in .search-panel { animation: search-scrim 120ms ease; } }
+.search-input:focus-visible { outline: none; } /* the open dialog already shows where typing goes */

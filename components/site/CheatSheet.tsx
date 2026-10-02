@@ -1,11 +1,14 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CheckIcon, CopyIcon, SearchIcon } from "@primer/octicons-react";
 import { CHEAT } from "@/lib/learn";
 
 /* A Git cheat sheet you can search and copy from. Filtering is instant and works without any network. */
 export function CheatSheet() {
   const [q, setQ] = useState(""); const [copied, setCopied] = useState("");
+  // arriving from site search (/learn?q=git%20stash#cheat): start filtered
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- reads the address once, after hydration
+  useEffect(() => { const v = new URLSearchParams(window.location.search).get("q"); if (v) setQ(v.slice(0, 60)); }, []);
   const groups = useMemo(() => {
     const n = q.trim().toLowerCase();
     return CHEAT.map((g) => ({ ...g, cmds: n ? g.cmds.filter((c) => (c.cmd + " " + c.what + " " + g.group + " " + g.blurb).toLowerCase().includes(n)) : g.cmds })).filter((g) => g.cmds.length);

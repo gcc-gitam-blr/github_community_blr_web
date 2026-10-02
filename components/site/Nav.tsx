@@ -9,6 +9,7 @@ import { daysToEpoch, epochIsLive } from "@/lib/epoch/config";
 import { eventSlug, nextEvent } from "@/lib/events";
 import { Announcement } from "./Announcement";
 import { MobileMenu } from "./MobileMenu";
+import { SiteSearch } from "./SiteSearch";
 import { useActiveSection } from "./useActiveSection";
 import { NAV_LINKS } from "./nav-links";
 
@@ -49,7 +50,7 @@ export function Nav() {
 
       <div className={`branch-bar ${scrolled ? "is-scrolled" : ""}`}>
         <div className="mx-auto flex h-16 max-w-[1240px] items-center gap-4 px-5 lg:px-[clamp(20px,5vw,72px)]">
-          <a href={home ? "#top" : "/"} className="group flex min-w-0 items-center gap-2.5" aria-label="GitHub Community BLR — home">
+          <a href={home ? "#top" : "/"} className="group flex flex-none items-center gap-2.5" aria-label="GitHub Community BLR — home">
             <svg viewBox="0 0 40 40" className="h-9 w-9 flex-none transition-transform duration-300 ease-out group-hover:-rotate-[20deg]" aria-hidden>
               <circle cx="20" cy="20" r="20" fill="#0b0b0f" />
               <path d="M14 11v18M14 17c0 6 12 2 12 9" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
@@ -59,12 +60,13 @@ export function Nav() {
           </a>
           {/* the "current branch": where you are, like a path in a repository */}
           {segment && (
-            <span aria-hidden className="-ml-1 flex min-w-0 items-center gap-1.5 font-mono text-[13px] text-ink-3">
+            <span aria-hidden className="-ml-1 flex flex-none items-center gap-1.5 font-mono text-[13px] text-ink-3">
               <span>/</span><span key={segment} className="branch-seg truncate text-ink-2">{segment}</span>
             </span>
           )}
 
           <DesktopLinks current={current} href={href} live={live} />
+          <SiteSearch />
 
           {next && <NextChip next={next} />}
           <a href={href("/#join")} className="press lift hidden whitespace-nowrap rounded-md border-2 border-ink bg-ink px-4 py-2 font-display text-[14.5px] font-bold text-white lg:inline-block">Join the club</a>
@@ -118,7 +120,7 @@ function NextChip({ next }: { next: string }) {
   const when = d === 0 ? "today" : d === 1 ? "tomorrow" : new Date(date + "T00:00:00").toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
   return (
     <Link href={`/events/${slug}`} aria-label={`Next event: ${title}, ${d === 0 ? "today" : d === 1 ? "tomorrow" : `in ${d} days`}`}
-      className="press hidden items-center gap-2 whitespace-nowrap rounded-full border border-line bg-white/70 px-3 py-1.5 text-[13px] text-ink-2 transition-colors duration-150 hover:border-ink/30 hover:text-ink xl:inline-flex">
+      className="press hidden items-center gap-2 whitespace-nowrap rounded-full border border-line bg-white/70 px-3 py-1.5 text-[13px] text-ink-2 transition-colors duration-150 hover:border-ink/30 hover:text-ink min-[1480px]:inline-flex">
       <span className="h-2 w-2 rounded-full bg-[#2da44e] shadow-[0_0_0_3px_rgba(45,164,78,.18)]" aria-hidden />
       Next · <b className="font-semibold text-ink">{when}</b>
     </Link>
