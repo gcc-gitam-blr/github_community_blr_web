@@ -48,7 +48,7 @@ test.describe("club site", () => {
 
   test("the cheat sheet searches and finds commands", async ({ page }) => {
     await page.goto("/learn");
-    const cmds = page.locator("#cheat ~ div code");
+    const cmds = page.locator("section[aria-labelledby=cheat] code");
     expect(await cmds.count()).toBeGreaterThan(20);
     await page.getByPlaceholder(/Search/).fill("stash");
     await expect(cmds).toHaveCount(2);
@@ -193,7 +193,7 @@ test("site search: / opens it, results are keyboard-driven, Enter goes there, Es
   await expect(page.getByRole("dialog").getByRole("option").first()).toContainText("git stash");
   await page.keyboard.press("Enter");
   await page.waitForURL(/\/learn\?q=git%20stash/);
-  await expect(page.locator("#cheat ~ div code")).toHaveCount(2); // the cheat sheet opens already filtered
+  await expect(page.locator("section[aria-labelledby=cheat] code")).toHaveCount(2); // the cheat sheet opens already filtered
   await page.keyboard.press("Control+k");
   await page.getByRole("combobox", { name: "Search the site" }).fill("december");
   await expect(page.getByRole("option", { name: /Epoch is coming in December/ })).toBeVisible(); // update posts come from /search.json
@@ -240,4 +240,16 @@ test("opening a #link lands there and stays (the smooth scroll doesn't snap back
   await page.waitForTimeout(1500); // well after the page has started up
   expect(await page.evaluate(() => document.getElementById("events")!.getBoundingClientRect().top)).toBeLessThan(200);
   await expect(page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Events" })).toHaveAttribute("aria-current", "page");
+});
+
+test("the 3D stickers load on desktop, with a still frame for reduced motion", async ({ page, request }) => {
+  await page.goto("/learn");
+  const duck = page.locator('img[src="/stickers/duck-3d.webp"]');
+  await duck.scrollIntoViewIfNeeded();
+  await expect(duck).toBeVisible();
+  for (const f of ["cat-3d", "cat-3d-still", "duck-3d", "duck-3d-still"]) {
+    const r = await request.get(`/stickers/${f}.webp`);
+    expect(r.status(), f).toBe(200);
+    expect((await r.body()).length, f).toBeLessThan(700_000);
+  }
 });

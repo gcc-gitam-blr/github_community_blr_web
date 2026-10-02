@@ -38,3 +38,24 @@ test("the phone menu: focus moves in, the page stops scrolling, Esc closes and r
   await expect(page.getByRole("button", { name: "Open menu" })).toBeFocused();
   expect(await page.evaluate(() => document.documentElement.style.overflow)).toBe("");
 });
+
+test("the smallest phones (320px): the home page and Epoch fit, including the ticket", async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 320, height: 640 }, isMobile: true, hasTouch: true });
+  const page = await ctx.newPage();
+  for (const path of ["/", "/epoch"]) {
+    await page.goto(path); await page.waitForTimeout(600);
+    const { scroll, client } = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
+    expect(scroll, path).toBeLessThanOrEqual(client);
+  }
+  // nothing in the ticket section reaches past the right edge (it clips instead of scrolling, so check directly)
+  const past = await page.evaluate(() => [...document.querySelectorAll("#ticket *")].filter((e) => e.getBoundingClientRect().right > document.documentElement.clientWidth + 1).length);
+  expect(past).toBe(0);
+  await ctx.close();
+});
+
+test("phones never download the animated 3D stickers (they're desktop-only)", async ({ page }) => {
+  const heavy: string[] = [];
+  page.on("request", (r) => { if (/\/stickers\/(cat|duck)-3d\.webp/.test(r.url())) heavy.push(r.url()); });
+  for (const path of ["/", "/learn"]) { await page.goto(path); await page.mouse.wheel(0, 6000); await page.waitForTimeout(800); }
+  expect(heavy).toEqual([]);
+});
