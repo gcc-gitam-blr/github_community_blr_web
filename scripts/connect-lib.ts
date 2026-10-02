@@ -4,11 +4,16 @@ import { randomBytes } from "node:crypto";
 export type Fetch = typeof fetch;
 export type Check = { ok: true; note?: string } | { ok: false; error: string };
 
-/** Supabase project URL + anon (public) key: does the REST API answer with them? */
+/** The project URL people paste is often the API URL from the docs; keep just https://<ref>.supabase.co */
+export const projectUrl = (url: string) => url.trim().replace(/\/(rest|auth)\/v1\/?$/, "").replace(/\/$/, "");
+
+/** Supabase project URL + anon (public) key: does the project accept the key?
+    Asks the auth settings endpoint — the REST root refuses anon keys on newer projects even when they're right. */
 export async function checkSupabase(url: string, anonKey: string, f: Fetch = fetch): Promise<Check> {
-  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(url)) return { ok: false, error: "The project URL looks like https://abcdefgh.supabase.co" };
+  url = projectUrl(url);
+  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(url)) return { ok: false, error: "The project URL looks like https://abcdefgh.supabase.co" };
   try {
-    const r = await f(`${url.replace(/\/$/, "")}/rest/v1/`, { headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` } });
+    const r = await f(`${url}/auth/v1/settings`, { headers: { apikey: anonKey } });
     if (r.status === 401 || r.status === 403) return { ok: false, error: "Supabase refused that anon key — copy the anon / public key from Project Settings → API." };
     return r.ok ? { ok: true } : { ok: false, error: `Supabase answered ${r.status}.` };
   } catch (e) { return { ok: false, error: `Couldn't reach Supabase: ${(e as Error).message}` }; }

@@ -6,7 +6,7 @@
    Press Enter to keep a value shown in [brackets]. Nothing is sent anywhere except Supabase, Gmail and Vercel. */
 import fs from "node:fs";
 import { createInterface } from "node:readline/promises";
-import { applySchema, checkEmail, checkSupabase, makeAdmin, mergeEnv, newSecret, pushVercel, type Check } from "./connect-lib";
+import { applySchema, checkEmail, checkSupabase, makeAdmin, projectUrl, mergeEnv, newSecret, pushVercel, type Check } from "./connect-lib";
 
 const ENV = ".env.local";
 const env: Record<string, string> = Object.fromEntries(
@@ -35,7 +35,7 @@ async function main() {
   say("     New project at supabase.com/dashboard → then Project Settings → API.");
   let url = "", key = "";
   for (;;) {
-    url = (await ask("Project URL", env.NEXT_PUBLIC_SUPABASE_URL)).replace(/\/$/, "");
+    url = projectUrl(await ask("Project URL", env.NEXT_PUBLIC_SUPABASE_URL));
     key = await ask("anon public key", env.NEXT_PUBLIC_SUPABASE_ANON_KEY, true);
     if (report("Supabase keys work", await checkSupabase(url, key))) break;
   }

@@ -23,7 +23,8 @@ const res = (status: number, body = "") => new Response(body, { status });
   ok("a non-Supabase URL is refused before any request", !(await checkSupabase("https://example.com", "k")).ok);
   ok("a wrong anon key is explained", /anon/.test(((await checkSupabase("https://abc.supabase.co", "k", (async () => res(401)) as Fetch)) as { error: string }).error));
   let seen = ""; const good = (async (u: string, i: RequestInit) => { seen = `${u} ${(i.headers as Record<string, string>).apikey}`; return res(200); }) as unknown as Fetch;
-  ok("good keys pass and are sent as apikey", (await checkSupabase("https://abc.supabase.co/", "anon-1", good)).ok && seen === "https://abc.supabase.co/rest/v1/ anon-1");
+  ok("good keys pass and are sent as apikey", (await checkSupabase("https://abc.supabase.co/", "anon-1", good)).ok && seen === "https://abc.supabase.co/auth/v1/settings anon-1");
+  ok("a pasted …/rest/v1/ URL is understood", (await checkSupabase("https://abc.supabase.co/rest/v1/", "anon-2", good)).ok && seen === "https://abc.supabase.co/auth/v1/settings anon-2");
 
   // the schema, over a real Postgres connection
   const db = new PGlite();
