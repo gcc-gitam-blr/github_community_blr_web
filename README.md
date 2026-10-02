@@ -38,6 +38,23 @@ It asks for three things and checks each one before moving on:
 
 Everything is saved in `.env.local` (never committed). To make someone an organiser after they sign in to Epoch once: `npm run connect -- admin <github-handle>`.
 
+## Club admin, attendance and certificates
+
+`/admin` is the core team's dashboard: club stats, sign-ups (and emailing everyone), Get involved messages, event feedback, **attendance & certificates**, and **people & roles**.
+
+- **Who gets in** is decided by the database (`profiles.role`): *admin* (everything), *volunteer* (sees everything, marks attendance), everyone else sees "ask an admin".
+- **The first admin** is set once in Supabase → SQL Editor: `update profiles set role = 'admin' where handle = 'your-github-username';` (sign in at `/admin` once first). After that, admins add people under **People & roles**.
+- **Certificates go only to people who attended.** After an event, open **Attendance & certificates**, pick the event and add who came: import Luma's guest list (Event → Guests → ⋯ → Export as CSV — only checked-in guests are taken), pick from club sign-ups, or type them in. Then **Email certificates**. Each person gets a link to their certificate page — printable as an A4 PDF, with an *Add to LinkedIn* button and a QR code anyone can scan to verify it.
+
+### Sign in with GitHub on the site's own address
+
+Browsers' phishing filters sometimes flag new `*.supabase.co` sign-in pages. To keep people on your own domain the whole way:
+
+1. In your GitHub OAuth App, set the **Authorization callback URL** to `https://<your-site>/api/auth/github/callback`.
+2. In Vercel, add `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` (from that OAuth App) and `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API Keys — server only, never `NEXT_PUBLIC_`). Redeploy.
+
+It works on the production address. Preview deployments and `localhost` automatically use Supabase's own GitHub sign-in instead.
+
 ## Settings (environment variables)
 
 | Variable | What it does |
