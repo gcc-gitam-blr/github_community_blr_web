@@ -33,6 +33,8 @@ const headers = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // the short commit this deploy was built from (Vercel sets VERCEL_GIT_COMMIT_SHA); shown in the footer
+  env: { NEXT_PUBLIC_COMMIT_SHA: (process.env.VERCEL_GIT_COMMIT_SHA ?? "").slice(0, 7) },
   // A stray package-lock.json in the parent folder made Next guess the wrong workspace root.
   turbopack: { root: path.resolve(__dirname) },
   async headers() {

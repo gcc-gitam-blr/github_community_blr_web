@@ -10,6 +10,7 @@ import { SocialLinks } from "./SocialLinks";
 import gallery from "@/lib/gallery.json";
 
 /* One footer for the whole site (club pages and Epoch). Links are only shown when they lead somewhere real. */
+const COMMIT = process.env.NEXT_PUBLIC_COMMIT_SHA ?? ""; // set at build time from Vercel (next.config.ts)
 const ORG = CLUB.githubOrg ? `${CLUB.githubUrl}/${CLUB.githubOrg}` : "";
 
 type L = { label: string; href: string; ext?: boolean };
@@ -52,11 +53,8 @@ export function SiteFooter({ sticker = true }: { sticker?: boolean }) {
         <div className="flex flex-wrap items-end justify-between gap-8 border-b border-[#30363d] py-14">
           <div className="max-w-[440px]">
             <Link href="/" className="flex items-center gap-3" aria-label="GitHub Community Club BLR — home">
-              <svg viewBox="0 0 40 40" className="h-10 w-10" aria-hidden>
-                <circle cx="20" cy="20" r="20" fill="#fff" />
-                <path d="M14 11v18M14 17c0 6 12 2 12 9" fill="none" stroke="#0d1117" strokeWidth="2.6" strokeLinecap="round" />
-                <g fill="#fff" stroke="#0d1117" strokeWidth="2.6"><circle cx="14" cy="11" r="3.2" /><circle cx="14" cy="29" r="3.2" /><circle cx="26" cy="27" r="3.2" /></g>
-              </svg>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/brand/club-mark.png" alt="" width={40} height={40} className="h-10 w-10" />
               <span className="font-display text-[20px] font-bold tracking-tight">GitHub Community Club <span className="text-[#3fb950]">BLR</span></span>
             </Link>
             <p className="mt-4 text-[15px] leading-relaxed text-[#9da7b3]">A student community at {CLUB.university}. We learn Git and GitHub, contribute to open source and run hands-on workshops.</p>
@@ -91,20 +89,27 @@ export function SiteFooter({ sticker = true }: { sticker?: boolean }) {
         </nav>
       </div>
 
-      {/* bottom bar */}
-      <div className="bg-[#010409]">
-        <div className="mx-auto flex w-full max-w-[1240px] flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-6 text-[12.5px] text-[#9da7b3] md:px-[clamp(20px,5vw,72px)]">
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            <span className="flex items-center gap-2"><MarkGithubIcon size={16} />© {new Date().getFullYear()} GitHub Community Club · {CLUB.university}</span>
-            <Link href="/epoch" className="hover:text-[#4493f8]">{EPOCH.name}_{EPOCH.edition}</Link>
-            <Link href="/privacy" className="hover:text-[#4493f8]">Privacy</Link>
-            <a href="/calendar.ics" download className="hover:text-[#4493f8]">Calendar (.ics)</a>
+      {/* bottom bar: a status line — who we are and where things live, then the small print and the exact deploy */}
+      <div className="border-t border-[#f0f6fc14] bg-[#010409] text-[13px] text-[#9da7b3]">
+        <div className="mx-auto w-full max-w-[1240px] px-5 md:px-[clamp(20px,5vw,72px)]">
+          <div className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="flex items-center gap-2.5 text-[#c9d1d9]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/brand/club-mark.png" alt="" width={20} height={20} className="h-5 w-5 opacity-90" />
+              <span>© {new Date().getFullYear()} GitHub Community Club <span className="text-[#6e7681]">·</span> {CLUB.university}</span>
+            </p>
+            <ul className="flex flex-wrap items-center gap-1">
+              {[["Privacy", "/privacy"], ["Calendar", "/calendar.ics"], [`${EPOCH.name}_${EPOCH.edition}`, "/epoch"]].map(([l, h]) => (
+                <li key={h}><a href={h} {...(h.endsWith(".ics") ? { download: true } : {})} className="rounded-md px-2.5 py-1.5 transition-colors duration-150 hover:bg-[#f0f6fc10] hover:text-white">{l}</a></li>
+              ))}
+              {ORG && <li><a href={ORG} target="_blank" rel="noopener" aria-label="Club on GitHub" className="grid h-8 w-8 place-items-center rounded-md transition-colors duration-150 hover:bg-[#f0f6fc10] hover:text-white"><MarkGithubIcon size={16} /></a></li>}
+              {CLUB.email && <li><a href={`mailto:${CLUB.email}`} aria-label="Email the club" className="grid h-8 w-8 place-items-center rounded-md transition-colors duration-150 hover:bg-[#f0f6fc10] hover:text-white"><MailIcon size={16} /></a></li>}
+              <li className="ml-1"><button type="button" onClick={() => scrollToTarget(document.body, 0)} className="inline-flex items-center gap-1.5 rounded-full border border-[#30363d] px-3 py-1.5 transition-colors duration-150 hover:border-[#8b949e] hover:text-white"><ChevronUpIcon size={14} />Back to top</button></li>
+            </ul>
           </div>
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            <span>Student-run · not officially affiliated with GitHub, Inc. Octocat artwork from the Octodex.</span>
-            {ORG && <a href={ORG} target="_blank" rel="noopener" aria-label="Club on GitHub" className="hover:text-white"><MarkGithubIcon size={18} /></a>}
-            {CLUB.email && <a href={`mailto:${CLUB.email}`} aria-label="Email the club" className="hover:text-white"><MailIcon size={18} /></a>}
-            <button type="button" onClick={() => scrollToTarget(document.body, 0)} className="inline-flex items-center gap-1 rounded-md border border-[#30363d] px-2.5 py-1 hover:border-[#8b949e] hover:text-white"><ChevronUpIcon size={14} />Top</button>
+          <div className="flex flex-col gap-2 border-t border-[#f0f6fc0d] py-4 text-[12px] text-[#7d8590] sm:flex-row sm:items-center sm:justify-between">
+            <p>Student-run. Not affiliated with GitHub, Inc. Octocat artwork from the <a href="https://octodex.github.com" target="_blank" rel="noopener" className="underline decoration-[#30363d] underline-offset-2 hover:text-[#c9d1d9]">Octodex</a>.</p>
+            {COMMIT && <p className="flex items-center gap-2 font-mono"><span className="h-1.5 w-1.5 rounded-full bg-[#3fb950]" aria-hidden />deployed from main@{COMMIT}</p>}
           </div>
         </div>
       </div>
