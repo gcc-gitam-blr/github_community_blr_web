@@ -15,6 +15,8 @@ export function MobileMenu({ href, current, live }: { href: (h: string) => strin
   const [top, setTop] = useState(64);
   const button = useRef<HTMLButtonElement>(null), panel = useRef<HTMLDivElement>(null);
   const [host, setHost] = useState<HTMLElement | null>(null);
+  const head = NAV_LINKS.findIndex((l) => l.href === current);
+  const state = (i: number) => (head < 0 ? "is-idle" : i < head ? "is-past" : i === head ? "is-head" : "is-ahead");
   // eslint-disable-next-line react-hooks/set-state-in-effect -- the portal target only exists in the browser
   useEffect(() => setHost(document.body), []);
 
@@ -53,22 +55,26 @@ export function MobileMenu({ href, current, live }: { href: (h: string) => strin
           <div className="phone-menu__scrim" onClick={() => close(false)} aria-hidden />
           <div ref={panel} id="phone-menu" className="phone-menu__panel" aria-hidden={!open} inert={!open}>
             <nav aria-label="Primary">
-              <ul>
+              <ul className="pm-branch">
                 {NAV_LINKS.map((l, i) => (
-                  <li key={l.href} style={{ "--i": i } as React.CSSProperties}>
-                    <a href={href(l.href)} onClick={() => close(false)} aria-current={current === l.href ? "page" : undefined} className="press flex items-center gap-3 rounded-xl px-3 py-3 active:bg-soft">
+                  <li key={l.href} className={`commit ${state(i)}`} style={{ "--i": i } as React.CSSProperties}>
+                    <a href={href(l.href)} onClick={() => close(false)} aria-current={current === l.href ? "page" : undefined} className="press flex items-center gap-4 rounded-xl px-3 py-3 active:bg-soft">
+                      <span className="commit-node" aria-hidden />
                       <span className="min-w-0 flex-1">
-                        <span className="flex items-center gap-2 font-display text-[21px] font-bold leading-tight">{l.label}{current === l.href && <span className="h-2 w-2 rounded-full bg-[#2da44e]" aria-hidden />}</span>
+                        <span className="flex items-center gap-2 font-display text-[21px] font-bold leading-tight">{l.label}{current === l.href && <span className="font-mono text-[11px] font-semibold tracking-wide text-[#1a7f37]">HEAD</span>}</span>
                         <span className="mt-0.5 block text-[14px] leading-snug text-ink-3">{l.blurb}</span>
                       </span>
                       <span aria-hidden className="text-ink-3">→</span>
                     </a>
                   </li>
                 ))}
-                <li style={{ "--i": NAV_LINKS.length } as React.CSSProperties}>
-                  <EpochLink className="press flex items-center gap-3 rounded-xl px-3 py-3 active:bg-soft">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-ink py-0.5 pl-1 pr-2.5 font-mono text-[12px] font-bold text-gold"><EpochCoin size={20} detail={false} />EPOCH</span>
-                    <span className="flex-1 text-[14px] text-ink-3">The December fest{live ? " — live now" : ""}</span>
+                <li className="commit is-ahead" style={{ "--i": NAV_LINKS.length } as React.CSSProperties}>
+                  <EpochLink className="press flex items-center gap-4 rounded-xl px-3 py-3 active:bg-soft">
+                    <span className="commit-node is-coin" aria-hidden><EpochCoin size={16} detail={false} /></span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-display text-[21px] font-bold leading-tight">Epoch{live && <span className="ml-2 align-middle font-mono text-[11px] font-semibold tracking-wide text-[#1a7f37]">LIVE</span>}</span>
+                      <span className="mt-0.5 block text-[14px] leading-snug text-ink-3">The December fest and its coin economy</span>
+                    </span>
                     <span aria-hidden className="text-ink-3">→</span>
                   </EpochLink>
                 </li>
