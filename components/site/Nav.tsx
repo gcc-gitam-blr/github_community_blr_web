@@ -7,9 +7,11 @@ import { EpochCoin } from "@/components/epoch/EpochCoin";
 import { daysToEpoch, epochIsLive } from "@/lib/epoch/config";
 import { Announcement } from "./Announcement";
 import { MobileMenu } from "./MobileMenu";
+import { EpochNudge } from "./EpochNudge";
 import { SiteSearch } from "./SiteSearch";
 import { useActiveSection } from "./useActiveSection";
 import { NAV_LINKS } from "./nav-links";
+import { ClubMark } from "@/components/ui/ClubMark";
 
 /* The header is a commit graph. Each place on the site is a commit on one branch; where you are is HEAD.
    Commits behind HEAD are filled and joined by a solid line (history); the ones ahead are hollow on a
@@ -67,11 +69,7 @@ export function Nav() {
       <div className="flex justify-center px-3 pt-3">
         <div className="head-pill pointer-events-auto" data-compact={compact}>
           <a href={home ? "#top" : "/"} className="group flex flex-none items-center gap-2 rounded-full py-1 pl-0.5 pr-1.5" aria-label="GitHub Community BLR — home">
-            <svg viewBox="0 0 40 40" className="h-8 w-8 flex-none transition-transform duration-300 ease-out group-hover:-rotate-[20deg]" aria-hidden>
-              <circle cx="20" cy="20" r="20" fill="#0b0b0f" />
-              <path d="M14 11v18M14 17c0 6 12 2 12 9" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
-              <g fill="#0b0b0f" stroke="#fff" strokeWidth="2.6"><circle cx="14" cy="11" r="3.2" /><circle cx="14" cy="29" r="3.2" /><circle cx="26" cy="27" r="3.2" /></g>
-            </svg>
+            <ClubMark size={32} className="transition-transform duration-300 ease-out group-hover:-rotate-[14deg]" />
             <span className="head-word hidden whitespace-nowrap font-display text-[15px] font-semibold tracking-tight xl:inline">GitHub Community</span>
             <b className="rounded bg-brand px-[6px] py-px font-display text-[15px] font-black">BLR</b>
           </a>
@@ -87,6 +85,7 @@ export function Nav() {
           <MobileMenu href={href} current={current} live={live} />
         </div>
       </div>
+      <EpochNudge hidden={compact} />
     </header>
   );
 }
