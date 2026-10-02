@@ -81,7 +81,7 @@ export function JoinCard() {
 
   const row = (key: string, ok: boolean, children: React.ReactNode) => (
     <label key={`${key}${errs[key] ?? ""}`} className={`relative flex items-center gap-3.5 border-b border-line py-4 pl-[34px] last:border-0 ${errs[key] ? "animate-[shake_.4s]" : ""}`}>
-      <span aria-hidden className={`absolute left-0 top-1/2 h-[17px] w-[17px] -translate-y-1/2 rounded-full border-2 transition-all ${ok ? "scale-75 border-ink bg-ink" : errs[key] ? "border-red-500 bg-white" : "border-[#c9ceca] bg-white"}`} />
+      <span aria-hidden className={`absolute left-0 top-1/2 h-[17px] w-[17px] -translate-y-1/2 rounded-full border-2 transition-[scale,background-color,border-color] duration-200 ease-out ${ok ? "scale-75 border-ink bg-ink" : errs[key] ? "border-red-500 bg-white" : "border-[#c9ceca] bg-white"}`} />
       {children}
     </label>
   );
@@ -103,7 +103,7 @@ export function JoinCard() {
           <span className="break-all rounded-md bg-[#ddf4ff] px-2 py-0.5 text-link">{cleanHandle(handle) || "you"}:first-commit</span>
         </p>
       </div>
-      <div className="relative grid grid-cols-[minmax(0,1fr)] gap-1 before:absolute before:bottom-[30px] before:left-2 before:top-[30px] before:w-0.5 before:bg-line after:absolute after:left-2 after:top-[30px] after:w-0.5 after:bg-ink after:transition-all after:duration-500 after:[height:calc((100%-60px)*var(--f))]" style={{ "--f": fill / 100 } as React.CSSProperties}>
+      <div className="relative grid grid-cols-[minmax(0,1fr)] gap-1 before:absolute before:bottom-[30px] before:left-2 before:top-[30px] before:w-0.5 before:bg-line after:absolute after:left-2 after:top-[30px] after:w-0.5 after:bg-ink after:transition-transform after:duration-300 after:ease-out after:h-[calc(100%-60px)] after:origin-top after:[transform:scaleY(var(--f))]" style={{ "--f": fill / 100 } as React.CSSProperties}>
         {row("handle", handleOk, <>
           <span className="sr-only">GitHub username</span><span className="-mr-2 text-ink-3">@</span>
           <input className={input} value={handle} onChange={(e) => onHandle(e.target.value)} placeholder="your-github-handle" autoComplete="off" spellCheck={false} />
