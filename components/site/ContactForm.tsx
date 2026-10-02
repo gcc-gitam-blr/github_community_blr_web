@@ -43,7 +43,7 @@ export function ContactForm({ initial = "question" }: { initial?: Kind }) {
       <p className="mt-2 text-[16px] text-ink-2">Our website inbox isn&apos;t switched on yet, so this hasn&apos;t reached anyone. Copy your message and paste it in the chat that opens. A real person reads every one.</p>
       <pre className="mt-5 max-h-60 overflow-auto whitespace-pre-wrap rounded-lg border border-line bg-[#f6f8fa] p-4 font-mono text-[13.5px] leading-relaxed">{text}</pre>
       <div className="mt-5 flex flex-wrap items-center gap-3">
-        <a href={DM_URL} target="_blank" rel="noopener" onClick={copy} className="rounded-md bg-ink px-5 py-3 font-display font-bold text-white">Copy &amp; open {where} ↗</a>
+        <a href={DM_URL} target="_blank" rel="noopener" onClick={copy} className="press rounded-md bg-ink px-5 py-3 font-display font-bold text-white">Copy &amp; open {where} ↗</a>
         <button type="button" onClick={copy} className="rounded-md border-2 border-ink px-5 py-3 font-display font-bold">{copied ? "Copied ✓" : "Copy only"}</button>
         <button type="button" onClick={() => setState("idle")} className="px-2 py-3 text-[14.5px] text-ink-2 underline underline-offset-4">Edit message</button>
       </div>

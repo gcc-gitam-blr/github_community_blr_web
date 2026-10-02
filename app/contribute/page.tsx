@@ -84,7 +84,7 @@ export default async function Contribute() {
 
         <div className="mt-20 rounded-[18px] border-2 border-ink bg-[#dafbe1] p-6 sm:flex sm:items-center sm:justify-between sm:p-8">
           <p className="max-w-[56ch] text-[18px]"><b>Stuck, or nervous about your first PR?</b> Come to a session — mentors review your first pull request with you. New to Git? Start with the <Link href="/learn" className="font-semibold text-link underline">Learn hub</Link>.</p>
-          <Link href="/#join" className="mt-4 inline-flex rounded-md bg-ink px-5 py-3 font-display font-bold text-white sm:mt-0">Join the club</Link>
+          <Link href="/#join" className="press mt-4 inline-flex rounded-md bg-ink px-5 py-3 font-display font-bold text-white sm:mt-0">Join the club</Link>
         </div>
       </main>
       <SiteFooter />

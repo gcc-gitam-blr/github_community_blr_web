@@ -66,7 +66,7 @@ export function SiteFooter({ sticker = true }: { sticker?: boolean }) {
           <div className="w-full max-w-[380px] rounded-xl border border-[#30363d] bg-[#161b22] p-5">
             <p className="font-display text-[16px] font-semibold">Never miss an event</p>
             <p className="mt-1 text-[14px] text-[#9da7b3]">All {CLUB.events.length} events for {CLUB.year}, in your calendar app.</p>
-            <a href="/calendar.ics" download className="mt-4 inline-flex items-center gap-2 rounded-md border border-[#f0f6fc1a] bg-[#238636] px-4 py-2 text-[14px] font-semibold text-white transition hover:bg-[#2ea043]">
+            <a href="/calendar.ics" download className="press mt-4 inline-flex items-center gap-2 rounded-md border border-[#f0f6fc1a] bg-[#238636] px-4 py-2 text-[14px] font-semibold text-white transition hover:bg-[#2ea043]">
               <CalendarIcon size={16} />Add to calendar
             </a>
           </div>
