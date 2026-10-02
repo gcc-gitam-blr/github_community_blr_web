@@ -1,19 +1,18 @@
 "use client";
-import { motion, useReducedMotion } from "motion/react";
+import { createElement } from "react";
 
-/** Fade-and-rise on scroll. Respects prefers-reduced-motion. */
-export function Reveal({ children, delay = 0, className = "", as = "div" }: { children: React.ReactNode; delay?: number; className?: string; as?: "div" | "li" | "section" | "article" }) {
-  const reduce = useReducedMotion();
-  const M = motion[as];
-  return (
-    <M
-      className={className}
-      initial={reduce ? false : { opacity: 0, y: 28 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "0px 0px -6% 0px" }}
-      transition={{ duration: 0.8, delay, ease: [0.22, 1, 0.36, 1] }}
-    >
-      {children}
-    </M>
-  );
+/* Fade-and-rise on scroll, in CSS (see .reveal in globals.css) with one shared IntersectionObserver —
+   no animation library on the page. `group` doesn't fade the element itself; it only marks it `.in`
+   so children can animate (.draw, .stagger, .pop). prefers-reduced-motion shows everything at once. */
+let io: IntersectionObserver | null = null;
+const observe = (el: Element) => {
+  io ??= new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io!.unobserve(e.target); } }), { rootMargin: "0px 0px -6% 0px" });
+  io.observe(el);
+  return () => io?.unobserve(el);
+};
+// a callback ref: observe on mount, stop on unmount
+const attach = (el: HTMLElement | null) => (el ? observe(el) : undefined);
+
+export function Reveal({ children, delay = 0, className = "", as = "div", group = false }: { children: React.ReactNode; delay?: number; className?: string; as?: "div" | "li" | "section" | "article" | "figure"; group?: boolean }) {
+  return createElement(as, { ref: attach, className: `${group ? "reveal-group" : "reveal"} ${className}`, style: delay ? ({ "--rd": `${delay}s` } as React.CSSProperties) : undefined }, children);
 }
