@@ -173,16 +173,15 @@ test("admin and certificates without a database: clear messages, no crashes", as
   expect(robots).toContain("Disallow: /admin");
 });
 
-test("the header shows where you are: path segment and current link", async ({ page }) => {
+test("the header is a commit graph: history behind HEAD, the rest ahead", async ({ page }) => {
   await page.goto("/updates");
   const nav = page.getByRole("navigation", { name: "Primary" });
   await expect(nav.getByRole("link", { name: "Updates" })).toHaveAttribute("aria-current", "page");
-  await expect(page.locator("header .branch-seg")).toHaveText("updates");
+  const states = await nav.locator("li.commit").evaluateAll((ls) => ls.map((l) => [...l.classList].find((c) => c.startsWith("is-"))));
+  expect(states).toEqual(["is-past", "is-past", "is-head", "is-ahead", "is-ahead"]);
   await page.goto("/");
-  await expect(page.locator("header .branch-seg")).toHaveText("main");
   await page.evaluate(() => document.getElementById("events")!.scrollIntoView());
-  await expect(page.locator("header .branch-seg")).toHaveText("events");
-  await expect(nav.getByRole("link", { name: "Events" })).toHaveAttribute("aria-current", "page");
+  await expect(nav.getByRole("link", { name: "Events" })).toHaveAttribute("aria-current", "page"); // HEAD follows the scroll
 });
 
 test("site search: / opens it, results are keyboard-driven, Enter goes there, Esc closes", async ({ page }) => {
