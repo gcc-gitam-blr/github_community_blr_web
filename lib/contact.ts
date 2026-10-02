@@ -10,7 +10,7 @@ export const KINDS = [
 export type Kind = (typeof KINDS)[number]["id"];
 
 export interface ContactInput { kind: string; name: string; email: string; handle?: string; message: string; website?: string; elapsedMs?: number }
-export type ContactResult = { ok: true } | { ok: false; error: string };
+export type ContactResult = { ok: true } | { ok: false; error: string; fallback?: boolean };
 
 export function validateContact(i: ContactInput): string | null {
   if (i.website) return "spam"; // honeypot

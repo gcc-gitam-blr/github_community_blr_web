@@ -24,7 +24,7 @@ export async function POST(req: Request) {
   const URL = process.env.NEXT_PUBLIC_SUPABASE_URL, KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const inbox = CLUB.email || process.env.SMTP_USER || "";
   const canEmail = emailConfigured() && !!inbox;
-  if (!(URL && KEY) && !canEmail) return reply({ ok: false, error: "Messages aren't connected yet — please message us on WhatsApp or Instagram." }, 503);
+  if (!(URL && KEY) && !canEmail) return reply({ ok: false, error: "The club inbox isn't switched on yet.", fallback: true }, 503); // the form then hands the message to Instagram
 
   const name = input.name.trim(), email = input.email.trim().toLowerCase(), handle = cleanHandle(input.handle ?? "") || undefined, message = input.message.trim();
   const kindLabel = KINDS.find((k) => k.id === input.kind)!.label;
