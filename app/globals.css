@@ -68,7 +68,7 @@ h1, h2 { font-family: var(--font-display); font-weight: 800; font-stretch: 115%;
 h3, h4 { font-family: var(--font-display); font-weight: 650; font-stretch: 105%; letter-spacing: -0.015em; line-height: 1.15; }
 }
 .font-display { font-stretch: 112%; }
-::selection { background: var(--color-brand); color: var(--color-ink); }
+::selection { background: #dcc6fb; color: var(--color-ink); } /* soft purple — the club's lilac node colour, lightened */
 :focus-visible { outline: 3px solid var(--color-link); outline-offset: 3px; } /* the outline follows each element's own corners */
 [hidden] { display: none !important; }
 
@@ -113,7 +113,7 @@ h3, h4 { font-family: var(--font-display); font-weight: 650; font-stretch: 105%;
 @media (hover: hover) and (pointer: fine) { .lift:hover { transform: translate(-4px, -4px); box-shadow: 8px 8px 0 var(--color-ink); } }
 .lift:active { transform: translate(-1px, -1px); box-shadow: 2px 2px 0 var(--color-ink); transition-duration: 80ms; } /* pressed into its shadow */
 
-.hl { background: linear-gradient(transparent 62%, var(--color-brand) 62% 92%, transparent 92%); padding-inline: 4px; margin-inline: -4px; font-style: normal; }
+.hl { background: linear-gradient(transparent 62%, #d4bcf7 62% 92%, transparent 92%); padding-inline: 4px; margin-inline: -4px; font-style: normal; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
