@@ -45,7 +45,7 @@ export function EpochNav() {
       <header className="no-print fixed inset-x-0 top-0 z-40 flex items-center gap-3 px-4 py-4 md:px-7">
         {/* phones: the way back to the club site (desktop has the "Club site" link on the right) */}
         <Link href="/" aria-label="Back to the club site" className={`press grid h-[52px] w-[52px] flex-none place-items-center rounded-full lg:hidden ${glassBar}`}><ClubMark size={34} /></Link>
-        <Link href="/epoch" className={`flex h-[52px] items-center gap-2.5 rounded-full pl-2.5 pr-5 ${glassBar}`} aria-label="Epoch home"><Coin size={34} /><Wordmark className="text-[22px]" /></Link>
+        <Link href="/epoch" className={`flex h-[52px] items-center gap-2.5 rounded-full pl-2.5 pr-2.5 min-[380px]:pr-5 ${glassBar}`} aria-label="Epoch home"><Coin size={34} /><Wordmark className="text-[22px] max-[379px]:hidden" /></Link>
         <div className={`mx-auto hidden w-full max-w-[520px] transition-[translate,opacity] duration-300 ease-out md:block ${showBar ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-3 opacity-0"}`}><Launcher /></div>
         <div className="ml-auto flex items-center gap-2 md:ml-0">
           <button onClick={open} aria-label="Search" className={`grid h-[52px] w-[52px] place-items-center rounded-full md:hidden ${glassBar}`}><Icon d="M11 4a7 7 0 100 14 7 7 0 000-14zM20 20l-3.5-3.5" /></button>
