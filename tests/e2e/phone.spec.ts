@@ -44,8 +44,15 @@ test("the smallest phones (320px): the home page and Epoch fit, including the ti
   const page = await ctx.newPage();
   for (const path of ["/", "/epoch"]) {
     await page.goto(path); await page.waitForTimeout(600);
-    const { scroll, client } = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
-    expect(scroll, path).toBeLessThanOrEqual(client);
+    const { scroll, client, culprits } = await page.evaluate(() => {
+      const vw = document.documentElement.clientWidth;
+      const inFixed = (e: Element | null): boolean => !!e && (getComputedStyle(e).position === "fixed" || inFixed(e.parentElement));
+      // name what sticks out, so a failure says where to look
+      const culprits = [...document.querySelectorAll("body *")].filter((e) => e.getBoundingClientRect().right > vw + 0.5 && !inFixed(e))
+        .slice(0, 6).map((e) => `${e.tagName}.${String((e as HTMLElement).className).slice(0, 60)} → ${e.getBoundingClientRect().right.toFixed(1)}`);
+      return { scroll: document.documentElement.scrollWidth, client: vw, culprits };
+    });
+    expect(scroll, `${path} — ${culprits.join(" | ")}`).toBeLessThanOrEqual(client);
   }
   // nothing in the ticket section reaches past the right edge (it clips instead of scrolling, so check directly)
   const past = await page.evaluate(() => [...document.querySelectorAll("#ticket *")].filter((e) => e.getBoundingClientRect().right > document.documentElement.clientWidth + 1).length);
