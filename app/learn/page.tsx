@@ -5,6 +5,7 @@ import { Nav } from "@/components/site/Nav";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { CheatSheet } from "@/components/site/CheatSheet";
 import { Sticker } from "@/components/ui/Sticker";
+import { LiveSticker } from "@/components/ui/LiveSticker";
 import { RESOURCES } from "@/lib/learn";
 
 export const metadata: Metadata = { title: "Learn", description: "A searchable Git cheat sheet and the best free resources for learning Git, GitHub and open source." };
@@ -46,8 +47,17 @@ export default function Learn() {
         </section>
 
         <section className="mt-20" aria-labelledby="cheat">
-          <h2 id="cheat" className="text-[clamp(30px,4vw,48px)]">Git cheat sheet</h2>
-          <p className="mb-8 mt-3 max-w-[60ch] text-[17px] text-ink-2">The commands you&apos;ll use every day. Search, then press the copy button.</p>
+          <div className="mb-8 flex items-end justify-between gap-6">
+            <div>
+              <h2 id="cheat" className="text-[clamp(30px,4vw,48px)]">Git cheat sheet</h2>
+              <p className="mt-3 max-w-[60ch] text-[17px] text-ink-2">The commands you&apos;ll use every day. Search, then press the copy button.</p>
+            </div>
+            {/* rubber-duck debugging: explain your code, line by line, to a duck — you usually spot the bug yourself */}
+            <figure className="hidden flex-none text-center md:block">
+              <LiveSticker name="duck-3d" size={120} />
+              <figcaption className="mt-1 max-w-[18ch] font-mono text-[12px] leading-snug text-ink-3">stuck? explain it to the duck</figcaption>
+            </figure>
+          </div>
           <CheatSheet />
         </section>
 

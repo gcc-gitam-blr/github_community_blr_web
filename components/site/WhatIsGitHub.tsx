@@ -1,5 +1,5 @@
 import { Reveal } from "@/components/ui/Reveal";
-import { Sticker } from "@/components/ui/Sticker";
+import { LiveSticker } from "@/components/ui/LiveSticker";
 
 /* A plain-language primer for people who've never used GitHub — before anything club-specific.
    Each idea gets a tiny diagram drawn in the site's git-graph style. */
@@ -62,7 +62,7 @@ export function WhatIsGitHub() {
             <h2 className="mt-4 text-[clamp(38px,5.6vw,68px)]">What is GitHub,<br />and why learn it?</h2>
             <p className="mt-5 max-w-[60ch] text-[19px] text-ink-2">GitHub is where the world builds software together. It&apos;s built on Git, and it&apos;s how developers save their work, share it, and improve each other&apos;s code. Here&apos;s the idea in three parts.</p>
           </Reveal>
-          <Sticker name="octocat" size={140} tilt={-6} className="mb-12 hidden md:block" alt="" />
+          <LiveSticker name="cat-3d" size={170} className="mb-8 hidden flex-none md:block" />
         </div>
 
         <ol className="grid gap-5 md:grid-cols-3">
