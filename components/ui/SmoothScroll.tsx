@@ -1,7 +1,7 @@
 "use client";
 import Lenis from "lenis";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 /* The "heavy", expensive-feeling scroll: wheel input is eased with inertia (Lenis) instead of
    jumping in steps. Touch keeps the native feel. Off entirely for prefers-reduced-motion.
@@ -24,7 +24,12 @@ export function SmoothScroll() {
     return () => { cancelAnimationFrame(raf); lenis?.destroy(); lenis = null; };
   }, []);
 
-  // new page: start at the top, without a smooth scroll back up
-  useEffect(() => { lenis?.scrollTo(0, { immediate: true }); }, [path]);
+  // on first load the browser owns the scroll position (a #link, or someone already scrolling) — only a *new* page starts at the top
+  const shown = useRef(path);
+  useEffect(() => {
+    if (shown.current === path) return;
+    shown.current = path;
+    if (!location.hash) lenis?.scrollTo(0, { immediate: true });
+  }, [path]);
   return null;
 }
