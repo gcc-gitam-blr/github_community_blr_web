@@ -19,7 +19,7 @@ const COLUMNS: { title: string; links: L[] }[] = [
   { title: "Learn on GitHub", links: [{ label: "GitHub Skills", href: "https://skills.github.com", ext: true }, { label: "GitHub Docs", href: "https://docs.github.com", ext: true }, { label: "Student Developer Pack", href: "https://education.github.com/pack", ext: true }, { label: "GitHub Community", href: "https://github.com/community", ext: true }] },
   { title: "Get involved", links: [
     { label: "My Epoch wallet", href: "/epoch/wallet" },
-    { label: "Organiser desk", href: "/epoch/admin" },
+    { label: "Club admin", href: "/admin" },
     ...(ORG ? [{ label: "Contribute to this site", href: ORG, ext: true }] : []),
     ...(CLUB.email ? [{ label: "Email the club", href: `mailto:${CLUB.email}`, ext: true }] : []),
     ...CLUB.socials.filter((s) => s.href && s.href !== "#").map((s) => ({ label: s.label, href: s.href, ext: true })),

@@ -38,6 +38,23 @@ It asks for three things and checks each one before moving on:
 
 Everything is saved in `.env.local` (never committed). To make someone an organiser after they sign in to Epoch once: `npm run connect -- admin <github-handle>`.
 
+## Club admin, attendance and certificates
+
+`/admin` is the core team's dashboard: club stats, sign-ups (and emailing everyone), Get involved messages, event feedback, **attendance & certificates**, and **people & roles**.
+
+- **Who gets in** is decided by the database (`profiles.role`): *admin* (everything), *volunteer* (sees everything, marks attendance), everyone else sees "ask an admin".
+- **The first admin** is set once in Supabase → SQL Editor: `update profiles set role = 'admin' where handle = 'your-github-username';` (sign in at `/admin` once first). After that, admins add people under **People & roles**.
+- **Certificates go only to people who attended.** After an event, open **Attendance & certificates**, pick the event and add who came: import Luma's guest list (Event → Guests → ⋯ → Export as CSV — only checked-in guests are taken), pick from club sign-ups, or type them in. Then **Email certificates**. Each person gets a link to their certificate page — printable as an A4 PDF, with an *Add to LinkedIn* button and a QR code anyone can scan to verify it.
+
+### Sign in with GitHub on the site's own address
+
+Browsers' phishing filters sometimes flag new `*.supabase.co` sign-in pages. To keep people on your own domain the whole way:
+
+1. Create a **second** GitHub OAuth App (github.com/settings/developers) with the **Authorization callback URL** `https://<your-site>/api/auth/github/callback`. Keep the first one in Supabase — it's still used for previews and `localhost`.
+2. In Vercel, add `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` (from the new OAuth App) and `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API Keys — server only, never `NEXT_PUBLIC_`). Redeploy.
+
+It works on the production address. Preview deployments and `localhost` automatically use Supabase's own GitHub sign-in instead.
+
 ## Settings (environment variables)
 
 | Variable | What it does |
@@ -113,7 +130,7 @@ The Octodex stickers in `public/stickers` are generated from `public/GitHub_stic
 ## Tests
 
 - `npm test` — the coin rules (demo store), the ask engine, club sign-ups (validator + `/api/join`), and the **real Supabase SQL** run inside PGlite (Postgres in WASM).
-- `npm run test:e2e` — **browser tests** (Playwright): the whole Epoch coin flow, the offline wallet, the join/contact forms, security headers, and that no page scrolls sideways on a phone. Build first (`npm run build`); locally it uses your installed Edge.
+- `npm run test:e2e` — **browser tests** (Playwright): the whole Epoch coin flow, the offline wallet, the join/contact forms, security headers, and that no page scrolls sideways on a phone. Build first with `npm run build:test` — it ignores `.env.local`, so tests never write to the real database or send real email (the tests refuse to run against a live build). Locally it uses your installed Edge.
 - CI (`.github/workflows/ci.yml`) runs type-check, lint, unit tests, the build and the browser tests on every push and pull request.
 - `tests/e2e.epoch.mjs` — the whole coin flow clicked through the real pages (instructions at the top of the file).
 

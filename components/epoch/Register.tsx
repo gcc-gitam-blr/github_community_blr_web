@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { PENDING_NAME } from "@/lib/epoch/pending";
 import { Frame, Notice } from "./Frame";
 import { btnInk, field, glass, label } from "./Bits";
 import { useEpoch } from "./EpochProvider";
@@ -13,6 +14,22 @@ export function Register() {
   const [msg, setMsg] = useState<{ k: "err" | "info"; t: string } | null>(null); const [busy, setBusy] = useState(false);
   const remote = store?.mode === "supabase";
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value });
+
+  // back from GitHub: show what went wrong, or finish creating the profile with the name typed before leaving
+  useEffect(() => {
+    if (!store?.loginResult) return;
+    let live = true;
+    store.loginResult().then(async ({ back, error }) => {
+      if (!live || !back) return;
+      if (error) return setMsg({ k: "err", t: error });
+      let name = ""; try { name = sessionStorage.getItem(PENDING_NAME) ?? ""; sessionStorage.removeItem(PENDING_NAME); } catch { /* fill it in by hand */ }
+      if (!name) return;
+      setBusy(true); const r = await store.register({ handle: "", name, email: "" }); setBusy(false);
+      if (!live) return;
+      if (r.ok) { await refresh(); router.push("/epoch/wallet"); } else setMsg({ k: "err", t: r.error });
+    });
+    return () => { live = false; };
+  }, [store, refresh, router]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); if (!store) return;

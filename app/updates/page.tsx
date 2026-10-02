@@ -5,10 +5,11 @@ import { Nav } from "@/components/site/Nav";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { UpdateTag } from "@/components/site/UpdateTag";
 import { getUpdates, updateDate } from "@/lib/updates";
+import { GitHubChangelog } from "@/components/site/GitHubChangelog";
 
 export const metadata: Metadata = {
   title: "Updates",
-  description: "News from the GitHub Community Club at GITAM Bengaluru: events, Epoch, and what's new.",
+  description: "News from the GitHub Community Club at GITAM Bengaluru — events, Epoch — and the latest from the GitHub Changelog.",
   alternates: { types: { "application/rss+xml": "/updates/feed.xml" } },
 };
 
@@ -39,6 +40,8 @@ export default function UpdatesPage() {
             </li>
           ))}
         </ol>
+
+        <GitHubChangelog variant="full" />
       </main>
       <SiteFooter />
     </>
