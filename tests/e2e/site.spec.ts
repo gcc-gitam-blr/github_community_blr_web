@@ -190,7 +190,7 @@ test("site search: / opens it, results are keyboard-driven, Enter goes there, Es
   const box = page.getByRole("combobox", { name: "Search the site" });
   await expect(box).toBeFocused();
   await box.fill("stash");
-  await expect(page.getByRole("option").first()).toContainText("git stash");
+  await expect(page.getByRole("dialog").getByRole("option").first()).toContainText("git stash");
   await page.keyboard.press("Enter");
   await page.waitForURL(/\/learn\?q=git%20stash/);
   await expect(page.locator("#cheat ~ div code")).toHaveCount(2); // the cheat sheet opens already filtered
@@ -199,4 +199,34 @@ test("site search: / opens it, results are keyboard-driven, Enter goes there, Es
   await expect(page.getByRole("option", { name: /Epoch is coming in December/ })).toBeVisible(); // update posts come from /search.json
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+
+
+test("the team: mentors, core team and technical staff as equal cards, and who built the site", async ({ page, request }) => {
+  await page.goto("/");
+  const team = page.locator("#team");
+  await team.scrollIntoViewIfNeeded();
+  await expect(team.getByText("Mentor · Tech & Design")).toBeVisible();
+  await expect(team.getByText("Mentor · Operations")).toBeVisible();
+  for (const [name, role] of [["Monisha S", "President"], ["Dhigveerraju G", "Vice President"], ["Supriya", "Secretary"], ["T Sai Ruchitha", "Design Lead"], ["Chandrika", "External Relations Head"]]) {
+    await expect(team.getByRole("heading", { name })).toBeVisible();
+    await expect(team.getByText(role, { exact: true })).toBeVisible();
+  }
+  for (const name of ["Geethika", "Aravind K", "Vishnu Teja", "Venkat Madhu", "Bhavana", "Niharika"]) await expect(team.getByRole("heading", { name })).toBeVisible();
+  await expect(team.getByText("Member of Technical Staff", { exact: true })).toHaveCount(6);
+  await expect(team.getByRole("heading", { name: /Contributors/ })).toContainText("4");
+  for (const src of ["/team/monisha-s.webp", "/team/chandrika-sm.webp", "/team/aravind-k.webp", "/brand/club-mark.png", "/brand/favicon-32.png"]) expect((await request.get(src)).status(), src).toBe(200);
+});
+
+test("the Epoch link and search open full-screen, not inside the glass header", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Search the site" }).click();
+  const box = await page.getByRole("dialog", { name: "Search the site" }).locator("xpath=..").boundingBox();
+  expect(box!.height).toBeGreaterThan(500); // the scrim covers the page, not just the header
+  await page.keyboard.press("Escape");
+  await page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: /Epoch/ }).click();
+  const wipe = await page.locator(".epoch-wipe").boundingBox();
+  expect(wipe!.height).toBeGreaterThan(500);
+  await page.waitForURL("**/epoch");
 });
