@@ -21,7 +21,7 @@ const TONE = {
 const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 
 /** A face: their photo, else their GitHub avatar, else their initials on a club colour. */
-function Face({ p, px, i, text }: { p: Person; px: number; i: number; text: string }) {
+export function Face({ p, px, i, text }: { p: Person; px: number; i: number; text: string }) {
   if (p.photo) {
     const sm = p.photo.replace(/\.webp$/, "-sm.webp");
     // eslint-disable-next-line @next/next/no-img-element
