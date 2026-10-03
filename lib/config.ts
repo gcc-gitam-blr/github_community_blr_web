@@ -20,7 +20,9 @@ export const CLUB = {
   // Until one is set the form says sign-ups aren't connected yet, instead of pretending to send.
   joinUrl: "https://chat.whatsapp.com/K1F5XOMfRavHEduanpxtSg", // the club WhatsApp community
 
-  // After an event, add `recap: { text: "What happened…", slides: "https://…" }` to its entry to show a Recap on its page.
+  // After an event, add a recap to its entry to show it on its page:
+  //   recap: { text: "What happened…", numbers: [{ value: 84, label: "came" }], video: "https://youtu.be/…", slides: "https://…" }
+  // Photos: put them in photos-inbox/<event-slug>/ and run `node scripts/photos.mjs` (or set `photos: "<folder>"`).
   // Events are published on Luma. Paste the club calendar link (e.g. "https://lu.ma/github-gitam")
   // to show "See all on Luma" buttons, and add `luma: "https://lu.ma/xyz"` to an event for its RSVP button.
   lumaCalendar: "https://luma.com/github_blr",
@@ -66,7 +68,7 @@ export const CLUB = {
     { date: "2027-01-04", type: "Workshop", title: "Build & Deploy with GitHub", luma: "https://luma.com/d74xiz76", text: "Build a website, app or student project and publish it using GitHub and related tools.", where: "GITAM Bengaluru", shape: "ring", color: "blue" },
     { date: "2027-02-08", type: "Workshop", title: "GitHub Profile Makeover", luma: "https://luma.com/6y0tnxzm", text: "Level up your profile, READMEs, repositories and project presentation for academic and professional use.", where: "GITAM Bengaluru", shape: "diamond", color: "purple" },
     { date: "2027-03-15", type: "Career", title: "GitHub for Careers & Technical Challenge", luma: "https://luma.com/a1bfax1o", text: "How GitHub helps with internships, placements and portfolios — followed by a technical challenge.", where: "GITAM Bengaluru", shape: "square", color: "mint" },
-  ] as { date: string; dateLabel?: string; href?: string; luma?: string; recap?: { text: string; slides?: string }; type: string; title: string; text: string; where: string; shape: Shape; color: NodeColor }[],
+  ] as { date: string; dateLabel?: string; href?: string; luma?: string; recap?: { text: string; numbers?: { value: number; label: string }[]; photos?: string; video?: string; slides?: string }; type: string; title: string; text: string; where: string; shape: Shape; color: NodeColor }[],
   // The team. `photo` is a square image made by scripts/team-photos.mjs (photos-inbox/team → public/team).
   // `handle` is a GitHub username (adds a link, and their avatar when there's no photo — set githubAvatar: false if their
   // GitHub picture is still the default pattern). Leave "" if unknown.
