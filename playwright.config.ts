@@ -5,7 +5,7 @@ import { defineConfig, devices } from "@playwright/test";
    build:test and the server below run with NODE_ENV=test, so .env.local is ignored: tests never touch the
    real database or send real email. global-setup refuses a build that contains the real Supabase URL.
    In CI:    Chromium is installed by the workflow. */
-const PORT = 3100;
+const PORT = Number(process.env.PORT) || 3100; // PORT=3101 npx playwright test runs a second suite alongside
 export default defineConfig({
   testDir: "./tests/e2e",
   globalSetup: "./tests/e2e/global-setup.ts",
