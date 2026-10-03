@@ -15,7 +15,7 @@ Website for the GitHub Community Club at GITAM University Bengaluru — **Code. 
 ## Features at a glance
 
 - **Club site** — git-graph hero, contribution-graph calendar of the year, a page per event (laid out like a GitHub release, with its own calendar file, share image and schema.org data), FAQ as closed issues, joining as a pull request.
-- **Club sign-ups** — the Join form posts to `/api/join` (validated, rate-limited, honeypot) and stores rows in Supabase's `join_requests`; organisers see them on `/epoch/admin` with a CSV export. Without Supabase it falls back to `joinUrl` / `email`.
+- **Club sign-ups** — the Join form posts to `/api/join` (validated, rate-limited, honeypot; with Supabase connected the limit is counted in the database, so it holds across every Vercel server) and stores rows in Supabase's `join_requests`; organisers see them on `/epoch/admin` with a CSV export. Without Supabase it falls back to `joinUrl` / `email`.
 - **Epoch** — coin economy with ticket verification, recharge points, booths, merch, leaderboard, QR scanning and a command bar (press `/`).
 - **Installable & offline** — Epoch has a web app manifest and a service worker: attendees can add the wallet to their home screen, and the wallet, QR pass and booths still open without signal.
 - **Calendar** — `/calendar.ics` (whole year) and `/events/<slug>/event.ics` (one event).
@@ -64,6 +64,7 @@ It works on the production address. Preview deployments and `localhost` automati
 | `NEXT_PUBLIC_SITE_URL` | Optional custom domain. On Vercel the production domain is used automatically. |
 | `NEXT_PUBLIC_EPOCH_MODE` | `live` / `off` forces Epoch's live state. |
 | `NEXT_PUBLIC_ANALYTICS` | `on` loads cookie-free Vercel Analytics + Speed Insights (enable them in the Vercel dashboard first). |
+| `RATE_LIMIT_SALT` | Optional. Any long random text, used to hash visitors' IPs for the form rate limits. Without it a secret the site already has (`EMAIL_SECRET`) is used. |
 
 ## Run it
 

@@ -137,5 +137,31 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   ok("an unknown handle is explained", /signed in yet/.test((await role(ORG, "nobody-here", "volunteer"))?.error ?? ""));
   ok("a made-up role is refused", !(await role(ORG, "ada", "superuser"))?.ok);
 
+  // ---- reliability: shared rate limits, browser error reports, data retention ----
+  // Supabase grants the API roles every table by default, so row-level security is all that stands in the way.
+  await db.exec("grant usage on schema public to anon; grant select, insert, update, delete on all tables in schema public to anon, authenticated;");
+  const asAnon = async <T,>(sql: string, p: unknown[] = []) => {
+    await as(""); await db.exec("set role anon");
+    try { return { rows: (await db.query<T>(sql, p)).rows, error: null as string | null }; }
+    catch (e) { return { rows: [] as T[], error: (e as Error).message }; }
+    finally { await db.exec("reset role"); }
+  };
+  const hit = async (key: string, limit = 3, secs = 600) => (await asAnon<{ r: boolean }>("select rate_hit($1, $2, $3) r", [key, limit, secs])).rows[0]?.r;
+  const hits: (boolean | undefined)[] = []; for (let i = 0; i < 4; i++) hits.push(await hit("join:aaa"));
+  ok("rate_hit allows 3 hits in the window, then blocks the 4th", hits.join() === "true,true,true,false");
+  ok("…another visitor has their own count", (await hit("join:bbb")) === true);
+  ok("…and the same visitor on another form too", (await hit("contact:aaa")) === true);
+  await db.query("update rate_hits set window_start = now() - interval '11 minutes' where key = 'join:aaa'");
+  ok("once the window has passed, the visitor can try again", (await hit("join:aaa")) === true && (await one<{ hits: number }>("select hits from rate_hits where key = 'join:aaa'")).hits === 1);
+  const burst = await Promise.all(Array.from({ length: 10 }, () => hit("join:burst", 5)));
+  ok("10 hits at once with a limit of 5: exactly 5 get through", burst.filter(Boolean).length === 5);
+  await db.query("insert into rate_hits (key, window_start) values ('join:stale', now() - interval '2 days')");
+  await hit("join:ccc");
+  ok("rows older than a day are deleted as it goes", (await one<{ n: number }>("select count(*)::int n from rate_hits where key = 'join:stale'")).n === 0);
+  ok("a missing or oversized key is refused", (await hit("")) === false && (await hit("k".repeat(101))) === false);
+  ok("visitors can't read the counters", (await asAnon("select * from rate_hits")).rows.length === 0);
+  ok("…or reset them", (await asAnon("delete from rate_hits returning key")).rows.length === 0 && (await one<{ n: number }>("select count(*)::int n from rate_hits")).n > 0);
+
+
   console.log(fails ? `\n${fails} FAILED` : "\nall schema checks passed"); process.exit(fails ? 1 : 0);
 })().catch((e) => { console.error("FAIL  crashed:", e.message); process.exit(1); });

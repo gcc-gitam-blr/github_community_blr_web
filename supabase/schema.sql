@@ -320,3 +320,36 @@ begin
 end $$;
 revoke execute on function set_role(text, text) from public, anon;
 grant execute on function set_role(text, text) to authenticated;
+
+-- ============================================================
+-- Rate limits shared by every server instance (lib/ratelimit.ts). Vercel runs many copies of the site,
+-- so a counter in memory resets whenever a new one starts; this one doesn't. The site sends a keyed
+-- SHA-256 of the visitor's IP, never the IP itself. Nobody can read the table; rows older than a day
+-- are deleted as it goes.
+-- ============================================================
+create table if not exists rate_hits (
+  key text primary key check (length(key) <= 100),
+  window_start timestamptz not null default now(),
+  hits int not null default 1
+);
+create index if not exists rate_hits_window on rate_hits (window_start);
+alter table rate_hits enable row level security;
+
+-- Counts one hit for p_key and answers whether it's still within p_limit hits per p_window_seconds.
+-- One statement, so two servers counting the same visitor at once can't both slip through.
+create or replace function rate_hit(p_key text, p_limit int, p_window_seconds int)
+returns boolean language plpgsql security definer as $$
+declare n int; w interval := make_interval(secs => greatest(1, least(coalesce(p_window_seconds, 600), 86400)));
+begin
+  if p_key is null or length(p_key) not between 1 and 100 then return false; end if;
+  delete from rate_hits where window_start < now() - interval '1 day';
+  insert into rate_hits as r (key) values (p_key)
+  on conflict (key) do update set
+    hits = case when r.window_start <= now() - w then 1 else r.hits + 1 end,
+    window_start = case when r.window_start <= now() - w then now() else r.window_start end
+  returning hits into n;
+  return n <= p_limit;
+end $$;
+revoke execute on function rate_hit(text, int, int) from public;
+grant execute on function rate_hit(text, int, int) to anon, authenticated;
+

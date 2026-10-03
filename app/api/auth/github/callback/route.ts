@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { STATE_COOKIE, githubIdentity, loginEnv, loginToken, ownLoginActive, safeNext, type AuthAdmin } from "@/lib/auth/github-login";
-import { clientIp, limited } from "@/lib/ratelimit";
+import { rateLimited } from "@/lib/ratelimit";
 
 /* GET /api/auth/github/callback — GitHub sends people here after they approve. We check it's the same
    browser that started (state cookie), find or create their account, and send them back signed in. */
@@ -15,7 +15,7 @@ export async function GET(req: Request) {
 
   if (url.searchParams.get("error")) return fail("Sign-in was cancelled.");
   if (!ownLoginActive(env, url.origin)) return fail("GitHub sign-in isn't set up on this address.");
-  if (limited(`login:${clientIp(req)}`, 60)) return fail("Too many sign-in attempts — please wait a few minutes."); // generous: a whole campus can share one IP
+  if (await rateLimited(req, "login", 60)) return fail("Too many sign-in attempts — please wait a few minutes."); // generous: a whole campus can share one IP
   const code = url.searchParams.get("code");
   if (!code || !state || url.searchParams.get("state") !== state) return fail("That sign-in link expired. Please try again.");
 
