@@ -35,6 +35,8 @@ const settle = () => new Promise((r) => setTimeout(r, 300));
 
   Object.assign(process.env, { NEXT_PUBLIC_SITE_URL: "https://club.test", EMAIL_SECRET: "s" });
   const { POST } = await import("../app/api/contact/route");
+  const { CLUB } = await import("../lib/config");
+  const club = CLUB.email || "club@test"; // the club email from the content editor, else the sending account
 
   // 1) nothing configured
   let r = await POST(post(good, "1.1.1.1"));
@@ -45,7 +47,7 @@ const settle = () => new Promise((r) => setTimeout(r, 300));
   r = await POST(post(good, "2.2.2.2")); await settle();
   ok("a valid message is saved (201)", r.status === 201 && saved.length === 1);
   ok("it is saved cleanly: lower-cased email, handle without @", saved[0].email === "ada@gitam.in" && saved[0].handle === "ada" && saved[0].kind === "apply");
-  const note = inbox.find((m) => toOf(m) === "club@test"), ack = inbox.find((m) => toOf(m) === "ada@gitam.in");
+  const note = inbox.find((m) => toOf(m) === club), ack = inbox.find((m) => toOf(m) === "ada@gitam.in");
   ok("the club inbox gets a notification", !!note && note.subject === "[Join the core team] Ada Lovelace");
   ok("replying to the notification goes to the sender", note?.replyTo?.text === "ada@gitam.in");
   ok("the notification shows their message and GitHub link", note?.text?.includes("I'd love to help run events") === true && note.html !== false && String(note.html).includes("github.com/ada"));
@@ -54,7 +56,7 @@ const settle = () => new Promise((r) => setTimeout(r, 300));
   // 3) hostile input is escaped in the HTML email
   inbox.length = 0;
   await POST(post({ ...good, name: "Eve <img src=x onerror=alert(1)>", message: "<script>alert(1)</script> hello there friend" }, "3.3.3.3")); await settle();
-  const evil = inbox.find((m) => toOf(m) === "club@test");
+  const evil = inbox.find((m) => toOf(m) === club);
   ok("anything a person typed is escaped in the HTML", !!evil && !String(evil.html).includes("<script>") && !String(evil.html).includes("<img src=x") && String(evil.html).includes("&lt;script&gt;"));
 
   // 4) spam, errors, limits
@@ -73,7 +75,7 @@ const settle = () => new Promise((r) => setTimeout(r, 300));
   // 5) email only (no database)
   delete process.env.NEXT_PUBLIC_SUPABASE_URL; inbox.length = 0; const n = saved.length;
   r = await POST(post(good, "8.8.8.8")); await settle();
-  ok("with email but no database, it still reaches the club inbox", r.status === 201 && saved.length === n && inbox.some((m) => toOf(m) === "club@test"));
+  ok("with email but no database, it still reaches the club inbox", r.status === 201 && saved.length === n && inbox.some((m) => toOf(m) === club));
 
   console.log(fails ? `\n${fails} FAILED` : "\nall contact checks passed"); smtp.close(); fake.close(); process.exit(fails ? 1 : 0);
 })().catch((e) => { console.error("FAIL  crashed:", e); process.exit(1); });
