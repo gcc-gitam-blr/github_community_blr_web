@@ -10,7 +10,8 @@
     "test": "tsx tests/economy.test.ts && tsx tests/ask.test.ts && tsx tests/join.test.ts && tsx tests/email.test.ts && tsx tests/issues.test.ts && tsx tests/contact.test.ts && tsx tests/announcements.test.ts && tsx tests/feedback.test.ts && tsx tests/schema.test.ts && tsx tests/connect.test.ts && tsx tests/updates.test.ts && tsx tests/stats.test.ts && tsx tests/github-changelog.test.ts && tsx tests/github-login.test.ts && tsx tests/attendance.test.ts && tsx tests/certificates.test.ts && tsx tests/search.test.ts && tsx tests/shuffle.test.ts && tsx tests/recap.test.ts && tsx tests/content.test.ts && tsx tests/board.test.ts",
     "test:e2e": "playwright test",
     "connect": "tsx scripts/connect.ts",
-    "build:test": "node scripts/build-test.mjs"
+    "build:test": "node scripts/build-test.mjs",
+    "load-test": "tsx scripts/load-test.ts"
   },
   "dependencies": {
     "@keystatic/core": "^0.6.9",
