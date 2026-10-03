@@ -1,15 +1,15 @@
 import { LinkExternalIcon, VideoIcon } from "@primer/octicons-react";
 import type { ClubEvent } from "@/lib/events";
 import { recapPhotos, youtubeId, type Recap as RecapData } from "@/lib/recap";
-import { PhotoGrid, type Photo } from "./PhotoGrid";
+import { PhotoGrid } from "./PhotoGrid";
 import { VideoEmbed } from "./VideoEmbed";
 
 /* "What happened" at an event: numbers, the story, photos, a video and the slides. Every part is optional except the text. */
-export function Recap({ event, recap, photos = recapPhotos(event, recap), sample = false }: { event: ClubEvent; recap: RecapData; photos?: Photo[]; sample?: boolean }) {
+export function Recap({ event, recap }: { event: ClubEvent; recap: RecapData }) {
+  const photos = recapPhotos(event, recap);
   const yt = recap.video ? youtubeId(recap.video) : null;
   return (
     <section id="recap" aria-labelledby="recap-title" className="mt-6 overflow-hidden rounded-[12px] border border-line bg-white md:ml-[212px]">
-      {sample && <p className="border-b border-[#d4a72c66] bg-[#fff8c5] px-6 py-2.5 text-[13.5px] text-[#7d4e00] sm:px-8">Sample recap — shown on preview deployments only, never on the live site.</p>}
       <div className="p-6 sm:p-8">
         <h2 id="recap-title" className="text-[24px]">Recap</h2>
 

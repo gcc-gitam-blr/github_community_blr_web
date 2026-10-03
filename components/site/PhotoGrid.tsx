@@ -3,9 +3,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeftIcon, ArrowRightIcon, XIcon } from "@primer/octicons-react";
 
 /* Masonry photo grid with a keyboard-friendly lightbox (Esc, ← →). Used by the home Gallery and event recaps.
-   Photos come from scripts/photos.mjs; `src` overrides the path (only the preview's sample recap uses it). */
-export interface Photo { id: string; event: string; eventTitle: string; index: number; w: number; h: number; alt: string; caption: string; src?: string }
-const src = (p: Photo, s: "sm" | "md" | "lg") => p.src ?? `/gallery/${p.event}/${p.index}-${s}.webp`;
+   Photos come from scripts/photos.mjs. */
+export interface Photo { id: string; event: string; eventTitle: string; index: number; w: number; h: number; alt: string; caption: string }
+const src = (p: Photo, s: "sm" | "md" | "lg") => `/gallery/${p.event}/${p.index}-${s}.webp`;
 
 export function PhotoGrid({ photos, cols = "columns-2 md:columns-3" }: { photos: Photo[]; cols?: string }) {
   const [open, setOpen] = useState<number | null>(null);
@@ -33,7 +33,7 @@ export function PhotoGrid({ photos, cols = "columns-2 md:columns-3" }: { photos:
           <li key={p.id} className="mb-3 break-inside-avoid md:mb-4">
             <button onClick={() => setOpen(i)} className="group block w-full overflow-hidden rounded-[14px] border border-line bg-soft focus-visible:outline-offset-4" aria-label={`Open photo: ${p.alt}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={src(p, "md")} srcSet={p.src ? undefined : `${src(p, "sm")} 480w, ${src(p, "md")} 960w`} sizes="(min-width: 768px) 33vw, 50vw" width={p.w} height={p.h} alt={p.alt} loading="lazy" decoding="async" className="h-auto w-full transition duration-300 ease-out group-hover:scale-[1.03]" />
+              <img src={src(p, "md")} srcSet={`${src(p, "sm")} 480w, ${src(p, "md")} 960w`} sizes="(min-width: 768px) 33vw, 50vw" width={p.w} height={p.h} alt={p.alt} loading="lazy" decoding="async" className="h-auto w-full transition duration-300 ease-out group-hover:scale-[1.03]" />
             </button>
           </li>
         ))}

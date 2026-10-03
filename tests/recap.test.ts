@@ -1,5 +1,5 @@
 /* Event recaps: video links people paste, and which gallery photos belong to which event. */
-import { recapPhotos, samplePhotos, youtubeId, SAMPLE_RECAP } from "../lib/recap";
+import { recapPhotos, youtubeId } from "../lib/recap";
 import { EVENTS } from "../lib/events";
 import type { Photo } from "../components/site/PhotoGrid";
 
@@ -19,7 +19,5 @@ ok("photos match the event's slug by default", recapPhotos(e, { text: "" }, all)
 ok("`photos` picks a differently named folder", recapPhotos(e, { text: "", photos: "first-session" }, all).length === 2);
 ok("no photos is fine", recapPhotos(e, { text: "" }, []).length === 0);
 
-ok("the sample recap is marked as a sample", SAMPLE_RECAP.text.startsWith("Sample recap"));
-ok("sample photos are inline placeholders, not files", samplePhotos(e).every((p) => p.src?.startsWith("data:image/svg+xml")));
 if (fails) { console.log(`${fails} recap check(s) failed`); process.exit(1); }
 console.log("all recap checks passed");

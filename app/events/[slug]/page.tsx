@@ -14,7 +14,6 @@ import { LatestBadge } from "./LatestBadge";
 import { FeedbackForm } from "./FeedbackForm";
 import { Upcoming } from "@/components/site/Upcoming";
 import { Recap } from "@/components/site/Recap";
-import { SAMPLE_RECAP, SHOW_SAMPLE, samplePhotos } from "@/lib/recap";
 
 /* Each event is a "release" of the club: a tag, release notes, and assets (calendar file, link). */
 export const dynamicParams = false;
@@ -92,8 +91,7 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
           </article>
         </div>
 
-        {e.recap ? <Recap event={e} recap={e.recap} />
-          : SHOW_SAMPLE && i === 0 && <Recap event={e} recap={SAMPLE_RECAP} photos={samplePhotos(e)} sample />}
+        {e.recap && <Recap event={e} recap={e.recap} />}
         {!e.dateLabel && <FeedbackForm date={e.date} title={e.title} />}
 
         {/* older / newer, like navigating releases */}
