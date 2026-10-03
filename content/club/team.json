@@ -1,0 +1,263 @@
+{
+  "team": [
+    {
+      "name": "Chakrawarthy",
+      "group": "mentor",
+      "role": "Mentor · Tech & Design",
+      "past": "Former President, 2024-25",
+      "owner": true,
+      "crew": [],
+      "tags": [],
+      "handle": "lechakrawarthy",
+      "githubAvatar": true
+    },
+    {
+      "name": "Lakshmi",
+      "group": "mentor",
+      "role": "Mentor · Operations",
+      "past": "Former Inclusion & Events Head",
+      "owner": true,
+      "crew": [],
+      "tags": [],
+      "handle": "lkshi0406",
+      "githubAvatar": false
+    },
+    {
+      "name": "Greeshmitha",
+      "group": "mentor",
+      "role": "Mentor",
+      "past": "Former President, 2025-26",
+      "owner": false,
+      "crew": [],
+      "tags": [],
+      "photo": "/team/greeshmitha.webp",
+      "githubAvatar": true
+    },
+    {
+      "name": "Rohit",
+      "group": "mentor",
+      "role": "Mentor",
+      "past": "Former Vice-President, 2025-26",
+      "owner": false,
+      "crew": [],
+      "tags": [],
+      "githubAvatar": true
+    },
+    {
+      "name": "Monisha S",
+      "group": "lead",
+      "role": "President",
+      "owner": false,
+      "crew": [
+        {
+          "role": "custodian",
+          "level": "1"
+        }
+      ],
+      "tags": [],
+      "photo": "/team/monisha-s.webp",
+      "githubAvatar": true
+    },
+    {
+      "name": "Dhigveerraju G",
+      "group": "lead",
+      "role": "Vice President",
+      "owner": false,
+      "crew": [
+        {
+          "role": "gatekeeper",
+          "level": "1"
+        }
+      ],
+      "tags": [],
+      "photo": "/team/dhigveerraju-g.webp",
+      "githubAvatar": true
+    },
+    {
+      "name": "Supriya K S",
+      "group": "lead",
+      "role": "Secretary",
+      "owner": false,
+      "crew": [
+        {
+          "role": "security",
+          "level": "1"
+        }
+      ],
+      "tags": [],
+      "photo": "/team/supriya-k-s.webp",
+      "githubAvatar": true
+    },
+    {
+      "name": "T Sai Ruchitha",
+      "group": "lead",
+      "role": "Design Lead",
+      "owner": false,
+      "crew": [
+        {
+          "role": "pipeline",
+          "level": "1"
+        }
+      ],
+      "tags": [],
+      "photo": "/team/t-sai-ruchitha.webp",
+      "githubAvatar": true
+    },
+    {
+      "name": "Chandrika",
+      "group": "lead",
+      "role": "External Relations Head",
+      "owner": false,
+      "crew": [
+        {
+          "role": "gatekeeper",
+          "level": "1"
+        }
+      ],
+      "tags": [],
+      "photo": "/team/chandrika.webp",
+      "githubAvatar": true
+    },
+    {
+      "name": "Geethika",
+      "group": "member",
+      "owner": false,
+      "crew": [
+        {
+          "role": "alchemist",
+          "level": "1"
+        }
+      ],
+      "tags": [
+        "Tech"
+      ],
+      "photo": "/team/geethika.webp",
+      "githubAvatar": true
+    },
+    {
+      "name": "Aravind K",
+      "group": "member",
+      "owner": false,
+      "crew": [
+        {
+          "role": "custodian",
+          "level": "1"
+        }
+      ],
+      "tags": [
+        "Tech"
+      ],
+      "photo": "/team/aravind-k.webp",
+      "githubAvatar": true
+    },
+    {
+      "name": "Vishnu Teja",
+      "group": "member",
+      "owner": false,
+      "crew": [
+        {
+          "role": "pipeline",
+          "level": "1"
+        }
+      ],
+      "tags": [
+        "Tech"
+      ],
+      "photo": "/team/vishnu-teja.webp",
+      "githubAvatar": true
+    },
+    {
+      "name": "Venkata Madhu K",
+      "group": "member",
+      "owner": false,
+      "crew": [
+        {
+          "role": "security",
+          "level": "1"
+        }
+      ],
+      "tags": [
+        "Tech"
+      ],
+      "photo": "/team/venkatamadhu-k.webp",
+      "githubAvatar": true
+    },
+    {
+      "name": "Bhavana",
+      "group": "member",
+      "owner": false,
+      "crew": [
+        {
+          "role": "explorer",
+          "level": "1"
+        }
+      ],
+      "tags": [
+        "Tech"
+      ],
+      "githubAvatar": true
+    },
+    {
+      "name": "Niharika",
+      "group": "member",
+      "owner": false,
+      "crew": [
+        {
+          "role": "alchemist",
+          "level": "1"
+        }
+      ],
+      "tags": [
+        "Tech",
+        "Media"
+      ],
+      "githubAvatar": true
+    },
+    {
+      "name": "Apsara",
+      "group": "member",
+      "owner": false,
+      "crew": [
+        {
+          "role": "scout",
+          "level": "1"
+        }
+      ],
+      "tags": [
+        "Tech"
+      ],
+      "githubAvatar": true
+    },
+    {
+      "name": "Lokesh",
+      "group": "member",
+      "owner": false,
+      "crew": [
+        {
+          "role": "forge",
+          "level": "1"
+        }
+      ],
+      "tags": [
+        "Tech"
+      ],
+      "githubAvatar": true
+    },
+    {
+      "name": "Manogna",
+      "group": "member",
+      "owner": false,
+      "crew": [
+        {
+          "role": "scout",
+          "level": "1"
+        }
+      ],
+      "tags": [
+        "Tech"
+      ],
+      "handle": "",
+      "githubAvatar": true
+    }
+  ]
+}

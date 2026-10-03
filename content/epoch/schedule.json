@@ -1,0 +1,161 @@
+{
+  "days": [
+    {
+      "day": "1",
+      "label": "Day 1",
+      "items": [
+        {
+          "time": "08:00",
+          "end": "08:30",
+          "title": "Inauguration Ceremony",
+          "kind": "Ceremony",
+          "notes": [
+            "Welcome address",
+            "Remarks by chief guests",
+            "Schedule overview"
+          ]
+        },
+        {
+          "time": "08:30",
+          "end": "12:00",
+          "title": "“Fail-Proof Code” Challenge",
+          "kind": "Competition",
+          "notes": [
+            "A standard problem with a twist",
+            "Judged on efficiency, error handling, adaptability"
+          ]
+        },
+        {
+          "time": "09:00",
+          "end": "10:00",
+          "title": "Git & GitHub Basics",
+          "kind": "Workshop",
+          "notes": [
+            "Version control",
+            "init · add · commit · push · pull",
+            "Collaborative workflows"
+          ]
+        },
+        {
+          "time": "10:30",
+          "end": "12:00",
+          "title": "Building Your GitHub Portfolio",
+          "kind": "Workshop",
+          "notes": [
+            "Organising repositories",
+            "Compelling READMEs",
+            "GitHub Pages"
+          ]
+        },
+        {
+          "time": "12:00",
+          "end": "14:00",
+          "title": "Lunch break",
+          "kind": "Break"
+        },
+        {
+          "time": "14:00",
+          "end": "18:00",
+          "title": "Digital Art Hack: GitHub Profile Banners",
+          "kind": "Workshop",
+          "notes": [
+            "Design tools intro",
+            "Hands-on with mentors"
+          ]
+        },
+        {
+          "time": "14:00",
+          "end": "18:00",
+          "title": "Interactive booths open",
+          "kind": "Booths",
+          "notes": [
+            "Spend coins, hit recharge points"
+          ]
+        },
+        {
+          "time": "16:00",
+          "end": "17:00",
+          "title": "Department of Placement presentation",
+          "kind": "Talk",
+          "notes": [
+            "GitHub in professional development",
+            "Q&A with industry recruiters"
+          ]
+        }
+      ]
+    },
+    {
+      "day": "2",
+      "label": "Day 2",
+      "items": [
+        {
+          "time": "08:00",
+          "end": "10:00",
+          "title": "Advanced Git & Open-Source Contributions",
+          "kind": "Workshop",
+          "notes": [
+            "Branching strategies",
+            "Resolving merge conflicts",
+            "Pull requests to real projects"
+          ]
+        },
+        {
+          "time": "08:30",
+          "end": "12:00",
+          "title": "“Code Auction” Challenge",
+          "kind": "Competition",
+          "notes": [
+            "Budget your team",
+            "Bid for coding tasks",
+            "2.5 hours of building"
+          ]
+        },
+        {
+          "time": "10:30",
+          "end": "12:00",
+          "title": "Code Review & QA Workshop",
+          "kind": "Workshop",
+          "notes": [
+            "Effective code reviews",
+            "Automated testing & CI",
+            "Quality in GitHub workflows"
+          ]
+        },
+        {
+          "time": "12:00",
+          "end": "14:00",
+          "title": "Lunch break",
+          "kind": "Break"
+        },
+        {
+          "time": "14:00",
+          "end": "18:00",
+          "title": "Booths & Digital Art Hack continue",
+          "kind": "Booths"
+        },
+        {
+          "time": "16:00",
+          "end": "17:00",
+          "title": "Guest speaker: a successful GitHub user",
+          "kind": "Talk",
+          "notes": [
+            "Personal journey",
+            "GitHub in the workplace",
+            "Q&A"
+          ]
+        },
+        {
+          "time": "18:00",
+          "end": "19:00",
+          "title": "Winners, prizes & closing",
+          "kind": "Ceremony",
+          "notes": [
+            "Winners of both days",
+            "Prize distribution",
+            "Networking & refreshments"
+          ]
+        }
+      ]
+    }
+  ]
+}

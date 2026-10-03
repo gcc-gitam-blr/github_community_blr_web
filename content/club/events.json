@@ -1,0 +1,84 @@
+{
+  "events": [
+    {
+      "title": "Learn GitHub & Make Your First Contribution",
+      "date": "2026-10-07",
+      "type": "Workshop",
+      "text": "Introduction to GitHub, repositories, commits, issues, pull requests — and your first contribution.",
+      "where": "GITAM Bengaluru",
+      "luma": "https://luma.com/exkd0eax",
+      "shape": "diamond",
+      "color": "blue",
+      "recap": {
+        "numbers": []
+      }
+    },
+    {
+      "title": "GIT Merge 26",
+      "date": "2026-10-12",
+      "type": "Open Source",
+      "text": "A GitHub and open-source event: learn Git, explore open source, make beginner-friendly contributions.",
+      "where": "GITAM Bengaluru",
+      "luma": "https://luma.com/iztx970g",
+      "shape": "square",
+      "color": "purple",
+      "recap": {
+        "numbers": []
+      }
+    },
+    {
+      "title": "EPOCH — GitHub Technical Month",
+      "date": "2026-12-01",
+      "dateLabel": "December 2026",
+      "type": "Flagship",
+      "text": "The club's major technical event: challenges, project development, presentations, a project showcase — and the Epoch Coins economy.",
+      "where": "GITAM Bengaluru",
+      "luma": "https://luma.com/nxg57cad",
+      "href": "/epoch",
+      "shape": "triangle",
+      "color": "mint",
+      "recap": {
+        "numbers": []
+      }
+    },
+    {
+      "title": "Build & Deploy with GitHub",
+      "date": "2027-01-04",
+      "type": "Workshop",
+      "text": "Build a website, app or student project and publish it using GitHub and related tools.",
+      "where": "GITAM Bengaluru",
+      "luma": "https://luma.com/d74xiz76",
+      "shape": "ring",
+      "color": "blue",
+      "recap": {
+        "numbers": []
+      }
+    },
+    {
+      "title": "GitHub Profile Makeover",
+      "date": "2027-02-08",
+      "type": "Workshop",
+      "text": "Level up your profile, READMEs, repositories and project presentation for academic and professional use.",
+      "where": "GITAM Bengaluru",
+      "luma": "https://luma.com/6y0tnxzm",
+      "shape": "diamond",
+      "color": "purple",
+      "recap": {
+        "numbers": []
+      }
+    },
+    {
+      "title": "GitHub for Careers & Technical Challenge",
+      "date": "2027-03-15",
+      "type": "Career",
+      "text": "How GitHub helps with internships, placements and portfolios — followed by a technical challenge.",
+      "where": "GITAM Bengaluru",
+      "luma": "https://luma.com/a1bfax1o",
+      "shape": "square",
+      "color": "mint",
+      "recap": {
+        "numbers": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "whatWeDo": [
+    {
+      "title": "Git & GitHub",
+      "text": "From your first commit to branches, pull requests and GitHub Actions — hands-on, at your own pace."
+    },
+    {
+      "title": "Open source",
+      "text": "Find beginner-friendly issues, make real contributions, and learn how open-source teams work together."
+    },
+    {
+      "title": "Workshops",
+      "text": "Practical sessions through the year: build and deploy projects, polish your profile, prepare for careers."
+    }
+  ],
+  "stats": [
+    {
+      "value": 6,
+      "file": "events/2026-27.md",
+      "label": "Events in 2026-27"
+    },
+    {
+      "value": 21,
+      "file": "epoch/booths.md",
+      "label": "Booths at Epoch"
+    },
+    {
+      "value": 2,
+      "file": "epoch/days.md",
+      "label": "Days of Epoch"
+    },
+    {
+      "value": 398,
+      "file": "epoch/starter-coins",
+      "label": "Starter coins per attendee"
+    }
+  ],
+  "learn": [
+    {
+      "id": "basics",
+      "cmd": "git init",
+      "shape": "diamond",
+      "color": "blue",
+      "title": "Git & GitHub basics",
+      "text": "Version control, repositories, and the everyday commands: init, add, commit, push, pull."
+    },
+    {
+      "id": "pr",
+      "cmd": "gh pr create",
+      "shape": "square",
+      "color": "purple",
+      "title": "Your first pull request",
+      "text": "Make a real contribution to a real project, with someone reviewing it alongside you."
+    },
+    {
+      "id": "portfolio",
+      "cmd": "git push origin main",
+      "shape": "ring",
+      "color": "mint",
+      "title": "Portfolio & READMEs",
+      "text": "Organise your repositories, write READMEs people read, and publish with GitHub Pages."
+    },
+    {
+      "id": "oss",
+      "cmd": "git merge upstream/main",
+      "shape": "triangle",
+      "color": "blue",
+      "title": "Open source",
+      "text": "Branching strategies, resolving merge conflicts and contributing to projects that aren't yours."
+    },
+    {
+      "id": "review",
+      "cmd": "gh pr review --approve",
+      "shape": "diamond",
+      "color": "purple",
+      "title": "Code review & CI",
+      "text": "Review code well, and use automated tests and checks to keep quality high."
+    },
+    {
+      "id": "career",
+      "cmd": "git tag v1.0.0",
+      "shape": "square",
+      "color": "mint",
+      "title": "GitHub for careers",
+      "text": "Use GitHub for internships, placements and a portfolio that speaks for you."
+    }
+  ]
+}

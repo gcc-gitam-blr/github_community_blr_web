@@ -1,0 +1,28 @@
+{
+  "faq": [
+    {
+      "q": "What is Epoch?",
+      "a": "Our flagship technical event in December: two days of workshops, coding competitions and 20+ interactive booths — run on its own currency, Epoch Coins."
+    },
+    {
+      "q": "How do Epoch Coins work?",
+      "a": "Everyone starts with 398 Epoch Coins, credited at check-in. Spend them at booths and on merch, and top up at recharge points. The ticket price (if any) hasn't been decided yet."
+    },
+    {
+      "q": "Can I earn more coins?",
+      "a": "Yes. Recharge points run mini-games — trivia, quick coding puzzles — worth around 20 coins. Each recharge point works once per person."
+    },
+    {
+      "q": "Do I need to know how to code?",
+      "a": "No. The year starts with a beginner session, Learn GitHub & Make Your First Contribution, and every event is built to be approachable."
+    },
+    {
+      "q": "How do I join, and where are events announced?",
+      "a": "Fill in the Join form on this page and hop into our WhatsApp community — that's where we share dates, workshops and RSVP links. Follow us on Instagram and LinkedIn too."
+    },
+    {
+      "q": "Who runs this?",
+      "a": "The GitHub Community Club at GITAM University Bengaluru — students organising for students."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "GitHub Community Club BLR",
+  "university": "GITAM University Bengaluru",
+  "year": "2026-27",
+  "githubOrg": "github-community-gitam",
+  "joinUrl": "https://chat.whatsapp.com/K1F5XOMfRavHEduanpxtSg",
+  "lumaCalendar": "https://luma.com/github_blr",
+  "lumaEpochCalendar": "https://luma.com/epoch-gitam-blr",
+  "email": "",
+  "socials": [
+    {
+      "label": "Instagram",
+      "href": "https://www.instagram.com/github.gitamblr/"
+    },
+    {
+      "label": "LinkedIn",
+      "href": "https://www.linkedin.com/company/githubcommunitygitam/"
+    },
+    {
+      "label": "WhatsApp",
+      "href": "https://chat.whatsapp.com/K1F5XOMfRavHEduanpxtSg"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 /* The club's technical roles, modelled on how engineering teams work. Each has levels like SD1/SD2/SD3:
-   I is starting out, II has some experience, III is the most experienced. People's roles live in lib/config.ts (team[].crew). */
+   I is starting out, II has some experience, III is the most experienced. People's roles live in content/club/team.json (team[].crew). */
 export type CrewId = "custodian" | "gatekeeper" | "scout" | "pipeline" | "security" | "alchemist" | "explorer" | "forge";
 
 export const CREWS = [

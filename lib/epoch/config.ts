@@ -1,39 +1,42 @@
 import type { Booth, Reward } from "./types";
+import settings from "@/content/epoch/settings.json";
+import schedule from "@/content/epoch/schedule.json";
 
 /* ============================================================
-   EDIT ME — Epoch settings.
+   Epoch settings. Dates, venue, ticket, sponsors and the schedule live in content/epoch/
+   (edit them at /keystatic). Coins, booths and the shop stay here: the database seeds them too.
    Anything marked PLACEHOLDER is not in the original plan; confirm it.
    ============================================================ */
 export const EPOCH = {
   name: "epoch",
   edition: "26",
   org: "GITAM University Bengaluru",
-  tagline: "Two days. One economy. Every commit counts.",
-  month: "December 2026",
-  dates: "December 2026 · dates to be announced",
-  venue: "GITAM University, Bengaluru",
+  tagline: settings.tagline,
+  month: settings.month,
+  dates: settings.dates,
+  venue: settings.venue,
 
   // Coins. Everyone gets `starterCoins` when the desk checks them in. The plan's example was
   // ₹199 → 398 coins, but the club hasn't decided the ticket price (it may be free), so the price
-  // is separate and unset: set `ticketPriceINR` to a number only when it's decided, and the site shows it.
+  // is separate: empty until it's decided, and then the site shows it.
   starterCoins: 398,
-  ticketPriceINR: null as number | null,
+  ticketPriceINR: settings.ticketPriceINR as number | null,
   currency: "EPC",
-  ticketUrl: "", // paste your payment / registration link (Razorpay, Google Form…). Empty = pay at the desk.
+  ticketUrl: settings.ticketUrl ?? "", // a payment / registration link. Empty = pay at the desk.
 
   // The Epoch section "opens" on its own between these times. To force it on/off
   // set NEXT_PUBLIC_EPOCH_MODE=live | off in .env.local.
-  // When the real dates are announced, set startsAt (e.g. "2026-12-11T09:00:00+05:30"):
-  // the club site then shows "Epoch starts in N days". Left empty so we never count down to a guess.
-  startsAt: "",
-  opensAt: "2026-12-01T00:00:00+05:30",
-  closesAt: "2026-12-31T23:59:59+05:30",
+  // startsAt: when the real dates are announced; the club site then shows "Epoch starts in N days".
+  // Empty so we never count down to a guess.
+  startsAt: settings.startsAt ?? "",
+  opensAt: settings.opensAt,
+  closesAt: settings.closesAt,
   organiserCode: process.env.NEXT_PUBLIC_EPOCH_ORGANISER_CODE || "epoch-admin", // demo mode only
 };
 
-/* Epoch sponsors. Empty until the club has some; the section then appears on the Epoch page.
-   { name: "Acme", url: "https://acme.example", logo: "/sponsors/acme.svg" (optional), tier: "Gold" } */
-export const SPONSORS = [] as { name: string; url: string; logo?: string; tier?: string }[];
+/* Epoch sponsors. Empty until the club has some; the section then appears on the Epoch page. */
+export const SPONSORS = (settings.sponsors as { name: string; url: string; logo?: string | null; tier?: string | null }[])
+  .map((s) => ({ name: s.name, url: s.url, logo: s.logo || undefined, tier: s.tier || undefined }));
 
 export const STARTER_COINS = EPOCH.starterCoins;
 /** "₹199" once decided, otherwise "To be announced". */
@@ -99,25 +102,8 @@ export const REWARDS: Reward[] = [
 
 export interface SessionItem { time: string; end?: string; title: string; kind: "Ceremony" | "Workshop" | "Competition" | "Booths" | "Talk" | "Break"; notes?: string[] }
 
-/* The Plan of Action, straight from the document. */
-export const SCHEDULE: { day: 1 | 2; label: string; items: SessionItem[] }[] = [
-  { day: 1, label: "Day 1", items: [
-    { time: "08:00", end: "08:30", title: "Inauguration Ceremony", kind: "Ceremony", notes: ["Welcome address", "Remarks by chief guests", "Schedule overview"] },
-    { time: "08:30", end: "12:00", title: "“Fail-Proof Code” Challenge", kind: "Competition", notes: ["A standard problem with a twist", "Judged on efficiency, error handling, adaptability"] },
-    { time: "09:00", end: "10:00", title: "Git & GitHub Basics", kind: "Workshop", notes: ["Version control", "init · add · commit · push · pull", "Collaborative workflows"] },
-    { time: "10:30", end: "12:00", title: "Building Your GitHub Portfolio", kind: "Workshop", notes: ["Organising repositories", "Compelling READMEs", "GitHub Pages"] },
-    { time: "12:00", end: "14:00", title: "Lunch break", kind: "Break" },
-    { time: "14:00", end: "18:00", title: "Digital Art Hack: GitHub Profile Banners", kind: "Workshop", notes: ["Design tools intro", "Hands-on with mentors"] },
-    { time: "14:00", end: "18:00", title: "Interactive booths open", kind: "Booths", notes: ["Spend coins, hit recharge points"] },
-    { time: "16:00", end: "17:00", title: "Department of Placement presentation", kind: "Talk", notes: ["GitHub in professional development", "Q&A with industry recruiters"] },
-  ] },
-  { day: 2, label: "Day 2", items: [
-    { time: "08:00", end: "10:00", title: "Advanced Git & Open-Source Contributions", kind: "Workshop", notes: ["Branching strategies", "Resolving merge conflicts", "Pull requests to real projects"] },
-    { time: "08:30", end: "12:00", title: "“Code Auction” Challenge", kind: "Competition", notes: ["Budget your team", "Bid for coding tasks", "2.5 hours of building"] },
-    { time: "10:30", end: "12:00", title: "Code Review & QA Workshop", kind: "Workshop", notes: ["Effective code reviews", "Automated testing & CI", "Quality in GitHub workflows"] },
-    { time: "12:00", end: "14:00", title: "Lunch break", kind: "Break" },
-    { time: "14:00", end: "18:00", title: "Booths & Digital Art Hack continue", kind: "Booths" },
-    { time: "16:00", end: "17:00", title: "Guest speaker: a successful GitHub user", kind: "Talk", notes: ["Personal journey", "GitHub in the workplace", "Q&A"] },
-    { time: "18:00", end: "19:00", title: "Winners, prizes & closing", kind: "Ceremony", notes: ["Winners of both days", "Prize distribution", "Networking & refreshments"] },
-  ] },
-];
+/* The Plan of Action, from content/epoch/schedule.json. */
+export const SCHEDULE = (schedule.days as { day: string; label: string; items: (Omit<SessionItem, "end" | "notes"> & { end?: string | null; notes?: string[] })[] }[]).map((d) => ({
+  day: Number(d.day) as 1 | 2, label: d.label,
+  items: d.items.map((i): SessionItem => ({ time: i.time, end: i.end || undefined, title: i.title, kind: i.kind, notes: i.notes?.length ? i.notes : undefined })),
+}));
