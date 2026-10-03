@@ -11,6 +11,7 @@ const PAGES: Entry[] = [
   { kind: "Page", title: "Home", hint: "The club, events and how to join", href: "/", keywords: "start" },
   { kind: "Page", title: "Learn hub", hint: "A path from your first commit, plus a cheat sheet", href: "/learn", keywords: "tutorial course guide beginner" },
   { kind: "Page", title: "Contribute", hint: "Beginner-friendly issues to work on", href: "/contribute", keywords: "open source good first issue pull request" },
+  { kind: "Page", title: "Board", hint: "Pull requests members got merged this year", href: "/board", keywords: "contributions merged pull requests leaderboard open source" },
   { kind: "Page", title: "Get involved", hint: "Volunteer, speak, sponsor, apply to the core team", href: "/get-involved", keywords: "contact message apply speaker sponsor team" },
   { kind: "Page", title: "Updates", hint: "Club news and what GitHub shipped lately", href: "/updates", keywords: "news blog changelog rss" },
   { kind: "Page", title: "Epoch", hint: "The December fest and its coin economy", href: "/epoch", keywords: "fest coins booths ticket wallet" },
