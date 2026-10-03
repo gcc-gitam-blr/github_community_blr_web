@@ -84,7 +84,7 @@ test.describe("club site", () => {
     const bad: string[] = [];
     page.on("console", (m) => { if (/Content Security Policy|Refused to/i.test(m.text())) bad.push(m.text().slice(0, 140)); });
     page.on("pageerror", (e) => bad.push("script error: " + e.message.slice(0, 140)));
-    for (const p of ["/", "/learn", "/contribute", "/get-involved", "/privacy", "/events/git-merge-26", "/epoch", "/epoch/booths", "/epoch/register", "/epoch/leaderboard"]) {
+    for (const p of ["/", "/learn", "/contribute", "/board", "/get-involved", "/privacy", "/events/git-merge-26", "/epoch", "/epoch/booths", "/epoch/register", "/epoch/leaderboard"]) {
       await page.goto(p); await page.waitForTimeout(700);
     }
     await page.goto("/"); await page.locator("#join").getByPlaceholder("your-github-handle").fill("octocat"); await page.waitForTimeout(2000); // GitHub lookup + avatar
