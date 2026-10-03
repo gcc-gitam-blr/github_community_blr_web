@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono, Mona_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { ErrorReporter } from "@/components/ui/ErrorReporter";
 import { SmoothScroll } from "@/components/ui/SmoothScroll";
 import { SITE_URL as SITE } from "@/lib/site";
 import "./globals.css";
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen antialiased">
         <noscript><style>{".reveal,.reveal-group .stagger>*,.reveal-group .pop{opacity:1!important;transform:none!important;scale:1!important}.reveal-group .draw{transform:none!important}.reveal-group .print-in{opacity:1!important;translate:none!important;scale:none!important}"}</style></noscript>
         <SmoothScroll />
+        <ErrorReporter />
         {children}
         {ANALYTICS && <><Analytics /><SpeedInsights /></>}
       </body>

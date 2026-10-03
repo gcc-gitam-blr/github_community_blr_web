@@ -353,3 +353,36 @@ end $$;
 revoke execute on function rate_hit(text, int, int) from public;
 grant execute on function rate_hit(text, int, int) to anon, authenticated;
 
+-- ============================================================
+-- Errors from visitors' browsers (components/ui/ErrorReporter.tsx → /api/errors), so we hear when
+-- something breaks on someone's phone. Only the message, a trimmed stack, the page path and the
+-- browser family: never form contents, emails or query strings. Anyone can add one through
+-- log_client_error (nobody can insert directly); only admins can read them, on /admin.
+-- ============================================================
+create table if not exists client_errors (
+  id bigint generated always as identity primary key,
+  message text not null check (length(message) between 1 and 300),
+  stack text check (stack is null or length(stack) <= 2000),
+  path text not null check (length(path) between 1 and 200),
+  browser text not null check (length(browser) between 1 and 40),
+  created_at timestamptz not null default now()
+);
+create index if not exists client_errors_at on client_errors (created_at desc);
+alter table client_errors enable row level security;
+drop policy if exists "admins read errors" on client_errors;
+create policy "admins read errors" on client_errors for select using (my_role() = 'admin');
+grant select on client_errors to authenticated;
+
+create or replace function log_client_error(p_message text, p_stack text, p_path text, p_browser text)
+returns boolean language plpgsql security definer as $$
+begin
+  if coalesce(p_message, '') = '' or coalesce(p_path, '') = '' then return false; end if;
+  -- a broken release on every phone, or someone scripting it: 2000 a day is plenty to see the pattern
+  if (select count(*) from client_errors where created_at > now() - interval '1 day') >= 2000 then return false; end if;
+  insert into client_errors (message, stack, path, browser)
+  values (left(p_message, 300), nullif(left(coalesce(p_stack, ''), 2000), ''), left(p_path, 200), left(coalesce(nullif(p_browser, ''), 'Other'), 40));
+  return true;
+end $$;
+revoke execute on function log_client_error(text, text, text, text) from public;
+grant execute on function log_client_error(text, text, text, text) to anon, authenticated;
+

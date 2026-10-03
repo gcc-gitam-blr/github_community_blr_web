@@ -46,6 +46,7 @@ Everything is saved in `.env.local` (never committed). To make someone an organi
 - **Who gets in** is decided by the database (`profiles.role`): *admin* (everything), *volunteer* (sees everything, marks attendance), everyone else sees "ask an admin".
 - **The first admin** is set once in Supabase → SQL Editor: `update profiles set role = 'admin' where handle = 'your-github-username';` (sign in at `/admin` once first). After that, admins add people under **People & roles**.
 - **Certificates go only to people who attended.** After an event, open **Attendance & certificates**, pick the event and add who came: import Luma's guest list (Event → Guests → ⋯ → Export as CSV — only checked-in guests are taken), pick from club sign-ups, or type them in. Then **Email certificates**. Each person gets a link to their certificate page — printable as an A4 PDF, with an *Add to LinkedIn* button and a QR code anyone can scan to verify it.
+- **Site errors** (admins only): when a page breaks in someone's browser, the message, the page and the browser family (never what they typed) go to `/api/errors` and show here, the same error from many phones folded into one line with a count. No third-party account needed; reports are deleted after 30 days. Needs `supabase/schema.sql` re-run once.
 
 ### Sign in with GitHub on the site's own address
 

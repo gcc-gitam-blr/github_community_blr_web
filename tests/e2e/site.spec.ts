@@ -114,6 +114,21 @@ test.describe("club site", () => {
     expect((await request.post("/api/feedback", { data: { event: "2026-10-07", rating: 9 } })).status()).toBe(422);
     expect((await request.post("/api/broadcast", { data: {} })).status()).toBeGreaterThanOrEqual(400);
   });
+
+  test("a script error is reported to /api/errors once per message, without the query string", async ({ page, request }) => {
+    expect((await request.post("/api/errors", { data: { message: "x", path: "/" } })).status()).toBe(204); // no database in tests: accepted and dropped
+    const sent: string[] = [];
+    page.on("request", (r) => { if (r.url().endsWith("/api/errors")) sent.push(r.postData() ?? ""); });
+    await page.goto("/learn?email=ada%40gitam.in");
+    await page.evaluate(() => { for (let i = 0; i < 4; i++) setTimeout(() => { throw new Error("e2e boom"); }); setTimeout(() => { throw new Error("e2e second"); }); });
+    await expect.poll(() => sent.length).toBe(2);
+    await page.waitForTimeout(500);
+    expect(sent.length).toBe(2);
+    const first = JSON.parse(sent[0]);
+    expect(first.message).toContain("e2e boom");
+    expect(first.path).toBe("/learn");
+    expect(sent.join()).not.toContain("gitam");
+  });
 });
 
 test("with no inbox switched on, Get involved hands the message to Instagram instead of losing it", async ({ page, context }) => {

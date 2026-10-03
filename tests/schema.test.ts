@@ -162,6 +162,18 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   ok("visitors can't read the counters", (await asAnon("select * from rate_hits")).rows.length === 0);
   ok("…or reset them", (await asAnon("delete from rate_hits returning key")).rows.length === 0 && (await one<{ n: number }>("select count(*)::int n from rate_hits")).n > 0);
 
+  const report = (m: string) => asAnon<{ r: boolean }>("select log_client_error($1, $2, $3, $4) r", [m, "at x (/_next/static/chunks/a.js:1:2)", "/epoch", "Chrome (phone)"]);
+  ok("anyone can report a browser error", (await report("TypeError: x is undefined")).rows[0]?.r === true);
+  ok("…but nobody can insert into the table directly", !!(await asAnon("insert into client_errors (message, path, browser) values ('x', '/', 'Chrome')")).error);
+  ok("a long message is trimmed to 300 characters", (await report("y".repeat(900))).rows[0]?.r === true && (await one<{ n: number }>("select max(length(message))::int n from client_errors")).n === 300);
+  ok("an empty report is ignored", (await report("")).rows[0]?.r === false);
+  ok("visitors can't read error reports", (await asAnon("select * from client_errors")).rows.length === 0);
+  ok("volunteers can't either", (await asApi(ADA, "select * from client_errors")).rows.length === 0);
+  ok("admins can", (await asApi(ORG, "select * from client_errors")).rows.length === 2);
+  await db.query("insert into client_errors (message, path, browser) select 'flood', '/', 'Chrome' from generate_series(1, 2000)");
+  ok("after 2000 reports in a day, more are dropped", (await report("one more")).rows[0]?.r === false);
+  await db.query("delete from client_errors where message = 'flood'");
+
 
   console.log(fails ? `\n${fails} FAILED` : "\nall schema checks passed"); process.exit(fails ? 1 : 0);
 })().catch((e) => { console.error("FAIL  crashed:", e.message); process.exit(1); });
