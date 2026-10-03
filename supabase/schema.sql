@@ -39,14 +39,41 @@ create table if not exists txs (
   at timestamptz not null default now()
 );
 create index if not exists txs_user on txs (user_id, at desc);
--- a recharge point pays once per attendee; the ticket credit happens once
+-- Nothing in the ledger is ever deleted. A mistake is undone by a reversal: a new row with the opposite amount
+-- (ref 'reverse:<original ref>', reverses = the original's id), and the original is stamped reversed_at.
+alter table txs add column if not exists reverses bigint references txs;
+alter table txs add column if not exists reversed_at timestamptz;
+create unique index if not exists txs_one_reversal on txs (reverses) where reverses is not null;
+-- a recharge point pays once per attendee (a reversed payout still counts as their attempt);
+-- the ticket credit happens once, unless an admin reversed it (a wrong check-in) and the desk verifies again
 create unique index if not exists txs_one_recharge_per_user on txs (user_id, ref) where ref like 'booth:recharge-%';
-create unique index if not exists txs_one_ticket_per_user on txs (user_id) where ref = 'ticket';
+drop index if exists txs_one_ticket_per_user;
+create unique index if not exists txs_one_live_ticket_per_user on txs (user_id) where ref = 'ticket' and reversed_at is null;
+
+-- Volunteers run one booth each (set by an admin). No booth = desk volunteer: ticket check-in only.
+alter table profiles add column if not exists booth text references booths on delete set null;
+
+-- Every staff action (check-in, award, booth scan for someone, reversal, role or booth change): who, what, to whom,
+-- how much, when. Written only inside the SECURITY DEFINER functions below, so it can't be skipped; only admins read it.
+create table if not exists audit_log (
+  id bigint generated always as identity primary key,
+  at timestamptz not null default now(),
+  actor uuid references profiles on delete set null,
+  actor_handle text not null,
+  action text not null check (action in ('ticket','award','scan','reverse','role','booth')),
+  target uuid references profiles on delete set null,
+  target_handle text,
+  booth text,
+  amount int,
+  detail text not null default ''
+);
+create index if not exists audit_log_at on audit_log (at desc);
 
 alter table profiles enable row level security;
 alter table booths enable row level security;
 alter table rewards enable row level security;
 alter table txs enable row level security;
+alter table audit_log enable row level security;
 
 -- 'none' (never null) for visitors without a profile: `null not in (...)` is not true in SQL, so a null role
 -- would slip past the organiser checks below.
@@ -63,6 +90,18 @@ drop policy if exists "read rewards" on rewards;
 create policy "read rewards" on rewards for select using (true);
 drop policy if exists "read own txs" on txs;
 create policy "read own txs" on txs for select using (auth.uid() = user_id);
+drop policy if exists "admins read the audit log" on audit_log;
+create policy "admins read the audit log" on audit_log for select using (my_role() = 'admin');
+-- no insert/update/delete policies: only the functions below write the audit log, and nobody edits it
+
+-- One audit row, as the signed-in organiser. Internal: only the functions below call it.
+create or replace function log_action(p_action text, p_target uuid, p_booth text, p_amount int, p_detail text default '')
+returns void language sql security definer as $$
+  insert into audit_log (actor, actor_handle, action, target, target_handle, booth, amount, detail)
+  values (auth.uid(), coalesce((select handle from profiles where id = auth.uid()), 'unknown'), p_action,
+          p_target, (select handle from profiles where id = p_target), p_booth, p_amount, coalesce(p_detail, ''));
+$$;
+revoke execute on function log_action(text, uuid, text, int, text) from public, anon, authenticated;
 
 -- public leaderboard: no emails, no balances
 create or replace view leaderboard as select id, handle, name, earned from profiles where earned > 0;
@@ -82,6 +121,7 @@ begin
 end $$;
 
 -- organiser desk: check the attendee in and credit their starter coins. Once per attendee.
+-- Any volunteer can check people in (the desk), whether or not they also run a booth.
 create or replace function issue_ticket(p_user uuid, p_coins int default 398)
 returns json language plpgsql security definer as $$
 declare t profiles; amt int := p_coins;
@@ -92,25 +132,28 @@ begin
   if t.ticket then return json_build_object('ok', false, 'error', t.name || ' already has a verified ticket.'); end if;
   update profiles set ticket = true, coins = coins + amt where id = t.id;
   insert into txs (user_id, delta, reason, ref) values (t.id, amt, 'Check-in → ' || amt || ' EPC', 'ticket');
+  perform log_action('ticket', t.id, null, amt);
   return json_build_object('ok', true);
 end $$;
 
-create or replace function scan_booth(p_booth text)
+-- The coin rules for one booth scan, for whoever is being charged or paid. Internal: called by scan_booth
+-- (the attendee scans the booth's code) and staff_scan (the booth's volunteer scans the attendee's wallet).
+create or replace function booth_tx(p_user uuid, p_booth text, p_staff boolean default false)
 returns json language plpgsql security definer as $$
 declare b booths; me profiles; d int; last_at timestamptz;
 begin
   select * into b from booths where id = p_booth;
   if not found or b.kind = 'free' then return json_build_object('ok', false, 'error', 'That QR code isn''t a coin booth.'); end if;
-  select * into me from profiles where id = auth.uid() for update;
-  if not found then return json_build_object('ok', false, 'error', 'Register first.'); end if;
-  if not me.ticket then return json_build_object('ok', false, 'error', 'Your ticket hasn''t been verified yet — visit the registration desk.'); end if;
+  select * into me from profiles where id = p_user for update;
+  if not found then return json_build_object('ok', false, 'error', case when p_staff then 'Unknown attendee QR.' else 'Register first.' end); end if;
+  if not me.ticket then return json_build_object('ok', false, 'error', case when p_staff then me.name || '''s ticket hasn''t been verified yet — send them to the registration desk.' else 'Your ticket hasn''t been verified yet — visit the registration desk.' end); end if;
 
   if b.kind = 'recharge' then
     d := b.coins;
     begin
       insert into txs (user_id, delta, reason, ref) values (me.id, d, b.name, 'booth:' || b.id);
     exception when unique_violation then
-      return json_build_object('ok', false, 'error', 'You''ve already used ' || b.name || '. One attempt per recharge point.');
+      return json_build_object('ok', false, 'error', case when p_staff then me.name || ' has already used ' || b.name || '. One attempt per recharge point.' else 'You''ve already used ' || b.name || '. One attempt per recharge point.' end);
     end;
     update profiles set coins = coins + d, earned = earned + d where id = me.id returning * into me;
   else
@@ -118,12 +161,31 @@ begin
     if last_at is not null and now() - last_at < interval '20 seconds' then
       return json_build_object('ok', false, 'error', 'Just scanned — wait a few seconds before paying again.');
     end if;
-    if me.coins < b.coins then return json_build_object('ok', false, 'error', 'Not enough coins — try a recharge point!'); end if;
+    if me.coins < b.coins then return json_build_object('ok', false, 'error', case when p_staff then 'Not enough coins — ' || me.name || ' has ' || me.coins || '.' else 'Not enough coins — try a recharge point!' end); end if;
     d := -b.coins;
     insert into txs (user_id, delta, reason, ref) values (me.id, d, b.name, 'booth:' || b.id);
     update profiles set coins = coins + d where id = me.id returning * into me;
   end if;
   return json_build_object('ok', true, 'delta', d, 'balance', me.coins);
+end $$;
+
+create or replace function scan_booth(p_booth text)
+returns json language sql security definer as $$ select booth_tx(auth.uid(), p_booth, false) $$;
+
+-- A booth's volunteer scans an attendee's wallet: charges the session, or pays out a recharge point once
+-- they've passed. Volunteers only at their own booth; admins at any.
+create or replace function staff_scan(p_user uuid, p_booth text)
+returns json language plpgsql security definer as $$
+declare me profiles; r json;
+begin
+  select * into me from profiles where id = auth.uid();
+  if not found or me.role not in ('volunteer','admin') then return json_build_object('ok', false, 'error', 'Organiser access required.'); end if;
+  if me.role = 'volunteer' and me.booth is distinct from p_booth then
+    return json_build_object('ok', false, 'error', case when me.booth is null then 'You''re on the desk, so you can check people in. Ask an admin to give you a booth.' else 'You can only scan for your own booth.' end);
+  end if;
+  r := booth_tx(p_user, p_booth, true);
+  if (r->>'ok')::boolean then perform log_action('scan', p_user, p_booth, (r->>'delta')::int); end if;
+  return r;
 end $$;
 
 create or replace function redeem_reward(p_reward text)
@@ -141,22 +203,86 @@ begin
   return json_build_object('ok', true, 'balance', me.coins);
 end $$;
 
+-- Prizes and manual corrections: admins only (volunteers are limited to the desk and their own booth).
 create or replace function award_coins(p_user uuid, p_delta int, p_reason text)
 returns json language plpgsql security definer as $$
 declare t profiles;
 begin
-  if my_role() not in ('volunteer','admin') then return json_build_object('ok', false, 'error', 'Organiser access required.'); end if;
+  if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins can award or deduct coins.'); end if;
   select * into t from profiles where id = p_user for update;
   if not found then return json_build_object('ok', false, 'error', 'Unknown attendee QR.'); end if;
   if t.coins + p_delta < 0 then return json_build_object('ok', false, 'error', 'Balance would go below zero.'); end if;
   update profiles set coins = coins + p_delta, earned = earned + greatest(p_delta, 0) where id = t.id;
   insert into txs (user_id, delta, reason, ref) values (t.id, p_delta, coalesce(nullif(p_reason,''), 'Organiser award'), 'admin');
+  perform log_action('award', t.id, null, p_delta, coalesce(nullif(p_reason,''), 'Organiser award'));
   return json_build_object('ok', true);
 end $$;
 
+-- Undo a transaction by adding its opposite (the original stays, stamped reversed_at). The rules (lib/epoch/rules.ts too):
+--   • admins can reverse anything except a reversal; a volunteer only a scan at their own booth, within 15 minutes
+--   • once per transaction, and never below zero (if they've already spent the coins, it's refused)
+--   • a booth charge or shop purchase gives the coins back (and the item goes back in stock)
+--   • a recharge payout or award takes the coins back, and off the leaderboard; the recharge point stays used
+--   • a check-in takes the starter coins back and sets the ticket to pending, so the desk can verify the right person
+create or replace function reverse_tx(p_tx bigint, p_reason text default '')
+returns json language plpgsql security definer as $$
+declare me profiles; o txs; t profiles; amt int;
+begin
+  select * into me from profiles where id = auth.uid();
+  if not found or me.role not in ('volunteer','admin') then return json_build_object('ok', false, 'error', 'Organiser access required.'); end if;
+  select * into o from txs where id = p_tx for update;
+  if not found then return json_build_object('ok', false, 'error', 'Transaction not found.'); end if;
+  if o.ref like 'reverse:%' then return json_build_object('ok', false, 'error', 'A reversal can''t be reversed. Ask an admin to award or deduct instead.'); end if;
+  if o.reversed_at is not null then return json_build_object('ok', false, 'error', 'Already reversed.'); end if;
+  if me.role = 'volunteer' then
+    if me.booth is null or o.ref <> 'booth:' || me.booth then return json_build_object('ok', false, 'error', 'You can only reverse scans at your own booth. Ask an admin.'); end if;
+    if now() - o.at > interval '15 minutes' then return json_build_object('ok', false, 'error', 'That was more than 15 minutes ago. Ask an admin.'); end if;
+  end if;
+  select * into t from profiles where id = o.user_id for update;
+  amt := -o.delta;
+  if t.coins + amt < 0 then return json_build_object('ok', false, 'error', t.name || ' has already spent those coins (balance ' || t.coins || '), so it can''t be reversed.'); end if;
+  update txs set reversed_at = now() where id = o.id;
+  insert into txs (user_id, delta, reason, ref, reverses) values (t.id, amt, 'Reversed: ' || o.reason, 'reverse:' || o.ref, o.id);
+  update profiles set coins = coins + amt,
+    earned = case when o.delta > 0 and o.ref <> 'ticket' then greatest(0, earned - o.delta) else earned end,
+    ticket = case when o.ref = 'ticket' then false else ticket end
+  where id = t.id returning * into t;
+  if o.ref like 'reward:%' then update rewards set stock = stock + 1 where id = substr(o.ref, 8); end if;
+  perform log_action('reverse', t.id, case when o.ref like 'booth:%' then substr(o.ref, 7) end, amt, o.reason || coalesce(' — ' || nullif(trim(p_reason), ''), ''));
+  return json_build_object('ok', true, 'delta', amt, 'balance', t.coins);
+end $$;
+
+-- Staff find an attendee by name, GitHub username or email (someone whose phone died, or who lost their QR).
+create or replace function find_attendees(p_q text)
+returns table (id uuid, handle text, name text, email text, coins int, earned int, ticket boolean, role text, booth text, created_at timestamptz)
+language plpgsql security definer stable as $$
+declare raw text := lower(ltrim(trim(coalesce(p_q, '')), '@')); q text;
+begin
+  if my_role() not in ('volunteer','admin') or length(raw) < 2 then return; end if;
+  q := '%' || replace(replace(replace(raw, '\', '\\'), '%', '\%'), '_', '\_') || '%';
+  return query select p.id, p.handle, p.name, p.email, p.coins, p.earned, p.ticket, p.role, p.booth, p.created_at from profiles p
+    where lower(p.name) like q or lower(p.handle) like q or lower(coalesce(p.email, '')) like q
+    order by (lower(p.handle) = raw) desc, p.name limit 20;
+end $$;
+
+-- An attendee's recent transactions, to reverse one: admins see all, a volunteer only their own booth's.
+create or replace function staff_txs(p_user uuid)
+returns setof txs language plpgsql security definer stable as $$
+declare me profiles;
+begin
+  select * into me from profiles where id = auth.uid();
+  if not found or me.role not in ('volunteer','admin') or (me.role = 'volunteer' and me.booth is null) then return; end if;
+  return query select * from txs where user_id = p_user and (me.role = 'admin' or ref in ('booth:' || me.booth, 'reverse:booth:' || me.booth))
+    order by at desc, id desc limit 30;
+end $$;
+
 -- Belt and braces: visitors who aren't signed in can't even call the coin functions.
-revoke execute on function issue_ticket(uuid, int), award_coins(uuid, int, text), scan_booth(text), redeem_reward(text), register_profile(text) from public, anon;
-grant execute on function issue_ticket(uuid, int), award_coins(uuid, int, text), scan_booth(text), redeem_reward(text), register_profile(text) to authenticated;
+revoke execute on function issue_ticket(uuid, int), award_coins(uuid, int, text), scan_booth(text), redeem_reward(text), register_profile(text),
+  staff_scan(uuid, text), reverse_tx(bigint, text), find_attendees(text), staff_txs(uuid) from public, anon;
+grant execute on function issue_ticket(uuid, int), award_coins(uuid, int, text), scan_booth(text), redeem_reward(text), register_profile(text),
+  staff_scan(uuid, text), reverse_tx(bigint, text), find_attendees(text), staff_txs(uuid) to authenticated;
+-- booth_tx charges whoever it's given: only scan_booth and staff_scan may call it
+revoke execute on function booth_tx(uuid, text, boolean) from public, anon, authenticated;
 
 -- Seed: recharge points and spend booths (mirrors lib/epoch/config.ts — costs other than VR=40 and recharge=20 are placeholders)
 insert into booths (id, name, kind, category, coins, blurb, optional) values
@@ -307,16 +433,36 @@ grant execute on function certificate(uuid) to anon, authenticated;
 -- Admins give people organiser access by GitHub handle (they must have signed in once).
 create or replace function set_role(p_handle text, p_role text)
 returns json language plpgsql security definer as $$
-declare h text := lower(ltrim(trim(p_handle), '@'));
+declare h text := lower(ltrim(trim(p_handle), '@')); t uuid;
 begin
   if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins can change roles.'); end if;
   if p_role not in ('attendee','volunteer','admin') then return json_build_object('ok', false, 'error', 'Unknown role.'); end if;
   if exists (select 1 from profiles where id = auth.uid() and lower(handle) = h) then
     return json_build_object('ok', false, 'error', 'You can''t change your own role — ask another admin.');
   end if;
-  update profiles set role = p_role where lower(handle) = h;
+  -- losing organiser access also takes them off their booth
+  update profiles set role = p_role, booth = case when p_role = 'attendee' then null else booth end where lower(handle) = h returning id into t;
   if not found then return json_build_object('ok', false, 'error', 'Nobody with that GitHub username has signed in yet. Ask them to sign in at /admin once.'); end if;
+  perform log_action('role', t, null, null, p_role);
   return json_build_object('ok', true);
 end $$;
 revoke execute on function set_role(text, text) from public, anon;
 grant execute on function set_role(text, text) to authenticated;
+
+-- Admins put a volunteer on a booth (or take them off it with an empty booth). What a volunteer can do follows:
+-- with a booth, scan wallets and reverse recent scans there; without one, ticket check-in at the desk.
+create or replace function assign_booth(p_handle text, p_booth text)
+returns json language plpgsql security definer as $$
+declare h text := lower(ltrim(trim(p_handle), '@')); b text := nullif(trim(coalesce(p_booth, '')), ''); t profiles;
+begin
+  if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins can assign booths.'); end if;
+  if b is not null and not exists (select 1 from booths where id = b and kind <> 'free') then return json_build_object('ok', false, 'error', 'That isn''t a coin booth.'); end if;
+  select * into t from profiles where lower(handle) = h for update;
+  if not found then return json_build_object('ok', false, 'error', 'Nobody with that GitHub username has signed in yet.'); end if;
+  if t.role = 'attendee' then return json_build_object('ok', false, 'error', '@' || t.handle || ' isn''t a volunteer yet. Give them the volunteer role first.'); end if;
+  update profiles set booth = b where id = t.id;
+  perform log_action('booth', t.id, b, null, coalesce(b, 'desk'));
+  return json_build_object('ok', true);
+end $$;
+revoke execute on function assign_booth(text, text) from public, anon;
+grant execute on function assign_booth(text, text) to authenticated;

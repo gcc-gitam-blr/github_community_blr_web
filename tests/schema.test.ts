@@ -137,5 +137,97 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   ok("an unknown handle is explained", /signed in yet/.test((await role(ORG, "nobody-here", "volunteer"))?.error ?? ""));
   ok("a made-up role is refused", !(await role(ORG, "ada", "superuser"))?.ok);
 
+  // ---- Epoch organisers: booths for volunteers, reversals, search and the audit log ----
+  const [VOL, DESK, REC, BEA, CY] = ["d", "e", "f", "1b", "1c"].map((s) => `00000000-0000-0000-0000-0000000000${s.padStart(2, "0")}`);
+  await db.query(`insert into auth.users values ('${VOL}', 'vol@x.in', '{"user_name":"vol"}'), ('${DESK}', 'desk@x.in', '{"user_name":"desk"}'), ('${REC}', 'rec@x.in', '{"user_name":"rec"}'), ('${BEA}', 'bea@gitam.in', '{"user_name":"bea"}'), ('${CY}', 'cy@gitam.in', '{"user_name":"cy_99"}')`);
+  for (const [id, n] of [[VOL, "Val"], [DESK, "Desk Person"], [REC, "Rec"], [BEA, "Bea Bhat"], [CY, "Cy"]]) { await as(id); await db.query("select register_profile($1)", [n]); }
+  await db.exec("grant select, insert on audit_log to authenticated;"); // what Supabase grants by default; row-level security decides
+  const rpc = async (uid: string, fn: string, args: unknown[]) => { await as(uid); return call(fn, args); };
+  const assign = (uid: string, h: string, b: string | null) => rpc(uid, "assign_booth", [h, b]);
+  for (const h of ["vol", "desk", "rec"]) await role(ORG, h, "volunteer");
+  ok("only admins assign booths", !(await assign(VOL, "vol", "vr")).ok);
+  ok("an attendee can't be put on a booth", /volunteer role first/.test((await assign(ORG, "bea", "vr")).error ?? ""));
+  ok("a free booth (no coins) can't be assigned", !(await assign(ORG, "vol", "startup")).ok);
+  ok("an admin puts volunteers on their booths", (await assign(ORG, "vol", "vr")).ok && (await assign(ORG, "@REC", "recharge-puzzle")).ok);
+  ok("…and it's stored on the profile", (await one<{ booth: string }>("select booth from profiles where id = $1", [VOL])).booth === "vr");
+
+  ok("a desk volunteer (no booth) checks a ticket in", (await rpc(DESK, "issue_ticket", [BEA, 398])).ok && (await coins(BEA)) === 398);
+  ok("a booth volunteer can check people in too", (await rpc(VOL, "issue_ticket", [CY, 398])).ok);
+  ok("a desk volunteer can't scan for a booth", /on the desk/.test((await rpc(DESK, "staff_scan", [BEA, "vr"])).error ?? ""));
+  ok("volunteers can't award coins any more", /Only admins/.test((await rpc(VOL, "award_coins", [BEA, 50, "prize"])).error ?? "") && (await coins(BEA)) === 398);
+  ok("a volunteer can't scan for someone else's booth", /own booth/.test((await rpc(VOL, "staff_scan", [BEA, "retro"])).error ?? ""));
+  const vrBea = await rpc(VOL, "staff_scan", [BEA, "vr"]);
+  ok("the VR volunteer charges Bea from her wallet QR → 358", vrBea.ok && vrBea.delta === -40 && (await coins(BEA)) === 358);
+  ok("the same 20-second double-scan guard applies", !(await rpc(VOL, "staff_scan", [BEA, "vr"])).ok && (await coins(BEA)) === 358);
+  ok("a booth can't charge an unknown attendee", /Unknown attendee/.test((await rpc(VOL, "staff_scan", ["00000000-0000-0000-0000-000000000099", "vr"])).error ?? ""));
+
+  const txOf = async (uid: string, ref: string) => (await one<{ id: number }>("select id from txs where user_id = $1 and ref = $2 order by id desc limit 1", [uid, ref])).id;
+  const vrTx = await txOf(BEA, "booth:vr");
+  ok("an attendee can't reverse anything", !(await rpc(BEA, "reverse_tx", [vrTx, ""])).ok);
+  ok("a desk volunteer can't reverse a booth charge", !(await rpc(DESK, "reverse_tx", [vrTx, ""])).ok);
+  const back = await rpc(VOL, "reverse_tx", [vrTx, "headset broke"]);
+  ok("the VR volunteer reverses the charge → 398 again", back.ok && back.delta === 40 && (await coins(BEA)) === 398);
+  ok("a reversal adds a row and keeps the original", (await one<{ n: number }>("select count(*)::int n from txs where user_id = $1 and ref like '%booth:vr'", [BEA])).n === 2 && !!(await one<{ reversed_at: string | null }>("select reversed_at from txs where id = $1", [vrTx])).reversed_at);
+  ok("the same transaction can't be reversed twice", /Already reversed/.test((await rpc(ORG, "reverse_tx", [vrTx, ""])).error ?? "") && (await coins(BEA)) === 398);
+  const rev = (await one<{ id: number }>("select id from txs where reverses = $1", [vrTx])).id;
+  ok("a reversal can't itself be reversed", /can't be reversed/.test((await rpc(ORG, "reverse_tx", [rev, ""])).error ?? ""));
+  let twin = false; try { await db.query("insert into txs (user_id, delta, reason, ref, reverses) values ($1, 40, 'again', 'reverse:booth:vr', $2)", [BEA, vrTx]); } catch { twin = true; }
+  ok("the database itself refuses a second reversal row", twin);
+
+  await as(BEA); await call("scan_booth", ["retro"]);
+  ok("a volunteer can't reverse a charge at another booth", /own booth/.test((await rpc(VOL, "reverse_tx", [await txOf(BEA, "booth:retro"), ""])).error ?? ""));
+  await db.query("update txs set at = now() - interval '1 minute' where user_id = $1", [BEA]); // past the double-scan guard
+  await rpc(VOL, "staff_scan", [BEA, "vr"]);
+  const oldVr = await txOf(BEA, "booth:vr");
+  await db.query("update txs set at = now() - interval '16 minutes' where id = $1", [oldVr]);
+  ok("a volunteer can't reverse after 15 minutes", /15 minutes/.test((await rpc(VOL, "reverse_tx", [oldVr, ""])).error ?? ""));
+  ok("an admin still can", (await rpc(ORG, "reverse_tx", [oldVr, ""])).ok);
+
+  const paid = await rpc(REC, "staff_scan", [BEA, "recharge-puzzle"]);
+  const earned = async (id: string) => (await one<{ earned: number }>("select earned from profiles where id = $1", [id])).earned;
+  ok("the puzzle volunteer pays Bea +20 once she passes", paid.ok && paid.delta === 20 && (await earned(BEA)) === 20);
+  const before = await coins(BEA);
+  ok("reversing a recharge payout takes the 20 back, and off the leaderboard", (await rpc(REC, "reverse_tx", [await txOf(BEA, "booth:recharge-puzzle"), "didn't finish"])).ok && (await coins(BEA)) === before - 20 && (await earned(BEA)) === 0);
+  ok("…and the point stays used", !(await rpc(REC, "staff_scan", [BEA, "recharge-puzzle"])).ok && !(await rpc(BEA, "scan_booth", ["recharge-puzzle"])).ok);
+
+  const stock = async () => (await one<{ stock: number }>("select stock from rewards where id = 'tee'")).stock;
+  const s0 = await stock(); await as(BEA); await call("redeem_reward", ["tee"]);
+  ok("an admin reverses a shop purchase: coins back, the tee back in stock", (await rpc(ORG, "reverse_tx", [await txOf(BEA, "reward:tee"), "wrong size"])).ok && (await stock()) === s0);
+  await as(BEA); await call("redeem_reward", ["sticker-pack"]);
+  ok("a volunteer can't reverse shop purchases", /own booth/.test((await rpc(VOL, "reverse_tx", [await txOf(BEA, "reward:sticker-pack"), ""])).error ?? ""));
+
+  await rpc(ORG, "award_coins", [BEA, 100, "Quiz winner"]);
+  const awardTx = await txOf(BEA, "admin");
+  await db.query("update profiles set coins = 50 where id = $1", [BEA]); // she spent most of it
+  ok("a reversal that would go below zero is refused", /already spent/.test((await rpc(ORG, "reverse_tx", [awardTx, ""])).error ?? "") && (await coins(BEA)) === 50);
+  ok("a ticket reversal is refused once the coins are spent", !(await rpc(ORG, "reverse_tx", [await txOf(BEA, "ticket"), ""])).ok);
+
+  ok("a wrong check-in: an admin reverses Cy's ticket → 0 coins, ticket pending", (await rpc(ORG, "reverse_tx", [await txOf(CY, "ticket"), "wrong person"])).ok && (await coins(CY)) === 0 && !(await one<{ ticket: boolean }>("select ticket from profiles where id = $1", [CY])).ticket);
+  ok("…and the desk can verify the right person again", (await rpc(DESK, "issue_ticket", [CY, 398])).ok && (await coins(CY)) === 398 && !(await rpc(DESK, "issue_ticket", [CY, 398])).ok);
+
+  ok("an attendee can't call the internal booth function to charge someone", !!(await asApi(BEA, "select booth_tx($1, 'vr', true)", [CY])).error);
+  ok("…or write to the audit log", !!(await asApi(BEA, "select log_action('award', $1, null, 1000, 'x')", [BEA])).error);
+
+  const find = async (uid: string, q: string) => (await asApi<{ handle: string; booth: string | null }>(uid, "select * from find_attendees($1)", [q])).rows;
+  ok("staff find an attendee by part of a name", (await find(DESK, "bhat")).map((r) => r.handle).join() === "bea");
+  ok("…by email, or by @handle", (await find(VOL, "BEA@gitam")).length === 1 && (await find(VOL, "@cy_99"))[0]?.handle === "cy_99");
+  ok("a wildcard isn't a way to list everyone", (await find(VOL, "%%")).length === 0 && (await find(VOL, "_y")).length === 0);
+  ok("attendees can't search", (await find(BEA, "bea")).length === 0);
+
+  const seen = async (uid: string) => (await asApi<{ ref: string }>(uid, "select * from staff_txs($1)", [BEA])).rows.map((r) => r.ref);
+  ok("a booth volunteer sees only their booth's lines of an attendee's ledger", (await seen(VOL)).length > 0 && (await seen(VOL)).every((r) => r.endsWith("booth:vr")));
+  ok("a desk volunteer sees none; an admin sees all", (await seen(DESK)).length === 0 && (await seen(ORG)).includes("ticket"));
+
+  const log = await db.query<{ actor_handle: string; action: string; target_handle: string | null; booth: string | null; amount: number | null }>("select actor_handle, action, target_handle, booth, amount from audit_log order by id");
+  const has = (a: string, by: string, to: string | null, amount?: number) => log.rows.some((r) => r.action === a && r.actor_handle === by && r.target_handle === to && (amount === undefined || r.amount === amount));
+  ok("the audit log records check-ins, scans, awards and reversals with who, whom and how much", has("ticket", "desk", "bea", 398) && has("scan", "vol", "bea", -40) && has("award", "org", "bea", 100) && has("reverse", "vol", "bea", 40) && has("reverse", "rec", "bea", -20));
+  ok("…and role and booth changes", has("role", "org", "vol") && log.rows.some((r) => r.action === "booth" && r.target_handle === "vol" && r.booth === "vr"));
+  ok("refused attempts leave no audit rows", !log.rows.some((r) => r.actor_handle === "bea" || (r.action === "award" && r.actor_handle === "vol")));
+  ok("only admins read the audit log", (await asApi(VOL, "select * from audit_log")).rows.length === 0 && (await asApi(ORG, "select * from audit_log")).rows.length === log.rows.length);
+  ok("nobody writes it directly", !!(await asApi(ORG, "insert into audit_log (actor_handle, action) values ('org', 'award')")).error);
+
+  ok("taking a volunteer's role away takes them off their booth", (await role(ORG, "vol", "attendee"))?.ok === true && (await one<{ booth: string | null }>("select booth from profiles where id = $1", [VOL])).booth === null);
+  ok("every balance still equals the sum of its ledger", (await one<{ n: number }>("select count(*)::int n from profiles p where coins <> coalesce((select sum(delta) from txs where user_id = p.id), 0) and id <> all($1)", [[ADA, BEA]])).n === 0); // (their balances were set by hand above)
+
   console.log(fails ? `\n${fails} FAILED` : "\nall schema checks passed"); process.exit(fails ? 1 : 0);
 })().catch((e) => { console.error("FAIL  crashed:", e.message); process.exit(1); });
