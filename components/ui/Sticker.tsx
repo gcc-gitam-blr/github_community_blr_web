@@ -6,7 +6,7 @@ export type StickerName =
   | "deckfail" | "cherry" | "founder";
 
 // the border is four hard white drop-shadows around the alpha edge, then one soft shadow for lift
-const DIECUT = "drop-shadow(2.5px 0 0 #fff) drop-shadow(-2.5px 0 0 #fff) drop-shadow(0 2.5px 0 #fff) drop-shadow(0 -2.5px 0 #fff) drop-shadow(0 6px 10px rgba(11,11,15,.18))";
+export const DIECUT = "drop-shadow(2.5px 0 0 #fff) drop-shadow(-2.5px 0 0 #fff) drop-shadow(0 2.5px 0 #fff) drop-shadow(0 -2.5px 0 #fff) drop-shadow(0 6px 10px rgba(11,11,15,.18))";
 
 export function Sticker({ name, size = 120, tilt = 0, alt = "", className = "" }: { name: StickerName; size?: number; tilt?: number; alt?: string; className?: string }) {
   return (
