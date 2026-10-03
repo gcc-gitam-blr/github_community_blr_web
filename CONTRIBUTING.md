@@ -28,8 +28,9 @@ No keys needed: without Supabase, Epoch runs in demo mode (data stays in your br
 
 | What | Where |
 | --- | --- |
-| Club content — events, FAQ, what you'll learn | `lib/config.ts` |
-| Epoch — prices, booths, merch, schedule | `lib/epoch/config.ts` |
+| Club content — events, recaps, team, FAQ, updates | `content/` (or the editor at `/keystatic`) |
+| Epoch — dates, ticket, sponsors, schedule | `content/epoch/` (or `/keystatic`) |
+| Epoch — coins, booths, merch | `lib/epoch/config.ts` (matches `supabase/schema.sql`) |
 | Home page sections | `components/site/` |
 | Epoch pages | `components/epoch/`, `app/epoch/` |
 | Database (Supabase) | `supabase/schema.sql` |

@@ -19,7 +19,8 @@ Website for the GitHub Community Club at GITAM University Bengaluru — **Code. 
 - **Epoch** — coin economy with ticket verification, recharge points, booths, merch, leaderboard, QR scanning and a command bar (press `/`).
 - **Installable & offline** — Epoch has a web app manifest and a service worker: attendees can add the wallet to their home screen, and the wallet, QR pass and booths still open without signal.
 - **Calendar** — `/calendar.ics` (whole year) and `/events/<slug>/event.ics` (one event).
-- **Countdown banner** — set `EPOCH.startsAt` in `lib/epoch/config.ts` once dates are announced; during Epoch the banner says it's live.
+- **Countdown banner** — set Epoch's start time in the content editor (Epoch settings) once dates are announced; during Epoch the banner says it's live.
+- **Content editor** — `/keystatic`: forms for events, recaps, team, contributors, FAQ, updates and Epoch's dates and schedule. Every save is a commit, so there's history and undo.
 
 ## Switch on messages, sign-ups and email (5 minutes)
 
@@ -75,8 +76,19 @@ Epoch works out of the box in **demo mode** (data lives in your browser's localS
 
 ## Make it yours
 
-- Club content (events, tracks, team, FAQ, socials): [`lib/config.ts`](lib/config.ts)
-- Epoch settings (ticket price, booths, recharge points, merch, schedule): [`lib/epoch/config.ts`](lib/epoch/config.ts)
+- Club content (events, recaps, team, contributors, FAQ, socials, updates): the content editor at `/keystatic`, which saves to [`content/`](content/). Run `npm run dev` and open http://localhost:3000/keystatic, or edit the JSON by hand.
+- Epoch dates, venue, ticket, sponsors and schedule: the editor too ([`content/epoch/`](content/epoch/)).
+- Epoch coins, booths, recharge points and merch: [`lib/epoch/config.ts`](lib/epoch/config.ts) — they're code because `supabase/schema.sql` seeds the same values, and both must match.
+
+### The content editor on the live site (once, about 10 minutes)
+
+Locally the editor writes straight to your files. On the live site it signs editors in with GitHub and saves each change as a commit (or a pull request, if they choose a branch). Anyone with write access to this repository can edit.
+
+1. Run `npm run dev` with `NEXT_PUBLIC_KEYSTATIC_GITHUB=1` in `.env.local`, open http://localhost:3000/keystatic and follow **Create GitHub App**. Keystatic creates the app and writes four `KEYSTATIC_*` values into `.env`.
+2. Copy those four values into Vercel → Settings → Environment Variables (Production), then redeploy.
+3. In the GitHub App's settings, add the live site's callback URL: `https://<your-domain>/api/keystatic/github/oauth/callback`.
+
+Until then `/keystatic` on the live site says it isn't connected — the rest of the site is unaffected.
 
 Things that are **empty until you fill them in** (the site hides them rather than showing fake content):
 
