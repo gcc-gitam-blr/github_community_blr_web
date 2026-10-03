@@ -2,17 +2,18 @@ import path from "node:path";
 import type { NextConfig } from "next";
 
 /* Security headers. The Content-Security-Policy lists exactly what the site talks to:
-   itself, Supabase (database + login), GitHub (avatars, username check) and Vercel's cookie-free analytics.
+   itself, Supabase (database + login), GitHub (avatars, username check), YouTube (recap videos) and Vercel's cookie-free analytics.
    Inline scripts/styles are allowed because Next.js and Tailwind emit them. Only applied in production,
    because the dev server needs eval for hot reload. */
 const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://github.com https://avatars.githubusercontent.com https://*.githubusercontent.com",
+  "img-src 'self' data: blob: https://github.com https://avatars.githubusercontent.com https://*.githubusercontent.com https://i.ytimg.com",
   "font-src 'self' data:",
   "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.github.com https://vitals.vercel-insights.com https://va.vercel-scripts.com",
   "media-src 'self' blob:",
+  "frame-src https://www.youtube-nocookie.com", // event recap videos, loaded only when someone presses play
   "worker-src 'self' blob:",
   "manifest-src 'self'",
   "frame-ancestors 'none'",
