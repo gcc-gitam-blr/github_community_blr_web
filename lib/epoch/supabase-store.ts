@@ -1,14 +1,22 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { EPOCH } from "./config";
-import type { Booth, EpochStore, Profile, Reward, Tx } from "./types";
+import type { AuditEntry, Booth, EpochStore, Profile, Reward, Tx } from "./types";
 import { PENDING_NAME } from "./pending";
 
 let client: SupabaseClient | null = null;
 const sb = () => (client ??= createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!));
 
-type Row = { id: string; handle: string; name: string; email: string | null; coins: number; earned: number; ticket: boolean; role: Profile["role"]; created_at: string };
-const toProfile = (r: Row): Profile => ({ id: r.id, handle: r.handle, name: r.name, email: r.email ?? "", coins: r.coins, earned: r.earned, ticket: r.ticket, role: r.role, createdAt: r.created_at });
+type Row = { id: string; handle: string; name: string; email: string | null; coins: number; earned: number; ticket: boolean; role: Profile["role"]; booth?: string | null; created_at: string };
+const toProfile = (r: Row): Profile => ({ id: r.id, handle: r.handle, name: r.name, email: r.email ?? "", coins: r.coins, earned: r.earned, ticket: r.ticket, role: r.role, booth: r.booth ?? null, createdAt: r.created_at });
+type TxRow = { id: number; user_id: string; delta: number; reason: string; ref: string; at: string; reverses?: number | null; reversed_at?: string | null };
+const toTx = (t: TxRow): Tx => ({ id: String(t.id), userId: t.user_id, delta: t.delta, reason: t.reason, ref: t.ref, at: t.at, ...(t.reverses ? { reverses: String(t.reverses) } : {}), ...(t.reversed_at ? { reversedAt: t.reversed_at } : {}) });
 const fail = (error: string) => ({ ok: false as const, error });
+/** Calls one of the database's coin functions; they answer { ok, error?, … }. */
+async function call<T extends object = object>(fn: string, args: Record<string, unknown>) {
+  const { data, error } = await sb().rpc(fn, args);
+  if (error) return fail(error.message);
+  return data?.ok ? { ok: true as const, ...(data as T) } : fail(data?.error ?? "That didn't work — please try again.");
+}
 /** The shared browser client, for the /admin dashboard. */
 export const supabase = () => sb();
 
@@ -74,9 +82,11 @@ export const supabaseStore: EpochStore = {
     return { ok: true, balance: data.balance, reward };
   },
 
+  // throws when offline, so the wallet keeps showing the copy it saved last time
   async history() {
-    const { data } = await sb().from("txs").select("*").order("at", { ascending: false }).limit(100);
-    return (data ?? []).map((t): Tx => ({ id: String(t.id), userId: t.user_id, delta: t.delta, reason: t.reason, ref: t.ref, at: t.at }));
+    const { data, error } = await sb().from("txs").select("*").order("at", { ascending: false }).limit(100);
+    if (error) throw new Error(error.message);
+    return (data as TxRow[]).map(toTx);
   },
 
   async leaderboard(limit = 20) {
@@ -96,11 +106,37 @@ export const supabaseStore: EpochStore = {
   },
 
   async award(userId, delta, reason) {
-    const { data, error } = await sb().rpc("award_coins", { p_user: userId, p_delta: delta, p_reason: reason });
-    if (error) return fail(error.message);
-    if (!data.ok) return fail(data.error);
+    const r = await call("award_coins", { p_user: userId, p_delta: delta, p_reason: reason });
+    if (!r.ok) return r;
     const profile = await this.lookup(userId);
     return profile ? { ok: true, profile } : fail("Awarded, but couldn't reload the profile.");
+  },
+
+  async staffScan(userId, boothId) {
+    const r = await call<{ delta: number; balance: number }>("staff_scan", { p_user: userId, p_booth: boothId });
+    if (!r.ok) return r;
+    const booth = (await this.booths()).find((b) => b.id === boothId)!;
+    return { ok: true, delta: r.delta, balance: r.balance, booth };
+  },
+
+  reverse: (txId, reason) => call<{ delta: number; balance: number }>("reverse_tx", { p_tx: Number(txId), p_reason: reason }),
+
+  async staffHistory(userId) { const { data } = await sb().rpc("staff_txs", { p_user: userId }); return ((data ?? []) as TxRow[]).map(toTx); },
+
+  async search(q) { const { data } = await sb().rpc("find_attendees", { p_q: q }); return ((data ?? []) as Row[]).map(toProfile); },
+
+  async staff() { const { data } = await sb().from("profiles").select("*").in("role", ["volunteer", "admin"]).order("name").limit(500); return ((data ?? []) as Row[]).map(toProfile); },
+
+  setRole: (handle, role) => call("set_role", { p_handle: handle, p_role: role }),
+  assignBooth: (handle, booth) => call("assign_booth", { p_handle: handle, p_booth: booth ?? "" }),
+
+  async audit(filter = {}) {
+    let q = sb().from("audit_log").select("*").order("at", { ascending: false }).limit(500);
+    if (filter.action) q = q.eq("action", filter.action);
+    const who = filter.who?.trim().replace(/^@/, "").toLowerCase().replace(/[^a-z0-9_-]/g, ""); // usernames only, so the filter can't be bent
+    if (who) q = q.or(`actor_handle.ilike.*${who}*,target_handle.ilike.*${who}*`);
+    const { data } = await q;
+    return (data ?? []).map((e): AuditEntry => ({ id: String(e.id), at: e.at, actor: e.actor_handle, action: e.action, target: e.target_handle, booth: e.booth, amount: e.amount, detail: e.detail }));
   },
 
   async joinRequests() {

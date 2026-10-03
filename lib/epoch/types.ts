@@ -9,6 +9,7 @@ export interface Profile {
   earned: number; // lifetime earned from recharge points & awards — drives the leaderboard
   ticket: boolean; // true once the organiser desk has verified the ticket and credited coins
   role: Role;
+  booth?: string | null; // volunteers: the one booth they run (set by an admin). None = the desk (check-in only)
   createdAt: string;
 }
 
@@ -40,9 +41,15 @@ export interface Tx {
   userId: string;
   delta: number;
   reason: string;
-  ref: string; // ticket | booth:<id> | reward:<id> | admin
+  ref: string; // ticket | booth:<id> | reward:<id> | admin | reverse:<original ref>
   at: string;
+  reverses?: string; // on a reversal: the id of the transaction it undoes
+  reversedAt?: string; // on the original, once it's been reversed
 }
+
+/** One staff action, as the audit log records it (handles, not ids, so it reads on its own). */
+export type AuditAction = "ticket" | "award" | "scan" | "reverse" | "role" | "booth";
+export interface AuditEntry { id: string; at: string; actor: string; action: AuditAction; target: string | null; booth: string | null; amount: number | null; detail: string }
 
 export interface JoinRequest { id: string; handle: string; email: string; firstEvent: string; createdAt: string }
 
@@ -68,9 +75,25 @@ export interface EpochStore {
   rewards(): Promise<Reward[]>;
   /** staff: verify an attendee's ticket and credit coins (price × rate), once */
   issueTicket(userId: string): Promise<Result<{ profile: Profile }>>;
-  /** staff: manual award/deduct, e.g. competition prizes or refunds */
+  /** admin: manual award/deduct, e.g. competition prizes */
   award(userId: string, delta: number, reason: string): Promise<Result<{ profile: Profile }>>;
   lookup(userId: string): Promise<Profile | null>;
+  /** a booth's volunteer (or an admin) scans an attendee's wallet: charge the session, or pay a recharge point */
+  staffScan(userId: string, boothId: string): Promise<Result<{ delta: number; balance: number; booth: Booth }>>;
+  /** undo a transaction with its opposite; the rules are in lib/epoch/rules.ts */
+  reverse(txId: string, reason: string): Promise<Result<{ delta: number; balance: number }>>;
+  /** staff: an attendee's recent transactions they may act on (admins: all; a volunteer: their booth's) */
+  staffHistory(userId: string): Promise<Tx[]>;
+  /** staff: find attendees by name, GitHub username or email */
+  search(q: string): Promise<Profile[]>;
+  /** staff: everyone with a volunteer or admin role */
+  staff(): Promise<Profile[]>;
+  /** admin: give or take organiser access */
+  setRole(handle: string, role: Role): Promise<Result>;
+  /** admin: put a volunteer on a booth (null = back to the desk) */
+  assignBooth(handle: string, booth: string | null): Promise<Result>;
+  /** admin: who did what, newest first */
+  audit(filter?: { action?: AuditAction; who?: string }): Promise<AuditEntry[]>;
   /** live mode: the outcome of coming back from "Sign in with GitHub" (back = just returned) */
   loginResult?(): Promise<{ back: boolean; error: string | null }>;
   /** demo mode only: unlock organiser tools with a shared code */
