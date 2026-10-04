@@ -10,7 +10,7 @@ The live checklist for the club site. Every item has a status and the exact page
 
 **Status:** ✅ Done (on `dev`, tested) · 🟡 In progress · ⬜ Not started · 🙋 Needs you (a decision, a login or content)
 
-**Working order, one at a time:** ~~reliability~~ → ~~Epoch organiser tools~~ → **Epoch live (now)** → dark mode → contributor onboarding → ideas.
+**Working order, one at a time:** ~~reliability~~ → ~~Epoch organiser tools~~ → ~~Epoch live~~ → **dark mode (now)** → contributor onboarding → ideas.
 
 ---
 
@@ -71,7 +71,7 @@ The live checklist for the club site. Every item has a status and the exact page
 | ✅ | 3.2 | Ticket payment | — | Decided: paid at the desk. No online payments. |
 | ✅ | 3.3 | Volunteers limited to their booth + booth kiosk | https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/epoch/kiosk/vr (a booth's kiosk screen) and https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/epoch/admin → **Team** (put a volunteer on a booth) | A volunteer only scans and reverses at their own booth; without a booth they only check people in at the desk. Every booth on https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/epoch/admin has an "Open as a kiosk" link. |
 | ✅ | 3.4 | Organiser tools: reverse a charge, search, audit log | https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/epoch/admin → **Find someone** and **Audit log** | Reversals add the opposite amount; nothing is deleted, nothing is reversed twice, no balance goes below zero. Load-tested with 150 reversals at once. |
-| 🟡 | 3.5 | Live leaderboard + "happening now" + big screen | (once merged) | Started on `feat/epoch-live`. |
+| ✅ | 3.5 | Live leaderboard + "happening now" + big screen | https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/epoch/leaderboard (updates without a refresh) and https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/epoch/screen (open it full screen on a TV) | "Happening now" appears on https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/epoch once Epoch's start time is set. 🙋 Re-run `supabase/schema.sql` (it switches on Realtime for the leaderboard). |
 | ✅ | 3.6 | Announcements | http://localhost:3000/keystatic → Announcements | Add one; it shows above the header. |
 | ✅ | 3.7 | Wallet receipts and filters | https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/epoch/wallet → tap any line | Register first at https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/epoch/register. Receipts work offline too. |
 | ✅ | 3.8 | Load test | Run `npm run load-test` (needs Docker Desktop) | 300 phones at once: no double charges, no negative balances, zero errors. |
