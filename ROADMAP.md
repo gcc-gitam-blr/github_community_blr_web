@@ -10,7 +10,7 @@ The live checklist for the club site. Every item has a status and the exact page
 
 **Status:** ✅ Done (on `dev`, tested) · 🟡 In progress · ⬜ Not started · 🙋 Needs you (a decision, a login or content)
 
-**Working order, one at a time:** ~~reliability~~ → **Epoch organiser tools (now)** → Epoch live → dark mode → contributor onboarding → ideas.
+**Working order, one at a time:** ~~reliability~~ → ~~Epoch organiser tools~~ → **Epoch live (now)** → dark mode → contributor onboarding → ideas.
 
 ---
 
@@ -18,7 +18,7 @@ The live checklist for the club site. Every item has a status and the exact page
 
 | | Where | What | Turns on |
 |---|---|---|---|
-| 🙋 | Supabase → SQL editor (or `npm run connect`) | Re-run `supabase/schema.sql` | Error reports, shared form limits, the Epoch dates list, the weekly clean-up |
+| 🙋 | Supabase → SQL editor (or `npm run connect`) | Re-run `supabase/schema.sql` | Error reports, shared form limits, the Epoch dates list, the weekly clean-up, booths for volunteers, reversals and the audit log |
 | 🙋 | Vercel → Settings → Environment Variables | `CRON_SECRET` (any long random text) | The weekly clean-up and the Monday digest |
 | 🙋 | Vercel → Settings → Environment Variables | `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API) | The clean-up, the digest and GitHub sign-in |
 | 🙋 | GitHub → Settings → Secrets → Actions | `SUPABASE_DB_URL` (Supabase → Connect → connection string) | Weekly backups |
@@ -69,14 +69,14 @@ The live checklist for the club site. Every item has a status and the exact page
 |---|---|------|----------|-------|
 | 🙋 | 3.1 | Supabase live + GitHub login | https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/epoch/register | Supabase is connected. Check the GitHub sign-in keys are in Vercel, then a full run-through. |
 | ✅ | 3.2 | Ticket payment | — | Decided: paid at the desk. No online payments. |
-| 🟡 | 3.3 | Volunteers limited to their booth + booth kiosk | (once merged) | Half built on `feat/epoch-organisers`. |
-| 🟡 | 3.4 | Organiser tools: reverse a charge, search, audit log | (once merged) | Half built on `feat/epoch-organisers`. |
+| ✅ | 3.3 | Volunteers limited to their booth + booth kiosk | https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/epoch/kiosk/vr (a booth's kiosk screen) and https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/epoch/admin → **Team** (put a volunteer on a booth) | A volunteer only scans and reverses at their own booth; without a booth they only check people in at the desk. Every booth on https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/epoch/admin has an "Open as a kiosk" link. |
+| ✅ | 3.4 | Organiser tools: reverse a charge, search, audit log | https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/epoch/admin → **Find someone** and **Audit log** | Reversals add the opposite amount; nothing is deleted, nothing is reversed twice, no balance goes below zero. Load-tested with 150 reversals at once. |
 | 🟡 | 3.5 | Live leaderboard + "happening now" + big screen | (once merged) | Started on `feat/epoch-live`. |
 | ✅ | 3.6 | Announcements | http://localhost:3000/keystatic → Announcements | Add one; it shows above the header. |
-| 🟡 | 3.7 | Wallet receipts and filters | (once merged) | Part of `feat/epoch-organisers`. |
+| ✅ | 3.7 | Wallet receipts and filters | https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/epoch/wallet → tap any line | Register first at https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/epoch/register. Receipts work offline too. |
 | ✅ | 3.8 | Load test | Run `npm run load-test` (needs Docker Desktop) | 300 phones at once: no double charges, no negative balances, zero errors. |
 | 🙋 | 3.9 | Dress rehearsal | — | A week before Epoch. |
-| 🟡 | 3.10 | Printable guides (attendees, organisers) | (once merged) | Part of `feat/epoch-organisers`. |
+| ✅ | 3.10 | Printable guides (attendees, organisers) | https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/epoch/guide and https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/epoch/guide/organisers (try Print) | One A4 page each. 🙋 Add the day's phone contacts: http://localhost:3000/keystatic → Epoch settings → Contacts |
 | 🙋 | 3.11 | Oddval font | — | The licensed file. Mona Sans until then. |
 | 🙋 | 3.12 | Booth prices | — | Only VR = 40 and recharge = 20 come from the plan; the rest are placeholders. |
 | ✅ | 3.13 | **"Tell me when the dates are out"** (new) | https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/epoch and the home page's Epoch band | Organisers email the list from /admin. 🙋 Re-run `supabase/schema.sql` (`npm run connect`). |
