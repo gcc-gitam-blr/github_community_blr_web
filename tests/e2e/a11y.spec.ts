@@ -5,6 +5,18 @@ import { expect, test } from "@playwright/test";
    They don't replace trying the site with a keyboard and a screen reader, but they stop regressions. */
 const PAGES = ["/", "/learn", "/contribute", "/board", "/memories", "/get-involved", "/privacy", "/updates", "/updates/calendar-2026-27", "/events/git-merge-26", "/epoch", "/epoch/booths", "/epoch/shop", "/epoch/register", "/epoch/leaderboard", "/epoch/guide", "/epoch/guide/organisers", "/epoch/screen", "/epoch/kiosk/vr", "/unsubscribe?e=a%40b.in&t=x", "/admin", "/no-such-page"];
 
+// dark mode follows the visitor's system setting; Epoch keeps its own light look, so only the club pages are checked again
+const DARK = PAGES.filter((p) => !p.startsWith("/epoch") && !p.startsWith("/unsubscribe"));
+for (const path of DARK) {
+  test(`${path} in dark mode has no WCAG A/AA violations`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.goto(path);
+    await page.waitForTimeout(1500);
+    const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+    expect(violations.map((v) => `${v.id}: ${v.help} — ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")}`)).toEqual([]);
+  });
+}
+
 for (const path of PAGES) {
   test(`${path} has no WCAG A/AA violations`, async ({ page }) => {
     await page.goto(path);
