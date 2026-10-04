@@ -64,6 +64,8 @@ It works on the production address. Preview deployments and `localhost` automati
 | `NEXT_PUBLIC_SITE_URL` | Optional custom domain. On Vercel the production domain is used automatically. |
 | `NEXT_PUBLIC_EPOCH_MODE` | `live` / `off` forces Epoch's live state. |
 | `NEXT_PUBLIC_ANALYTICS` | `on` loads cookie-free Vercel Analytics + Speed Insights (enable them in the Vercel dashboard first). |
+| `CRON_SECRET` | Optional. Turns on the Monday digest email to organisers (see *Email* below). Any long random text. |
+| `ORGANISER_EMAILS` | Optional. Who gets the Monday digest, comma-separated. Empty = every admin's email from Supabase. |
 
 ## Run it
 
@@ -77,6 +79,7 @@ Epoch works out of the box in **demo mode** (data lives in your browser's localS
 ## Make it yours
 
 - Club content (events, recaps, team, contributors, FAQ, socials, updates): the content editor at `/keystatic`, which saves to [`content/`](content/). Run `npm run dev` and open http://localhost:3000/keystatic, or edit the JSON by hand.
+- A contribution challenge on `/board` (like *4 merged pull requests in October*): the editor → *Contribution challenge* ([`content/club/challenge.json`](content/club/challenge.json)). Leave it empty for none; it counts like the board, by merge day in India.
 - Epoch dates, venue, ticket, sponsors and schedule: the editor too ([`content/epoch/`](content/epoch/)).
 - Epoch coins, booths, recharge points and merch: [`lib/epoch/config.ts`](lib/epoch/config.ts) — they're code because `supabase/schema.sql` seeds the same values, and both must match.
 
@@ -149,8 +152,17 @@ The Octodex stickers in `public/stickers` are generated from `public/GitHub_stic
 ## Email: welcome message and organiser broadcasts
 
 When someone joins through the form, the site emails them a welcome (WhatsApp link, next event, what to do first).
-Admins can also email **every sign-up** from `/epoch/admin` → *Email everyone*. Every message carries a personal,
-signed unsubscribe link (and the one-click header Gmail shows as an "Unsubscribe" button).
+Admins can also email **every sign-up** from `/admin` → *Sign-ups* → *Email everyone* (also on `/epoch/admin`), or pick
+**Waiting for Epoch dates**: the people who used "Tell me when the dates are out" on the home page or `/epoch`.
+Every message carries a personal, signed unsubscribe link (and the one-click header Gmail shows as an "Unsubscribe" button);
+one link takes the address off both lists.
+
+**Monday digest for organisers.** Every Monday at 9:00 India time (`vercel.json` → `crons`, 03:30 UTC), Vercel calls
+`/api/cron/digest`, which emails organisers the past 7 days: new sign-ups (how many, and the first few handles),
+Get involved messages by kind, and the average feedback rating per event, with a link to `/admin`. Quiet weeks send nothing.
+To turn it on, add in Vercel: `CRON_SECRET` (any long random text; Vercel sends it with each cron call and the route
+refuses anything else), `SUPABASE_SERVICE_ROLE_KEY` (it reads staff-only tables with no one signed in) and optionally
+`ORGANISER_EMAILS` (otherwise it goes to every profile with role `admin`). Without them it does nothing and says why.
 
 Epoch has **no passwords** — attendees sign in with GitHub — so there is no "forgot password" email to build.
 
