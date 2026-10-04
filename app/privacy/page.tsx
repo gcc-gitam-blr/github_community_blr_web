@@ -3,9 +3,10 @@ import Link from "next/link";
 import { Nav } from "@/components/site/Nav";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { CLUB } from "@/lib/config";
+import { RETENTION } from "@/lib/retention";
 
 export const metadata: Metadata = { title: "Privacy", description: "What the GitHub Community Club collects, why, and how to have it removed." };
-const UPDATED = "2 October 2026";
+const UPDATED = "4 October 2026";
 
 const H = ({ children }: { children: React.ReactNode }) => <h2 className="mb-3 mt-12 text-[26px]">{children}</h2>;
 const P = ({ children }: { children: React.ReactNode }) => <p className="mt-3 text-[17px] leading-relaxed text-ink-2">{children}</p>;
@@ -25,6 +26,9 @@ export default function Privacy() {
         <L>
           <li><b>When you join the club:</b> your GitHub username, email address, and which event you want to try first. We use it to welcome you, remind you about events, and plan sessions.</li>
           <li><b>When you use Epoch (our fest):</b> your name, GitHub username (via GitHub sign-in) and email, your Epoch Coins balance, and a record of your coin transactions (where you scanned or spent coins). We use it to run the event and the leaderboard. The leaderboard shows only your name and GitHub username.</li>
+          <li><b>When you write to us</b> (to help out, speak, sponsor or ask a question): your name, email, GitHub username if you give it, and your message, so we can reply.</li>
+          <li><b>Event feedback:</b> your rating and what you wrote. It is anonymous: we don&apos;t record who sent it.</li>
+          <li><b>When something breaks:</b> if a page hits an error in your browser, it sends us the error message, the page address (without anything after a ? or #) and your browser&apos;s name, so we can fix it. Never what you typed, your email or your IP address.</li>
           <li><b>Emails we send:</b> a welcome message and event updates. Every email has an unsubscribe link, and you can unsubscribe with one click.</li>
         </L>
 
@@ -47,7 +51,14 @@ export default function Privacy() {
         <P>Epoch keeps a sign-in session and a copy of your last wallet in your browser so it works with a weak signal. Nothing else is stored. Clearing your browser data removes it.</P>
 
         <H>How long we keep it</H>
-        <P>Sign-up details are kept for the club year they were collected in and deleted within 12 months after you stop being active. Epoch data is deleted within 6 months after the event.</P>
+        <P>Old data is deleted automatically once a week:</P>
+        <L>
+          <li><b>Sign-ups:</b> {RETENTION.signUpsMonths} months after you joined.</li>
+          <li><b>Messages:</b> {RETENTION.messagesMonths} months after you sent them. <b>Event feedback:</b> {RETENTION.feedbackMonths} months.</li>
+          <li><b>Error reports:</b> {RETENTION.errorsDays} days.</li>
+          <li><b>Spam protection:</b> to stop scripts flooding our forms we count how often a form is sent from the same connection. We only keep a scrambled code, never your IP address, and only for a day.</li>
+        </L>
+        <P>Epoch data is deleted by hand within 6 months after the event. Attendance (which events you came to) is kept so your certificates stay valid; ask us and we&apos;ll remove it.</P>
 
         <H>Your choices</H>
         <L>
