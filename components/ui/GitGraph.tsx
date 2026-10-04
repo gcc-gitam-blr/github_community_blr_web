@@ -52,8 +52,8 @@ export function GitGraph({ nodes, edges, dx = 82, dy = 100, pad = 44, className 
 
   return (
     <svg ref={ref} viewBox={`0 0 ${w} ${h}`} className={`graph overflow-visible ${seen ? "in" : ""} ${className}`} role="img" aria-label="Animated git branch graph">
-      <g fill="none" stroke="#e4e8e6" strokeWidth={4} strokeLinecap="round">{paths.map((p, k) => <path key={k} d={p.d} />)}</g>
-      <g fill="none" stroke="#0b0b0f" strokeWidth={4} strokeLinecap="round">
+      <g fill="none" className="stroke-line" strokeWidth={4} strokeLinecap="round">{paths.map((p, k) => <path key={k} d={p.d} />)}</g>
+      <g fill="none" className="stroke-ink" strokeWidth={4} strokeLinecap="round">{/* theme colours, so the branches show in dark mode */}
         {paths.map((p, k) => <path key={k} d={p.d} pathLength={1} className="g-edge" style={{ "--i": p.i } as React.CSSProperties} />)}
       </g>
       {nodes.map((n) => (

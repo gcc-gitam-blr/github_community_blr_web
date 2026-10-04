@@ -47,8 +47,8 @@ export function MobileMenu({ href, current, live }: { href: (h: string) => strin
   return (
     <>
       <button ref={button} className="relative h-11 w-11 lg:hidden" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="phone-menu" onClick={toggle}>
-        <span className={`absolute inset-x-2.5 h-0.5 rounded bg-ink transition-[top,rotate] duration-200 ease-out ${open ? "top-[21px] rotate-45" : "top-4"}`} />
-        <span className={`absolute inset-x-2.5 h-0.5 rounded bg-ink transition-[top,rotate] duration-200 ease-out ${open ? "top-[21px] -rotate-45" : "top-[26px]"}`} />
+        <span className={`absolute inset-x-2.5 h-0.5 rounded bg-current transition-[top,rotate] duration-200 ease-out ${open ? "top-[21px] rotate-45" : "top-4"}`} />
+        <span className={`absolute inset-x-2.5 h-0.5 rounded bg-current transition-[top,rotate] duration-200 ease-out ${open ? "top-[21px] -rotate-45" : "top-[26px]"}`} />
       </button>
       {host && createPortal(
         <div className="phone-menu lg:hidden" data-open={open} style={{ "--top": `${top}px` } as React.CSSProperties}>

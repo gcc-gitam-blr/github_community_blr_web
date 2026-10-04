@@ -4,45 +4,44 @@ import { LiveSticker } from "@/components/ui/LiveSticker";
 /* A plain-language primer for people who've never used GitHub — before anything club-specific.
    Each idea gets a tiny diagram drawn in the site's git-graph style. */
 
-const INK = "#0b0b0f";
-const Dot = ({ x, y, fill = "#b9e0f7", r = 9 }: { x: number; y: number; fill?: string; r?: number }) => <circle cx={x} cy={y} r={r} fill={fill} stroke={INK} strokeWidth={3} />;
+const Dot = ({ x, y, fill = "#b9e0f7", r = 9 }: { x: number; y: number; fill?: string; r?: number }) => <circle cx={x} cy={y} r={r} fill={fill} className="stroke-ink" strokeWidth={3} />;
 
 /* 1 · Git: a line of save points, with a branch to try an idea */
 const GitArt = () => (
   <svg viewBox="0 0 220 90" className="h-[90px] w-full" aria-hidden>
-    <path d="M20 60 H200" stroke={INK} strokeWidth={3} fill="none" />
-    <path d="M80 60 C 95 60 95 28 112 28 H150 C 165 28 165 60 180 60" stroke={INK} strokeWidth={3} fill="none" />
+    <path d="M20 60 H200" className="stroke-ink" strokeWidth={3} fill="none" />
+    <path d="M80 60 C 95 60 95 28 112 28 H150 C 165 28 165 60 180 60" className="stroke-ink" strokeWidth={3} fill="none" />
     <Dot x={30} y={60} /><Dot x={80} y={60} /><Dot x={130} y={60} /><Dot x={180} y={60} fill="#4fd1a1" />
     <Dot x={120} y={28} fill="#d9c8f7" /><Dot x={150} y={28} fill="#d9c8f7" />
-    <text x={30} y={86} textAnchor="middle" fontSize={11} fontFamily="var(--font-jbm)" fill="#3a3d44">v1</text>
-    <text x={180} y={86} textAnchor="middle" fontSize={11} fontFamily="var(--font-jbm)" fill="#3a3d44">now</text>
+    <text x={30} y={86} textAnchor="middle" fontSize={11} fontFamily="var(--font-jbm)" className="fill-ink-2">v1</text>
+    <text x={180} y={86} textAnchor="middle" fontSize={11} fontFamily="var(--font-jbm)" className="fill-ink-2">now</text>
   </svg>
 );
 
 /* 2 · GitHub: your laptop pushes the project up to a repository everyone can reach */
 const GitHubArt = () => (
   <svg viewBox="0 0 220 90" className="h-[90px] w-full" aria-hidden>
-    <rect x={12} y={46} width={62} height={36} rx={6} fill="#fff" stroke={INK} strokeWidth={3} />
-    <path d="M4 86 H82" stroke={INK} strokeWidth={3} strokeLinecap="round" />
+    <rect x={12} y={46} width={62} height={36} rx={6} fill="#fff" className="stroke-ink" strokeWidth={3} />
+    <path d="M4 86 H82" className="stroke-ink" strokeWidth={3} strokeLinecap="round" />
     <text x={43} y={69} textAnchor="middle" fontSize={11} fontFamily="var(--font-jbm)" fill="#3a3d44">you</text>
-    <path d="M78 58 C 108 58 108 30 136 30" stroke={INK} strokeWidth={3} fill="none" strokeDasharray="5 5" />
-    <path d="M128 23 L138 30 L128 37" stroke={INK} strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    <rect x={142} y={8} width={70} height={46} rx={8} fill="#2ea043" stroke={INK} strokeWidth={3} />
+    <path d="M78 58 C 108 58 108 30 136 30" className="stroke-ink" strokeWidth={3} fill="none" strokeDasharray="5 5" />
+    <path d="M128 23 L138 30 L128 37" className="stroke-ink" strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    <rect x={142} y={8} width={70} height={46} rx={8} fill="#2ea043" className="stroke-ink" strokeWidth={3} />
     <text x={177} y={36} textAnchor="middle" fontSize={11} fontWeight={700} fontFamily="var(--font-jbm)" fill="#fff">repo</text>
-    <text x={177} y={76} textAnchor="middle" fontSize={11} fontFamily="var(--font-jbm)" fill="#3a3d44">git push</text>
+    <text x={177} y={76} textAnchor="middle" fontSize={11} fontFamily="var(--font-jbm)" className="fill-ink-2">git push</text>
   </svg>
 );
 
 /* 3 · Pull requests: someone else's change is reviewed, then merged in */
 const PRArt = () => (
   <svg viewBox="0 0 220 90" className="h-[90px] w-full" aria-hidden>
-    <path d="M20 62 H200" stroke={INK} strokeWidth={3} fill="none" />
-    <path d="M50 62 C 65 62 65 26 82 26 H130 C 150 26 150 62 168 62" stroke={INK} strokeWidth={3} fill="none" />
+    <path d="M20 62 H200" className="stroke-ink" strokeWidth={3} fill="none" />
+    <path d="M50 62 C 65 62 65 26 82 26 H130 C 150 26 150 62 168 62" className="stroke-ink" strokeWidth={3} fill="none" />
     <Dot x={30} y={62} /><Dot x={90} y={62} /><Dot x={168} y={62} fill="#2ea043" r={11} />
     <Dot x={92} y={26} fill="#ffd966" /><Dot x={122} y={26} fill="#ffd966" />
     <path d="M161 62 l5 5 l9 -10" stroke="#fff" strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    <text x={107} y={12} textAnchor="middle" fontSize={11} fontFamily="var(--font-jbm)" fill="#3a3d44">a friend&apos;s change</text>
-    <text x={168} y={86} textAnchor="middle" fontSize={11} fontFamily="var(--font-jbm)" fill="#3a3d44">merged</text>
+    <text x={107} y={12} textAnchor="middle" fontSize={11} fontFamily="var(--font-jbm)" className="fill-ink-2">a friend&apos;s change</text>
+    <text x={168} y={86} textAnchor="middle" fontSize={11} fontFamily="var(--font-jbm)" className="fill-ink-2">merged</text>
   </svg>
 );
 
