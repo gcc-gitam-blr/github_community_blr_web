@@ -242,6 +242,33 @@ test("opening a #link lands there and stays (the smooth scroll doesn't snap back
   await expect(page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Events" })).toHaveAttribute("aria-current", "page");
 });
 
+test("'Tell me when the dates are out' is on the home page and /epoch, and says so honestly while the list is off", async ({ page }) => {
+  for (const path of ["/", "/epoch"]) {
+    await page.goto(path);
+    const box = page.getByLabel("Tell me when the dates are out");
+    await box.scrollIntoViewIfNeeded();
+    await box.fill("grace@");
+    await page.getByRole("button", { name: "Watch releases" }).click();
+    await expect(page.getByText("That email doesn't look right.")).toBeVisible();
+  }
+  await page.getByLabel("Tell me when the dates are out").fill("grace@gitam.in");
+  await page.waitForTimeout(1500); // a person takes a moment; the spam check knows that
+  await page.getByRole("button", { name: "Watch releases" }).click();
+  await expect(page.getByText(/isn't switched on yet, so nothing was saved/)).toBeVisible(); // the test build has no database
+});
+
+test("the new endpoints refuse what they should", async ({ request }) => {
+  expect((await request.post("/api/epoch-interest", { data: { email: "nope" } })).status()).toBe(422);
+  expect((await request.get("/api/cron/digest")).status()).toBeGreaterThanOrEqual(401); // no CRON_SECRET in tests: off
+  expect((await request.get("/api/cron/digest", { headers: { authorization: "Bearer guess" } })).status()).toBeGreaterThanOrEqual(401);
+});
+
+test("the board shows no challenge while none is set in the content editor", async ({ page }) => {
+  await page.goto("/board");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.locator("#challenge")).toHaveCount(0);
+});
+
 test("the 3D stickers load on desktop, with a still frame for reduced motion", async ({ page, request }) => {
   await page.goto("/learn");
   const duck = page.locator('img[src="/stickers/duck-3d.webp"]');
