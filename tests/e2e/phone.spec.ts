@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 /* On a phone: nothing may scroll sideways, and the phone menu and tab bar work. */
-const PAGES = ["/", "/learn", "/contribute", "/board", "/memories", "/get-involved", "/privacy", "/updates", "/updates/calendar-2026-27", "/events/git-merge-26", "/epoch", "/epoch/booths", "/epoch/shop", "/epoch/leaderboard", "/epoch/register", "/epoch/wallet", "/epoch/scan", "/epoch/admin", "/no-such-page"];
+const PAGES = ["/", "/learn", "/contribute", "/board", "/memories", "/get-involved", "/privacy", "/updates", "/updates/calendar-2026-27", "/events/git-merge-26", "/epoch", "/epoch/booths", "/epoch/shop", "/epoch/leaderboard", "/epoch/register", "/epoch/wallet", "/epoch/scan", "/epoch/admin", "/epoch/guide", "/epoch/guide/organisers", "/epoch/kiosk/vr", "/no-such-page"];
 
 for (const path of PAGES) {
   test(`${path} fits the screen`, async ({ page }) => {
@@ -11,6 +11,17 @@ for (const path of PAGES) {
     expect(scroll, `${path} is ${scroll}px wide on a ${client}px screen`).toBeLessThanOrEqual(client);
   });
 }
+
+test("the booth kiosk fills the screen without scrolling, QR and all", async ({ page }) => {
+  await page.goto("/epoch/kiosk/vr");
+  await expect(page.getByRole("heading", { level: 1, name: "Virtual Reality Merge Zone" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Epoch tabs" })).toHaveCount(0); // no tab bar or footer around it
+  await expect(page.locator("footer")).toHaveCount(0);
+  const { scroll, client } = await page.evaluate(() => ({ scroll: document.documentElement.scrollHeight, client: window.innerHeight }));
+  expect(scroll).toBeLessThanOrEqual(client);
+  await expect(page.getByRole("img", { name: /QR code for/ })).toBeInViewport({ ratio: 1 });
+  await expect(page.getByText(/tap Scan and point it here/)).toBeInViewport({ ratio: 1 });
+});
 
 test("the phone menu opens and navigates", async ({ page }) => {
   await page.goto("/");
@@ -42,7 +53,7 @@ test("the phone menu: focus moves in, the page stops scrolling, Esc closes and r
 test("the smallest phones (320px): the home page and Epoch fit, including the ticket", async ({ browser }) => {
   const ctx = await browser.newContext({ viewport: { width: 320, height: 640 }, isMobile: true, hasTouch: true });
   const page = await ctx.newPage();
-  for (const path of ["/", "/epoch"]) {
+  for (const path of ["/", "/epoch", "/epoch/guide", "/epoch/guide/organisers", "/epoch/kiosk/vr"]) {
     await page.goto(path); await page.waitForTimeout(600);
     const { scroll, client, culprits } = await page.evaluate(() => {
       const vw = document.documentElement.clientWidth;

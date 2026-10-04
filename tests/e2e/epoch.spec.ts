@@ -73,6 +73,86 @@ test("a full Epoch day: check-in, spend, recharge, shop, ledger", async ({ page 
   await expect(page.getByText("20", { exact: true })).toBeVisible(); // earned counts recharges, not the 398 or spending
 });
 
+test("organisers: a volunteer runs one booth, reverses a scan once, and the admin sees it in the audit log", async ({ page }) => {
+  test.setTimeout(120_000); // a whole volunteer + admin session: about 30 s alone, slower when the suite runs in parallel
+  await page.goto("/epoch"); await page.evaluate(() => localStorage.clear());
+  await register(page, "ada", "Ada Lovelace"); const adaId = await userId(page, "ada");
+  await signOut(page); await register(page, "vol", "Val Volunteer");
+  await signOut(page); await register(page, "org", "Organiser");
+  await page.goto("/epoch/admin");
+  await page.getByPlaceholder("organiser code").fill("epoch-admin"); await page.getByRole("button", { name: "Unlock" }).click();
+  await expect(page.getByRole("link", { name: "Organiser guide" })).toBeVisible();
+
+  // the admin adds a volunteer and puts them on the VR booth
+  await page.getByPlaceholder("@github-username").fill("vol"); await page.getByRole("button", { name: "Add a volunteer" }).click();
+  await expect(page.getByText("@vol is now a volunteer")).toBeVisible();
+  await page.getByLabel("Booth for @vol").selectOption("vr");
+  await expect(page.getByText("@vol now runs Virtual Reality Merge Zone")).toBeVisible();
+
+  // find Ada by name at the desk, check her in
+  await page.getByLabel(/Find them by name/).fill("lovel");
+  await page.getByRole("button", { name: /Ada Lovelace/ }).click();
+  await page.waitForURL(/\/epoch\/scan\?u=/);
+  await page.getByRole("button", { name: /Verify ticket/ }).click();
+  await expect(page.getByText("+398")).toBeVisible();
+
+  // the volunteer charges Ada at VR, can't scan another booth, and reverses the charge once
+  await signOut(page); await register(page, "vol", "Val Volunteer");
+  await scan(page, `epoch:u:${adaId}`);
+  await expect(page.getByText("Your booth")).toBeVisible();
+  await page.getByRole("button", { name: /Charge 40/ }).click();
+  await expect(page.getByText("New balance 358")).toBeVisible();
+  await scan(page, `epoch:u:${adaId}`);
+  await page.getByRole("button", { name: "Reverse", exact: true }).click();
+  await page.getByLabel("Why it's being reversed").fill("scanned twice");
+  await page.getByRole("button", { name: /Reverse −40/ }).click();
+  await expect(page.getByText("New balance 398")).toBeVisible();
+  await scan(page, `epoch:u:${adaId}`);
+  await expect(page.getByText("Reversed", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Reverse", exact: true })).toHaveCount(0); // never twice
+
+  // the admin's audit log has it all, and filters
+  await signOut(page); await register(page, "org", "Organiser");
+  await page.goto("/epoch/admin");
+  const log = page.getByRole("region", { name: "Audit log" });
+  await expect(log.getByText("scanned twice")).toBeVisible();
+  await log.getByRole("button", { name: "Reversals" }).click();
+  await expect(log.locator("li")).toHaveCount(1);
+  await log.getByRole("button", { name: "All" }).click();
+  await log.getByPlaceholder("@someone").fill("vol");
+  await expect(log.getByText(/moved/)).toBeVisible();
+
+  // Ada's wallet: each line opens a receipt with the balance after it; the filter splits spent and earned
+  await signOut(page); await register(page, "ada", "Ada Lovelace");
+  await page.getByRole("button", { name: /^Virtual Reality Merge Zone/ }).click(); // the charge, not its reversal
+  const receipt = page.getByRole("dialog");
+  await expect(receipt.getByText("Balance after")).toBeVisible();
+  await expect(receipt.getByText(/^EPC-[0-9A-F]{6}$/)).toBeVisible();
+  await expect(receipt.getByText(/Reversed by an organiser/)).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(receipt).toHaveCount(0);
+  await page.getByRole("button", { name: "spent" }).click();
+  await expect(page.getByRole("button", { name: /Check-in/ })).toHaveCount(0);
+  await page.getByRole("button", { name: "earned" }).click();
+  await expect(page.getByRole("button", { name: /Check-in/ })).toBeVisible();
+});
+
+test("the guides are one printable page each and link to each other", async ({ page }) => {
+  await page.goto("/epoch/guide");
+  await expect(page.getByRole("heading", { level: 1, name: "How Epoch works." })).toBeVisible();
+  await expect(page.getByText(/no online payment/)).toBeVisible();
+  await page.getByRole("link", { name: "Organiser guide" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Running Epoch." })).toBeVisible();
+  for (const h of ["Desk check-in", "Cash at the desk", "Reversing a mistake", "The kiosk", "Who to call"]) await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
+  // printed: one A4 page, with no site chrome
+  await page.emulateMedia({ media: "print" });
+  const pdf = await page.pdf({ format: "A4", preferCSSPageSize: true });
+  expect((pdf.toString("latin1").match(/\/Type\s*\/Page[^s]/g) ?? []).length).toBe(1);
+  await page.goto("/epoch/guide");
+  const pdf2 = await page.pdf({ format: "A4", preferCSSPageSize: true });
+  expect((pdf2.toString("latin1").match(/\/Type\s*\/Page[^s]/g) ?? []).length).toBe(1);
+});
+
 test("the command bar answers a question about the VR booth", async ({ page }) => {
   await page.goto("/epoch");
   await page.keyboard.press("/");
