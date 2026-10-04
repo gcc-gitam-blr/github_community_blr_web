@@ -288,3 +288,23 @@ html.lenis, html.lenis body { height: auto; }
 .epoch-nudge { animation: nudge-in 260ms var(--ease-out); transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out); }
 .epoch-nudge[data-hidden="true"] { opacity: 0; transform: translateY(-8px); pointer-events: none; }
 @media (prefers-reduced-motion: reduce) { .epoch-nudge { animation: none; } }
+
+/* ---------- Memories (app/memories): photos laid on a table like prints ---------- */
+/* the opening photo drifts in slowly, once — a breath, not a slideshow */
+@keyframes drift { from { scale: 1.1; translate: 0 1.5%; } }
+.drift { animation: drift 24s cubic-bezier(0.22, 1, 0.36, 1) both; }
+/* a print: white border, paper shadow, a slight tilt that straightens when you reach for it */
+.print { position: relative; display: block; width: 100%; padding: 6px; border-radius: 3px; background: #fff; rotate: var(--tilt, 0deg);
+  box-shadow: 0 1px 1px rgba(11, 11, 15, .06), 0 2px 4px -2px rgba(11, 11, 15, .12), 0 14px 28px -14px rgba(11, 11, 15, .38);
+  transition: rotate 320ms var(--ease-out), translate 320ms var(--ease-out), box-shadow 320ms var(--ease-out), scale 120ms var(--ease-out); }
+@media (min-width: 640px) { .print { padding: 8px; } }
+@media (hover: hover) and (pointer: fine) {
+  .print:hover { rotate: 0deg; translate: 0 -4px; z-index: 2; box-shadow: 0 1px 1px rgba(11, 11, 15, .06), 0 4px 8px -4px rgba(11, 11, 15, .14), 0 26px 44px -18px rgba(11, 11, 15, .42); }
+}
+.print:focus-visible { rotate: 0deg; z-index: 2; }
+/* …and they're dropped onto the table, one after another, as the moment scrolls in */
+.reveal-group .print-in { opacity: 0; translate: 0 -16px; scale: 1.05; transition: opacity .45s ease var(--sd, 0s), translate .8s var(--ease-reveal) var(--sd, 0s), scale .8s var(--ease-reveal) var(--sd, 0s); }
+.reveal-group.in .print-in { opacity: 1; translate: 0 0; scale: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal-group .print-in { opacity: 1; translate: 0 0; scale: 1; } /* the tilt stays: it's still, not motion */
+}

@@ -9,12 +9,12 @@ export interface Photo { id: string; event: string; eventTitle: string; index: n
 export const photoSrc = (p: Photo, s: "sm" | "md" | "lg") => `/gallery/${p.event}/${p.index}-${s}.webp`;
 
 /** A sample photo's stand-in: the tile, the sticker, and a label so nobody mistakes it for a real photo. */
-export function SampleTile({ p, className = "", style }: { p: Photo; className?: string; style?: React.CSSProperties }) {
+export function SampleTile({ p, className = "", style, art = "w-[42%] max-w-[240px]", tag = "left-2 top-2" }: { p: Photo; className?: string; style?: React.CSSProperties; art?: string; tag?: string }) {
   return (
     <span role="img" aria-label={p.alt} className={`relative grid place-items-center overflow-hidden ${className}`} style={{ background: p.sample!.tone, aspectRatio: `${p.w} / ${p.h}`, ...style }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={`/stickers/${p.sample!.sticker}-240.webp`} alt="" draggable={false} className="w-[42%] max-w-[240px] select-none" style={{ filter: DIECUT }} />
-      <span className="absolute left-2 top-2 rounded bg-white/85 px-1.5 py-px font-mono text-[10.5px] font-semibold uppercase tracking-wide text-ink">Sample</span>
+      <img src={`/stickers/${p.sample!.sticker}-240.webp`} alt="" draggable={false} className={`select-none ${art}`} style={{ filter: DIECUT }} />
+      <span className={`absolute ${tag} rounded bg-white/85 px-1.5 py-px font-mono text-[10.5px] font-semibold uppercase tracking-wide text-ink`}>Sample</span>
     </span>
   );
 }

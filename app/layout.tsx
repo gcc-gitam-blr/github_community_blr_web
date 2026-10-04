@@ -28,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" data-scroll-behavior="smooth" className={`${mona.variable} ${jbm.variable}`}>
       <body className="min-h-screen antialiased">
-        <noscript><style>{".reveal,.reveal-group .stagger>*,.reveal-group .pop{opacity:1!important;transform:none!important;scale:1!important}.reveal-group .draw{transform:none!important}"}</style></noscript>
+        <noscript><style>{".reveal,.reveal-group .stagger>*,.reveal-group .pop{opacity:1!important;transform:none!important;scale:1!important}.reveal-group .draw{transform:none!important}.reveal-group .print-in{opacity:1!important;translate:none!important;scale:none!important}"}</style></noscript>
         <SmoothScroll />
         {children}
         {ANALYTICS && <><Analytics /><SpeedInsights /></>}

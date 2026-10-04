@@ -84,11 +84,25 @@ test.describe("club site", () => {
     const bad: string[] = [];
     page.on("console", (m) => { if (/Content Security Policy|Refused to/i.test(m.text())) bad.push(m.text().slice(0, 140)); });
     page.on("pageerror", (e) => bad.push("script error: " + e.message.slice(0, 140)));
-    for (const p of ["/", "/learn", "/contribute", "/board", "/get-involved", "/privacy", "/events/git-merge-26", "/epoch", "/epoch/booths", "/epoch/register", "/epoch/leaderboard"]) {
+    for (const p of ["/", "/learn", "/contribute", "/board", "/memories", "/get-involved", "/privacy", "/events/git-merge-26", "/epoch", "/epoch/booths", "/epoch/register", "/epoch/leaderboard"]) {
       await page.goto(p); await page.waitForTimeout(700);
     }
     await page.goto("/"); await page.locator("#join").getByPlaceholder("your-github-handle").fill("octocat"); await page.waitForTimeout(2000); // GitHub lookup + avatar
     expect(bad).toEqual([]);
+  });
+
+  test("Memories tells the years from real data, shows no sample, and stays unlinked until there are photos", async ({ page }) => {
+    await page.goto("/memories");
+    await expect(page.getByRole("heading", { level: 1, name: "Memories." })).toBeVisible();
+    for (const y of ["2024–25", "2025–26", "2026–27"]) await expect(page.getByRole("heading", { level: 2, name: y })).toBeVisible();
+    await expect(page.locator("#y2024-25").getByText("Chakrawarthy")).toBeVisible(); // "Former President, 2024-25" in the team file
+    await expect(page.locator("#y2025-26").getByText("Greeshmitha")).toBeVisible();
+    await expect(page.getByText(/Sample/)).toHaveCount(0); // never outside preview deployments
+    await expect(page.getByRole("heading", { name: "Thank you." })).toBeVisible();
+    await expect(page.locator("#next").getByRole("link", { name: "Join the club" })).toHaveAttribute("href", "/#join");
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+    await page.goto("/");
+    await expect(page.locator('footer a[href="/memories"]')).toHaveCount(0);
   });
 
   test("API routes refuse bad requests instead of crashing", async ({ request }) => {
