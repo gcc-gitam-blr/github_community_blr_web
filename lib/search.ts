@@ -13,6 +13,7 @@ const PAGES: Entry[] = [
   { kind: "Page", title: "Learn hub", hint: "A path from your first commit, plus a cheat sheet", href: "/learn", keywords: "tutorial course guide beginner" },
   { kind: "Page", title: "Contribute", hint: "Beginner-friendly issues to work on", href: "/contribute", keywords: "open source good first issue pull request" },
   { kind: "Page", title: "Board", hint: "Pull requests members got merged this year", href: "/board", keywords: "contributions merged pull requests leaderboard open source" },
+  { kind: "Page", title: "My club", hint: "Your events, certificates, merges and badges", href: "/me", keywords: "profile account sign in certificate attendance my" },
   { kind: "Page", title: "Get involved", hint: "Volunteer, speak, sponsor, apply to the core team", href: "/get-involved", keywords: "contact message apply speaker sponsor team" },
   { kind: "Page", title: "Updates", hint: "Club news and what GitHub shipped lately", href: "/updates", keywords: "news blog changelog rss" },
   ...(MEMORIES_LINKED ? [{ kind: "Page" as const, title: "Memories", hint: "The club's story, one year at a time", href: "/memories", keywords: "history photos years past album story" }] : []),
