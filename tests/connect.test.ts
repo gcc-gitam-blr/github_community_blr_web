@@ -28,7 +28,7 @@ const res = (status: number, body = "") => new Response(body, { status });
 
   // the schema, over a real Postgres connection
   const db = new PGlite();
-  await db.exec(`create role anon; create role authenticated; create schema auth;
+  await db.exec(`create role anon; create role authenticated; create role service_role; create schema auth;
     create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb);
     create function auth.uid() returns uuid language sql stable as $$ select null::uuid $$;`);
   const server = new PGLiteSocketServer({ db, port: 0, host: "127.0.0.1" });
