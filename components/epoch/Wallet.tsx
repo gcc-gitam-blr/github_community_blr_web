@@ -2,15 +2,17 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { animate } from "motion/react";
 import { Notice } from "./Frame";
 import { Coin, btnInk, btnSoft, glass } from "./Bits";
 import { NodeIcon } from "@/components/ui/GitGraph";
 import { useCommand } from "./Command";
 import { useEpoch } from "./EpochProvider";
+import { Receipt } from "./Receipt";
 import { qr } from "@/lib/epoch/store";
 import { EPOCH, RECHARGE_POINTS, STARTER_COINS } from "@/lib/epoch/config";
+import { filterTxs, kindLabel, place, withBalances, type TxFilter } from "@/lib/epoch/receipt";
 import type { Tx } from "@/lib/epoch/types";
 
 function Balance({ value }: { value: number }) {
@@ -23,15 +25,23 @@ function Balance({ value }: { value: number }) {
   return <>{n}</>;
 }
 const ago = (iso: string) => { const s = (Date.now() - new Date(iso).getTime()) / 1000; return s < 60 ? "just now" : s < 3600 ? `${Math.floor(s / 60)} min ago` : s < 86400 ? `${Math.floor(s / 3600)} hours ago` : new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" }); };
-const kindOf = (t: Tx) => t.ref === "ticket" ? { s: "diamond", c: "blue", tag: "Ticket" } : t.ref.startsWith("booth:recharge") ? { s: "triangle", c: "green", tag: "Recharge" } : t.ref.startsWith("booth:") ? { s: "ring", c: "purple", tag: "Booth" } : t.ref.startsWith("reward:") ? { s: "square", c: "mint", tag: "Merch" } : { s: "diamond", c: "purple", tag: "Award" };
+const kindOf = (t: Tx) => t.ref.startsWith("reverse:") ? { s: "ring", c: "blue" } : t.ref === "ticket" ? { s: "diamond", c: "blue" } : t.ref.startsWith("booth:recharge") ? { s: "triangle", c: "green" } : t.ref.startsWith("booth:") ? { s: "ring", c: "purple" } : t.ref.startsWith("reward:") ? { s: "square", c: "mint" } : { s: "diamond", c: "purple" };
+
+/* The last history we loaded, per wallet, so receipts still open when the venue's signal drops. */
+const SAVED = (id: string) => `epoch:lastTxs:${id}`;
+const save = (id: string, t: Tx[]) => { try { localStorage.setItem(SAVED(id), JSON.stringify(t)); } catch { /* storage blocked */ } };
+const saved = (id: string): Tx[] => { try { return JSON.parse(localStorage.getItem(SAVED(id)) ?? "[]"); } catch { return []; } };
+const HISTORY_LIMIT = 100; // the live store returns the latest 100
 
 /* Wallet dashboard: greeting, balance + QR, activity feed, and a recharge checklist on the side. */
 export function Wallet() {
   const { store, me, ready, refresh, offline } = useEpoch(); const router = useRouter(); const { open } = useCommand();
   const [tx, setTx] = useState<Tx[]>([]);
   const [now, setNow] = useState(""); const [tab, setTab] = useState<"feed" | "recharge">("feed");
+  const [filter, setFilter] = useState<TxFilter>("all"); const [more, setMore] = useState(false); const [open1, setOpen1] = useState<string | null>(null);
 
-  useEffect(() => { if (store && me) store.history().then(setTx); }, [store, me]);
+  useEffect(() => { if (store && me) store.history().then((t) => { setTx(t); save(me.id, t); }, () => setTx(saved(me.id))); }, [store, me]);
+  const rows = useMemo(() => (me ? withBalances(tx, me.coins, tx.length < HISTORY_LIMIT) : []), [tx, me]);
   useEffect(() => { if (!me) return; const i = setInterval(() => void refresh(), 4000); return () => clearInterval(i); }, [me, refresh]);
   useEffect(() => { const f = () => setNow(new Date().toLocaleString("en-IN", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })); f(); const i = setInterval(f, 30000); return () => clearInterval(i); }, []);
 
@@ -77,18 +87,28 @@ export function Wallet() {
           </section>
 
           {offline && <div className="mt-4"><Notice kind="info">You&apos;re offline — this is your last saved pass. The QR still works at the desk; your balance updates when you&apos;re back online.</Notice></div>}
-          {!me.ticket && <div className="mt-4"><Notice kind="info">One step left: {EPOCH.ticketUrl ? <><a className="underline" href={EPOCH.ticketUrl} target="_blank" rel="noopener">get your ticket here</a>, then show</> : "show"} your QR at the registration desk. {STARTER_COINS} {EPOCH.currency} appear here within seconds.</Notice></div>}
+          {!me.ticket && <div className="mt-4"><Notice kind="info">One step left: pay for your ticket at the registration desk and show them this QR. {STARTER_COINS} {EPOCH.currency} appear here within seconds.</Notice></div>}
 
-          {/* feed */}
-          <div className="mt-5 space-y-3">
+          {/* feed: each line opens its receipt */}
+          {tab === "feed" && tx.length > 0 && (
+            <div className="mt-5 flex flex-wrap items-center gap-2" role="group" aria-label="Show">
+              {(["all", "earned", "spent"] as const).map((f) => <button key={f} onClick={() => { setFilter(f); setMore(false); }} aria-pressed={filter === f} className={`rounded-full border px-4 py-1.5 text-[14px] capitalize transition ${filter === f ? "border-ink bg-ink text-white" : "border-hair bg-white/60 hover:border-ink/40"}`}>{f}</button>)}
+              <span className="ml-auto text-[13px] text-mute">Tap a line for its receipt</span>
+            </div>
+          )}
+          <div className="mt-3 space-y-3">
             {tab === "feed" && (tx.length === 0
-              ? <div className={`${glass} p-7 text-mute`}>Nothing yet. Scan a recharge point to get your first entry.</div>
-              : tx.map((t) => { const k = kindOf(t); return (
-                <article key={t.id} className={`${glass} flex items-center gap-5 p-5 sm:p-6`}>
-                  <NodeIcon shape={k.s as never} color={k.c as never} size={44} />
-                  <div className="min-w-0 flex-1"><p className="truncate text-[19px] font-medium tracking-[-0.02em]">{t.reason}</p><p className="text-[14px] text-mute">{k.tag} · {ago(t.at)}</p></div>
-                  <span className="text-[24px] font-medium tabular-nums tracking-[-0.03em]">{t.delta > 0 ? "+" : "−"}{Math.abs(t.delta)}</span>
-                </article>); }))}
+              ? <div className={`${glass} mt-5 p-7 text-mute`}>Nothing yet. Scan a recharge point to get your first entry.</div>
+              : (() => { const list = filterTxs(rows, filter), shown = more ? list : list.slice(0, 8); return (<>
+                {list.length === 0 && <div className={`${glass} p-7 text-mute`}>Nothing {filter} yet.</div>}
+                {shown.map((t) => { const k = kindOf(t); return (
+                  <button key={t.id} onClick={() => setOpen1(t.id)} aria-haspopup="dialog" className={`${glass} flex w-full items-center gap-5 p-5 text-left transition hover:border-ink/25 sm:p-6`}>
+                    <NodeIcon shape={k.s as never} color={k.c as never} size={44} />
+                    <span className="min-w-0 flex-1"><span className={`block truncate text-[19px] font-medium tracking-[-0.02em] ${t.reversedAt ? "text-mute line-through" : ""}`}>{t.reason}</span><span className="block truncate text-[14px] text-mute">{kindLabel(t)} · {place(t)} · {ago(t.at)}</span></span>
+                    <span className="text-right"><span className="block text-[24px] font-medium tabular-nums tracking-[-0.03em]">{t.delta > 0 ? "+" : "−"}{Math.abs(t.delta)}</span><span className="block font-mono text-[12px] text-mute">= {t.after}</span></span>
+                  </button>); })}
+                {list.length > 8 && <button onClick={() => setMore(!more)} className={`${btnSoft} w-full !py-3`}>{more ? "Show fewer" : `Show all ${list.length}`}</button>}
+              </>); })())}
             {tab === "recharge" && RECHARGE_POINTS.map((p) => (
               <article key={p.id} className={`${glass} flex items-center gap-5 p-5 sm:p-6 ${used.has(p.id) ? "opacity-50" : ""}`}>
                 <NodeIcon shape="triangle" color="green" size={44} />
@@ -97,6 +117,8 @@ export function Wallet() {
               </article>))}
           </div>
         </div>
+
+        <Receipt tx={rows.find((t) => t.id === open1) ?? null} all={tx} onClose={() => setOpen1(null)} />
 
         {/* Quick access */}
         <aside className="hidden xl:block">
