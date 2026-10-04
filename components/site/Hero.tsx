@@ -1,6 +1,7 @@
 import { GitGraph, type GNode } from "@/components/ui/GitGraph";
 import { EpochLink } from "@/components/epoch/EpochLink";
 import { EpochCoin } from "@/components/epoch/EpochCoin";
+import { EpochInterest } from "@/components/site/EpochInterest";
 import { BOOTH_COUNT, EPOCH, STARTER_COINS } from "@/lib/epoch/config";
 
 /* The club's own git history, drawn: main plus two branches that merge back. Decorative. */
@@ -50,6 +51,7 @@ export function Hero() {
             <li className="hidden sm:block">workshops · contests · one economy</li>
           </ul>
           <EpochLink className="press rounded-full bg-[#ffc933] px-6 py-3 font-display text-[15px] font-bold text-ink transition hover:-translate-y-0.5 hover:bg-[#ffe28f]">Enter Epoch →</EpochLink>
+          <EpochInterest dark className="basis-full border-t border-white/10 pt-5 lg:max-w-[860px]" />
         </div>
       </section>
     </>
