@@ -8,6 +8,7 @@ import { scrollToTarget } from "@/components/ui/SmoothScroll";
 import { useClientValue } from "@/lib/useClientValue";
 import { SocialLinks } from "./SocialLinks";
 import gallery from "@/lib/gallery.json";
+import { MEMORIES_LINKED } from "@/lib/memories";
 
 /* One footer for the whole site (club pages and Epoch). Links are only shown when they lead somewhere real. */
 const COMMIT = process.env.NEXT_PUBLIC_COMMIT_SHA ?? ""; // set at build time from Vercel (next.config.ts)
@@ -15,7 +16,7 @@ const ORG = CLUB.githubOrg ? `${CLUB.githubUrl}/${CLUB.githubOrg}` : "";
 
 type L = { label: string; href: string; ext?: boolean };
 const COLUMNS: { title: string; links: L[] }[] = [
-  { title: "Club", links: [{ label: "About", href: "/#about" }, { label: "What you'll learn", href: "/#learn" }, { label: "Learn hub", href: "/learn" }, { label: "Contribute", href: "/contribute" }, { label: "Board", href: "/board" }, { label: "Get involved", href: "/get-involved" }, { label: "Updates", href: "/updates" }, { label: "Events 2026-27", href: "/#events" }, { label: "Team", href: "/#team" }, ...(gallery.length ? [{ label: "Gallery", href: "/#gallery" }] : []), { label: "FAQ", href: "/#faq" }, { label: "Join the club", href: "/#join" }] },
+  { title: "Club", links: [{ label: "About", href: "/#about" }, { label: "What you'll learn", href: "/#learn" }, { label: "Learn hub", href: "/learn" }, { label: "Contribute", href: "/contribute" }, { label: "Board", href: "/board" }, { label: "Get involved", href: "/get-involved" }, { label: "Updates", href: "/updates" }, { label: "Events 2026-27", href: "/#events" }, { label: "Team", href: "/#team" }, ...(MEMORIES_LINKED ? [{ label: "Memories", href: "/memories" }] : []), ...(gallery.length ? [{ label: "Gallery", href: "/#gallery" }] : []), { label: "FAQ", href: "/#faq" }, { label: "Join the club", href: "/#join" }] },
   { title: "Epoch", links: [{ label: "Overview", href: "/epoch" }, { label: "How coins work", href: "/epoch#ticket" }, { label: "Booths", href: "/epoch/booths" }, { label: "The plan", href: "/epoch#plan" }, { label: "Merch shop", href: "/epoch/shop" }, { label: "Leaderboard", href: "/epoch/leaderboard" }] },
   { title: "Learn on GitHub", links: [{ label: "GitHub Skills", href: "https://skills.github.com", ext: true }, { label: "GitHub Docs", href: "https://docs.github.com", ext: true }, { label: "Student Developer Pack", href: "https://education.github.com/pack", ext: true }, { label: "GitHub Community", href: "https://github.com/community", ext: true }] },
   { title: "Get involved", links: [

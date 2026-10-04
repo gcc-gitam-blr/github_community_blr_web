@@ -1,6 +1,7 @@
 import { CLUB } from "./config";
 import { EVENTS, eventDate, eventSlug } from "./events";
 import { CHEAT } from "./learn";
+import { MEMORIES_LINKED } from "./memories";
 
 /* Site search (press / or Ctrl+K): everything worth jumping to, ranked by a small, predictable scorer.
    Pure functions — the index is built from config, and update posts arrive from /search.json. */
@@ -14,6 +15,7 @@ const PAGES: Entry[] = [
   { kind: "Page", title: "Board", hint: "Pull requests members got merged this year", href: "/board", keywords: "contributions merged pull requests leaderboard open source" },
   { kind: "Page", title: "Get involved", hint: "Volunteer, speak, sponsor, apply to the core team", href: "/get-involved", keywords: "contact message apply speaker sponsor team" },
   { kind: "Page", title: "Updates", hint: "Club news and what GitHub shipped lately", href: "/updates", keywords: "news blog changelog rss" },
+  ...(MEMORIES_LINKED ? [{ kind: "Page" as const, title: "Memories", hint: "The club's story, one year at a time", href: "/memories", keywords: "history photos years past album story" }] : []),
   { kind: "Page", title: "Epoch", hint: "The December fest and its coin economy", href: "/epoch", keywords: "fest coins booths ticket wallet" },
   { kind: "Page", title: "Privacy", hint: "What we store and why", href: "/privacy", keywords: "data cookies" },
 ];
