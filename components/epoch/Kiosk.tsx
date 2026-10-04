@@ -12,8 +12,8 @@ import type { Booth } from "@/lib/epoch/types";
 /* A booth's QR for a phone or tablet propped up at the booth: one screen, no scrolling, big enough to scan
    from arm's length. It asks the browser to keep the screen awake while it's open. */
 
-type Wake = "on" | "off" | "none";
-function useWakeLock(): [Wake, () => void] {
+export type Wake = "on" | "off" | "none";
+export function useWakeLock(): [Wake, () => void] {
   const supported = useClientValue(() => typeof navigator !== "undefined" && "wakeLock" in navigator, true);
   const [on, setOn] = useState(false); const [n, setN] = useState(0); // n: ask again (a tap, or the tab coming back)
   useEffect(() => {
