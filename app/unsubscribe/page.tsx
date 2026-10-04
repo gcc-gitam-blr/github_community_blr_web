@@ -19,7 +19,7 @@ export default async function Unsubscribe({ searchParams }: { searchParams: Prom
           <p className="mt-4 text-[18px] text-ink-2">We won&apos;t email you again. You&apos;re always welcome at our events — they&apos;re announced in the WhatsApp community and on Instagram.</p>
         </>) : valid ? (<>
           <h1 className="text-[40px]">Unsubscribe from club emails?</h1>
-          <p className="mt-4 text-[18px] text-ink-2">We&apos;ll stop sending event updates to <b>{e}</b>.</p>
+          <p className="mt-4 text-[18px] text-ink-2">We&apos;ll stop sending event updates and Epoch news (including the Epoch dates list) to <b>{e}</b>.</p>
           <form method="post" action="/api/unsubscribe" className="mt-8">
             <input type="hidden" name="e" value={e} /><input type="hidden" name="t" value={t} />
             <button className="rounded-md bg-ink px-6 py-3 font-display font-bold text-white">Yes, unsubscribe me</button>

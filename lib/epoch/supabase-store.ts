@@ -118,11 +118,16 @@ export const supabaseStore: EpochStore = {
     return (data ?? []).map((m) => ({ id: String(m.id), kind: m.kind, name: m.name, email: m.email, handle: m.handle ?? "", message: m.message, createdAt: m.created_at }));
   },
 
-  async broadcast(subject, message) {
+  async epochInterestCount() {
+    const { count, error } = await sb().from("epoch_interest").select("id", { count: "exact", head: true }).eq("unsubscribed", false);
+    return error ? null : count ?? 0;
+  },
+
+  async broadcast(subject, message, audience = "members") {
     const { data: { session } } = await sb().auth.getSession();
     if (!session) return fail("Sign in first.");
     try {
-      const r = await fetch("/api/broadcast", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ subject, message }) });
+      const r = await fetch("/api/broadcast", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ subject, message, audience }) });
       const j = await r.json();
       return j.ok ? { ok: true, sent: j.sent, failed: j.failed, total: j.total } : fail(j.error ?? "Couldn't send.");
     } catch { return fail("Network error — nothing was sent."); }

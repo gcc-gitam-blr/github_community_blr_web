@@ -140,6 +140,8 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   // ---- reliability: shared rate limits, browser error reports, data retention ----
   // Supabase grants the API roles every table by default, so row-level security is all that stands in the way.
   await db.exec("grant usage on schema public to anon, service_role; grant select, insert, update, delete on all tables in schema public to anon, authenticated;");
+  // ---- the Epoch interest list ("notify me when the dates are out") ----
+  await db.exec("grant usage on schema public to anon; grant select on epoch_interest to anon, authenticated;");
   const asAnon = async <T,>(sql: string, p: unknown[] = []) => {
     await as(""); await db.exec("set role anon");
     try { return { rows: (await db.query<T>(sql, p)).rows, error: null as string | null }; }
@@ -197,6 +199,18 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   ok("attendance is kept, so certificates stay verifiable", (await one<{ n: number }>("select count(*)::int n from attendance")).n === 1);
   await db.exec(fs.readFileSync("supabase/schema.sql", "utf8"));
   ok("schema.sql still re-runs cleanly with the new tables in use", (await one<{ n: number }>("select count(*)::int n from client_errors")).n === 1);
+  const join = async (email: string) => (await asAnon<{ r: string }>("select epoch_interest_join($1) r", [email])).rows[0]?.r;
+  ok("a visitor joins the Epoch interest list through the function", (await join(" Grace@Gitam.in ")) === "created");
+  ok("the same address again (any case) is not added twice", (await join("grace@gitam.in")) === "exists" && (await one<{ n: number }>("select count(*)::int n from epoch_interest")).n === 1);
+  ok("it's stored trimmed and lowercase", (await one<{ email: string }>("select email from epoch_interest")).email === "grace@gitam.in");
+  ok("a broken address is refused", !!(await asAnon("select epoch_interest_join('not-an-email')")).error);
+  ok("visitors can't add to the list directly", !!(await asAnon("insert into epoch_interest (email) values ('x@y.in')")).error);
+  ok("visitors can't read the list", (await asAnon("select * from epoch_interest")).rows.length === 0);
+  ok("volunteers can't read the list either", (await asApi(ADA, "select * from epoch_interest")).rows.length === 0);
+  ok("admins can read the list", (await asApi(ORG, "select * from epoch_interest")).rows.length === 1);
+  await asAnon("select unsubscribe_join('GRACE@gitam.in')");
+  ok("the usual unsubscribe link also takes people off the Epoch list", (await one<{ u: boolean }>("select unsubscribed u from epoch_interest")).u === true);
+  ok("someone typing an unsubscribed address in again doesn't re-subscribe it, and is told so", (await join("grace@gitam.in")) === "unsubscribed" && (await one<{ u: boolean }>("select unsubscribed u from epoch_interest")).u === true);
 
   console.log(fails ? `\n${fails} FAILED` : "\nall schema checks passed"); process.exit(fails ? 1 : 0);
 })().catch((e) => { console.error("FAIL  crashed:", e.message); process.exit(1); });

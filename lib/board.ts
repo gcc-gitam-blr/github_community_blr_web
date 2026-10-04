@@ -27,22 +27,28 @@ export function queries(handles: string[], since = BOARD_SINCE, max = 240): stri
   return out;
 }
 
+/** The merged PRs that count: by a member, outside their own repos, each once; newest first. The board and the challenge both use it. */
+export function counted(prs: MergedPr[], members: Member[]): MergedPr[] {
+  const handles = new Set(members.map((m) => m.handle.toLowerCase()));
+  const seen = new Set<number>();
+  return prs
+    .filter((p) => handles.has(p.author.toLowerCase()) && p.repo.split("/")[0].toLowerCase() !== p.author.toLowerCase() && !seen.has(p.id) && seen.add(p.id))
+    .sort((a, b) => b.merged.localeCompare(a.merged));
+}
+
 /** Ranks members by merged PRs outside their own repos (ties: more repos, then most recent); also the latest few merges. */
 export function summarise(prs: MergedPr[], members: Member[], recent = 6): { rows: Row[]; recent: MergedPr[] } {
   const byHandle = new Map(members.map((m) => [m.handle.toLowerCase(), m]));
-  const seen = new Set<number>();
-  const counted = prs
-    .filter((p) => byHandle.has(p.author.toLowerCase()) && p.repo.split("/")[0].toLowerCase() !== p.author.toLowerCase() && !seen.has(p.id) && seen.add(p.id))
-    .sort((a, b) => b.merged.localeCompare(a.merged));
+  const counts = counted(prs, members);
   const rows = new Map<string, Row>();
-  for (const p of counted) {
+  for (const p of counts) {
     const k = p.author.toLowerCase(), r = rows.get(k);
     if (!r) rows.set(k, { member: byHandle.get(k)!, prs: 1, repos: [p.repo], latest: p });
     else { r.prs++; if (!r.repos.includes(p.repo)) r.repos.push(p.repo); }
   }
   return {
     rows: [...rows.values()].sort((a, b) => b.prs - a.prs || b.repos.length - a.repos.length || b.latest.merged.localeCompare(a.latest.merged)),
-    recent: counted.slice(0, recent),
+    recent: counts.slice(0, recent),
   };
 }
 
@@ -69,20 +75,22 @@ async function search(q: string, pages = 3): Promise<MergedPr[] | null> {
 /* Preview deployments fill an empty board with a sample, so the layout can be judged before members have merges.
    It uses GitHub's mascot accounts, never real members, and never builds into production. Locally: BOARD_SAMPLE=1. */
 export const SHOW_SAMPLE = process.env.VERCEL_ENV === "preview" || process.env.BOARD_SAMPLE === "1";
-export function sampleBoard() {
+export function sampleBoard(now = new Date()) {
   const who: Member[] = [{ name: "Mona Lisa Octocat", handle: "octocat" }, { name: "Hubot", handle: "hubot" }, { name: "Monalisa", handle: "monalisa" }];
   const work: [string, string, string][] = [
     ["octocat", "first-contributions/first-contributions", "Add Octocat to Contributors list"], ["octocat", "freeCodeCamp/freeCodeCamp", "fix(curriculum): typo in the CSS grid lesson"],
     ["octocat", "mdn/content", "Clarify Array.prototype.at() examples"], ["hubot", "vercel/next.js", "docs: fix broken link in the caching guide"],
     ["hubot", "first-contributions/first-contributions", "Add Hubot to Contributors list"], ["monalisa", "python/cpython", "Docs: correct a parameter name in pathlib"],
   ];
-  const prs = work.map(([author, repo, title], i) => ({ id: -(i + 1), title, url: `https://github.com/${repo}`, repo, author, merged: new Date(Date.UTC(2026, 8, 20 - i * 3)).toISOString() }));
-  return { members: who, ...summarise(prs, who) };
+  // dated a few days apart before `now`, so the sample challenge always has someone done, someone halfway and someone starting
+  const prs = work.map(([author, repo, title], i) => ({ id: -(i + 1), title, url: `https://github.com/${repo}`, repo, author, merged: new Date(now.getTime() - (1 + i * 3) * 864e5).toISOString() }));
+  return { members: who, prs, ...summarise(prs, who) };
 }
 
 /** The board, or `ok: false` when GitHub couldn't be reached (the page says so rather than showing an empty board). */
 export async function loadBoard() {
   const members = boardMembers();
   const results = await Promise.all(queries(members.map((m) => m.handle)).map(search));
-  return { ok: results.every((r) => r !== null), members, ...summarise(results.flatMap((r) => r ?? []), members) };
+  const prs = results.flatMap((r) => r ?? []);
+  return { ok: results.every((r) => r !== null), members, prs, ...summarise(prs, members) };
 }

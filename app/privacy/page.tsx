@@ -25,6 +25,7 @@ export default function Privacy() {
         <H>What we collect, and why</H>
         <L>
           <li><b>When you join the club:</b> your GitHub username, email address, and which event you want to try first. We use it to welcome you, remind you about events, and plan sessions.</li>
+          <li><b>When you ask to hear about Epoch dates:</b> only your email address. We use it to tell you when the dates are announced, and for Epoch news after that. Nothing else.</li>
           <li><b>When you use Epoch (our fest):</b> your name, GitHub username (via GitHub sign-in) and email, your Epoch Coins balance, and a record of your coin transactions (where you scanned or spent coins). We use it to run the event and the leaderboard. The leaderboard shows only your name and GitHub username.</li>
           <li><b>When you write to us</b> (to help out, speak, sponsor or ask a question): your name, email, GitHub username if you give it, and your message, so we can reply.</li>
           <li><b>Event feedback:</b> your rating and what you wrote. It is anonymous: we don&apos;t record who sent it.</li>
@@ -58,12 +59,12 @@ export default function Privacy() {
           <li><b>Error reports:</b> {RETENTION.errorsDays} days.</li>
           <li><b>Spam protection:</b> to stop scripts flooding our forms we count how often a form is sent from the same connection. We only keep a scrambled code, never your IP address, and only for a day.</li>
         </L>
-        <P>Epoch data is deleted by hand within 6 months after the event. Attendance (which events you came to) is kept so your certificates stay valid; ask us and we&apos;ll remove it.</P>
+        <P>Epoch data, and the Epoch dates list, are deleted by hand within 6 months after the event. Attendance (which events you came to) is kept so your certificates stay valid; ask us and we&apos;ll remove it.</P>
 
         <H>Your choices</H>
         <L>
           <li><b>Stop emails:</b> use the unsubscribe link in any email.</li>
-          <li><b>See or delete your details:</b> contact us through {contact} and we&apos;ll remove them. Please tell us the GitHub username and email you used.</li>
+          <li><b>See or delete your details:</b> contact us through {contact} and we&apos;ll remove them. Please tell us the email you used, and your GitHub username if you have one with us.</li>
         </L>
 
         <H>Photos</H>

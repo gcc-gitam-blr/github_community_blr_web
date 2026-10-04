@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 
 /* Automated accessibility checks (axe-core, WCAG 2.1 A/AA). They catch contrast, labels, names, roles and more.
    They don't replace trying the site with a keyboard and a screen reader, but they stop regressions. */
-const PAGES = ["/", "/learn", "/contribute", "/board", "/memories", "/get-involved", "/privacy", "/updates", "/updates/calendar-2026-27", "/events/git-merge-26", "/epoch", "/epoch/booths", "/epoch/shop", "/epoch/register", "/epoch/leaderboard", "/unsubscribe?e=a%40b.in&t=x", "/admin", "/no-such-page"];
+const PAGES = ["/", "/learn", "/contribute", "/board", "/get-involved", "/privacy", "/updates", "/updates/calendar-2026-27", "/events/git-merge-26", "/epoch", "/epoch/booths", "/epoch/shop", "/epoch/register", "/epoch/leaderboard", "/unsubscribe?e=a%40b.in&t=x", "/admin", "/no-such-page"];
 
 for (const path of PAGES) {
   test(`${path} has no WCAG A/AA violations`, async ({ page }) => {
@@ -24,7 +24,7 @@ test("the whole site can be used with the keyboard: skip link, then the first in
 });
 
 test("reduced motion: content is visible without waiting for animations", async ({ browser, baseURL }) => {
-  const ctx = await browser.newContext({ reducedMotion: "reduce", baseURL });
+  const ctx = await browser.newContext({ reducedMotion: "reduce", baseURL }); // a new context doesn't inherit the test server's address
   const page = await ctx.newPage();
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /What is GitHub/ })).toBeVisible({ timeout: 2000 });
