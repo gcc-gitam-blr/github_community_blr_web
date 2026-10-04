@@ -29,6 +29,9 @@ const get = (auth?: string) => new Request("http://x/api/cron/retention", { head
 
   const port = await new Promise<number>((res) => fake.listen(0, "127.0.0.1", () => res((fake.address() as AddressInfo).port)));
   Object.assign(process.env, { NEXT_PUBLIC_SUPABASE_URL: `http://127.0.0.1:${port}`, NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon" });
+  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+  ok("without the server-only key it says so instead of trying with the public one", (await GET(get("Bearer s3cret"))).status === 503 && calls === 0);
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "service";
   r = await GET(get("Bearer s3cret"));
   ok("with the secret it runs prune_old_data and reports what it deleted", r.status === 200 && calls === 1 && (await r.json()).deleted.errors === 9);
   ok("the wrong secret never reaches the database", (await GET(get("Bearer guess"))).status === 401 && calls === 1);

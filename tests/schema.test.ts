@@ -15,7 +15,7 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
 
 (async () => {
   await db.exec(`
-    create role anon; create role authenticated;
+    create role anon; create role authenticated; create role service_role;
     create schema auth;
     create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb);
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.uid', true), '')::uuid $$;
@@ -139,7 +139,7 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
 
   // ---- reliability: shared rate limits, browser error reports, data retention ----
   // Supabase grants the API roles every table by default, so row-level security is all that stands in the way.
-  await db.exec("grant usage on schema public to anon; grant select, insert, update, delete on all tables in schema public to anon, authenticated;");
+  await db.exec("grant usage on schema public to anon, service_role; grant select, insert, update, delete on all tables in schema public to anon, authenticated;");
   const asAnon = async <T,>(sql: string, p: unknown[] = []) => {
     await as(""); await db.exec("set role anon");
     try { return { rows: (await db.query<T>(sql, p)).rows, error: null as string | null }; }
@@ -184,7 +184,10 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
     await db.query(`insert into event_feedback (event, rating, liked, created_at) values ('2026-10-07', 4, '${tag}', ${ago(RETENTION.feedbackMonths, "months", days)})`);
     await db.query(`insert into client_errors (message, path, browser, created_at) values ('${tag}', '/', 'Chrome', ${ago(RETENTION.errorsDays, "days", days)})`);
   }
-  const pruned = (await asAnon<{ r: Record<string, number> }>("select prune_old_data() r")).rows[0]?.r;
+  ok("visitors can't start the clean-up", !!(await asAnon("select prune_old_data()")).error);
+  await db.exec("set role service_role");
+  const pruned = (await db.query<{ r: Record<string, number> }>("select prune_old_data() r")).rows[0]?.r;
+  await db.exec("reset role");
   ok("prune_old_data deletes one old row of each kind", JSON.stringify(pruned) === JSON.stringify({ signups: 1, messages: 1, feedback: 1, errors: 1 }));
   const left = async (sql: string) => (await db.query<{ v: string }>(sql)).rows.map((r) => r.v).join();
   ok(`sign-ups are kept ${RETENTION.signUpsMonths} months (lib/retention.ts and the SQL agree)`, (await left("select handle v from join_requests")) === "new");

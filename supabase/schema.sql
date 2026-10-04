@@ -405,4 +405,4 @@ begin
   return json_build_object('signups', s, 'messages', m, 'feedback', f, 'errors', e);
 end $$;
 revoke execute on function prune_old_data() from public;
-grant execute on function prune_old_data() to anon, authenticated;
+grant execute on function prune_old_data() to service_role; -- only the weekly cron, with the server-only key, may delete
