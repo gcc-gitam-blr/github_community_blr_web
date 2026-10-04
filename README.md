@@ -106,16 +106,28 @@ Things that are **empty until you fill them in** (the site hides them rather tha
 5. After you sign in once, make yourself admin: `update profiles set role = 'admin' where handle = 'your-handle';`
 6. Open `/epoch/admin`, **print the QR sheet**, and put one code on each booth.
 
+> **Updating an existing database:** after pulling new Epoch features, run `supabase/schema.sql` again (`npm run connect`, or paste it into the SQL editor). It only adds what's missing, so it is safe to re-run; the organiser tools below need it.
+
 **Epoch mode:** the *EPOCH* item in the nav and the black-disc page transition are always there; the live dot and countdown follow `opensAt`/`closesAt`. Force it with `NEXT_PUBLIC_EPOCH_MODE=live|off`.
 
 ### How coins flow (from the original Epoch plan)
 
-- **Check-in → coins.** Everyone gets **398 EPC** (`EPOCH.starterCoins`). The attendee registers, then shows their wallet QR at the registration desk; an organiser scans it and presses *Verify ticket*. Coins are credited once — a second attempt is refused. The ticket price is undecided (it may be free): set `EPOCH.ticketPriceINR` when it's fixed and the site will show it.
+- **Check-in → coins.** Everyone gets **398 EPC** (`EPOCH.starterCoins`). The attendee registers, then **pays at the registration desk** (there is no online payment) and shows their wallet QR; an organiser scans it and presses *Verify ticket*. Coins are credited once — a second attempt is refused. The ticket price is undecided (it may be free): set `EPOCH.ticketPriceINR` when it's fixed and the site will show it.
 - **Spend booths** (`epoch:b:<id>`) charge coins per session (VR = 40) and can be repeated, with a 20-second double-scan guard.
 - **Recharge points** pay **once per attendee, per point** (20 coins in the plan). The wallet shows how many are left.
 - **Merch stall** sells tees, hoodies and stickers for coins; stock is decremented atomically.
-- **Organiser desk** (`/epoch/admin`) prints the booth QR sheet; scanning a wallet also allows manual awards/deductions (competition prizes, refunds) with a reason in the ledger.
-- Attendees see balance, full ledger and remaining recharge points, refreshed every few seconds.
+- **Organiser desk** (`/epoch/admin`) prints the booth QR sheet; admins can also award or deduct coins by hand (competition prizes) with a reason in the ledger.
+- Attendees see balance, full ledger and remaining recharge points, refreshed every few seconds. Every line opens a **receipt** (what, where, when, amount, balance after it, and a reference like `EPC-00042`), with an all / earned / spent filter. The last history is kept on the phone, so receipts open offline too.
+
+### Organisers: booths, reversals and the audit log
+
+- **Roles.** *Admins* do everything. A *volunteer* with a booth (set by an admin under **Who runs what** on the desk, `profiles.booth`) scans wallets for that booth only; a volunteer without one is on the desk and can only check people in. Awards are admin-only.
+- **Reversals.** Nothing in the ledger is deleted. *Reverse* adds the opposite transaction and stamps the original. Admins can reverse anything except a reversal; a booth's volunteer can reverse that booth's charges for 15 minutes. It works once, never takes a balance below zero (spent coins can't be clawed back), and: a booth charge or merch purchase gives the coins back (and restocks the item); a recharge payout or award takes them back and off the leaderboard (the recharge point stays used); a check-in takes the starter coins back and sets the ticket to pending. The rules live in `lib/epoch/rules.ts` and `reverse_tx` in the schema.
+- **Search.** Staff can find an attendee by name, GitHub username or email (dead phone, lost QR).
+- **Audit log.** Check-ins, awards, scans for someone, reversals, and role or booth changes are written inside the database functions (who, what, to whom, how much, when). Only admins can read it, on the desk, filtered by action or person.
+- **Kiosk.** `/epoch/kiosk/<booth>` shows one booth's QR, name and price full screen for a propped-up phone or tablet; it asks the screen to stay awake.
+- **Guides.** `/epoch/guide` (attendees) and `/epoch/guide/organisers` (desk check-in, cash, scanning, reversals, kiosk, who to call) print as one A4 page each. The *who to call* list is **Epoch settings → Who organisers call on the day** in the content editor.
+- `npm run load-test` (needs Docker) also has three people reverse the same charge at once and checks only one reversal lands.
 
 > Only VR = 40 and the recharge reward = 20 come from the plan. Every other price, the ticket price and the recharge-point names are **placeholders** in `lib/epoch/config.ts` — confirm them.
 
