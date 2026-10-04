@@ -5,5 +5,5 @@ import KeystaticApp from "./keystatic";
 export const metadata: Metadata = { title: "Content editor", robots: { index: false, follow: false } };
 
 export default function Layout() {
-  return <div data-lenis-prevent><KeystaticApp /></div>;
+  return <div data-lenis-prevent data-light-only><KeystaticApp /></div>;
 }

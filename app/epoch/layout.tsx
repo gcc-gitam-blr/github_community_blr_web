@@ -32,7 +32,7 @@ export default function EpochLayout({ children }: { children: React.ReactNode })
     <EpochProvider>
       <CommandProvider>
         {OddvalFace && <style dangerouslySetInnerHTML={{ __html: OddvalFace }} />}
-        <div className="epoch-field flex min-h-screen flex-col font-epoch text-ink print:bg-white">
+        <div data-light-only className="epoch-field flex min-h-screen flex-col font-epoch text-ink print:bg-white">
           <EpochNav />
           <EpochMain>{children}</EpochMain>
           <NotOnKiosk>
