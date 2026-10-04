@@ -10,7 +10,7 @@ The live checklist for the club site. Every item has a status and the exact page
 
 **Status:** ✅ Done (on `dev`, tested) · 🟡 In progress · ⬜ Not started · 🙋 Needs you (a decision, a login or content)
 
-**Working order, one at a time:** ~~reliability~~ → ~~Epoch organiser tools~~ → ~~Epoch live~~ → **dark mode (now)** → contributor onboarding → ideas.
+**Working order, one at a time:** ~~reliability~~ → ~~Epoch organiser tools~~ → ~~Epoch live~~ → ~~dark mode~~ → **contributor onboarding (now)** → ideas.
 
 ---
 
@@ -85,7 +85,7 @@ The live checklist for the club site. Every item has a status and the exact page
 
 | | # | Item | Check it | Notes |
 |---|---|------|----------|-------|
-| ⬜ | 4.1 | Dark mode | — | After the Epoch work. |
+| ✅ | 4.1 | Dark mode | https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/ with your phone or laptop set to dark mode (or Chrome DevTools → Rendering → prefers-color-scheme: dark) | Follows the system setting, in GitHub's dark palette. Every club page is checked for contrast in dark mode too. Epoch and the content editor keep their own light look. |
 | ✅ | 4.2 | Home page speed on phones | https://github.com/lechakrawarthy/github_community_blr/actions → newest **CI** run → *lighthouse-reports* | Speed is measured on every push and warns if a page gets slower. |
 | 🙋 | 4.3 | Accessibility audit | — | Automated checks on every page are done. A manual screen-reader pass (NVDA) needs a person. |
 | ✅ | 4.4 | Site search | https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/ then press `/` | |
