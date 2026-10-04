@@ -151,38 +151,6 @@
       "githubAvatar": true
     },
     {
-      "name": "Vishnu Teja",
-      "group": "member",
-      "owner": false,
-      "crew": [
-        {
-          "role": "pipeline",
-          "level": "1"
-        }
-      ],
-      "tags": [
-        "Tech"
-      ],
-      "photo": "/team/vishnu-teja.webp",
-      "githubAvatar": true
-    },
-    {
-      "name": "Venkata Madhu K",
-      "group": "member",
-      "owner": false,
-      "crew": [
-        {
-          "role": "security",
-          "level": "1"
-        }
-      ],
-      "tags": [
-        "Tech"
-      ],
-      "photo": "/team/venkatamadhu-k.webp",
-      "githubAvatar": true
-    },
-    {
       "name": "Bhavana",
       "group": "member",
       "owner": false,
@@ -256,7 +224,6 @@
       "tags": [
         "Tech"
       ],
-      "handle": "",
       "githubAvatar": true
     }
   ]
