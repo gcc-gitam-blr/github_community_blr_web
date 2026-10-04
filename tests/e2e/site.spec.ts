@@ -117,7 +117,7 @@ test("with no inbox switched on, Get involved hands the message to Instagram ins
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/get-involved");
   await page.getByLabel("Your name").fill("Ada Lovelace");
-  await page.getByLabel("Email").fill("ada@gitam.in");
+  await page.getByLabel("Email", { exact: true }).fill("ada@gitam.in");
   await page.locator("textarea").fill("We'd love to run a workshop on Git internals.");
   await page.waitForTimeout(3500); // humans take a few seconds; the spam check knows that
   await page.getByRole("button", { name: "Send message" }).click();
