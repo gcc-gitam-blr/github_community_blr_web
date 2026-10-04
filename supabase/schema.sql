@@ -333,13 +333,15 @@ alter table epoch_interest enable row level security;
 drop policy if exists "admins read epoch interest" on epoch_interest;
 create policy "admins read epoch interest" on epoch_interest for select using (my_role() = 'admin');
 
--- 'created' or 'exists'. An address that unsubscribed stays unsubscribed: someone else typing it in can't undo that.
+-- 'created', 'exists' or 'unsubscribed'. An address that unsubscribed stays unsubscribed: someone else typing it in
+-- can't undo that, so the form says it won't be emailed instead of claiming it's on the list.
 create or replace function epoch_interest_join(p_email text) returns text language plpgsql security definer as $$
 declare e text := lower(trim(p_email));
 begin
   if e is null or length(e) > 254 or e !~ '^[^\s@]+@[^\s@]+\.[^\s@]+$' then raise exception 'invalid email'; end if;
   insert into epoch_interest (email) values (e) on conflict ((lower(email))) do nothing;
-  return case when found then 'created' else 'exists' end;
+  if found then return 'created'; end if;
+  return case when exists (select 1 from epoch_interest where lower(email) = e and unsubscribed) then 'unsubscribed' else 'exists' end;
 end $$;
 revoke execute on function epoch_interest_join(text) from public;
 grant execute on function epoch_interest_join(text) to anon, authenticated;

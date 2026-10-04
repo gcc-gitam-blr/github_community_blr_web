@@ -18,5 +18,5 @@ export async function POST(req: Request) {
   if (!URL || !KEY) return reply({ ok: false, error: "This list isn't switched on yet, so nothing was saved. The dates will be on this page and in our WhatsApp community.", off: true }, 503);
   const { data, error } = await createClient(URL, KEY, { auth: { persistSession: false } }).rpc("epoch_interest_join", { p_email: input.email.trim().toLowerCase() });
   if (error) return reply({ ok: false, error: "Couldn't save that — please try again." }, 502);
-  return data === "exists" ? reply({ ok: true, status: "exists" }) : reply({ ok: true, status: "created" }, 201);
+  return data === "exists" || data === "unsubscribed" ? reply({ ok: true, status: data }) : reply({ ok: true, status: "created" }, 201);
 }

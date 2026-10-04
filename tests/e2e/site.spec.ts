@@ -256,6 +256,15 @@ test("'Tell me when the dates are out' is on the home page and /epoch, and says 
   await expect(page.getByText(/isn't switched on yet, so nothing was saved/)).toBeVisible(); // the test build has no database
 });
 
+test("an address that unsubscribed is told it won't be emailed, not that it's on the list", async ({ page }) => {
+  await page.route("**/api/epoch-interest", (r) => r.fulfill({ json: { ok: true, status: "unsubscribed" } })); // what the database answers for it
+  await page.goto("/epoch");
+  await page.getByLabel("Tell me when the dates are out").fill("grace@gitam.in");
+  await page.getByRole("button", { name: "Watch releases" }).click();
+  await expect(page.getByRole("status")).toContainText("unsubscribed from our emails, so we won't email it");
+  await expect(page.getByText(/already on the list/)).toHaveCount(0);
+});
+
 test("the new endpoints refuse what they should", async ({ request }) => {
   expect((await request.post("/api/epoch-interest", { data: { email: "nope" } })).status()).toBe(422);
   expect((await request.get("/api/cron/digest")).status()).toBeGreaterThanOrEqual(401); // no CRON_SECRET in tests: off

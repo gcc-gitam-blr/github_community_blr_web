@@ -156,7 +156,7 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   ok("admins can read the list", (await asApi(ORG, "select * from epoch_interest")).rows.length === 1);
   await asAnon("select unsubscribe_join('GRACE@gitam.in')");
   ok("the usual unsubscribe link also takes people off the Epoch list", (await one<{ u: boolean }>("select unsubscribed u from epoch_interest")).u === true);
-  ok("someone typing an unsubscribed address in again doesn't re-subscribe it", (await join("grace@gitam.in")) === "exists" && (await one<{ u: boolean }>("select unsubscribed u from epoch_interest")).u === true);
+  ok("someone typing an unsubscribed address in again doesn't re-subscribe it, and is told so", (await join("grace@gitam.in")) === "unsubscribed" && (await one<{ u: boolean }>("select unsubscribed u from epoch_interest")).u === true);
 
   console.log(fails ? `\n${fails} FAILED` : "\nall schema checks passed"); process.exit(fails ? 1 : 0);
 })().catch((e) => { console.error("FAIL  crashed:", e.message); process.exit(1); });

@@ -10,7 +10,7 @@ import { validateInterest } from "@/lib/interest";
 export function EpochInterest({ dark = false, className = "" }: { dark?: boolean; className?: string }) {
   const id = useId();
   const [email, setEmail] = useState("");
-  const [state, setState] = useState<"idle" | "sending" | "created" | "exists">("idle");
+  const [state, setState] = useState<"idle" | "sending" | "created" | "exists" | "unsubscribed">("idle");
   const [err, setErr] = useState("");
   const honey = useRef<HTMLInputElement>(null);
   const t = dark ? { sub: "text-[#a9b3ad]", field: "border-white/25 bg-white/10 text-white placeholder:text-white/45 focus:border-gold", btn: "bg-gold text-ink hover:bg-gold-soft", ring: "focus-visible:outline-gold", link: "text-gold", err: "text-[#ffb4a8]" }
@@ -34,6 +34,10 @@ export function EpochInterest({ dark = false, className = "" }: { dark?: boolean
     } catch { setErr("Network error — please try again."); setState("idle"); }
   };
 
+  // the address unsubscribed earlier and stays that way; say so rather than promise an email that won't come
+  if (state === "unsubscribed") return (
+    <p role="status" className={`text-[15px] ${className}`}>This address unsubscribed from our emails, so we won&apos;t email it. The dates will be on this page and in our WhatsApp community.</p>
+  );
   if (state === "created" || state === "exists") return (
     <p role="status" className={`flex items-center gap-2 text-[15px] ${className}`}><CheckIcon size={18} className={dark ? "text-gold" : "text-[#1a7f37]"} />{state === "created" ? "Watching. We'll email you when the Epoch dates are out." : "You're already on the list. We'll email you when the dates are out."}</p>
   );
