@@ -4,18 +4,19 @@
      1. doors open:   every phone signs up at once
      2. check-in:     six desks verify tickets, and sometimes two desks scan the same person at the same moment
      3. booth rush:   every phone scans booths, recharge points and the shop at once, including double-taps
+     4. mistakes:     an admin and the booth's volunteer reverse the same charge at the same moment, again and again
    then checks the money still adds up, and reports how long each call took.
 
    It measures the database's coin logic under real concurrency (locks, races, double-spends). It doesn't measure
    Supabase's network or the size of its free-tier machine, so real latencies will be higher than these.
-   Options: PHONES=300 POOL=20 (connections, like Supabase's API pool) KEEP=1 (leave the container running). Needs Docker. */
+   Options: PHONES=300 POOL=20 (connections, like Supabase's API pool) UNDOS=150 (charges reversed at once) KEEP=1 (leave the container running). Needs Docker. */
 import { execSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import pg from "pg";
 
-const PHONES = Number(process.env.PHONES ?? 300), POOL = Number(process.env.POOL ?? 20), ACTIONS = 12, DESKS = 6;
-const NAME = "epoch-load-test", PORT = 55432;
+const PHONES = Number(process.env.PHONES ?? 300), POOL = Number(process.env.POOL ?? 20), ACTIONS = 12, DESKS = 6, UNDOS = Number(process.env.UNDOS ?? 150);
+const NAME = process.env.LOAD_NAME ?? "epoch-load-test", PORT = Number(process.env.LOAD_PORT ?? 55432); // override to run two at once
 const sh = (cmd: string) => execSync(cmd, { stdio: ["ignore", "pipe", "pipe"] }).toString().trim();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const pick = <T,>(xs: T[]) => xs[Math.floor(Math.random() * xs.length)];
@@ -39,7 +40,7 @@ async function rpc(uid: string, fn: string, args: unknown[]): Promise<R | null> 
       const { rows } = await c.query(`select ${fn}(${args.map((_, i) => `$${i + 1}`).join(",")}) as r`, args);
       await c.query("commit");
       const r = (fn === "register_profile" ? { ok: true } : rows[0].r) as R;
-      count(`${fn}: ${r.ok ? "ok" : r.error?.replace(/^.* already has a verified ticket\.$/, "already verified").replace(/^You've already used .*$/, "recharge already used")}`);
+      count(`${fn}: ${r.ok ? "ok" : r.error?.replace(/^.* already has a verified ticket\.$/, "already verified").replace(/^You've already used .*$/, "recharge already used").replace(/^.* has already spent those coins.*$/, "coins already spent")}`);
       return r;
     } catch (e) { await c.query("rollback").catch(() => {}); throw e; } finally { c.release(); }
   } catch (e) {
@@ -101,6 +102,22 @@ async function main() {
   }));
   const t3 = performance.now();
 
+  // 4. mistakes: a volunteer runs each spend booth; for a sample of booth charges, that volunteer and an admin both press
+  //    Reverse at the same moment (and the volunteer double-taps). Exactly one reversal may land.
+  const admin = desks[0];
+  await pool.query("update profiles set role = 'admin' where id = $1", [admin]);
+  const runners = new Map<string, string>(); // booth -> its volunteer (a fresh one, so desks keep checking in)
+  for (const b of spend) { const v = randomUUID(); runners.set(b, v); await pool.query("insert into auth.users values ($1, $2, $3)", [v, `vol-${b}@gitam.in`, { user_name: `vol-${b}` }]); }
+  await Promise.all([...runners.values()].map((v, i) => rpc(v, "register_profile", [`Volunteer ${i}`])));
+  for (const [b, v] of runners) await pool.query("update profiles set role = 'volunteer', booth = $2 where id = $1", [v, b]);
+  const charges = (await pool.query<{ id: string; ref: string }>("select id::text, ref from txs where ref like 'booth:%' and ref not like 'booth:recharge-%' and delta < 0 order by random() limit $1", [UNDOS])).rows;
+  const undos: (R | null)[][] = [];
+  await Promise.all(charges.map(async (c) => {
+    const vol = runners.get(c.ref.slice(6))!;
+    undos.push(await Promise.all([rpc(admin, "reverse_tx", [c.id, "load test"]), rpc(vol, "reverse_tx", [c.id, "load test"]), rpc(vol, "reverse_tx", [c.id, "double tap"])]));
+  }));
+  const t4 = performance.now();
+
   // the money must still add up
   const checks: [string, boolean][] = [];
   const q = async (sql: string, p: unknown[] = []) => (await pool.query(sql, p)).rows;
@@ -113,11 +130,15 @@ async function main() {
   checks.push(["no booth charged the same person twice within 20 seconds", (await q("select count(*)::int n from txs a join txs b on a.user_id = b.user_id and a.ref = b.ref and a.id < b.id and b.at - a.at < interval '20 seconds' where a.ref like 'booth:%' and a.ref not like 'booth:recharge-%'"))[0].n === 0]);
   const stock = await q("select id, stock, (select count(*)::int from txs where ref = 'reward:' || r.id) sold from rewards r");
   checks.push(["shop stock matches what was sold, and never went negative", stock.every((s) => s.stock >= 0 && s.stock + s.sold === rewards.find((r) => r.id === s.id)!.stock)]);
+  checks.push([`${charges.length} charges reversed by three people at once: exactly one reversal each`, undos.every((rs) => rs.filter((r) => r?.ok).length === 1)]);
+  checks.push(["no transaction was reversed twice", (await q("select count(*)::int n from (select reverses from txs where reverses is not null group by 1 having count(*) > 1) d"))[0].n === 0]);
+  checks.push(["every reversal is the exact opposite of its original, which is stamped reversed", (await q("select count(*)::int n from txs r join txs o on o.id = r.reverses where r.delta <> -o.delta or o.reversed_at is null or r.ref <> 'reverse:' || o.ref"))[0].n === 0]);
+  checks.push(["every reversal was written to the audit log", (await q("select count(*)::int n from txs where reverses is not null"))[0].n === (await q("select count(*)::int n from audit_log where action = 'reverse'"))[0].n]);
   checks.push(["no call failed with a database error (deadlock, timeout, crash)", crashes.length === 0]);
 
   const calls = [...timings.values()].reduce((n, xs) => n + xs.length, 0);
-  console.log(`phases: sign-up ${((t1 - t0) / 1000).toFixed(1)} s · check-in ${((t2 - t1) / 1000).toFixed(1)} s · booth rush ${((t3 - t2) / 1000).toFixed(1)} s`);
-  console.log(`${calls} calls in ${((t3 - t0) / 1000).toFixed(1)} s (${Math.round(calls / ((t3 - t0) / 1000))} calls/s)\n`);
+  console.log(`phases: sign-up ${((t1 - t0) / 1000).toFixed(1)} s · check-in ${((t2 - t1) / 1000).toFixed(1)} s · booth rush ${((t3 - t2) / 1000).toFixed(1)} s · reversals ${((t4 - t3) / 1000).toFixed(1)} s`);
+  console.log(`${calls} calls in ${((t4 - t0) / 1000).toFixed(1)} s (${Math.round(calls / ((t4 - t0) / 1000))} calls/s)\n`);
   console.log("call               count    p50     p95     p99     max   (ms, from the phone's side)");
   for (const [fn, xs] of timings) console.log(`${fn.padEnd(18)} ${String(xs.length).padStart(5)} ${[50, 95, 99, 100].map((p) => pct(xs, p).toFixed(0).padStart(7)).join("")}`);
   console.log("\noutcomes (refusals are the coin rules working):");
