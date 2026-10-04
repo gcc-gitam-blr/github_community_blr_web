@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ErrorReporter } from "@/components/ui/ErrorReporter";
 import { SmoothScroll } from "@/components/ui/SmoothScroll";
+import { THEME_SCRIPT } from "@/lib/theme";
 import { SITE_URL as SITE } from "@/lib/site";
 import "./globals.css";
 
@@ -27,7 +28,9 @@ export const viewport: Viewport = { themeColor: "#ffffff", viewportFit: "cover" 
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" className={`${mona.variable} ${jbm.variable}`}>
+    // suppressHydrationWarning: THEME_SCRIPT sets data-theme on <html> before React loads
+    <html lang="en" data-scroll-behavior="smooth" className={`${mona.variable} ${jbm.variable}`} suppressHydrationWarning>
+      <head><script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} /></head>
       <body className="min-h-screen antialiased">
         <noscript><style>{".reveal,.reveal-group .stagger>*,.reveal-group .pop{opacity:1!important;transform:none!important;scale:1!important}.reveal-group .draw{transform:none!important}.reveal-group .print-in{opacity:1!important;translate:none!important;scale:none!important}"}</style></noscript>
         <SmoothScroll />

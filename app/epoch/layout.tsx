@@ -36,7 +36,7 @@ export default function EpochLayout({ children }: { children: React.ReactNode })
           <EpochNav />
           <EpochMain>{children}</EpochMain>
           <NotOnKiosk>
-            <div className="relative z-10 no-print font-sans"><SiteFooter sticker={false} /></div>
+            <div className="relative z-10 no-print font-sans"><SiteFooter sticker={false} themes={false} /></div>
             <div aria-hidden className="no-print h-[calc(6rem+env(safe-area-inset-bottom))] bg-[#010409] md:hidden" />{/* room for the phone tab bar */}
           </NotOnKiosk>
         </div>

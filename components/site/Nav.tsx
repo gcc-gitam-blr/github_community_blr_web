@@ -9,6 +9,7 @@ import { Announcement } from "./Announcement";
 import { MobileMenu } from "./MobileMenu";
 import { EpochNudge } from "./EpochNudge";
 import { SiteSearch } from "./SiteSearch";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { useActiveSection } from "./useActiveSection";
 import { NAV_LINKS } from "./nav-links";
 import { ClubMark } from "@/components/ui/ClubMark";
@@ -79,6 +80,7 @@ export function Nav() {
           <MiniGraph head={head} label={head >= 0 ? COMMITS[head].label : home ? "main" : page} />
 
           <SiteSearch />
+          <ThemeToggle className="hidden lg:inline-flex" />
           <a href={href("/#join")} className="press hidden h-9 flex-none items-center whitespace-nowrap rounded-full bg-ink px-4 font-display text-[14px] font-bold text-white transition-colors duration-150 hover:bg-ink/85 lg:inline-flex">
             <span className="head-join-long">Join the club</span><span className="head-join-short">Join</span>
           </a>

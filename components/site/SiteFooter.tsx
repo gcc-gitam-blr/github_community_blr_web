@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { ThemeChoices } from "@/components/ui/ThemeToggle";
 import { ArrowUpRightIcon, CalendarIcon, ChevronUpIcon, DotFillIcon, MailIcon, MarkGithubIcon } from "@primer/octicons-react";
 import { CLUB } from "@/lib/config";
 import { EPOCH } from "@/lib/epoch/config";
@@ -45,7 +46,7 @@ function NextUp() {
   );
 }
 
-export function SiteFooter({ sticker = true }: { sticker?: boolean }) {
+export function SiteFooter({ sticker = true, themes = true }: { sticker?: boolean; themes?: boolean }) {
   return (
     <footer className="relative mt-auto border-t border-[#30363d] bg-[#0d1117] text-[#e6edf3]">
       {sticker && <Sticker name="octocat" size={108} tilt={-6} className="pointer-events-none absolute -top-[74px] right-[8%] hidden md:block" alt="" />}
@@ -99,6 +100,7 @@ export function SiteFooter({ sticker = true }: { sticker?: boolean }) {
               <img src="/brand/club-mark.png" alt="" width={20} height={20} className="h-5 w-5 opacity-90" />
               <span>© {new Date().getFullYear()} GitHub Community Club <span className="text-[#6e7681]">·</span> {CLUB.university}</span>
             </p>
+            {themes && <ThemeChoices />}
             <ul className="flex flex-wrap items-center gap-1">
               {[["Privacy", "/privacy"], ["Calendar", "/calendar.ics"], [`${EPOCH.name}_${EPOCH.edition}`, "/epoch"]].map(([l, h]) => (
                 <li key={h}><a href={h} {...(h.endsWith(".ics") ? { download: true } : {})} className="rounded-md px-2.5 py-1.5 transition-colors duration-150 hover:bg-[#f0f6fc10] hover:text-white">{l}</a></li>

@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { EpochLink } from "@/components/epoch/EpochLink";
 import { EpochCoin } from "@/components/epoch/EpochCoin";
 import { SocialLinks } from "./SocialLinks";
+import { ThemeChoices } from "@/components/ui/ThemeToggle";
 import { NAV_LINKS } from "./nav-links";
 
 /* The phone menu: a panel that drops from under the header over a dimmed page (dim to focus).
@@ -80,7 +81,7 @@ export function MobileMenu({ href, current, live }: { href: (h: string) => strin
                 </li>
               </ul>
             </nav>
-            <div className="mt-4 border-t border-line px-3 pt-4"><SocialLinks /></div>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line px-3 pt-4"><SocialLinks /><ThemeChoices tone="menu" /></div>
             <a href={href("/#join")} onClick={() => close(false)} className="press lift mt-5 block rounded-md border-2 border-ink bg-ink py-3.5 text-center font-display text-[16px] font-bold text-white">Join the club</a>
           </div>
         </div>,

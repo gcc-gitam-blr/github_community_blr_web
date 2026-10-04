@@ -324,57 +324,55 @@ html.lenis, html.lenis body { height: auto; }
 @keyframes fade-out { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
 
 /* ============================================================
-   Dark mode: follows the visitor's system setting, in GitHub's own dark palette.
-   Text tokens flip to light. White surfaces become GitHub's canvas and the ink surfaces (buttons, bands) its
-   dark grey, so white text on them still reads; GitHub's light tints map to their dark versions. Photos, prints,
-   the lightbox, stickers and pastel badges keep their colours (their text stays dark). Epoch and the content
-   editor keep their own designed light look: their wrappers carry data-light-only.
-   Kept in the utilities layer with :where(), so hover and focus variants still win as they do in light mode.
+   Dark mode. A tiny script in app/layout.tsx sets <html data-theme="light|dark"> before the first paint:
+   the visitor's choice (the toggle in the header, menu and footer) or, until they choose, their system setting.
+   A true-black palette: black page, near-black cards, charcoal hairlines, bright text; GitHub's light tints
+   map to their dark versions. Photos, prints, the lightbox, stickers and pastel badges keep their colours (their
+   text stays dark). Epoch and the content editor keep their own designed light look (data-light-only).
+   Utilities are overridden inside the utilities layer with :where(), so hover and focus variants still win.
    ============================================================ */
-@media (prefers-color-scheme: dark) {
-  :root:not(:has([data-light-only])) {
-    color-scheme: dark;
-    --color-paper: #0d1117; --color-soft: #161b22; --color-mist: #30363d; --color-line: #30363d;
-    --color-ink: #e6edf3; --color-ink-2: #b1bac4; --color-ink-3: #8b949e; --color-link: #4493f8;
-  }
-  :root:not(:has([data-light-only])) body { background: #0d1117; }
-  :root:not(:has([data-light-only])) .head-pill { background: rgba(13, 17, 23, .74); border-color: rgba(240, 246, 252, .1); box-shadow: inset 0 1px 0 rgba(240, 246, 252, .06), 0 12px 32px -16px rgba(0, 0, 0, .6); }
-  :root:not(:has([data-light-only])) :is(.commit-node, .mini-dot) { background: #0d1117; }
-  :root:not(:has([data-light-only])) .phone-menu__panel { background: #0d1117; }
-  /* light islands: pastel badges and prints keep dark text, whatever the theme */
-  :root:not(:has([data-light-only])) :is(.print, .cert, .bg-brand, .bg-\[\#d8f5dd\], .bg-\[\#fffdf8\], .bg-\[\#ffc933\], .bg-\[\#ffd966\], .bg-\[\#b9e0f7\], .bg-node-blue, .bg-node-purple, .bg-node-mint, .bg-gold, [style*="background"]) {
-    --color-ink: #0b0b0f; --color-ink-2: #3a3d44; --color-ink-3: #57606a; --color-line: #e4e8e6; color: #0b0b0f;
-  }
-  /* …but a dark card inside a light island (the join form on the green band) keeps light text */
-  :root:not(:has([data-light-only])) :is(.bg-brand, .bg-\[\#ffd966\], .bg-\[\#dafbe1\]) :is(.bg-white, .bg-ink) {
-    --color-ink: #e6edf3; --color-ink-2: #b1bac4; --color-ink-3: #8b949e; --color-line: #30363d; color: #e6edf3;
-  }
+:root[data-theme="dark"]:not(:has([data-light-only])) {
+  color-scheme: dark;
+  --color-paper: #000; --color-soft: #0a0a0a; --color-mist: #262626; --color-line: #262626;
+  --color-ink: #f2f2f2; --color-ink-2: #a8a8a8; --color-ink-3: #8c8c8c; --color-link: #58a6ff;
+}
+:root[data-theme="dark"]:not(:has([data-light-only])) body { background: #000; }
+:root[data-theme="dark"]:not(:has([data-light-only])) .head-pill { background: rgba(10, 10, 10, .72); border-color: rgba(255, 255, 255, .1); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 12px 32px -16px rgba(0, 0, 0, .9); }
+:root[data-theme="dark"]:not(:has([data-light-only])) :is(.commit-node, .mini-dot) { background: #000; }
+:root[data-theme="dark"]:not(:has([data-light-only])) .phone-menu__panel { background: #0a0a0a; }
+/* light islands: pastel badges, the green band and prints keep dark text, whatever the theme */
+:root[data-theme="dark"]:not(:has([data-light-only])) :is(.print, .cert, .bg-brand, .bg-\[\#d8f5dd\], .bg-\[\#fffdf8\], .bg-\[\#ffc933\], .bg-\[\#ffd966\], .bg-\[\#b9e0f7\], .bg-node-blue, .bg-node-purple, .bg-node-mint, .bg-gold, [style*="background"]) {
+  --color-ink: #0b0b0f; --color-ink-2: #3a3d44; --color-ink-3: #57606a; --color-line: #e4e8e6; color: #0b0b0f;
+}
+/* …but a dark card inside a light island (the join form on the green band) keeps light text */
+:root[data-theme="dark"]:not(:has([data-light-only])) :is(.bg-brand, .bg-\[\#ffd966\], .bg-\[\#dafbe1\]) :is(.bg-white, .bg-ink) {
+  --color-ink: #f2f2f2; --color-ink-2: #a8a8a8; --color-ink-3: #8c8c8c; --color-line: #262626; color: #f2f2f2;
 }
 @layer utilities {
-  @media (prefers-color-scheme: dark) {
-    :where(:root:not(:has([data-light-only]))) {
-      & .bg-white, & .file\:bg-white::file-selector-button { background-color: #0d1117; }
-      & .bg-white\/85 { background-color: rgb(13 17 23 / .85); } & .bg-white\/80 { background-color: rgb(13 17 23 / .8); }
-      & .hover\:bg-white\/70:hover { background-color: rgb(22 27 34 / .7); }
-      & .bg-ink { background-color: #21262d; } /* buttons and bands; lines drawn with before:/after:bg-ink follow the text colour */
-      & .hover\:bg-ink:hover, & .focus\:bg-ink:focus { background-color: #30363d; }
-      & .hover\:bg-ink\/85:hover { background-color: #30363d; }
-      & .bg-ink\/65 { background-color: rgb(33 38 45 / .65); }
-      & .border-ink { border-color: rgb(230 237 243 / .5); } /* the bold sticker borders, softened: full white is harsh on dark (hover still brightens them) */
-      /* GitHub's light tints → its dark ones: success, attention, danger, accent, done */
-      & .bg-\[\#dafbe1\] { background-color: rgb(46 160 67 / .15); } & :is(.text-\[\#1a7f37\], .text-\[\#116329\]) { color: #3fb950; }
-      & :is(.border-\[\#4ac26b66\]) { border-color: rgb(46 160 67 / .4); }
-      & .bg-\[\#fff8c5\] { background-color: rgb(187 128 9 / .15); } & :is(.text-\[\#7d4e00\], .text-\[\#9a6700\]) { color: #d29922; }
-      & :is(.border-\[\#d4a72c66\], .border-\[\#d4a72c\]) { border-color: rgb(187 128 9 / .4); }
-      & .bg-\[\#ffebe9\] { background-color: rgb(248 81 73 / .15); } & :is(.text-\[\#a40e26\], .text-\[\#cf222e\]) { color: #ff7b72; }
-      & .border-\[\#ff818266\] { border-color: rgb(248 81 73 / .4); }
-      & .bg-\[\#ddf4ff\] { background-color: rgb(56 139 253 / .15); } & .text-\[\#0550ae\] { color: #4493f8; }
-      & .border-\[\#54aeff66\] { border-color: rgb(56 139 253 / .4); } & .outline-\[\#0969da\] { outline-color: #4493f8; }
-      & .bg-\[\#fbefff\] { background-color: rgb(163 113 247 / .15); } & :is(.text-\[\#6e40c9\], .text-\[\#6639ba\], .text-\[\#8250df\]) { color: #a371f7; }
-      & .border-\[\#c297ff66\] { border-color: rgb(163 113 247 / .4); }
-      & :is(.border-\[\#c9ceca\], .border-\[\#c4cad0\]) { border-color: #30363d; }
-      & .bg-\[\#ebeef0\] { background-color: #21262d; }
-      & .bg-\[\#f6f8fa\] { background-color: #161b22; } & .bg-\[\#fff6d6\] { background-color: rgb(187 128 9 / .1); } /* code blocks; Epoch's cream card becomes a warm tint */ /* the year grid's empty days, like GitHub's dark contribution graph */
-    }
+  :where(:root[data-theme="dark"]:not(:has([data-light-only]))) {
+    & .bg-white, & .file\:bg-white::file-selector-button { background-color: #0a0a0a; }
+    & .bg-white\/85 { background-color: rgb(10 10 10 / .85); } & .bg-white\/80 { background-color: rgb(10 10 10 / .8); }
+    & .hover\:bg-white\/70:hover { background-color: rgb(23 23 23 / .7); }
+    & .bg-ink { background-color: #1c1c1c; } /* buttons and bands; lines drawn with before:/after:bg-ink follow the text colour */
+    & .hover\:bg-ink:hover, & .focus\:bg-ink:focus, & .hover\:bg-ink\/85:hover { background-color: #2a2a2a; }
+    & .bg-ink\/65 { background-color: rgb(28 28 28 / .65); }
+    & .border-ink { border-color: rgb(242 242 242 / .45); } /* the bold sticker borders, softened: full white is harsh on black (hover still brightens them) */
+    & .hover\:bg-black\/\[\.05\]:hover { background-color: rgb(255 255 255 / .08); }
+    /* the GitHub-dark pieces that were already dark (footer, code) join the black palette */
+    & :is(.bg-\[\#0d1117\], .bg-\[\#010409\]) { background-color: #000; } & .bg-\[\#161b22\] { background-color: #0a0a0a; }
+    & :is(.border-\[\#30363d\], .border-\[\#c9ceca\], .border-\[\#c4cad0\]) { border-color: #262626; }
+    /* GitHub's light tints → its dark ones: success, attention, danger, accent, done */
+    & .bg-\[\#dafbe1\] { background-color: rgb(46 160 67 / .16); } & :is(.text-\[\#1a7f37\], .text-\[\#116329\]) { color: #3fb950; }
+    & .border-\[\#4ac26b66\] { border-color: rgb(46 160 67 / .4); }
+    & .bg-\[\#fff8c5\] { background-color: rgb(187 128 9 / .16); } & :is(.text-\[\#7d4e00\], .text-\[\#9a6700\]) { color: #d29922; }
+    & :is(.border-\[\#d4a72c66\], .border-\[\#d4a72c\]) { border-color: rgb(187 128 9 / .4); }
+    & .bg-\[\#ffebe9\] { background-color: rgb(248 81 73 / .16); } & :is(.text-\[\#a40e26\], .text-\[\#cf222e\]) { color: #ff7b72; }
+    & .border-\[\#ff818266\] { border-color: rgb(248 81 73 / .4); }
+    & .bg-\[\#ddf4ff\] { background-color: rgb(56 139 253 / .16); } & .text-\[\#0550ae\] { color: #58a6ff; }
+    & .border-\[\#54aeff66\] { border-color: rgb(56 139 253 / .4); } & .outline-\[\#0969da\] { outline-color: #58a6ff; }
+    & .bg-\[\#fbefff\] { background-color: rgb(163 113 247 / .16); } & :is(.text-\[\#6e40c9\], .text-\[\#6639ba\], .text-\[\#8250df\]) { color: #a371f7; }
+    & .border-\[\#c297ff66\] { border-color: rgb(163 113 247 / .4); }
+    & .bg-\[\#ebeef0\] { background-color: #161616; } /* the year grid's empty days, like a dark contribution graph */
+    & .bg-\[\#f6f8fa\] { background-color: #0a0a0a; } & .bg-\[\#fff6d6\] { background-color: rgb(187 128 9 / .1); } /* code blocks; Epoch's cream card becomes a warm tint */
   }
 }
