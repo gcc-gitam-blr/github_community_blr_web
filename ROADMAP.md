@@ -10,7 +10,7 @@ The live checklist for the club site. Every item has a status and the exact page
 
 **Status:** ✅ Done (on `dev`, tested) · 🟡 In progress · ⬜ Not started · 🙋 Needs you (a decision, a login or content)
 
-**Working order, one at a time:** ~~reliability~~ → ~~Epoch organiser tools~~ → ~~Epoch live~~ → ~~dark mode~~ → **contributor onboarding (now)** → ideas.
+**Working order, one at a time:** ~~reliability~~ → ~~Epoch organiser tools~~ → ~~Epoch live~~ → ~~dark mode~~ → ~~contributor onboarding~~ → **ideas (now)**.
 
 ---
 
@@ -99,7 +99,7 @@ The live checklist for the club site. Every item has a status and the exact page
 | | # | Item | Check it | Notes |
 |---|---|------|----------|-------|
 | ✅ | 5.1 | Content editor | http://localhost:3000/keystatic | Every save is a commit. 🙋 Connect it to GitHub for the live site (README, ~10 min). |
-| ⬜ | 5.2 | Contributor onboarding | — | Labelled "good first issue"s on this repo. |
+| ✅ | 5.2 | Contributor onboarding | https://github.com/lechakrawarthy/github_community_blr/issues?q=is%3Aopen+label%3A%22good+first+issue%22 | 5 starter issues (#7–#11), each naming the exact file; CONTRIBUTING.md points to them and says pull requests go to `dev`. 🙋 The repo is private: add members as collaborators so they can pick them up. |
 | ✅ | 5.3 | Year-rollover guide | https://github.com/lechakrawarthy/github_community_blr/blob/dev/docs/ROLLOVER.md | Plain steps for next year's team. |
 | ✅ | 5.4 | Backups & data retention | https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/privacy (how long each thing is kept) | Weekly clean-up of old data, weekly backup kept 30 days. 🙋 `CRON_SECRET` in Vercel, `SUPABASE_DB_URL` secret in GitHub. |
 | ✅ | 5.5 | Uptime check | https://github.com/lechakrawarthy/github_community_blr/actions/workflows/uptime.yml | Every 6 hours; opens a "Site is down" issue if the site fails. 🙋 The `SITE_URL` repository variable. |
