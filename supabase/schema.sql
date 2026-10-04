@@ -217,11 +217,7 @@ grant insert on join_requests to anon, authenticated;
 -- ============================================================
 alter table join_requests add column if not exists unsubscribed boolean not null default false;
 
--- Anyone with a valid signed link can unsubscribe (the site checks the signature before calling this).
-create or replace function unsubscribe_join(p_email text) returns void language sql security definer as $$
-  update join_requests set unsubscribed = true where lower(email) = lower(p_email);
-$$;
-grant execute on function unsubscribe_join(text) to anon, authenticated;
+-- Anyone with a valid signed link can unsubscribe: unsubscribe_join, defined with the Epoch interest list below.
 
 -- A record of every broadcast: who sent what, to how many.
 create table if not exists broadcasts (
@@ -320,3 +316,38 @@ begin
 end $$;
 revoke execute on function set_role(text, text) from public, anon;
 grant execute on function set_role(text, text) to authenticated;
+
+-- ============================================================
+-- "Notify me when Epoch dates are announced": an email-only interest list.
+-- Nobody can insert or read it directly: the site calls epoch_interest_join (which checks the address), and only
+-- admins can read the list, to email it from the broadcast tool. The same signed unsubscribe link covers it.
+-- ============================================================
+create table if not exists epoch_interest (
+  id bigint generated always as identity primary key,
+  email text not null check (length(email) <= 254 and email ~ '^[^\s@]+@[^\s@]+\.[^\s@]+$'),
+  unsubscribed boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists epoch_interest_one_per_email on epoch_interest (lower(email));
+alter table epoch_interest enable row level security;
+drop policy if exists "admins read epoch interest" on epoch_interest;
+create policy "admins read epoch interest" on epoch_interest for select using (my_role() = 'admin');
+
+-- 'created' or 'exists'. An address that unsubscribed stays unsubscribed: someone else typing it in can't undo that.
+create or replace function epoch_interest_join(p_email text) returns text language plpgsql security definer as $$
+declare e text := lower(trim(p_email));
+begin
+  if e is null or length(e) > 254 or e !~ '^[^\s@]+@[^\s@]+\.[^\s@]+$' then raise exception 'invalid email'; end if;
+  insert into epoch_interest (email) values (e) on conflict ((lower(email))) do nothing;
+  return case when found then 'created' else 'exists' end;
+end $$;
+revoke execute on function epoch_interest_join(text) from public;
+grant execute on function epoch_interest_join(text) to anon, authenticated;
+
+-- Anyone with a valid signed link can unsubscribe (the site checks the signature before calling this).
+-- One link, every list: club sign-ups and the Epoch interest list.
+create or replace function unsubscribe_join(p_email text) returns void language sql security definer as $$
+  update join_requests set unsubscribed = true where lower(email) = lower(p_email);
+  update epoch_interest set unsubscribed = true where lower(email) = lower(p_email);
+$$;
+grant execute on function unsubscribe_join(text) to anon, authenticated;
