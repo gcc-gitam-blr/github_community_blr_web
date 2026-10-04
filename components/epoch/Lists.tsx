@@ -5,6 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Frame, Notice } from "./Frame";
 import { Coin, btnInk, btnSoft, field, glass, label } from "./Bits";
 import { BoothSection } from "./home/BoothSection";
+import { AuditLog, FindAttendee, Team } from "./Desk";
+import { MyPost } from "./Staff";
 import { useEpoch } from "./EpochProvider";
 import { qr } from "@/lib/epoch/store";
 import { BOOTHS, STARTER_COINS, EPOCH } from "@/lib/epoch/config";
@@ -91,7 +93,11 @@ export function AdminPage() {
   );
 
   return (
-    <Frame title="Organiser desk." sub={`Verify tickets (${STARTER_COINS} ${EPOCH.currency}, once), award prizes, and print the booth QR sheet.`} aside={<div className="no-print flex gap-2"><Link href="/epoch/scan" className={btnInk}>Scan a wallet</Link><button onClick={() => window.print()} className={btnSoft}>Print QR sheet</button></div>}>
+    <Frame title="Organiser desk." sub={`Check people in once they've paid at the desk (${STARTER_COINS} ${EPOCH.currency}, once), fix mistakes, and print the booth QR sheet.`} aside={<div className="no-print flex flex-wrap gap-2"><Link href="/epoch/scan" className={btnInk}>Scan a wallet</Link><button onClick={() => window.print()} className={btnSoft}>Print QR sheet</button></div>}>
+      <MyPost />
+      <FindAttendee />
+      <Team />
+      <AuditLog />
       <ClubStatsPanel />
       <SignUps />
       <Inbox />
@@ -104,6 +110,7 @@ export function AdminPage() {
             <p className="text-[19px] font-medium leading-tight tracking-[-0.02em]">{b.name}</p>
             <p className={`${label} flex items-center gap-1.5`}><Coin size={14} />{b.kind === "recharge" ? `+${b.coins} once` : `−${b.coins} / session`}</p>
             <p className="text-[10px] text-mute">{qr.booth(b.id)}</p>
+            <Link href={`/epoch/kiosk/${b.id}`} className="no-print text-[13px] text-mute underline underline-offset-2 hover:text-ink">Open as a kiosk<span className="sr-only"> for {b.name}</span></Link>
           </li>
         ))}
       </ul>
