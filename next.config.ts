@@ -34,6 +34,8 @@ const headers = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // The content editor in GitHub mode sends localhost to 127.0.0.1 (where GitHub's login returns); let the dev server serve it there too.
+  allowedDevOrigins: ["127.0.0.1"],
   // the short commit this deploy was built from (Vercel sets VERCEL_GIT_COMMIT_SHA); shown in the footer
   env: { NEXT_PUBLIC_COMMIT_SHA: (process.env.VERCEL_GIT_COMMIT_SHA ?? "").slice(0, 7) },
   // A stray package-lock.json in the parent folder made Next guess the wrong workspace root.
