@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import contributors from "../../content/club/contributors.json";
 
 test.describe("club site", () => {
   test("home page tells people what the club is", async ({ page }) => {
@@ -102,7 +103,7 @@ test.describe("club site", () => {
     expect((await request.post("/api/errors", { data: { message: "x", path: "/" } })).status()).toBe(204); // no database in tests: accepted and dropped
     const sent: string[] = [];
     page.on("request", (r) => { if (r.url().endsWith("/api/errors")) sent.push(r.postData() ?? ""); });
-    await page.goto("/learn?email=ada%40gitam.in");
+    await page.goto("/learn?email=ada%40gitam.in"); await page.waitForLoadState("networkidle"); // the reporter starts once the page is interactive
     await page.evaluate(() => { for (let i = 0; i < 4; i++) setTimeout(() => { throw new Error("e2e boom"); }); setTimeout(() => { throw new Error("e2e second"); }); });
     await expect.poll(() => sent.length).toBe(2);
     await page.waitForTimeout(500);
@@ -234,7 +235,7 @@ test("the team: mentors, the five leads, everyone else, and their crew roles", a
   await expect(team.getByText(/merge conflicts newer members run into/)).toBeVisible();
   await expect(team.getByText(/first pull request/).first()).toBeVisible(); // Onboarding Forge is explained too
   await expect(team.getByText("Non-tech")).toHaveCount(0);
-  await expect(team.getByRole("heading", { name: /Contributors/ })).toContainText("20");
+  await expect(team.getByRole("heading", { name: /Contributors/ })).toContainText(String(contributors.contributors.length)); // follows the content editor
   for (const src of ["/team/monisha-s.webp", "/team/supriya-k-s-sm.webp", "/team/greeshmitha.webp", "/team/raja-sree-sm.webp", "/brand/club-mark.png"]) expect((await request.get(src)).status(), src).toBe(200);
 });
 
@@ -302,4 +303,18 @@ test("the 3D stickers load on desktop, with a still frame for reduced motion", a
     expect(r.status(), f).toBe(200);
     expect((await r.body()).length, f).toBeLessThan(700_000);
   }
+});
+
+test("the theme follows the system until you choose, and the switch remembers your choice", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark"); // system setting, before anyone chooses
+  await page.getByRole("button", { name: "Switch to light mode" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light"); // remembered, though the system is still dark
+  await page.locator("footer").getByRole("radio", { name: "System" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark"); // back to following the system
+  await page.goto("/epoch");
+  await expect(page.locator("[data-light-only]")).toHaveCount(1); // Epoch keeps its own light look
 });
