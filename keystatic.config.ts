@@ -1,6 +1,7 @@
 import { collection, config, fields, singleton } from "@keystatic/core";
 import gallery from "./lib/gallery.json";
-import { folders } from "./scripts/photos-lib.mjs";
+import memories from "./content/memories.json";
+import { folderOptions } from "./scripts/photos-lib.mjs";
 
 /* The content editor at /keystatic: forms for everything the site shows, saved as files in content/.
    Locally (npm run dev) it saves straight to your files. On the live site it signs editors in with GitHub
@@ -14,8 +15,9 @@ const SHAPES = [{ label: "Diamond", value: "diamond" }, { label: "Square", value
 const COLORS = [{ label: "Blue", value: "blue" }, { label: "Purple", value: "purple" }, { label: "Mint", value: "mint" }, { label: "Green", value: "green" }] as const;
 const CREW = ["custodian", "gatekeeper", "scout", "pipeline", "security", "alchemist", "explorer", "forge"].map((v) => ({ label: v[0].toUpperCase() + v.slice(1), value: v }));
 const req = { validation: { isRequired: true } } as const;
-// photo folders already processed by scripts/photos.mjs: pick one instead of typing its name
-const FOLDERS = [{ label: "No photos yet", value: "" }, ...folders(gallery).map((f) => ({ label: `${f.folder} (${f.photos} photo${f.photos === 1 ? "" : "s"})`, value: f.folder }))];
+// photo folders already processed by scripts/photos.mjs: pick one instead of typing its name.
+// Folders Memories still names but the gallery lacks stay listed (marked), or the editor would refuse to open Memories at all.
+const FOLDERS = folderOptions(gallery, memories);
 const folder = (label: string, description: string) => fields.select({ label, description, options: FOLDERS, defaultValue: "" });
 const photo = fields.text({ label: "Photo", description: "Path of a processed photo, like /team/monisha-s.webp. New photos: a maintainer runs scripts/team-photos.mjs, which strips location data. Leave empty to use their GitHub avatar." });
 

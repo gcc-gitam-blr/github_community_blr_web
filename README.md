@@ -146,6 +146,8 @@ To add a year's photos (no coding needed apart from step 2):
 2. A maintainer runs `node scripts/photos.mjs` and commits `public/gallery` and `lib/gallery.json`. These photos also appear in the home Gallery.
 3. In the content editor (`/keystatic` → **Memories**), open the year, add a moment (title, date, caption) and pick its folder from **Photo folder**. Optionally pick the big opening photo under **Opening photo**. Save.
 
+If a folder Memories uses ever drops out of the gallery (say after `node scripts/photos.mjs --fresh` without all the photos in `photos-inbox`), the editor still opens and lists it as **no photos found**, and the photo script prints which folders are missing. Put those photos back in `photos-inbox` and run the script again, or pick another folder.
+
 Until there is at least one photo the page is quiet: it isn't in the header, footer, search or sitemap, and search engines are asked not to index it. The links appear by themselves once photos exist. Vercel **preview** deployments show a clearly labelled sample (Octodex stickers on coloured tiles, never people) so the design can be judged; locally, run with `MEMORIES_SAMPLE=1` to see it. The live site never shows the sample.
 
 ## Stickers

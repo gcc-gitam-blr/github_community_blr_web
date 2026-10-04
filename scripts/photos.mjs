@@ -8,13 +8,14 @@
 
    Only the folders in photos-inbox are (re)made, each as a whole; photos already in the gallery from other folders are kept.
    So you only need this time's photos on your computer. To rebuild everything from scratch: node scripts/photos.mjs --fresh
+   (--fresh drops every folder that isn't in photos-inbox, so have ALL the club's photos there first.)
 
    For every photo this: fixes rotation, REMOVES hidden camera/location data (EXIF), makes 3 WebP sizes,
    and records the size so the page never jumps while loading. */
 import sharp from "sharp";
 import fs from "node:fs";
 import path from "node:path";
-import { folders, mergeManifest, slug, title } from "./photos-lib.mjs";
+import { folders, mergeManifest, missingFolders, slug, title } from "./photos-lib.mjs";
 
 const args = process.argv.slice(2).filter((a) => !a.startsWith("--")), fresh = process.argv.includes("--fresh");
 const [INBOX, OUT, MANIFEST] = [args[0] ?? "photos-inbox", args[1] ?? "public/gallery", args[2] ?? "lib/gallery.json"];
@@ -48,3 +49,7 @@ fs.writeFileSync(MANIFEST, JSON.stringify(all, null, 2) + "\n");
 console.log(`${photos.length} photos from ${processed.length} folder${processed.length === 1 ? "" : "s"} → ${OUT}, ${MANIFEST} (${all.length} photos in the gallery)`);
 console.log("\nFolders you can pick in the content editor (Memories → a moment → Photo folder):");
 for (const f of folders(all)) console.log(`  ${f.folder}  (${f.photos} photo${f.photos === 1 ? "" : "s"})`);
+// a moment pointing at a folder the gallery doesn't have shows no photos: say so now, not after the deploy
+const memories = fs.existsSync("content/memories.json") ? JSON.parse(fs.readFileSync("content/memories.json", "utf8")) : {};
+const missing = missingFolders(all, memories);
+if (missing.length) console.warn(`\n! Memories names folders with no photos in the gallery: ${missing.join(", ")}.\n  Put their photos in photos-inbox/<folder>/ and run this again, or pick another folder in the editor.`);
