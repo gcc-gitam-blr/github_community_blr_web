@@ -202,6 +202,14 @@ export function SignUps() {
   const [sending, setSending] = useState(false); const [result, setResult] = useState<{ k: "ok" | "err"; t: string } | null>(null);
   const [audience, setAudience] = useState<Audience>("members");
   const [waiting, setWaiting] = useState<number | null>(null);
+  const [month, setMonth] = useState(""); const [drafting, setDrafting] = useState(false);
+  // fills the form with a draft of that month's newsletter (empty month = the usual one); nothing is sent until Send
+  const draft = async () => {
+    setDrafting(true); setResult(null);
+    try { const d = await (await fetch(`/api/newsletter${month ? `?month=${month}` : ""}`)).json(); setSubject(d.subject); setMessage(d.message); if (!month) setMonth(d.month); }
+    catch { setResult({ k: "err", t: "Couldn't build the draft. Try again." }); }
+    setDrafting(false);
+  };
   useEffect(() => { if (me?.role === "admin") store?.epochInterestCount?.().then(setWaiting); }, [store, me?.role]);
   const count = audience === "epoch" ? waiting ?? 0 : rows?.length ?? 0;
   const send = async () => {
@@ -247,6 +255,12 @@ export function SignUps() {
         <div className="mt-8 border-t border-hair pt-6">
           <h3 className="text-[22px] font-medium tracking-[-0.02em]">Email everyone</h3>
           <p className={`${label} mb-4`}>Goes to everyone on the list you pick who hasn&apos;t unsubscribed. Each email has an unsubscribe link automatically.</p>
+          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-hair p-3">
+            <span className="text-[14px]">Monthly newsletter:</span>
+            <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} aria-label="Newsletter month" className={`${field} !w-auto !py-1.5`} />
+            <button type="button" onClick={draft} disabled={drafting} className={btnSoft}>{drafting ? "Drafting…" : "Draft it"}</button>
+            <span className={label}>Fills the form below from that month&apos;s events, recaps, news and merges. Read it, edit it, then send.</span>
+          </div>
           <fieldset className="mb-4 flex flex-wrap gap-2">
             <legend className="sr-only">Who gets it</legend>
             {([["members", `Club sign-ups (${rows?.length ?? 0})`], ["epoch", `Waiting for Epoch dates${waiting === null ? "" : ` (${waiting})`}`]] as const).map(([id, l]) => (

@@ -334,3 +334,11 @@ test("My club explains itself when sign-in isn't switched on, and stays out of s
   await expect(page.getByText("Sign-in isn't switched on for this site yet.")).toBeVisible(); // the test build has no database
   expect(await page.locator('meta[name="robots"]').getAttribute("content")).toContain("noindex");
 });
+
+test("the newsletter draft comes from the site's own content", async ({ request }) => {
+  const d = await (await request.get("/api/newsletter?month=2026-10")).json();
+  expect(d.month).toBe("2026-10");
+  expect(d.subject).toBe("GitHub Community Club · October 2026");
+  expect(d.message).toContain("See you there");
+  expect((await (await request.get("/api/newsletter?month=nonsense")).json()).month).toMatch(/^\d{4}-\d{2}$/); // falls back to the usual month
+});
