@@ -342,3 +342,11 @@ test("the newsletter draft comes from the site's own content", async ({ request 
   expect(d.message).toContain("See you there");
   expect((await (await request.get("/api/newsletter?month=nonsense")).json()).month).toMatch(/^\d{4}-\d{2}$/); // falls back to the usual month
 });
+
+test("adding photos asks for the editor login first, and the upload API refuses without it", async ({ page, request }) => {
+  await page.goto("/photos");
+  await expect(page.getByRole("link", { name: "log in to the content editor" })).toBeVisible();
+  expect((await (await request.get("/api/photos/blob")).json()).ok).toBe(false);
+  expect((await request.post("/api/photos/blob", { data: { sm: "x", md: "x", lg: "x" } })).status()).toBe(401);
+  expect((await request.post("/api/photos/commit", { data: { folder: "a", photos: [] } })).status()).toBe(401);
+});
