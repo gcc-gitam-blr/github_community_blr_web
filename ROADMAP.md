@@ -10,7 +10,7 @@ The live checklist for the club site. Every item has a status and the exact page
 
 **Status:** ✅ Done (live, tested) · 🟡 In progress · ⬜ Not started · 🙋 Needs you (a decision, a login or content)
 
-**Working order, one at a time:** phases 0–5 are built. **Now: Phase 6, below**, one feature after another, straight to the live site.
+**Working order, one at a time:** phases 0–5 are built. **Phase 6 is built too**, apart from the projects showcase, which waits for the club's own GitHub organisation.
 
 ---
 
@@ -114,7 +114,7 @@ All done except `CRON_SECRET`.
 | ✅ | Badges | https://githubcommunityblr.vercel.app/board and each member's page, e.g. https://githubcommunityblr.vercel.app/board/lechakrawarthy | First merge, Five merged, Ten merged, Three projects, Challenge finisher: earned from real merges only. Every member page has a share card. |
 | ✅ | "My club" page | https://githubcommunityblr.vercel.app/me (also in the footer) | Sign in with GitHub: the events you came to with their certificates, your board page (merges and badges), your Epoch wallet. 🙋 Re-run `supabase/schema.sql` once more (it adds `my_attendance`). |
 | ✅ | Monthly newsletter | https://githubcommunityblr.vercel.app/epoch/admin → Club sign-ups → Email everyone → **Monthly newsletter: Draft it** | Builds the month's draft from events, recaps, news, members' merges and what's coming up. Read, edit, then send; nothing goes out by itself. |
-| ⬜ | Photo uploads in the editor | https://githubcommunityblr.vercel.app/keystatic | Add photos in the editor; GitHub resizes them and strips location data, so nobody needs the script. |
+| ✅ | Photo uploads | https://githubcommunityblr.vercel.app/photos | Log in to the editor once, then pick the event and choose photos on your phone or laptop. They're resized and stripped of location data on your device, then added to the gallery, recap and Memories in one commit. No script needed. |
 | 🙋 | Club projects showcase | — | After the club creates its own GitHub organisation: live repos, their beginner issues and contributors. |
 
 Decided against: QR check-in at the door (Luma already does it), Kannada/Hindi.
