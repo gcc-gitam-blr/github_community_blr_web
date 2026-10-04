@@ -88,9 +88,10 @@ Open the branch's preview, check it, then merge into `main`. Small content fixes
 |---|------|--------|-------|
 | 5.1 | Content in one place | In review | All content lives in `content/`, with a form-based editor at `/keystatic`. Each save is a commit, so there's history and undo. **Needs you once:** connect the editor to GitHub (README, about 10 minutes). Not yet: photo uploads in the editor; photos still go through the script, which strips location data. |
 | 5.2 | Contributor onboarding | Partly | `CONTRIBUTING.md`, issue templates and labels exist. To do: open a few labelled "good first issue"s on this repo; there are none open · S. |
-| 5.3 | Year-rollover guide | To do · S | Running the site for 2027-28: what to change, in what order. |
-| 5.4 | Backups & data retention | To do · S | Supabase backups; delete sign-up data after N months. |
-| 5.5 | Uptime check | To do · S | A free monitor (e.g. UptimeRobot) on the home page and `/epoch`. |
+| 5.3 | Year-rollover guide | In review | `docs/ROLLOVER.md`: year label, team to mentors/contributors, events, Epoch dates and clearing last year's Epoch data, Memories, changing the secrets. |
+| 5.4 | Backups & data retention | In review | Weekly backup of the club's data as a GitHub Actions artifact (30 days), with restore steps in the README. Old data deleted every week: sign-ups after 18 months, messages and feedback after 12, error reports after 30 days; `/privacy` says so. **Needs you:** `CRON_SECRET` in Vercel, `SUPABASE_DB_URL` secret on GitHub, re-run `supabase/schema.sql`. |
+| 5.5 | Uptime check | In review | Every 6 hours GitHub checks the home page and `/epoch` and opens a "Site is down" issue if they fail. **Needs you:** the `SITE_URL` repository variable. For 5-minute checks, a free UptimeRobot monitor (README). |
+| 5.6 | Reliability | In review | Form rate limits counted in the database (hashed IPs only); browser errors reported to `/admin` without a third-party account; Lighthouse in CI (accessibility under 0.95 fails). |
 
 ---
 
