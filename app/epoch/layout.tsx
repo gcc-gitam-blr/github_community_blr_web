@@ -8,6 +8,7 @@ import { EpochEntrance } from "@/components/epoch/EpochEntrance";
 import { EpochMain } from "@/components/epoch/EpochMain";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { RegisterSW } from "@/components/epoch/RegisterSW";
+import { NotOnKiosk } from "@/components/epoch/NotOnKiosk";
 
 // the browser bar matches Epoch's paper instead of the club's white
 export const viewport: Viewport = { themeColor: "#f4f1ea", viewportFit: "cover" };
@@ -34,8 +35,10 @@ export default function EpochLayout({ children }: { children: React.ReactNode })
         <div className="epoch-field flex min-h-screen flex-col font-epoch text-ink print:bg-white">
           <EpochNav />
           <EpochMain>{children}</EpochMain>
-          <div className="relative z-10 no-print font-sans"><SiteFooter sticker={false} /></div>
-          <div aria-hidden className="h-[calc(6rem+env(safe-area-inset-bottom))] bg-[#010409] md:hidden" />{/* room for the phone tab bar */}
+          <NotOnKiosk>
+            <div className="relative z-10 no-print font-sans"><SiteFooter sticker={false} /></div>
+            <div aria-hidden className="no-print h-[calc(6rem+env(safe-area-inset-bottom))] bg-[#010409] md:hidden" />{/* room for the phone tab bar */}
+          </NotOnKiosk>
         </div>
         <EpochEntrance />
         <RegisterSW />

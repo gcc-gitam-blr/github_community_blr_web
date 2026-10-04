@@ -8,6 +8,7 @@ import { Launcher, useCommand } from "./Command";
 import { BOOTH_COUNT } from "@/lib/epoch/config";
 import { ClubMark } from "@/components/ui/ClubMark";
 import { EPOCH_SEEN } from "@/components/site/EpochNudge";
+import { isKiosk } from "./NotOnKiosk";
 
 const ITEMS = [
   { l: "Wallet", h: "/epoch/wallet", i: "M3 7h18v12H3zM3 7l3-3h12l3 3M16 13h2" },
@@ -37,6 +38,7 @@ export function EpochNav() {
   useEffect(() => { try { localStorage.setItem(EPOCH_SEEN, "1"); } catch { /* storage blocked */ } }, []);
   const showBar = !landing || scrolled; // on the landing page the hero has its own big pill
 
+  if (isKiosk(path)) return null; // the kiosk is the whole screen
   const items = [...ITEMS, ...(staff ? [{ l: "Desk", h: "/epoch/admin", i: "M4 6h16v12H4zM8 10h8M8 14h5" }] : [])];
 
   return (
