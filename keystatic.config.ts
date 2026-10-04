@@ -25,7 +25,7 @@ export default config({
   storage: local ? { kind: "local" } : { kind: "github", repo: "lechakrawarthy/github_community_blr", branchPrefix: "content/" },
   ui: {
     brand: { name: "Club site" },
-    navigation: { Club: ["settings", "announcements", "events", "updates", "team", "contributors", "challenge", "faq", "home", "memories"], Epoch: ["epoch", "schedule"] },
+    navigation: { Club: ["settings", "announcements", "events", "updates", "team", "contributors", "alumni", "challenge", "faq", "home", "memories"], Epoch: ["epoch", "schedule"] },
   },
   collections: {
     updates: collection({
@@ -86,7 +86,12 @@ export default config({
             text: fields.text({ label: "What happened", description: "Two or three short paragraphs. Empty = no recap yet.", multiline: true }),
             numbers: fields.array(fields.object({ value: fields.integer({ label: "Number", ...req }), label: fields.text({ label: "Label", description: "came, first pull requests, mentors…", ...req }) }), { label: "Numbers", itemLabel: (p) => `${p.fields.value.value ?? ""} ${p.fields.label.value}` }),
             video: fields.url({ label: "Video", description: "A YouTube link plays on the page; any other link (Instagram…) shows as a button." }),
-            slides: fields.url({ label: "Slides and materials" }),
+            slides: fields.url({ label: "Slides" }),
+            materials: fields.array(fields.object({
+              title: fields.text({ label: "Title", description: "Like Starter repo, or Recording (part 2).", ...req }),
+              url: fields.url({ label: "Link", ...req }),
+              kind: fields.select({ label: "Kind", options: [{ label: "Slides", value: "slides" }, { label: "Recording", value: "recording" }, { label: "Code", value: "code" }, { label: "Reading", value: "reading" }], defaultValue: "reading" }),
+            }), { label: "More links", description: "Anything else from the session. All of it also shows in the archive on the Learn page.", itemLabel: (p) => p.fields.title.value }),
             photos: fields.text({ label: "Photo folder", description: "Only if the gallery folder isn't named after the event." }),
           }, { label: "Recap (after the event)" }),
         }), { label: "Events", itemLabel: (p) => `${p.fields.date.value ?? ""} · ${p.fields.title.value}` }),
@@ -128,6 +133,22 @@ export default config({
         to: fields.date({ label: "Last day", description: "…up to and including this day. The board shows the result for two weeks after." }),
         goal: fields.integer({ label: "Goal", description: "How many merged pull requests into other people's projects, like 4. Same counting as the board." }),
         description: fields.text({ label: "Short description", description: "One or two sentences: what it is, and what finishing it gets you (only if that's really decided).", multiline: true }),
+      },
+    }),
+    alumni: singleton({
+      label: "Alumni", path: "content/club/alumni", format: { data: "json" },
+      schema: {
+        alumni: fields.array(fields.object({
+          name: fields.text({ label: "Name", ...req }),
+          years: fields.text({ label: "Years in the club", description: "Like 2023-25.", ...req }),
+          role: fields.text({ label: "Role in the club", description: "Optional: President, Design Lead…" }),
+          now: fields.text({ label: "Where they are now", description: "One line, like SDE intern at Microsoft, or MS at TU Munich.", ...req }),
+          link: fields.url({ label: "Link", description: "Optional: their LinkedIn or GitHub profile." }),
+          handle: fields.text({ label: "GitHub username", description: "Optional, without the @: shows their avatar." }),
+          photo: fields.text({ label: "Photo", description: "Optional: a processed photo path, like /team/name.webp." }),
+          quote: fields.text({ label: "A line from them", description: "Optional, in their own words.", multiline: true }),
+          consent: fields.checkbox({ label: "They said yes to being listed here", description: "Nobody shows until this is ticked.", defaultValue: false }),
+        }), { label: "Alumni (shown on the Memories page)", itemLabel: (p) => `${p.fields.name.value}${p.fields.consent.value ? "" : " (not shown yet: no okay)"}` }),
       },
     }),
     faq: singleton({

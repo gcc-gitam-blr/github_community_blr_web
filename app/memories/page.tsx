@@ -5,6 +5,8 @@ import { SiteFooter } from "@/components/site/SiteFooter";
 import { SampleTile, photoSrc, type Photo } from "@/components/site/Lightbox";
 import { Chapter, yearId } from "@/components/memories/Chapter";
 import { YearRail } from "@/components/memories/YearRail";
+import { Alumni } from "@/components/memories/Alumni";
+import { ALUMNI } from "@/lib/alumni";
 import { Reveal } from "@/components/ui/Reveal";
 import { Sticker } from "@/components/ui/Sticker";
 import { CLUB } from "@/lib/config";
@@ -71,7 +73,7 @@ export default function MemoriesPage() {
   const sample = SHOW_SAMPLE && !MEMORIES.photos;
   const { chapters, cover } = sample ? sampleMemories(MEMORIES) : MEMORIES;
   const names = thanks();
-  const stops = [...chapters.map((c) => ({ id: yearId(c.year), label: c.year, hint: c.title })), { id: "thanks", label: "Thank you" }, { id: "next", label: "you", hint: "the next chapter", next: true }];
+  const stops = [...chapters.map((c) => ({ id: yearId(c.year), label: c.year, hint: c.title })), { id: "thanks", label: "Thank you" }, { id: "alumni", label: "Alumni", hint: "where they are now" }, { id: "next", label: "you", hint: "the next chapter", next: true }];
 
   return (
     <>
@@ -109,6 +111,8 @@ export default function MemoriesPage() {
               </Reveal>
               <p className="mt-10 text-[15px] text-ink-3">{WORDS.missing}</p>
             </section>
+
+            <Alumni alumni={ALUMNI} />
 
             <section id="next" aria-labelledby="next-h" className="mt-28 sm:mt-36">
               <Reveal className="relative overflow-hidden rounded-[28px] border-2 border-dashed border-ink/25 px-6 py-14 text-center sm:px-12 sm:py-20">
