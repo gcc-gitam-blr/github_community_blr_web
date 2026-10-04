@@ -5,7 +5,7 @@ import { SiteFooter } from "@/components/site/SiteFooter";
 import { CLUB } from "@/lib/config";
 
 export const metadata: Metadata = { title: "Privacy", description: "What the GitHub Community Club collects, why, and how to have it removed." };
-const UPDATED = "2 October 2026";
+const UPDATED = "4 October 2026";
 
 const H = ({ children }: { children: React.ReactNode }) => <h2 className="mb-3 mt-12 text-[26px]">{children}</h2>;
 const P = ({ children }: { children: React.ReactNode }) => <p className="mt-3 text-[17px] leading-relaxed text-ink-2">{children}</p>;
@@ -24,6 +24,7 @@ export default function Privacy() {
         <H>What we collect, and why</H>
         <L>
           <li><b>When you join the club:</b> your GitHub username, email address, and which event you want to try first. We use it to welcome you, remind you about events, and plan sessions.</li>
+          <li><b>When you ask to hear about Epoch dates:</b> only your email address. We use it to tell you when the dates are announced, and for Epoch news after that. Nothing else.</li>
           <li><b>When you use Epoch (our fest):</b> your name, GitHub username (via GitHub sign-in) and email, your Epoch Coins balance, and a record of your coin transactions (where you scanned or spent coins). We use it to run the event and the leaderboard. The leaderboard shows only your name and GitHub username.</li>
           <li><b>Emails we send:</b> a welcome message and event updates. Every email has an unsubscribe link, and you can unsubscribe with one click.</li>
         </L>
@@ -47,12 +48,12 @@ export default function Privacy() {
         <P>Epoch keeps a sign-in session and a copy of your last wallet in your browser so it works with a weak signal. Nothing else is stored. Clearing your browser data removes it.</P>
 
         <H>How long we keep it</H>
-        <P>Sign-up details are kept for the club year they were collected in and deleted within 12 months after you stop being active. Epoch data is deleted within 6 months after the event.</P>
+        <P>Sign-up details are kept for the club year they were collected in and deleted within 12 months after you stop being active. Epoch data, and the Epoch dates list, are deleted within 6 months after the event.</P>
 
         <H>Your choices</H>
         <L>
           <li><b>Stop emails:</b> use the unsubscribe link in any email.</li>
-          <li><b>See or delete your details:</b> contact us through {contact} and we&apos;ll remove them. Please tell us the GitHub username and email you used.</li>
+          <li><b>See or delete your details:</b> contact us through {contact} and we&apos;ll remove them. Please tell us the email you used, and your GitHub username if you have one with us.</li>
         </L>
 
         <H>Photos</H>

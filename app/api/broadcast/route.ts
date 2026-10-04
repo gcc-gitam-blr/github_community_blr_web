@@ -4,12 +4,14 @@ import { broadcastEmail } from "@/lib/email/templates";
 import { unsubscribeApiUrl, unsubscribeUrl } from "@/lib/email/token";
 import { SITE_URL } from "@/lib/site";
 
-/* POST /api/broadcast — an admin emails every club sign-up who hasn't unsubscribed.
+/* POST /api/broadcast — an admin emails everyone on one list who hasn't unsubscribed: club sign-ups ("members",
+   the default) or the "tell me when Epoch dates are out" list ("epoch"). One unsubscribe link covers both.
    The caller proves who they are with their Supabase login (Bearer token); the database's own
    rules (RLS) decide what they may read, and only role 'admin' may send. */
 export const maxDuration = 60;
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL, KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const MAX_PER_SEND = 450; // stays under a Gmail account's ~500/day limit
+const LISTS = { members: "join_requests", epoch: "epoch_interest" } as const;
 
 const json = (b: object, status = 200) => Response.json(b, { status });
 
@@ -18,11 +20,13 @@ export async function POST(req: Request) {
   const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) return json({ ok: false, error: "Sign in first." }, 401);
 
-  let body: { subject?: string; message?: string };
+  let body: { subject?: string; message?: string; audience?: string };
   try { body = await req.json(); } catch { return json({ ok: false, error: "Bad request." }, 400); }
   const subject = (body.subject ?? "").trim(), message = (body.message ?? "").trim();
   if (subject.length < 3 || subject.length > 120) return json({ ok: false, error: "Subject must be 3–120 characters." }, 422);
   if (message.length < 10 || message.length > 5000) return json({ ok: false, error: "Message must be 10–5000 characters." }, 422);
+  const audience = body.audience ?? "members";
+  if (!(audience in LISTS)) return json({ ok: false, error: "Pick who it goes to." }, 422);
   if (!emailConfigured()) return json({ ok: false, error: "Email isn't set up yet — add the email settings in Vercel (see README)." }, 503);
 
   const db = createClient(URL, KEY, { global: { headers: { Authorization: `Bearer ${token}` } }, auth: { persistSession: false } });
@@ -30,7 +34,7 @@ export async function POST(req: Request) {
   const { data: role } = await db.rpc("my_role");
   if (!user.user || role !== "admin") return json({ ok: false, error: "Only organiser admins can send emails." }, 403);
 
-  const { data: rows, error } = await db.from("join_requests").select("email").eq("unsubscribed", false).limit(MAX_PER_SEND + 1);
+  const { data: rows, error } = await db.from(LISTS[audience as keyof typeof LISTS]).select("email").eq("unsubscribed", false).limit(MAX_PER_SEND + 1);
   if (error) return json({ ok: false, error: "Couldn't load the list." }, 502);
   if (!rows?.length) return json({ ok: false, error: "Nobody to email yet." }, 422);
   if (rows.length > MAX_PER_SEND) return json({ ok: false, error: `That's more than ${MAX_PER_SEND} people — send in batches or ask a developer to raise the limit.` }, 422);

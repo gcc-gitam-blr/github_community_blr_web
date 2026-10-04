@@ -1,4 +1,5 @@
 import { CLUB } from "../config";
+import { digestHeadline, type Digest } from "../digest";
 
 /* Plain, readable HTML emails (inline styles — email clients ignore stylesheets) plus a text version.
    Everything a person typed is escaped before it goes into the HTML. */
@@ -108,4 +109,24 @@ ${button(i.url, "View your certificate")}
 <p>See you at the next one!</p>`, i.site);
   const text = `Thanks for coming, ${i.name.split(" ")[0]}!\n\nYour certificate of participation for ${i.eventTitle}:\n${i.url}\n\nAdd it to LinkedIn: ${i.linkedin}\n\nSee you at the next one!\n— ${CLUB.name}`;
   return { subject: `Your certificate: ${i.eventTitle}`, html, text };
+}
+
+/** Monday morning, to organisers: the past week on the site, in a few lines, with a link to /admin. */
+export function digestEmail(d: Digest, site: string): Mail {
+  const day = (s: string) => new Date(`${s}T12:00:00+05:30`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" });
+  const week = `${day(d.from)} – ${day(d.to)}`, admin = `${site}/admin`;
+  const more = d.signups.count - d.signups.first.length;
+  const handles = d.signups.first.map((h) => `@${h}`).join(", ") + (more > 0 ? ` and ${more} more` : "");
+  const lines: [string, string][] = [];
+  if (d.signups.count) lines.push([`New sign-ups: ${d.signups.count}`, handles]);
+  if (d.messages.length) lines.push(["Get involved messages", d.messages.map((m) => `${m.label}: ${m.count}`).join(" · ")]);
+  for (const f of d.feedback) lines.push([`Feedback: ${f.event}`, `${f.average} / 5 from ${f.count} ${f.count === 1 ? "rating" : "ratings"}`]);
+  const rows = lines.map(([k, v]) => `<tr><td style="padding:10px 0;border-top:1px solid #d0d7de"><b>${esc(k)}</b><br><span style="color:#59636e">${esc(v)}</span></td></tr>`).join("");
+  const html = frame(`The club's week: ${digestHeadline(d)}`, `<h1 style="font-size:22px;line-height:1.3;margin:0 0 6px">The club&#39;s week</h1>
+<p style="margin:0 0 14px;color:#59636e;font-family:ui-monospace,Menlo,monospace;font-size:14px">${esc(week)}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>
+${button(admin, "Open the organiser dashboard")}
+<p style="margin-bottom:0;color:#59636e;font-size:14px">Sent every Monday to organisers, only when something happened.</p>`, site);
+  const text = [`The club's week (${week})`, "", ...lines.map(([k, v]) => `${k}\n  ${v}`), "", `Organiser dashboard: ${admin}`].join("\n");
+  return { subject: `Club week: ${digestHeadline(d)}`, html, text };
 }

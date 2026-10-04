@@ -5,8 +5,10 @@ import { Nav } from "@/components/site/Nav";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { Face } from "@/components/site/Team";
 import { Sticker } from "@/components/ui/Sticker";
+import { Challenge } from "@/components/site/Challenge";
 import { ago } from "@/lib/issues";
 import { BOARD_SINCE, SHOW_SAMPLE, loadBoard, sampleBoard, type MergedPr, type Row } from "@/lib/board";
+import { CHALLENGE, challengeProgress, challengeState, sampleChallenge } from "@/lib/challenge";
 
 export const metadata: Metadata = { title: "Board", description: "Pull requests club members got merged into open-source projects this year, live from GitHub." };
 export const revalidate = 3600;
@@ -55,8 +57,11 @@ function Recent({ prs }: { prs: MergedPr[] }) {
 export default async function Board() {
   const live = await loadBoard();
   const sample = SHOW_SAMPLE && !live.rows.length;
-  const { ok, members, rows, recent } = sample ? { ...live, ...sampleBoard() } : live;
+  const now = new Date();
+  const { ok, members, prs, rows, recent } = sample ? { ...live, ...sampleBoard(now) } : live;
   const top = rows.slice(0, TOP), more = rows.slice(TOP);
+  // the sample board gets a sample challenge; real merges are only ever measured against the real one
+  const challenge = sample ? sampleChallenge(now) : CHALLENGE, state = challenge && challengeState(challenge, now);
   return (
     <>
       <Nav />
@@ -70,8 +75,10 @@ export default async function Board() {
           <Sticker name="maker" size={150} tilt={6} className="mb-4 hidden md:block" alt="" />
         </div>
 
-        {sample && <p className="mt-10 rounded-lg border border-[#d4a72c66] bg-[#fff8c5] px-4 py-3 text-[15px] text-[#7d4e00]">Sample board, with GitHub&apos;s mascot accounts: shown on preview deployments only while no member has a merge, never on the live site.</p>}
+        {sample && <p className="mt-10 rounded-lg border border-[#d4a72c66] bg-[#fff8c5] px-4 py-3 text-[15px] text-[#7d4e00]">Sample board and challenge, with GitHub&apos;s mascot accounts: shown on preview deployments only while no member has a merge, never on the live site.</p>}
         {!ok && <p role="status" className="mt-10 rounded-lg border border-[#d4a72c66] bg-[#fff8c5] px-4 py-3 text-[15px] text-[#7d4e00]">GitHub didn&apos;t answer every request just now, so the board may be missing a few people. It refreshes within the hour.</p>}
+
+        {challenge && (state === "on" || state === "finished") && <Challenge c={challenge} state={state} now={now} sample={sample} {...challengeProgress(prs, members, challenge)} />}
 
         {rows.length ? (
           <div className="mt-14 grid items-start gap-10 lg:grid-cols-[1fr_360px]">
