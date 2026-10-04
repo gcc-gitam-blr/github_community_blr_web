@@ -8,6 +8,8 @@ import { Sticker } from "@/components/ui/Sticker";
 import { Challenge } from "@/components/site/Challenge";
 import { ago } from "@/lib/issues";
 import { BOARD_SINCE, SHOW_SAMPLE, loadBoard, sampleBoard, type MergedPr, type Row } from "@/lib/board";
+import { badgesByMember, type Badge } from "@/lib/badges";
+import { BadgeRow } from "@/components/site/Badges";
 import { CHALLENGE, challengeProgress, challengeState, sampleChallenge } from "@/lib/challenge";
 
 export const metadata: Metadata = { title: "Board", description: "Pull requests club members got merged into open-source projects this year, live from GitHub." };
@@ -16,17 +18,18 @@ export const revalidate = 3600;
 const since = new Date(BOARD_SINCE + "T00:00:00").toLocaleDateString("en-IN", { month: "long", year: "numeric" });
 const TOP = 12; // the rest are summarised as faces, so the page never turns into a long list
 
-function RowItem({ r, i }: { r: Row; i: number }) {
+function RowItem({ r, i, badges }: { r: Row; i: number; badges: Badge[] }) {
   return (
     <li className="flex items-center gap-4 px-4 py-4 sm:px-5">
       <span className="w-6 shrink-0 text-right font-mono text-[13px] text-ink-3">{i + 1}</span>
       <span className="h-11 w-11 shrink-0 overflow-hidden rounded-full border border-line bg-soft"><Face p={r.member} px={44} i={i} text="text-[15px]" /></span>
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-baseline gap-x-2">
-          <span className="font-semibold">{r.member.name}</span>
+          <Link href={`/board/${r.member.handle}`} className="font-semibold hover:text-link">{r.member.name}</Link>
           <a href={`https://github.com/${r.member.handle}`} target="_blank" rel="noopener" className="font-mono text-[13px] text-link hover:underline">@{r.member.handle}</a>
         </span>
         <a href={r.latest.url} target="_blank" rel="noopener" className="mt-0.5 block truncate text-[14px] text-ink-2 hover:text-link" title={r.latest.title}>Latest: {r.latest.title} <span className="text-ink-3">· {r.latest.repo}</span></a>
+        <BadgeRow badges={badges} />
       </span>
       <span className="shrink-0 text-right">
         <span className="inline-flex items-center gap-1.5 font-display text-[22px] font-bold tabular-nums leading-none"><GitMergeIcon size={16} className="text-[#8250df]" />{r.prs}</span>
@@ -62,6 +65,7 @@ export default async function Board() {
   const top = rows.slice(0, TOP), more = rows.slice(TOP);
   // the sample board gets a sample challenge; real merges are only ever measured against the real one
   const challenge = sample ? sampleChallenge(now) : CHALLENGE, state = challenge && challengeState(challenge, now);
+  const badges = badgesByMember(prs, members, challenge && state !== "upcoming" ? challenge : undefined);
   return (
     <>
       <Nav />
@@ -84,7 +88,7 @@ export default async function Board() {
           <div className="mt-14 grid items-start gap-10 lg:grid-cols-[1fr_360px]">
             <section aria-labelledby="ranks" className="min-w-0">
               <h2 id="ranks" className="text-[clamp(26px,3.4vw,40px)]">Contributors</h2>
-              <ol className="mt-6 divide-y divide-line rounded-[14px] border border-line bg-white">{top.map((r, i) => <RowItem key={r.member.handle} r={r} i={i} />)}</ol>
+              <ol className="mt-6 divide-y divide-line rounded-[14px] border border-line bg-white">{top.map((r, i) => <RowItem key={r.member.handle} r={r} i={i} badges={badges.get(r.member.handle.toLowerCase()) ?? []} />)}</ol>
               {more.length > 0 && (
                 <div className="mt-4 flex items-center gap-3">
                   <span className="flex -space-x-2">{more.slice(0, 8).map((r, i) => <span key={r.member.handle} title={`${r.member.name}: ${r.prs} merged`} className="h-8 w-8 overflow-hidden rounded-full border-2 border-white bg-soft"><Face p={r.member} px={32} i={i + TOP} text="text-[11px]" /></span>)}</span>
