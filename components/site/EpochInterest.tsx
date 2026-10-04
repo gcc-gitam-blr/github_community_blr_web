@@ -12,7 +12,7 @@ export function EpochInterest({ dark = false, className = "" }: { dark?: boolean
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "created" | "exists">("idle");
   const [err, setErr] = useState("");
-  const started = useRef(0); const honey = useRef<HTMLInputElement>(null);
+  const honey = useRef<HTMLInputElement>(null);
   const t = dark ? { sub: "text-[#a9b3ad]", field: "border-white/25 bg-white/10 text-white placeholder:text-white/45 focus:border-gold", btn: "bg-gold text-ink hover:bg-gold-soft", ring: "focus-visible:outline-gold", link: "text-gold", err: "text-[#ffb4a8]" }
     : { sub: "text-ink-3", field: "border-line bg-white text-ink placeholder:text-ink-3 focus:border-ink", btn: "bg-ink text-white hover:bg-ink/85", ring: "", link: "text-link", err: "text-red-600" };
 
@@ -25,7 +25,7 @@ export function EpochInterest({ dark = false, className = "" }: { dark?: boolean
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setErr("");
-    const input = { email, website: honey.current?.value, elapsedMs: started.current ? Date.now() - started.current : undefined };
+    const input = { email, website: honey.current?.value };
     const bad = validateInterest(input); if (bad && bad !== "spam") return setErr(bad);
     setState("sending");
     try {
@@ -42,7 +42,7 @@ export function EpochInterest({ dark = false, className = "" }: { dark?: boolean
     <form onSubmit={submit} noValidate className={`relative ${dark ? "md:grid md:grid-cols-[auto_minmax(0,1fr)] md:items-center md:gap-x-5" : ""} ${className}`}>
       <label htmlFor={id} className="flex items-center gap-2 text-[15px] font-semibold"><BellIcon size={16} className={dark ? "text-gold" : ""} />Tell me when the dates are out</label>
       <div className={`mt-2 flex flex-wrap gap-2 ${dark ? "md:mt-0" : ""}`}>
-        <input id={id} type="email" value={email} onChange={(e) => { if (!started.current) started.current = Date.now(); setEmail(e.target.value); }} placeholder="you@gitam.in" autoComplete="email" aria-describedby={`${id}-note ${id}-err`}
+        <input id={id} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@gitam.in" autoComplete="email" aria-describedby={`${id}-note ${id}-err`}
           className={`min-w-0 flex-1 basis-[200px] rounded-md border px-3.5 py-2.5 text-[16px] outline-none transition ${t.field} ${t.ring}`} />
         <button disabled={state === "sending"} className={`rounded-md px-4 py-2.5 font-display text-[15px] font-bold transition disabled:opacity-60 ${t.btn} ${t.ring}`}>{state === "sending" ? "Saving…" : "Watch releases"}</button>
       </div>
