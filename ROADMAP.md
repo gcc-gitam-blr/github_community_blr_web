@@ -109,9 +109,9 @@ All done except `CRON_SECRET`.
 
 | | Feature | Check it | What it is |
 |---|---------|----------|------------|
-| ⬜ | Session materials archive | https://githubcommunityblr.vercel.app/learn | Slides, recordings and links from every session, in one place on the Learn hub. |
-| ⬜ | Alumni wall | https://githubcommunityblr.vercel.app/memories | Where past members went: internships, jobs, studies. Only with their consent; added in the editor. |
-| ⬜ | Badges | https://githubcommunityblr.vercel.app/board | First merge, five merges, challenge finisher: earned from real GitHub activity, each with a shareable image. |
+| ✅ | Session materials archive | https://githubcommunityblr.vercel.app/learn (top: "From our sessions") | Fills itself from each event's recap. 🙋 After a session: https://githubcommunityblr.vercel.app/keystatic → Events → the event → Recap → Slides, Video, More links. |
+| ✅ | Alumni wall | https://githubcommunityblr.vercel.app/memories#alumni | "Where they are now", alumni as forks of the club. 🙋 Add people at https://githubcommunityblr.vercel.app/keystatic → Alumni and tick "They said yes"; until then it invites past members to get in touch. |
+| ✅ | Badges | https://githubcommunityblr.vercel.app/board and each member's page, e.g. https://githubcommunityblr.vercel.app/board/lechakrawarthy | First merge, Five merged, Ten merged, Three projects, Challenge finisher: earned from real merges only. Every member page has a share card. |
 | ⬜ | "My club" page | https://githubcommunityblr.vercel.app/me | Sign in with GitHub: your events, certificates, merged pull requests and badges in one place. |
 | ⬜ | Monthly newsletter | https://githubcommunityblr.vercel.app/admin | A draft built from the month's updates, events and recaps; an organiser reads it, then sends it to members. |
 | ⬜ | Photo uploads in the editor | https://githubcommunityblr.vercel.app/keystatic | Add photos in the editor; GitHub resizes them and strips location data, so nobody needs the script. |
