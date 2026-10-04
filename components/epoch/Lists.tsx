@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
 import { useCallback, useEffect, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import { Frame, Notice } from "./Frame";
 import { Coin, btnInk, btnSoft, field, glass, label } from "./Bits";
 import { BoothSection } from "./home/BoothSection";
@@ -9,6 +10,7 @@ import { AuditLog, FindAttendee, Team } from "./Desk";
 import { MyPost } from "./Staff";
 import { useEpoch } from "./EpochProvider";
 import { qr } from "@/lib/epoch/store";
+import { useLiveLeaderboard, type BoardLink } from "@/lib/epoch/live";
 import { BOOTHS, STARTER_COINS, EPOCH } from "@/lib/epoch/config";
 import type { Audience, ClubMessage, EventFeedback, JoinRequest, Reward } from "@/lib/epoch/types";
 import { KINDS } from "@/lib/contact";
@@ -53,19 +55,27 @@ export function ShopPage() {
   );
 }
 
+/** Whether the board is updating by itself, and when it last did. */
+export function LinkState({ link, updatedAt, className = "" }: { link: BoardLink; updatedAt: number | null; className?: string }) {
+  if (link === "connecting") return null;
+  const at = updatedAt ? new Date(updatedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" }) : "";
+  const [dot, text] = link === "live" ? ["bg-[#1a7f37] animate-pulse motion-reduce:animate-none", "Live"] : link === "polling" ? ["bg-[#9a6700]", "Updating every few seconds"] : ["bg-[#cf222e]", `Offline · last updated ${at}`];
+  return <p role="status" className={`inline-flex items-center gap-2 text-[13px] text-mute ${className}`}><span className={`h-2 w-2 rounded-full ${dot}`} aria-hidden />{text}</p>;
+}
+
 export function LeaderboardPage() {
-  const { store, me } = useEpoch(); const [rows, setRows] = useState<{ id: string; handle: string; name: string; earned: number }[]>([]);
-  useEffect(() => { const l = () => store?.leaderboard(50).then(setRows); l(); const i = setInterval(l, 8000); return () => clearInterval(i); }, [store]);
+  const { me } = useEpoch(); const { rows, link, updatedAt } = useLiveLeaderboard(50);
+  const still = useReducedMotion();
   return (
-    <Frame title="Top earners." sub="Ranked by coins earned at recharge points and prizes. Spending never lowers your rank.">
-      {rows.length === 0 && <p className="text-[19px] text-mute">Nobody has earned coins yet. <Link className="text-ink underline" href="/epoch/register">Be first</Link>.</p>}
+    <Frame title="Top earners." sub="Ranked by coins earned at recharge points and prizes. Spending never lowers your rank." aside={<LinkState link={link} updatedAt={updatedAt} />}>
+      {rows?.length === 0 && <p className="text-[19px] text-mute">Nobody has earned coins yet. <Link className="text-ink underline" href="/epoch/register">Be first</Link>.</p>}
       <ol className="border-t border-hair">
-        {rows.map((r, i) => (
-          <li key={r.id} className={`flex items-center gap-5 border-b border-hair py-5 ${me?.id === r.id ? "-mx-4 rounded-2xl bg-white/60 px-4" : ""}`}>
+        {rows?.map((r, i) => (
+          <motion.li key={r.id} layout={!still} transition={{ type: "spring", stiffness: 420, damping: 38 }} className={`flex items-center gap-5 border-b border-hair py-5 ${me?.id === r.id ? "-mx-4 rounded-2xl bg-white/60 px-4" : ""}`}>
             <span className="w-8 text-[19px] tabular-nums text-mute">{i + 1}</span>
-            <div className="min-w-0 flex-1"><p className="truncate text-[24px] font-medium tracking-[-0.03em]">{r.name}</p><p className={`${label} truncate`}>@{r.handle}</p></div>
+            <div className="min-w-0 flex-1"><p className="truncate text-[24px] font-medium tracking-[-0.03em]">{r.name}</p><p className={`${label} truncate`}>@{r.handle}{r.climbed > 0 && <span className="ml-2 text-[#1a7f37]">↑ {r.climbed}</span>}{r.gained > 0 && <span key={`${r.id}-${r.earned}`} className="ml-2 inline-block animate-[fade-out_4s_ease-out_forwards] rounded-full bg-[#dafbe1] px-2 tabular-nums text-[#1a7f37] motion-reduce:animate-none">+{r.gained}</span>}</p></div>
             <span className="flex items-center gap-2 text-[24px] font-medium tabular-nums"><Coin size={22} />{r.earned}</span>
-          </li>
+          </motion.li>
         ))}
       </ol>
     </Frame>

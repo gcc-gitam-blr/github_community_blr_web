@@ -319,3 +319,6 @@ html.lenis, html.lenis body { height: auto; }
 @media (prefers-reduced-motion: reduce) {
   .reveal-group .print-in { opacity: 1; translate: 0 0; scale: 1; } /* the tilt stays: it's still, not motion */
 }
+
+/* a "+20" chip on the live leaderboard: shows for a few seconds, then fades */
+@keyframes fade-out { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
