@@ -174,6 +174,26 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   ok("after 2000 reports in a day, more are dropped", (await report("one more")).rows[0]?.r === false);
   await db.query("delete from client_errors where message = 'flood'");
 
+  // retention: rows a day past the period go, rows a day short of it stay — using the numbers /privacy quotes
+  const { RETENTION } = await import("../lib/retention");
+  await db.exec("delete from join_requests; delete from messages; delete from event_feedback; delete from client_errors;");
+  const ago = (n: number, unit: string, days: number) => `now() - interval '${n} ${unit}' + interval '${days} days'`;
+  for (const [tag, days] of [["old", -1], ["new", 1]] as const) {
+    await db.query(`insert into join_requests (handle, email, first_event, created_at) values ('${tag}', '${tag}@gitam.in', '2026-10-07', ${ago(RETENTION.signUpsMonths, "months", days)})`);
+    await db.query(`insert into messages (kind, name, email, message, created_at) values ('question', '${tag}', '${tag}@gitam.in', 'a question long enough', ${ago(RETENTION.messagesMonths, "months", days)})`);
+    await db.query(`insert into event_feedback (event, rating, liked, created_at) values ('2026-10-07', 4, '${tag}', ${ago(RETENTION.feedbackMonths, "months", days)})`);
+    await db.query(`insert into client_errors (message, path, browser, created_at) values ('${tag}', '/', 'Chrome', ${ago(RETENTION.errorsDays, "days", days)})`);
+  }
+  const pruned = (await asAnon<{ r: Record<string, number> }>("select prune_old_data() r")).rows[0]?.r;
+  ok("prune_old_data deletes one old row of each kind", JSON.stringify(pruned) === JSON.stringify({ signups: 1, messages: 1, feedback: 1, errors: 1 }));
+  const left = async (sql: string) => (await db.query<{ v: string }>(sql)).rows.map((r) => r.v).join();
+  ok(`sign-ups are kept ${RETENTION.signUpsMonths} months (lib/retention.ts and the SQL agree)`, (await left("select handle v from join_requests")) === "new");
+  ok(`messages are kept ${RETENTION.messagesMonths} months`, (await left("select name v from messages")) === "new");
+  ok(`feedback is kept ${RETENTION.feedbackMonths} months`, (await left("select liked v from event_feedback")) === "new");
+  ok(`error reports are kept ${RETENTION.errorsDays} days`, (await left("select message v from client_errors")) === "new");
+  ok("attendance is kept, so certificates stay verifiable", (await one<{ n: number }>("select count(*)::int n from attendance")).n === 1);
+  await db.exec(fs.readFileSync("supabase/schema.sql", "utf8"));
+  ok("schema.sql still re-runs cleanly with the new tables in use", (await one<{ n: number }>("select count(*)::int n from client_errors")).n === 1);
 
   console.log(fails ? `\n${fails} FAILED` : "\nall schema checks passed"); process.exit(fails ? 1 : 0);
 })().catch((e) => { console.error("FAIL  crashed:", e.message); process.exit(1); });

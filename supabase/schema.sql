@@ -386,3 +386,23 @@ end $$;
 revoke execute on function log_client_error(text, text, text, text) from public;
 grant execute on function log_client_error(text, text, text, text) to anon, authenticated;
 
+-- ============================================================
+-- Data retention: old personal data is deleted every week (a Vercel cron calls /api/cron/retention,
+-- which calls this). The periods are mirrored in lib/retention.ts, which /privacy quotes;
+-- tests/schema.test.ts checks the two agree, so change both together.
+-- Anyone may run it: it only ever does what the privacy page promises, a few days early at most.
+-- Attendance is kept, so certificates stay verifiable; Epoch data is cleared by hand (docs/ROLLOVER.md).
+-- ============================================================
+create or replace function prune_old_data()
+returns json language plpgsql security definer as $$
+declare s int; m int; f int; e int;
+begin
+  delete from join_requests where created_at < now() - interval '18 months'; get diagnostics s = row_count;
+  delete from messages where created_at < now() - interval '12 months'; get diagnostics m = row_count;
+  delete from event_feedback where created_at < now() - interval '12 months'; get diagnostics f = row_count;
+  delete from client_errors where created_at < now() - interval '30 days'; get diagnostics e = row_count;
+  delete from rate_hits where window_start < now() - interval '1 day';
+  return json_build_object('signups', s, 'messages', m, 'feedback', f, 'errors', e);
+end $$;
+revoke execute on function prune_old_data() from public;
+grant execute on function prune_old_data() to anon, authenticated;
