@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { MEMORIES_LINKED } from "../../lib/memories";
 
 test.describe("club site", () => {
   test("home page tells people what the club is", async ({ page }) => {
@@ -91,7 +92,7 @@ test.describe("club site", () => {
     expect(bad).toEqual([]);
   });
 
-  test("Memories tells the years from real data, shows no sample, and stays unlinked until there are photos", async ({ page }) => {
+  test("Memories tells the years from real data, shows no sample, and is linked only once it has photos", async ({ page }) => {
     await page.goto("/memories");
     await expect(page.getByRole("heading", { level: 1, name: "Memories." })).toBeVisible();
     for (const y of ["2024–25", "2025–26", "2026–27"]) await expect(page.getByRole("heading", { level: 2, name: y })).toBeVisible();
@@ -100,9 +101,11 @@ test.describe("club site", () => {
     await expect(page.getByText(/Sample/)).toHaveCount(0); // never outside preview deployments
     await expect(page.getByRole("heading", { name: "Thank you." })).toBeVisible();
     await expect(page.locator("#next").getByRole("link", { name: "Join the club" })).toHaveAttribute("href", "/#join");
-    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+    // follows the content: adding the first photos in the editor links the page, and that mustn't fail CI
+    if (MEMORIES_LINKED) await expect(page.locator('meta[name="robots"][content*="noindex"]')).toHaveCount(0);
+    else await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
     await page.goto("/");
-    await expect(page.locator('footer a[href="/memories"]')).toHaveCount(0);
+    await expect(page.locator('footer a[href="/memories"]')).toHaveCount(MEMORIES_LINKED ? 1 : 0);
   });
 
   test("API routes refuse bad requests instead of crashing", async ({ request }) => {
