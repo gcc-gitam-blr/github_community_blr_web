@@ -25,7 +25,7 @@ export default config({
   storage: local ? { kind: "local" } : { kind: "github", repo: "lechakrawarthy/github_community_blr", branchPrefix: "content/" },
   ui: {
     brand: { name: "Club site" },
-    navigation: { Club: ["settings", "announcements", "events", "updates", "team", "contributors", "faq", "home", "memories"], Epoch: ["epoch", "schedule"] },
+    navigation: { Club: ["settings", "announcements", "events", "updates", "team", "contributors", "challenge", "faq", "home", "memories"], Epoch: ["epoch", "schedule"] },
   },
   collections: {
     updates: collection({
@@ -118,6 +118,16 @@ export default config({
           photo,
           githubAvatar: fields.checkbox({ label: "Use their GitHub avatar when there's no photo", defaultValue: true }),
         }), { label: "People who've shaped the club", itemLabel: (p) => p.fields.name.value }),
+      },
+    }),
+    challenge: singleton({
+      label: "Contribution challenge", path: "content/club/challenge", format: { data: "json" },
+      schema: {
+        name: fields.text({ label: "Name", description: "Like October contribution challenge. Leave everything empty for no challenge." }),
+        from: fields.date({ label: "First day", description: "Pull requests merged from this day (India time) count." }),
+        to: fields.date({ label: "Last day", description: "…up to and including this day. The board shows the result for two weeks after." }),
+        goal: fields.integer({ label: "Goal", description: "How many merged pull requests into other people's projects, like 4. Same counting as the board." }),
+        description: fields.text({ label: "Short description", description: "One or two sentences: what it is, and what finishing it gets you (only if that's really decided).", multiline: true }),
       },
     }),
     faq: singleton({

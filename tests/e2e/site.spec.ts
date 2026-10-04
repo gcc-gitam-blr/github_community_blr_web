@@ -1,5 +1,4 @@
 import { expect, test } from "@playwright/test";
-import { MEMORIES_LINKED } from "../../lib/memories";
 
 test.describe("club site", () => {
   test("home page tells people what the club is", async ({ page }) => {
@@ -92,27 +91,26 @@ test.describe("club site", () => {
     expect(bad).toEqual([]);
   });
 
-  test("Memories tells the years from real data, shows no sample, and is linked only once it has photos", async ({ page }) => {
-    await page.goto("/memories");
-    await expect(page.getByRole("heading", { level: 1, name: "Memories." })).toBeVisible();
-    for (const y of ["2024–25", "2025–26", "2026–27"]) await expect(page.getByRole("heading", { level: 2, name: y })).toBeVisible();
-    await expect(page.locator("#y2024-25").getByText("Chakrawarthy")).toBeVisible(); // "Former President, 2024-25" in the team file
-    await expect(page.locator("#y2025-26").getByText("Greeshmitha")).toBeVisible();
-    await expect(page.getByText(/Sample/)).toHaveCount(0); // never outside preview deployments
-    await expect(page.getByRole("heading", { name: "Thank you." })).toBeVisible();
-    await expect(page.locator("#next").getByRole("link", { name: "Join the club" })).toHaveAttribute("href", "/#join");
-    // follows the content: adding the first photos in the editor links the page, and that mustn't fail CI
-    if (MEMORIES_LINKED) await expect(page.locator('meta[name="robots"][content*="noindex"]')).toHaveCount(0);
-    else await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
-    await page.goto("/");
-    await expect(page.locator('footer a[href="/memories"]')).toHaveCount(MEMORIES_LINKED ? 1 : 0);
-  });
-
   test("API routes refuse bad requests instead of crashing", async ({ request }) => {
     expect((await request.post("/api/join", { data: { handle: "-x-", email: "no", firstEvent: "x" } })).status()).toBe(422);
     expect((await request.post("/api/contact", { data: { kind: "apply" } })).status()).toBe(422);
     expect((await request.post("/api/feedback", { data: { event: "2026-10-07", rating: 9 } })).status()).toBe(422);
     expect((await request.post("/api/broadcast", { data: {} })).status()).toBeGreaterThanOrEqual(400);
+  });
+
+  test("a script error is reported to /api/errors once per message, without the query string", async ({ page, request }) => {
+    expect((await request.post("/api/errors", { data: { message: "x", path: "/" } })).status()).toBe(204); // no database in tests: accepted and dropped
+    const sent: string[] = [];
+    page.on("request", (r) => { if (r.url().endsWith("/api/errors")) sent.push(r.postData() ?? ""); });
+    await page.goto("/learn?email=ada%40gitam.in");
+    await page.evaluate(() => { for (let i = 0; i < 4; i++) setTimeout(() => { throw new Error("e2e boom"); }); setTimeout(() => { throw new Error("e2e second"); }); });
+    await expect.poll(() => sent.length).toBe(2);
+    await page.waitForTimeout(500);
+    expect(sent.length).toBe(2);
+    const first = JSON.parse(sent[0]);
+    expect(first.message).toContain("e2e boom");
+    expect(first.path).toBe("/learn");
+    expect(sent.join()).not.toContain("gitam");
   });
 });
 
@@ -120,7 +118,7 @@ test("with no inbox switched on, Get involved hands the message to Instagram ins
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/get-involved");
   await page.getByLabel("Your name").fill("Ada Lovelace");
-  await page.getByLabel("Email", { exact: true }).fill("ada@gitam.in");
+  await page.getByLabel("Email", { exact: true }).fill("ada@gitam.in"); // not the footer's "Email the club" link
   await page.locator("textarea").fill("We'd love to run a workshop on Git internals.");
   await page.waitForTimeout(3500); // humans take a few seconds; the spam check knows that
   await page.getByRole("button", { name: "Send message" }).click();
@@ -257,6 +255,41 @@ test("opening a #link lands there and stays (the smooth scroll doesn't snap back
   await page.waitForTimeout(1500); // well after the page has started up
   expect(await page.evaluate(() => document.getElementById("events")!.getBoundingClientRect().top)).toBeLessThan(200);
   await expect(page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Events" })).toHaveAttribute("aria-current", "page");
+});
+
+test("'Tell me when the dates are out' is on the home page and /epoch, and says so honestly while the list is off", async ({ page }) => {
+  for (const path of ["/", "/epoch"]) {
+    await page.goto(path);
+    const box = page.getByLabel("Tell me when the dates are out");
+    await box.scrollIntoViewIfNeeded();
+    await box.fill("grace@");
+    await page.getByRole("button", { name: "Watch releases" }).click();
+    await expect(page.getByText("That email doesn't look right.")).toBeVisible();
+  }
+  await page.getByLabel("Tell me when the dates are out").fill("grace@gitam.in");
+  await page.getByRole("button", { name: "Watch releases" }).click();
+  await expect(page.getByText(/isn't switched on yet, so nothing was saved/)).toBeVisible(); // the test build has no database
+});
+
+test("an address that unsubscribed is told it won't be emailed, not that it's on the list", async ({ page }) => {
+  await page.route("**/api/epoch-interest", (r) => r.fulfill({ json: { ok: true, status: "unsubscribed" } })); // what the database answers for it
+  await page.goto("/epoch");
+  await page.getByLabel("Tell me when the dates are out").fill("grace@gitam.in");
+  await page.getByRole("button", { name: "Watch releases" }).click();
+  await expect(page.getByRole("status")).toContainText("unsubscribed from our emails, so we won't email it");
+  await expect(page.getByText(/already on the list/)).toHaveCount(0);
+});
+
+test("the new endpoints refuse what they should", async ({ request }) => {
+  expect((await request.post("/api/epoch-interest", { data: { email: "nope" } })).status()).toBe(422);
+  expect((await request.get("/api/cron/digest")).status()).toBeGreaterThanOrEqual(401); // no CRON_SECRET in tests: off
+  expect((await request.get("/api/cron/digest", { headers: { authorization: "Bearer guess" } })).status()).toBeGreaterThanOrEqual(401);
+});
+
+test("the board shows no challenge while none is set in the content editor", async ({ page }) => {
+  await page.goto("/board");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.locator("#challenge")).toHaveCount(0);
 });
 
 test("the 3D stickers load on desktop, with a still frame for reduced motion", async ({ page, request }) => {

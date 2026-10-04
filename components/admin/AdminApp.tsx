@@ -6,6 +6,7 @@ import { ClubStatsPanel, FeedbackSummary, Inbox, SignUps } from "@/components/ep
 import { ensureProfile, signedInUser } from "@/lib/admin/client";
 import { Attendance } from "./Attendance";
 import { People } from "./People";
+import { SiteErrors } from "./SiteErrors";
 import { ClubMark } from "@/components/ui/ClubMark";
 
 /* The club's admin dashboard. Who may see it is decided by the database (profiles.role), not by this page:
@@ -17,7 +18,8 @@ const SECTIONS = [
   { id: "messages", label: "Messages" },
   { id: "feedback", label: "Feedback" },
   { id: "people", label: "People & roles" },
-] as const;
+  { id: "errors", label: "Site errors", admin: true },
+] as const satisfies readonly { id: string; label: string; admin?: boolean }[];
 type Section = (typeof SECTIONS)[number]["id"];
 
 const card = "rounded-[12px] border border-line bg-white p-6 sm:p-8";
@@ -103,7 +105,7 @@ export function AdminApp() {
     <Shell who={me.handle} onSignOut={signOut}>
       <div className="grid grid-cols-1 gap-8 md:grid-cols-[240px_minmax(0,1fr)]">
         <nav aria-label="Admin sections" className="-mx-5 flex min-w-0 gap-1 overflow-x-auto px-5 md:mx-0 md:flex-col md:px-0">
-          {SECTIONS.map((s) => (
+          {SECTIONS.filter((s) => admin || !("admin" in s)).map((s) => (
             <a key={s.id} href={`#${s.id}`} aria-current={section === s.id ? "page" : undefined}
               className={`relative whitespace-nowrap rounded-md px-3 py-2 text-[14.5px] ${section === s.id ? "bg-white font-semibold shadow-[inset_0_0_0_1px_var(--color-line)] md:before:absolute md:before:-left-2 md:before:bottom-1.5 md:before:top-1.5 md:before:w-1 md:before:rounded md:before:bg-[#fd8c73]" : "text-ink-2 hover:bg-white/70"}`}>{s.label}</a>
           ))}
@@ -119,6 +121,7 @@ export function AdminApp() {
           {section === "messages" && <Inbox />}
           {section === "feedback" && <FeedbackSummary />}
           {section === "people" && <People admin={admin} me={me.handle} />}
+          {section === "errors" && (admin ? <SiteErrors /> : <p className="text-ink-2">Error reports are for admins.</p>)}
         </div>
       </div>
     </Shell>

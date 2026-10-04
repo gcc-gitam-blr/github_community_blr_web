@@ -343,11 +343,7 @@ grant insert on join_requests to anon, authenticated;
 -- ============================================================
 alter table join_requests add column if not exists unsubscribed boolean not null default false;
 
--- Anyone with a valid signed link can unsubscribe (the site checks the signature before calling this).
-create or replace function unsubscribe_join(p_email text) returns void language sql security definer as $$
-  update join_requests set unsubscribed = true where lower(email) = lower(p_email);
-$$;
-grant execute on function unsubscribe_join(text) to anon, authenticated;
+-- Anyone with a valid signed link can unsubscribe: unsubscribe_join, defined with the Epoch interest list below.
 
 -- A record of every broadcast: who sent what, to how many.
 create table if not exists broadcasts (
@@ -466,3 +462,123 @@ begin
 end $$;
 revoke execute on function assign_booth(text, text) from public, anon;
 grant execute on function assign_booth(text, text) to authenticated;
+-- ============================================================
+-- Rate limits shared by every server instance (lib/ratelimit.ts). Vercel runs many copies of the site,
+-- so a counter in memory resets whenever a new one starts; this one doesn't. The site sends a keyed
+-- SHA-256 of the visitor's IP, never the IP itself. Nobody can read the table; rows older than a day
+-- are deleted as it goes.
+-- ============================================================
+create table if not exists rate_hits (
+  key text primary key check (length(key) <= 100),
+  window_start timestamptz not null default now(),
+  hits int not null default 1
+);
+create index if not exists rate_hits_window on rate_hits (window_start);
+alter table rate_hits enable row level security;
+
+-- Counts one hit for p_key and answers whether it's still within p_limit hits per p_window_seconds.
+-- One statement, so two servers counting the same visitor at once can't both slip through.
+create or replace function rate_hit(p_key text, p_limit int, p_window_seconds int)
+returns boolean language plpgsql security definer as $$
+declare n int; w interval := make_interval(secs => greatest(1, least(coalesce(p_window_seconds, 600), 86400)));
+begin
+  if p_key is null or length(p_key) not between 1 and 100 then return false; end if;
+  delete from rate_hits where window_start < now() - interval '1 day';
+  insert into rate_hits as r (key) values (p_key)
+  on conflict (key) do update set
+    hits = case when r.window_start <= now() - w then 1 else r.hits + 1 end,
+    window_start = case when r.window_start <= now() - w then now() else r.window_start end
+  returning hits into n;
+  return n <= p_limit;
+end $$;
+revoke execute on function rate_hit(text, int, int) from public;
+grant execute on function rate_hit(text, int, int) to anon, authenticated;
+
+-- ============================================================
+-- Errors from visitors' browsers (components/ui/ErrorReporter.tsx → /api/errors), so we hear when
+-- something breaks on someone's phone. Only the message, a trimmed stack, the page path and the
+-- browser family: never form contents, emails or query strings. Anyone can add one through
+-- log_client_error (nobody can insert directly); only admins can read them, on /admin.
+-- ============================================================
+create table if not exists client_errors (
+  id bigint generated always as identity primary key,
+  message text not null check (length(message) between 1 and 300),
+  stack text check (stack is null or length(stack) <= 2000),
+  path text not null check (length(path) between 1 and 200),
+  browser text not null check (length(browser) between 1 and 40),
+  created_at timestamptz not null default now()
+);
+create index if not exists client_errors_at on client_errors (created_at desc);
+alter table client_errors enable row level security;
+drop policy if exists "admins read errors" on client_errors;
+create policy "admins read errors" on client_errors for select using (my_role() = 'admin');
+grant select on client_errors to authenticated;
+
+create or replace function log_client_error(p_message text, p_stack text, p_path text, p_browser text)
+returns boolean language plpgsql security definer as $$
+begin
+  if coalesce(p_message, '') = '' or coalesce(p_path, '') = '' then return false; end if;
+  -- a broken release on every phone, or someone scripting it: 2000 a day is plenty to see the pattern
+  if (select count(*) from client_errors where created_at > now() - interval '1 day') >= 2000 then return false; end if;
+  insert into client_errors (message, stack, path, browser)
+  values (left(p_message, 300), nullif(left(coalesce(p_stack, ''), 2000), ''), left(p_path, 200), left(coalesce(nullif(p_browser, ''), 'Other'), 40));
+  return true;
+end $$;
+revoke execute on function log_client_error(text, text, text, text) from public;
+grant execute on function log_client_error(text, text, text, text) to anon, authenticated;
+
+-- ============================================================
+-- Data retention: old personal data is deleted every week (a Vercel cron calls /api/cron/retention,
+-- which calls this). The periods are mirrored in lib/retention.ts, which /privacy quotes;
+-- tests/schema.test.ts checks the two agree, so change both together.
+-- Only the server-only key (service_role) may run it, so nobody can start a deletion from a browser.
+-- Attendance is kept, so certificates stay verifiable; Epoch data is cleared by hand (docs/ROLLOVER.md).
+-- ============================================================
+create or replace function prune_old_data()
+returns json language plpgsql security definer as $$
+declare s int; m int; f int; e int;
+begin
+  delete from join_requests where created_at < now() - interval '18 months'; get diagnostics s = row_count;
+  delete from messages where created_at < now() - interval '12 months'; get diagnostics m = row_count;
+  delete from event_feedback where created_at < now() - interval '12 months'; get diagnostics f = row_count;
+  delete from client_errors where created_at < now() - interval '30 days'; get diagnostics e = row_count;
+  delete from rate_hits where window_start < now() - interval '1 day';
+  return json_build_object('signups', s, 'messages', m, 'feedback', f, 'errors', e);
+end $$;
+revoke execute on function prune_old_data() from public;
+grant execute on function prune_old_data() to service_role; -- only the weekly cron, with the server-only key, may delete
+-- "Notify me when Epoch dates are announced": an email-only interest list.
+-- Nobody can insert or read it directly: the site calls epoch_interest_join (which checks the address), and only
+-- admins can read the list, to email it from the broadcast tool. The same signed unsubscribe link covers it.
+-- ============================================================
+create table if not exists epoch_interest (
+  id bigint generated always as identity primary key,
+  email text not null check (length(email) <= 254 and email ~ '^[^\s@]+@[^\s@]+\.[^\s@]+$'),
+  unsubscribed boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists epoch_interest_one_per_email on epoch_interest (lower(email));
+alter table epoch_interest enable row level security;
+drop policy if exists "admins read epoch interest" on epoch_interest;
+create policy "admins read epoch interest" on epoch_interest for select using (my_role() = 'admin');
+
+-- 'created', 'exists' or 'unsubscribed'. An address that unsubscribed stays unsubscribed: someone else typing it in
+-- can't undo that, so the form says it won't be emailed instead of claiming it's on the list.
+create or replace function epoch_interest_join(p_email text) returns text language plpgsql security definer as $$
+declare e text := lower(trim(p_email));
+begin
+  if e is null or length(e) > 254 or e !~ '^[^\s@]+@[^\s@]+\.[^\s@]+$' then raise exception 'invalid email'; end if;
+  insert into epoch_interest (email) values (e) on conflict ((lower(email))) do nothing;
+  if found then return 'created'; end if;
+  return case when exists (select 1 from epoch_interest where lower(email) = e and unsubscribed) then 'unsubscribed' else 'exists' end;
+end $$;
+revoke execute on function epoch_interest_join(text) from public;
+grant execute on function epoch_interest_join(text) to anon, authenticated;
+
+-- Anyone with a valid signed link can unsubscribe (the site checks the signature before calling this).
+-- One link, every list: club sign-ups and the Epoch interest list.
+create or replace function unsubscribe_join(p_email text) returns void language sql security definer as $$
+  update join_requests set unsubscribed = true where lower(email) = lower(p_email);
+  update epoch_interest set unsubscribed = true where lower(email) = lower(p_email);
+$$;
+grant execute on function unsubscribe_join(text) to anon, authenticated;

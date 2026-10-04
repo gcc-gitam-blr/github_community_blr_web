@@ -7,11 +7,12 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx tests/economy.test.ts && tsx tests/ask.test.ts && tsx tests/join.test.ts && tsx tests/email.test.ts && tsx tests/issues.test.ts && tsx tests/contact.test.ts && tsx tests/announcements.test.ts && tsx tests/feedback.test.ts && tsx tests/schema.test.ts && tsx tests/connect.test.ts && tsx tests/updates.test.ts && tsx tests/stats.test.ts && tsx tests/github-changelog.test.ts && tsx tests/github-login.test.ts && tsx tests/attendance.test.ts && tsx tests/certificates.test.ts && tsx tests/search.test.ts && tsx tests/shuffle.test.ts && tsx tests/recap.test.ts && tsx tests/content.test.ts && tsx tests/board.test.ts && tsx tests/photos.test.ts && tsx tests/memories.test.ts && tsx tests/organisers.test.ts && tsx tests/receipts.test.ts",
+    "test": "tsx tests/economy.test.ts && tsx tests/ask.test.ts && tsx tests/join.test.ts && tsx tests/email.test.ts && tsx tests/issues.test.ts && tsx tests/contact.test.ts && tsx tests/announcements.test.ts && tsx tests/feedback.test.ts && tsx tests/schema.test.ts && tsx tests/connect.test.ts && tsx tests/updates.test.ts && tsx tests/stats.test.ts && tsx tests/github-changelog.test.ts && tsx tests/github-login.test.ts && tsx tests/attendance.test.ts && tsx tests/certificates.test.ts && tsx tests/search.test.ts && tsx tests/shuffle.test.ts && tsx tests/recap.test.ts && tsx tests/content.test.ts && tsx tests/board.test.ts && tsx tests/photos.test.ts && tsx tests/memories.test.ts && tsx tests/challenge.test.ts && tsx tests/interest.test.ts && tsx tests/digest.test.ts && tsx tests/ratelimit.test.ts && tsx tests/errors.test.ts && tsx tests/retention.test.ts && tsx tests/organisers.test.ts && tsx tests/receipts.test.ts",
     "test:e2e": "playwright test",
     "connect": "tsx scripts/connect.ts",
     "build:test": "node scripts/build-test.mjs",
-    "load-test": "tsx scripts/load-test.ts"
+    "load-test": "tsx scripts/load-test.ts",
+    "lighthouse": "npx --yes @lhci/cli@0.15.1 autorun --config=lighthouserc.cjs"
   },
   "dependencies": {
     "@keystatic/core": "^0.6.9",

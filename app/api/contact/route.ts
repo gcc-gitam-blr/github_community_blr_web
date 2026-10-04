@@ -4,7 +4,7 @@ import { KINDS, validateContact, type ContactInput, type ContactResult } from "@
 import { emailConfigured, sendEmail } from "@/lib/email/send";
 import { contactAck, contactNotification } from "@/lib/email/templates";
 import { cleanHandle } from "@/lib/join";
-import { clientIp, limited } from "@/lib/ratelimit";
+import { rateLimited } from "@/lib/ratelimit";
 import { SITE_URL } from "@/lib/site";
 
 /* POST /api/contact — a "Get involved" message. Saved in Supabase (table `messages`) and emailed to the
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   const problem = validateContact(input);
   if (problem === "spam") return reply({ ok: true }); // don't tell bots they were caught
   if (problem) return reply({ ok: false, error: problem }, 422);
-  if (limited(`contact:${clientIp(req)}`)) return reply({ ok: false, error: "Too many messages from here — please try again in a few minutes." }, 429);
+  if (await rateLimited(req, "contact")) return reply({ ok: false, error: "Too many messages from here — please try again in a few minutes." }, 429);
 
   const URL = process.env.NEXT_PUBLIC_SUPABASE_URL, KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const inbox = CLUB.email || process.env.SMTP_USER || "";

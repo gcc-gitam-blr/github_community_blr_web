@@ -15,7 +15,7 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
 
 (async () => {
   await db.exec(`
-    create role anon; create role authenticated;
+    create role anon; create role authenticated; create role service_role;
     create schema auth;
     create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb);
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.uid', true), '')::uuid $$;
@@ -228,6 +228,80 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
 
   ok("taking a volunteer's role away takes them off their booth", (await role(ORG, "vol", "attendee"))?.ok === true && (await one<{ booth: string | null }>("select booth from profiles where id = $1", [VOL])).booth === null);
   ok("every balance still equals the sum of its ledger", (await one<{ n: number }>("select count(*)::int n from profiles p where coins <> coalesce((select sum(delta) from txs where user_id = p.id), 0) and id <> all($1)", [[ADA, BEA]])).n === 0); // (their balances were set by hand above)
+  // ---- reliability: shared rate limits, browser error reports, data retention ----
+  // Supabase grants the API roles every table by default, so row-level security is all that stands in the way.
+  await db.exec("grant usage on schema public to anon, service_role; grant select, insert, update, delete on all tables in schema public to anon, authenticated;");
+  // ---- the Epoch interest list ("notify me when the dates are out") ----
+  await db.exec("grant usage on schema public to anon; grant select on epoch_interest to anon, authenticated;");
+  const asAnon = async <T,>(sql: string, p: unknown[] = []) => {
+    await as(""); await db.exec("set role anon");
+    try { return { rows: (await db.query<T>(sql, p)).rows, error: null as string | null }; }
+    catch (e) { return { rows: [] as T[], error: (e as Error).message }; }
+    finally { await db.exec("reset role"); }
+  };
+  const hit = async (key: string, limit = 3, secs = 600) => (await asAnon<{ r: boolean }>("select rate_hit($1, $2, $3) r", [key, limit, secs])).rows[0]?.r;
+  const hits: (boolean | undefined)[] = []; for (let i = 0; i < 4; i++) hits.push(await hit("join:aaa"));
+  ok("rate_hit allows 3 hits in the window, then blocks the 4th", hits.join() === "true,true,true,false");
+  ok("…another visitor has their own count", (await hit("join:bbb")) === true);
+  ok("…and the same visitor on another form too", (await hit("contact:aaa")) === true);
+  await db.query("update rate_hits set window_start = now() - interval '11 minutes' where key = 'join:aaa'");
+  ok("once the window has passed, the visitor can try again", (await hit("join:aaa")) === true && (await one<{ hits: number }>("select hits from rate_hits where key = 'join:aaa'")).hits === 1);
+  const burst = await Promise.all(Array.from({ length: 10 }, () => hit("join:burst", 5)));
+  ok("10 hits at once with a limit of 5: exactly 5 get through", burst.filter(Boolean).length === 5);
+  await db.query("insert into rate_hits (key, window_start) values ('join:stale', now() - interval '2 days')");
+  await hit("join:ccc");
+  ok("rows older than a day are deleted as it goes", (await one<{ n: number }>("select count(*)::int n from rate_hits where key = 'join:stale'")).n === 0);
+  ok("a missing or oversized key is refused", (await hit("")) === false && (await hit("k".repeat(101))) === false);
+  ok("visitors can't read the counters", (await asAnon("select * from rate_hits")).rows.length === 0);
+  ok("…or reset them", (await asAnon("delete from rate_hits returning key")).rows.length === 0 && (await one<{ n: number }>("select count(*)::int n from rate_hits")).n > 0);
+
+  const report = (m: string) => asAnon<{ r: boolean }>("select log_client_error($1, $2, $3, $4) r", [m, "at x (/_next/static/chunks/a.js:1:2)", "/epoch", "Chrome (phone)"]);
+  ok("anyone can report a browser error", (await report("TypeError: x is undefined")).rows[0]?.r === true);
+  ok("…but nobody can insert into the table directly", !!(await asAnon("insert into client_errors (message, path, browser) values ('x', '/', 'Chrome')")).error);
+  ok("a long message is trimmed to 300 characters", (await report("y".repeat(900))).rows[0]?.r === true && (await one<{ n: number }>("select max(length(message))::int n from client_errors")).n === 300);
+  ok("an empty report is ignored", (await report("")).rows[0]?.r === false);
+  ok("visitors can't read error reports", (await asAnon("select * from client_errors")).rows.length === 0);
+  ok("volunteers can't either", (await asApi(ADA, "select * from client_errors")).rows.length === 0);
+  ok("admins can", (await asApi(ORG, "select * from client_errors")).rows.length === 2);
+  await db.query("insert into client_errors (message, path, browser) select 'flood', '/', 'Chrome' from generate_series(1, 2000)");
+  ok("after 2000 reports in a day, more are dropped", (await report("one more")).rows[0]?.r === false);
+  await db.query("delete from client_errors where message = 'flood'");
+
+  // retention: rows a day past the period go, rows a day short of it stay — using the numbers /privacy quotes
+  const { RETENTION } = await import("../lib/retention");
+  await db.exec("delete from join_requests; delete from messages; delete from event_feedback; delete from client_errors;");
+  const ago = (n: number, unit: string, days: number) => `now() - interval '${n} ${unit}' + interval '${days} days'`;
+  for (const [tag, days] of [["old", -1], ["new", 1]] as const) {
+    await db.query(`insert into join_requests (handle, email, first_event, created_at) values ('${tag}', '${tag}@gitam.in', '2026-10-07', ${ago(RETENTION.signUpsMonths, "months", days)})`);
+    await db.query(`insert into messages (kind, name, email, message, created_at) values ('question', '${tag}', '${tag}@gitam.in', 'a question long enough', ${ago(RETENTION.messagesMonths, "months", days)})`);
+    await db.query(`insert into event_feedback (event, rating, liked, created_at) values ('2026-10-07', 4, '${tag}', ${ago(RETENTION.feedbackMonths, "months", days)})`);
+    await db.query(`insert into client_errors (message, path, browser, created_at) values ('${tag}', '/', 'Chrome', ${ago(RETENTION.errorsDays, "days", days)})`);
+  }
+  ok("visitors can't start the clean-up", !!(await asAnon("select prune_old_data()")).error);
+  await db.exec("set role service_role");
+  const pruned = (await db.query<{ r: Record<string, number> }>("select prune_old_data() r")).rows[0]?.r;
+  await db.exec("reset role");
+  ok("prune_old_data deletes one old row of each kind", JSON.stringify(pruned) === JSON.stringify({ signups: 1, messages: 1, feedback: 1, errors: 1 }));
+  const left = async (sql: string) => (await db.query<{ v: string }>(sql)).rows.map((r) => r.v).join();
+  ok(`sign-ups are kept ${RETENTION.signUpsMonths} months (lib/retention.ts and the SQL agree)`, (await left("select handle v from join_requests")) === "new");
+  ok(`messages are kept ${RETENTION.messagesMonths} months`, (await left("select name v from messages")) === "new");
+  ok(`feedback is kept ${RETENTION.feedbackMonths} months`, (await left("select liked v from event_feedback")) === "new");
+  ok(`error reports are kept ${RETENTION.errorsDays} days`, (await left("select message v from client_errors")) === "new");
+  ok("attendance is kept, so certificates stay verifiable", (await one<{ n: number }>("select count(*)::int n from attendance")).n === 1);
+  await db.exec(fs.readFileSync("supabase/schema.sql", "utf8"));
+  ok("schema.sql still re-runs cleanly with the new tables in use", (await one<{ n: number }>("select count(*)::int n from client_errors")).n === 1);
+  const join = async (email: string) => (await asAnon<{ r: string }>("select epoch_interest_join($1) r", [email])).rows[0]?.r;
+  ok("a visitor joins the Epoch interest list through the function", (await join(" Grace@Gitam.in ")) === "created");
+  ok("the same address again (any case) is not added twice", (await join("grace@gitam.in")) === "exists" && (await one<{ n: number }>("select count(*)::int n from epoch_interest")).n === 1);
+  ok("it's stored trimmed and lowercase", (await one<{ email: string }>("select email from epoch_interest")).email === "grace@gitam.in");
+  ok("a broken address is refused", !!(await asAnon("select epoch_interest_join('not-an-email')")).error);
+  ok("visitors can't add to the list directly", !!(await asAnon("insert into epoch_interest (email) values ('x@y.in')")).error);
+  ok("visitors can't read the list", (await asAnon("select * from epoch_interest")).rows.length === 0);
+  ok("volunteers can't read the list either", (await asApi(ADA, "select * from epoch_interest")).rows.length === 0);
+  ok("admins can read the list", (await asApi(ORG, "select * from epoch_interest")).rows.length === 1);
+  await asAnon("select unsubscribe_join('GRACE@gitam.in')");
+  ok("the usual unsubscribe link also takes people off the Epoch list", (await one<{ u: boolean }>("select unsubscribed u from epoch_interest")).u === true);
+  ok("someone typing an unsubscribed address in again doesn't re-subscribe it, and is told so", (await join("grace@gitam.in")) === "unsubscribed" && (await one<{ u: boolean }>("select unsubscribed u from epoch_interest")).u === true);
 
   console.log(fails ? `\n${fails} FAILED` : "\nall schema checks passed"); process.exit(fails ? 1 : 0);
 })().catch((e) => { console.error("FAIL  crashed:", e.message); process.exit(1); });

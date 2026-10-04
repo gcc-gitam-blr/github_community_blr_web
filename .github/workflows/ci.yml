@@ -28,6 +28,7 @@ jobs:
       - name: Tests (coin rules, ask engine, sign-ups, Supabase SQL in PGlite)
         run: npm test
       - name: Build
+        id: build
         run: npm run build
       - name: Browser tests (Playwright)
         run: |
@@ -40,3 +41,14 @@ jobs:
           name: playwright-traces
           path: test-results/
           retention-days: 7
+      # Reuses the build above (demo mode, no secrets) instead of building twice: about 2 minutes for 5 pages.
+      - name: Lighthouse (accessibility 0.95+ on every page; performance budgets only warn)
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: npm run lighthouse
+      - name: Keep the Lighthouse reports
+        if: ${{ !cancelled() && hashFiles('.lighthouseci/*.html') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci/
+          retention-days: 14

@@ -1,0 +1,52 @@
+name: Uptime
+
+# Every 6 hours, checks that the live home page and /epoch open. If either doesn't, it opens one
+# "Site is down" issue (or comments on the open one), so watchers get an email; when the site is back it
+# comments and closes it. Uses the repository variable SITE_URL (e.g. https://example.vercel.app);
+# without it the run skips, green. Scheduled runs only happen on the default branch.
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: uptime
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SITE_URL: ${{ vars.SITE_URL }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TITLE: Site is down
+    steps:
+      - name: Check the live site
+        run: |
+          if [ -z "$SITE_URL" ]; then echo "::notice::No SITE_URL variable, so there's nothing to check. Add it under Settings → Secrets and variables → Actions → Variables."; exit 0; fi
+          base="${SITE_URL%/}"; down=""
+          for path in / /epoch; do
+            code=000
+            for try in 1 2 3; do # a single slow answer isn't an outage
+              code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 -L "$base$path" || true)
+              [ "$code" = 200 ] && break; sleep 20
+            done
+            echo "$base$path → $code"
+            [ "$code" = 200 ] || down="$down- $base$path answered **$code** (000 = no answer)"$'\n'
+          done
+          issue=$(gh issue list --state open --search "\"$TITLE\" in:title" --json number,title --jq "map(select(.title == \"$TITLE\"))[0].number // empty")
+          now=$(date -u '+%d %b %Y %H:%M UTC')
+          if [ -n "$down" ]; then
+            body="Checked at $now:"$'\n\n'"$down"$'\n'"Open the site yourself, then check Vercel → Deployments and Logs. This issue closes itself once the site is back."
+            if [ -n "$issue" ]; then gh issue comment "$issue" --body "Still down. $body"; else gh issue create --title "$TITLE" --body "$body"; fi
+            exit 1
+          elif [ -n "$issue" ]; then
+            gh issue comment "$issue" --body "Back up: the home page and /epoch answered at $now."
+            gh issue close "$issue"
+          fi

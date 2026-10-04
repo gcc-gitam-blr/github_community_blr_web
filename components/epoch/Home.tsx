@@ -9,7 +9,8 @@ import { BoothSection } from "./home/BoothSection";
 import { PlanList } from "./home/PlanList";
 import { Sponsors } from "./home/Sponsors";
 import { useEpoch } from "./EpochProvider";
-import { BOOTH_COUNT, REWARDS } from "@/lib/epoch/config";
+import { EpochInterest } from "@/components/site/EpochInterest";
+import { BOOTH_COUNT, EPOCH, REWARDS } from "@/lib/epoch/config";
 
 const wrap = "mx-auto w-full max-w-[1120px] px-6 md:px-10";
 const h2 = "text-[clamp(38px,5.6vw,72px)] font-medium leading-[1.02] tracking-[-0.045em]";
@@ -20,6 +21,12 @@ export function EpochHome() {
   return (
     <>
       <Hero />
+      <section id="dates" aria-labelledby="dates-h" className="pb-[clamp(56px,8vw,96px)]">
+        <div className={`${wrap} grid items-end gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,480px)]`}>
+          <div><h2 id="dates-h" className="text-[clamp(30px,4vw,48px)] font-medium leading-[1.05] tracking-[-0.04em]">{EPOCH.startsAt ? "The dates are out." : "Dates aren't tagged yet."}</h2><p className="mt-3 max-w-[44ch] text-[17px] leading-snug text-mute">{EPOCH.startsAt ? "Get your ticket now and your coins are waiting at the desk." : "Leave your email and we'll tell you the day they're announced, so you can plan around exams."}</p></div>
+          <EpochInterest />
+        </div>
+      </section>
       <Rule />
       <TicketPanel />
       <Rule />

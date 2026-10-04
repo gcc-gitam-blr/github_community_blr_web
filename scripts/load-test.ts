@@ -64,7 +64,7 @@ async function main() {
   // Supabase's auth schema, stubbed as in tests/schema.test.ts: auth.uid() reads a per-transaction setting
   const phones = Array.from({ length: PHONES }, () => randomUUID()), desks = Array.from({ length: DESKS }, () => randomUUID());
   await pool.query(`
-    create role anon; create role authenticated; create schema auth;
+    create role anon; create role authenticated; create role service_role; create schema auth;
     create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb);
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.uid', true), '')::uuid $$;`);
   await pool.query(fs.readFileSync("supabase/schema.sql", "utf8"));

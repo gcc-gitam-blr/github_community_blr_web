@@ -15,7 +15,7 @@ Website for the GitHub Community Club at GITAM University Bengaluru — **Code. 
 ## Features at a glance
 
 - **Club site** — git-graph hero, contribution-graph calendar of the year, a page per event (laid out like a GitHub release, with its own calendar file, share image and schema.org data), FAQ as closed issues, joining as a pull request.
-- **Club sign-ups** — the Join form posts to `/api/join` (validated, rate-limited, honeypot) and stores rows in Supabase's `join_requests`; organisers see them on `/epoch/admin` with a CSV export. Without Supabase it falls back to `joinUrl` / `email`.
+- **Club sign-ups** — the Join form posts to `/api/join` (validated, rate-limited, honeypot; with Supabase connected the limit is counted in the database, so it holds across every Vercel server) and stores rows in Supabase's `join_requests`; organisers see them on `/epoch/admin` with a CSV export. Without Supabase it falls back to `joinUrl` / `email`.
 - **Epoch** — coin economy with ticket verification, recharge points, booths, merch, leaderboard, QR scanning and a command bar (press `/`).
 - **Installable & offline** — Epoch has a web app manifest and a service worker: attendees can add the wallet to their home screen, and the wallet, QR pass and booths still open without signal.
 - **Calendar** — `/calendar.ics` (whole year) and `/events/<slug>/event.ics` (one event).
@@ -46,6 +46,7 @@ Everything is saved in `.env.local` (never committed). To make someone an organi
 - **Who gets in** is decided by the database (`profiles.role`): *admin* (everything), *volunteer* (sees everything, marks attendance), everyone else sees "ask an admin".
 - **The first admin** is set once in Supabase → SQL Editor: `update profiles set role = 'admin' where handle = 'your-github-username';` (sign in at `/admin` once first). After that, admins add people under **People & roles**.
 - **Certificates go only to people who attended.** After an event, open **Attendance & certificates**, pick the event and add who came: import Luma's guest list (Event → Guests → ⋯ → Export as CSV — only checked-in guests are taken), pick from club sign-ups, or type them in. Then **Email certificates**. Each person gets a link to their certificate page — printable as an A4 PDF, with an *Add to LinkedIn* button and a QR code anyone can scan to verify it.
+- **Site errors** (admins only): when a page breaks in someone's browser, the message, the page and the browser family (never what they typed) go to `/api/errors` and show here, the same error from many phones folded into one line with a count. No third-party account needed; reports are deleted after 30 days. Needs `supabase/schema.sql` re-run once.
 
 ### Sign in with GitHub on the site's own address
 
@@ -64,6 +65,9 @@ It works on the production address. Preview deployments and `localhost` automati
 | `NEXT_PUBLIC_SITE_URL` | Optional custom domain. On Vercel the production domain is used automatically. |
 | `NEXT_PUBLIC_EPOCH_MODE` | `live` / `off` forces Epoch's live state. |
 | `NEXT_PUBLIC_ANALYTICS` | `on` loads cookie-free Vercel Analytics + Speed Insights (enable them in the Vercel dashboard first). |
+| `CRON_SECRET` | Switches on the two weekly jobs: the clean-up of old personal data and the Monday digest email to organisers (see **Keeping it running** and *Email*). Any long random text; Vercel sends it to the jobs itself. Without it both refuse to run. |
+| `ORGANISER_EMAILS` | Optional. Who gets the Monday digest, comma-separated. Empty = every admin's email from Supabase. |
+| `RATE_LIMIT_SALT` | Optional. Any long random text, used to hash visitors' IPs for the form rate limits. Without it a secret the site already has (`EMAIL_SECRET`) is used. |
 
 ## Run it
 
@@ -77,6 +81,7 @@ Epoch works out of the box in **demo mode** (data lives in your browser's localS
 ## Make it yours
 
 - Club content (events, recaps, team, contributors, FAQ, socials, updates): the content editor at `/keystatic`, which saves to [`content/`](content/). Run `npm run dev` and open http://localhost:3000/keystatic, or edit the JSON by hand.
+- A contribution challenge on `/board` (like *4 merged pull requests in October*): the editor → *Contribution challenge* ([`content/club/challenge.json`](content/club/challenge.json)). Leave it empty for none; it counts like the board, by merge day in India.
 - Epoch dates, venue, ticket, sponsors and schedule: the editor too ([`content/epoch/`](content/epoch/)).
 - Epoch coins, booths, recharge points and merch: [`lib/epoch/config.ts`](lib/epoch/config.ts) — they're code because `supabase/schema.sql` seeds the same values, and both must match.
 
@@ -171,13 +176,23 @@ The Octodex stickers in `public/stickers` are generated from `public/GitHub_stic
 - `npm test` — the coin rules (demo store), the ask engine, club sign-ups (validator + `/api/join`), and the **real Supabase SQL** run inside PGlite (Postgres in WASM).
 - `npm run test:e2e` — **browser tests** (Playwright): the whole Epoch coin flow, the offline wallet, the join/contact forms, security headers, and that no page scrolls sideways on a phone. Build first with `npm run build:test` — it ignores `.env.local`, so tests never write to the real database or send real email (the tests refuse to run against a live build). Locally it uses your installed Edge.
 - CI (`.github/workflows/ci.yml`) runs type-check, lint, unit tests, the build and the browser tests on every push and pull request.
+- **Lighthouse** runs in the same CI job on the same demo build: `/`, `/epoch`, `/events/git-merge-26`, `/board` and `/learn`, one phone-sized run each (about 2 minutes). Accessibility below 0.95 on any page fails CI. Performance only warns, against budgets set a little under the scores measured on 4 October 2026 (`lighthouserc.cjs`); raise them as pages get faster. The reports are under the run → Artifacts → *lighthouse-reports*. Locally: `npm run build:test`, then `npm run lighthouse` (set `PORT` if 3100 is busy).
 - `tests/e2e.epoch.mjs` — the whole coin flow clicked through the real pages (instructions at the top of the file).
 
 ## Email: welcome message and organiser broadcasts
 
 When someone joins through the form, the site emails them a welcome (WhatsApp link, next event, what to do first).
-Admins can also email **every sign-up** from `/epoch/admin` → *Email everyone*. Every message carries a personal,
-signed unsubscribe link (and the one-click header Gmail shows as an "Unsubscribe" button).
+Admins can also email **every sign-up** from `/admin` → *Sign-ups* → *Email everyone* (also on `/epoch/admin`), or pick
+**Waiting for Epoch dates**: the people who used "Tell me when the dates are out" on the home page or `/epoch`.
+Every message carries a personal, signed unsubscribe link (and the one-click header Gmail shows as an "Unsubscribe" button);
+one link takes the address off both lists.
+
+**Monday digest for organisers.** Every Monday at 9:00 India time (`vercel.json` → `crons`, 03:30 UTC), Vercel calls
+`/api/cron/digest`, which emails organisers the past 7 days: new sign-ups (how many, and the first few handles),
+Get involved messages by kind, and the average feedback rating per event, with a link to `/admin`. Quiet weeks send nothing.
+To turn it on, add in Vercel: `CRON_SECRET` (any long random text; Vercel sends it with each cron call and the route
+refuses anything else), `SUPABASE_SERVICE_ROLE_KEY` (it reads staff-only tables with no one signed in) and optionally
+`ORGANISER_EMAILS` (otherwise it goes to every profile with role `admin`). Without them it does nothing and says why.
 
 Epoch has **no passwords** — attendees sign in with GitHub — so there is no "forgot password" email to build.
 
@@ -194,6 +209,25 @@ Epoch has **no passwords** — attendees sign in with GitHub — so there is no 
 
 Gmail allows about 500 emails a day; the broadcast stops at 450 per send. For bigger lists, use Resend with a verified domain (`RESEND_API_KEY`).
 Without any of these settings the site works normally and just doesn't send email.
+
+## Keeping it running
+
+A new club year? Follow [docs/ROLLOVER.md](docs/ROLLOVER.md): year label, team, events, Epoch dates, Memories and changing the secrets.
+
+**Old personal data is deleted every week.** A Vercel cron (`vercel.json`) calls `/api/cron/retention` early every Monday (India time), which runs `prune_old_data()` in the database: sign-ups after 18 months, Get involved messages and event feedback after 12, browser error reports after 30 days. The periods live in `lib/retention.ts`, which `/privacy` quotes; the SQL has the same numbers and `npm test` checks they agree, so change both. To switch it on: add `CRON_SECRET` in Vercel (Production), make sure `SUPABASE_SERVICE_ROLE_KEY` is there too (the database only lets that server-only key delete), and re-run `supabase/schema.sql`. Vercel then sends `Authorization: Bearer <CRON_SECRET>`; any other call gets 401. Attendance is kept so certificates stay valid; Epoch data is cleared by hand after the fest (docs/ROLLOVER.md).
+
+**Backups.** Supabase's free plan has no backups, so `.github/workflows/backup.yml` saves one every Sunday: all the club's data (the `public` tables) as a gzipped SQL file, kept 30 days under Actions → *Backup* → the run → Artifacts. Add the repository secret `SUPABASE_DB_URL` (Supabase → Connect → Session pooler, with the password filled in) under Settings → Secrets and variables → Actions; without it the run skips. The file holds names and emails and anyone who can read the repo can download it, so you can add a `BACKUP_PASSPHRASE` secret to have it encrypted. Run it now from Actions → *Backup* → Run workflow.
+
+To restore (you need `psql`, which comes with PostgreSQL):
+1. Download the artifact and unzip it. If it ends in `.gpg`: `gpg --decrypt club-data-….sql.gz.gpg > club-data.sql.gz`.
+2. Into a **new or emptied** database: run `supabase/schema.sql` first (SQL Editor or `npm run connect`), then `gunzip -c club-data-….sql.gz | psql "<connection string>"`.
+3. Into the **same** project after a bad delete, restore only the damaged table, here `join_requests`: empty it (`truncate join_requests;` in the SQL Editor), then `gunzip -c club-data-….sql.gz | sed -n '/^COPY public.join_requests /,/^\\\.$/p' | psql "<connection string>"`. Restoring the whole file over a working database would wind the id counters back, so don't.
+
+Epoch accounts (`profiles`, `txs`) belong to Supabase sign-ins, which aren't in this backup: in a brand-new project those two tables come back only for people who already have a sign-in there. Everything else (sign-ups, messages, feedback, attendance, broadcasts, booths, rewards) comes back fully.
+
+**Is the site up?** `.github/workflows/uptime.yml` opens the live home page and `/epoch` every 6 hours. If either fails three tries in a row it opens one **Site is down** issue (or comments on it), which emails everyone watching the repo, and closes it once the site answers again. Set the repository variable `SITE_URL` (Settings → Secrets and variables → Actions → Variables, e.g. `https://your-site.vercel.app`); without it the check skips. Scheduled runs only happen from `main`. For a check every 5 minutes with email or app alerts, add the site to a free [UptimeRobot](https://uptimerobot.com) account (New monitor → HTTP(s) → the site's address); it needs nothing from this repo.
+
+**Errors on visitors' phones** show on `/admin` → *Site errors* (see above).
 
 ## Epoch typeface
 

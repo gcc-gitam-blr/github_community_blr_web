@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/epoch/supabase-store";
 import type { Attendee } from "@/lib/attendance";
+import type { ErrorRow } from "@/lib/client-errors";
 
 /* What the /admin dashboard reads and changes. Every call runs as the signed-in organiser, so the
    database's own rules (supabase/schema.sql) decide what's allowed — the UI only hides what won't work. */
@@ -54,4 +55,10 @@ export async function sendCertificates(event: string, ids?: string[]): Promise<R
     const r = await fetch("/api/certificates", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ event, ids }) });
     return await r.json();
   } catch { return { ok: false, error: "Network error — please try again." }; }
+}
+
+/** Errors from visitors' browsers in the last 30 days (older ones are deleted). Only admins can read them. */
+export async function clientErrors(): Promise<ErrorRow[] | null> {
+  const { data, error } = await supabase().from("client_errors").select("*").order("created_at", { ascending: false }).limit(1000);
+  return error ? null : (data ?? []) as ErrorRow[];
 }

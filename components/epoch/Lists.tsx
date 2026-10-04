@@ -10,7 +10,7 @@ import { MyPost } from "./Staff";
 import { useEpoch } from "./EpochProvider";
 import { qr } from "@/lib/epoch/store";
 import { BOOTHS, STARTER_COINS, EPOCH } from "@/lib/epoch/config";
-import type { ClubMessage, EventFeedback, JoinRequest, Reward } from "@/lib/epoch/types";
+import type { Audience, ClubMessage, EventFeedback, JoinRequest, Reward } from "@/lib/epoch/types";
 import { KINDS } from "@/lib/contact";
 import { CLUB } from "@/lib/config";
 import { clubStats, type ClubStats } from "@/lib/stats";
@@ -190,11 +190,15 @@ export function SignUps() {
   const { me } = useEpoch();
   const [subject, setSubject] = useState(""); const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false); const [result, setResult] = useState<{ k: "ok" | "err"; t: string } | null>(null);
+  const [audience, setAudience] = useState<Audience>("members");
+  const [waiting, setWaiting] = useState<number | null>(null);
+  useEffect(() => { if (me?.role === "admin") store?.epochInterestCount?.().then(setWaiting); }, [store, me?.role]);
+  const count = audience === "epoch" ? waiting ?? 0 : rows?.length ?? 0;
   const send = async () => {
     if (!store?.broadcast) return;
-    if (!window.confirm(`Email ${rows?.length ?? 0} people? This can't be undone.`)) return;
+    if (!window.confirm(`Email ${count} people? This can't be undone.`)) return;
     setSending(true); setResult(null);
-    const r = await store.broadcast(subject, message); setSending(false);
+    const r = await store.broadcast(subject, message, audience); setSending(false);
     if (r.ok) { setResult({ k: "ok", t: `Sent to ${r.sent} of ${r.total}${r.failed ? ` (${r.failed} failed)` : ""}.` }); setSubject(""); setMessage(""); } else setResult({ k: "err", t: r.error });
   };
 
@@ -232,11 +236,19 @@ export function SignUps() {
       {store?.broadcast && me?.role === "admin" && (
         <div className="mt-8 border-t border-hair pt-6">
           <h3 className="text-[22px] font-medium tracking-[-0.02em]">Email everyone</h3>
-          <p className={`${label} mb-4`}>Goes to every sign-up who hasn&apos;t unsubscribed. Each email has an unsubscribe link automatically.</p>
+          <p className={`${label} mb-4`}>Goes to everyone on the list you pick who hasn&apos;t unsubscribed. Each email has an unsubscribe link automatically.</p>
+          <fieldset className="mb-4 flex flex-wrap gap-2">
+            <legend className="sr-only">Who gets it</legend>
+            {([["members", `Club sign-ups (${rows?.length ?? 0})`], ["epoch", `Waiting for Epoch dates${waiting === null ? "" : ` (${waiting})`}`]] as const).map(([id, l]) => (
+              <label key={id} className={`cursor-pointer rounded-full border px-3.5 py-1.5 text-[13px] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-link ${audience === id ? "border-ink bg-ink text-white" : "border-hair"}`}>
+                <input type="radio" name="audience" value={id} checked={audience === id} onChange={() => setAudience(id)} className="sr-only" />{l}
+              </label>
+            ))}
+          </fieldset>
           <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject, e.g. GIT Merge 26 is this Monday" className={`${field} mb-3 !py-3`} aria-label="Subject" maxLength={120} />
           <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder={"Write your message. A blank line starts a new paragraph; links become clickable."} rows={6} className={`${field} !py-3`} aria-label="Message" maxLength={5000} />
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <button disabled={sending || subject.trim().length < 3 || message.trim().length < 10} onClick={send} className={btnInk}>{sending ? "Sending…" : `Send to ${rows?.length ?? 0} people`}</button>
+            <button disabled={sending || subject.trim().length < 3 || message.trim().length < 10} onClick={send} className={btnInk}>{sending ? "Sending…" : `Send to ${count} people`}</button>
             {result && <Notice kind={result.k}>{result.t}</Notice>}
           </div>
         </div>

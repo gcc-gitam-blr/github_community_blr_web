@@ -51,6 +51,8 @@ export interface Tx {
 export type AuditAction = "ticket" | "award" | "scan" | "reverse" | "role" | "booth";
 export interface AuditEntry { id: string; at: string; actor: string; action: AuditAction; target: string | null; booth: string | null; amount: number | null; detail: string }
 
+/** Who an organiser broadcast goes to: club sign-ups, or the people waiting for the Epoch dates. */
+export type Audience = "members" | "epoch";
 export interface JoinRequest { id: string; handle: string; email: string; firstEvent: string; createdAt: string }
 
 export interface ClubMessage { id: string; kind: string; name: string; email: string; handle: string; message: string; createdAt: string }
@@ -104,6 +106,8 @@ export interface EpochStore {
   feedback?(): Promise<EventFeedback[]>;
   /** staff, live (Supabase) mode only: "Get involved" messages */
   messages?(): Promise<ClubMessage[]>;
-  /** admin, live mode only: email every subscribed sign-up */
-  broadcast?(subject: string, message: string): Promise<Result<{ sent: number; failed: number; total: number }>>;
+  /** admin, live mode only: email every subscribed sign-up, or everyone waiting for the Epoch dates */
+  broadcast?(subject: string, message: string, audience?: Audience): Promise<Result<{ sent: number; failed: number; total: number }>>;
+  /** admin, live mode only: how many people are waiting for the Epoch dates (and haven't unsubscribed) */
+  epochInterestCount?(): Promise<number | null>;
 }
