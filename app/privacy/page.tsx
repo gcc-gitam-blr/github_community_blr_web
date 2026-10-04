@@ -48,12 +48,12 @@ export default function Privacy() {
         <P>Epoch keeps a sign-in session and a copy of your last wallet in your browser so it works with a weak signal. Nothing else is stored. Clearing your browser data removes it.</P>
 
         <H>How long we keep it</H>
-        <P>Sign-up details are kept for the club year they were collected in and deleted within 12 months after you stop being active. Epoch data is deleted within 6 months after the event.</P>
+        <P>Sign-up details are kept for the club year they were collected in and deleted within 12 months after you stop being active. Epoch data, and the Epoch dates list, are deleted within 6 months after the event.</P>
 
         <H>Your choices</H>
         <L>
           <li><b>Stop emails:</b> use the unsubscribe link in any email.</li>
-          <li><b>See or delete your details:</b> contact us through {contact} and we&apos;ll remove them. Please tell us the GitHub username and email you used.</li>
+          <li><b>See or delete your details:</b> contact us through {contact} and we&apos;ll remove them. Please tell us the email you used, and your GitHub username if you have one with us.</li>
         </L>
 
         <H>Photos</H>
