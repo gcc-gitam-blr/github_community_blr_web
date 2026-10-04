@@ -23,10 +23,10 @@ test("the whole site can be used with the keyboard: skip link, then the first in
   expect(await page.evaluate(() => document.activeElement?.closest("main") !== null)).toBe(true); // focus moved into the page content
 });
 
-test("reduced motion: content is visible without waiting for animations", async ({ browser }) => {
-  const ctx = await browser.newContext({ reducedMotion: "reduce" });
+test("reduced motion: content is visible without waiting for animations", async ({ browser, baseURL }) => {
+  const ctx = await browser.newContext({ reducedMotion: "reduce", baseURL }); // a new context doesn't inherit the test server's address
   const page = await ctx.newPage();
-  await page.goto("http://localhost:3100/");
+  await page.goto("/");
   await expect(page.getByRole("heading", { name: /What is GitHub/ })).toBeVisible({ timeout: 2000 });
   await ctx.close();
 });

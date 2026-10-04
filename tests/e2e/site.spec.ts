@@ -103,7 +103,7 @@ test("with no inbox switched on, Get involved hands the message to Instagram ins
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/get-involved");
   await page.getByLabel("Your name").fill("Ada Lovelace");
-  await page.getByLabel("Email").fill("ada@gitam.in");
+  await page.getByLabel("Email", { exact: true }).fill("ada@gitam.in"); // not the footer's "Email the club" link
   await page.locator("textarea").fill("We'd love to run a workshop on Git internals.");
   await page.waitForTimeout(3500); // humans take a few seconds; the spam check knows that
   await page.getByRole("button", { name: "Send message" }).click();
@@ -252,7 +252,6 @@ test("'Tell me when the dates are out' is on the home page and /epoch, and says 
     await expect(page.getByText("That email doesn't look right.")).toBeVisible();
   }
   await page.getByLabel("Tell me when the dates are out").fill("grace@gitam.in");
-  await page.waitForTimeout(1500); // a person takes a moment; the spam check knows that
   await page.getByRole("button", { name: "Watch releases" }).click();
   await expect(page.getByText(/isn't switched on yet, so nothing was saved/)).toBeVisible(); // the test build has no database
 });
