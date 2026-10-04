@@ -132,6 +132,9 @@ Things that are **empty until you fill them in** (the site hides them rather tha
 - **Audit log.** Check-ins, awards, scans for someone, reversals, and role or booth changes are written inside the database functions (who, what, to whom, how much, when). Only admins can read it, on the desk, filtered by action or person.
 - **Kiosk.** `/epoch/kiosk/<booth>` shows one booth's QR, name and price full screen for a propped-up phone or tablet; it asks the screen to stay awake.
 - **Guides.** `/epoch/guide` (attendees) and `/epoch/guide/organisers` (desk check-in, cash, scanning, reversals, kiosk, who to call) print as one A4 page each. The *who to call* list is **Epoch settings → Who organisers call on the day** in the content editor.
+- **Live leaderboard.** `/epoch/leaderboard` updates on every phone within seconds, without a refresh. Only a public counter (`leaderboard_version`) is streamed, never anyone's transactions. It needs Supabase Realtime, which re-running `supabase/schema.sql` switches on for that table; if Realtime can't connect, phones check every few seconds instead.
+- **Big screen.** `/epoch/screen` is for a projector or TV at the venue: the live top eight, what's on now and next, announcements, and a QR code to register. Open it full screen on a laptop plugged into the projector; it keeps the screen awake and reloads itself every 4 hours.
+- **Happening now.** Once Epoch's start time is set (content editor → Epoch settings → Starts at), the Epoch page shows what's on now and next, in India time, and the schedule opens on today.
 - `npm run load-test` (needs Docker) also has three people reverse the same charge at once and checks only one reversal lands.
 
 > Only VR = 40 and the recharge reward = 20 come from the plan. Every other price, the ticket price and the recharge-point names are **placeholders** in `lib/epoch/config.ts` — confirm them.
