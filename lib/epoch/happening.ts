@@ -8,7 +8,7 @@ export const IST = 330 * 60_000; // India's offset from UTC
 const DAY = 864e5, HOUR = 36e5;
 
 type Day = { day: 1 | 2; label: string; items: SessionItem[] };
-export interface Slot extends SessionItem { day: 1 | 2; label: string; start: number; end: number }
+export interface Slot extends Omit<SessionItem, "end"> { day: 1 | 2; label: string; start: number; end: number } // start and end as real moments (UTC ms)
 export type Happening =
   | { phase: "unset" }
   | { phase: "before"; next: Slot[]; startsIn: number }
