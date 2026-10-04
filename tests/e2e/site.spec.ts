@@ -318,3 +318,12 @@ test("the theme follows the system until you choose, and the switch remembers yo
   await page.goto("/epoch");
   await expect(page.locator("[data-light-only]")).toHaveCount(1); // Epoch keeps its own light look
 });
+
+test("each member has a board page with their badges, how to earn the rest, and their merges", async ({ page }) => {
+  await page.goto("/board/lechakrawarthy");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Chakrawarthy");
+  await expect(page.getByRole("heading", { name: "Badges" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Merged this club year" })).toBeVisible();
+  expect((await page.request.get("/board/lechakrawarthy/opengraph-image")).headers()["content-type"]).toContain("image/png");
+  expect((await page.request.get("/board/not-a-member")).status()).toBe(404);
+});
