@@ -1,7 +1,7 @@
 /* Epoch offline cache. Network first — you always get the latest when online — and the last
    good copy when the venue's signal drops, so the wallet and its QR pass still open. */
-const CACHE = "epoch-v1";
-const SHELL = ["/epoch", "/epoch/wallet", "/epoch/booths", "/icons/epoch-192.png", "/epoch-coin.svg"];
+const CACHE = "epoch-v2";
+const SHELL = ["/epoch", "/epoch/wallet", "/epoch/booths", "/epoch/guide", "/icons/epoch-192.png", "/epoch-coin.svg"];
 
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => {

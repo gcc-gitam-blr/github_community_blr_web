@@ -22,7 +22,7 @@ export const EPOCH = {
   starterCoins: 398,
   ticketPriceINR: settings.ticketPriceINR as number | null,
   currency: "EPC",
-  ticketUrl: settings.ticketUrl ?? "", // a payment / registration link. Empty = pay at the desk.
+  ticketUrl: settings.ticketUrl ?? "", // a registration form, if the club uses one. Tickets are always paid at the desk, never online.
 
   // The Epoch section "opens" on its own between these times. To force it on/off
   // set NEXT_PUBLIC_EPOCH_MODE=live | off in .env.local.
@@ -37,6 +37,10 @@ export const EPOCH = {
 /* Epoch sponsors. Empty until the club has some; the section then appears on the Epoch page. */
 export const SPONSORS = (settings.sponsors as { name: string; url: string; logo?: string | null; tier?: string | null }[])
   .map((s) => ({ name: s.name, url: s.url, logo: s.logo || undefined, tier: s.tier || undefined }));
+
+/* Who organisers call on the day (the organiser guide). Empty until the club fills it in. */
+export const CONTACTS = ((settings as { contacts?: { name: string; role?: string | null; phone?: string | null }[] }).contacts ?? [])
+  .filter((c) => c.name && c.phone).map((c) => ({ name: c.name, role: c.role || "", phone: c.phone! }));
 
 export const STARTER_COINS = EPOCH.starterCoins;
 /** "₹199" once decided, otherwise "To be announced". */

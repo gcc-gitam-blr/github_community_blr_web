@@ -177,11 +177,12 @@ export default config({
         dates: fields.text({ label: "Dates", description: "As shown: December 2026 · dates to be announced.", ...req }),
         venue: fields.text({ label: "Venue", ...req }),
         ticketPriceINR: fields.integer({ label: "Ticket price (₹)", description: "Empty until decided; the site then says To be announced." }),
-        ticketUrl: fields.url({ label: "Ticket link", description: "A payment or registration link. Empty = pay at the desk." }),
+        ticketUrl: fields.url({ label: "Registration form link", description: "Optional: a form people fill in before the day. Not for payment: tickets are paid at the registration desk." }),
         startsAt: fields.text({ label: "Starts at", description: "When the real date is announced, like 2026-12-11T09:00:00+05:30. The site then counts down. Empty = no countdown." }),
         opensAt: fields.text({ label: "Epoch section opens", description: "Like 2026-12-01T00:00:00+05:30.", ...req }),
         closesAt: fields.text({ label: "Epoch section closes", description: "Like 2026-12-31T23:59:59+05:30.", ...req }),
         sponsors: fields.array(fields.object({ name: fields.text({ label: "Name", ...req }), url: fields.url({ label: "Website", ...req }), logo: fields.text({ label: "Logo", description: "Path like /sponsors/acme.svg (optional)." }), tier: fields.text({ label: "Tier", description: "Gold, Silver… (optional)" }) }), { label: "Sponsors", itemLabel: (p) => p.fields.name.value }),
+        contacts: fields.array(fields.object({ name: fields.text({ label: "Name", ...req }), role: fields.text({ label: "Call them for", description: "Like Registration desk and cash, or Coins and reversals." }), phone: fields.text({ label: "Phone", description: "Shown on the printed organiser guide, which is a public page. Use a number that's fine to share." }) }), { label: "Who organisers call on the day", description: "Shown in the organiser guide (/epoch/guide/organisers). Empty = the guide says to ask an admin.", itemLabel: (p) => p.fields.name.value }),
       },
     }),
     schedule: singleton({

@@ -192,6 +192,17 @@ html.lenis, html.lenis body { height: auto; }
   .cert h1 { font-size: 46pt !important; }
 }
 
+/* ---------- the Epoch guides print as one A4 page each ---------- */
+@page guide { size: A4; margin: 11mm 12mm; }
+@media print {
+  .guide { page: guide; max-width: none !important; padding: 0 !important; font-size: 9.4pt; }
+  .guide h1 { font-size: 26pt !important; }
+  .guide header p { font-size: 9.5pt !important; }
+  .guide h2 { font-size: 11.5pt !important; }
+  .guide ol > li { padding-block: 2.2mm !important; }
+  .guide .guide-body { font-size: 9.4pt !important; line-height: 1.35 !important; padding-left: 0 !important; }
+}
+
 /* iPhones zoom into any field under 16px; keep the desktop sizes, lift them on touch screens */
 @media (pointer: coarse) {
   input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea { font-size: max(16px, 1em) !important; }
