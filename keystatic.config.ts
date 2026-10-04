@@ -160,6 +160,13 @@ export default config({
             role: fields.text({ label: "Who they are", description: "Like Member, first year. Optional." }),
           }), { label: "In their words", description: "Real words from members, shared with their permission. Optional.", itemLabel: (p) => p.fields.name.value }),
         }), { label: "Chapters", description: "One per club year. The page shows them oldest first.", itemLabel: (p) => `${p.fields.year.value}${p.fields.title.value ? " · " + p.fields.title.value : ""}` }),
+        words: fields.object({
+          intro: fields.text({ label: "Intro", description: "Under the big Memories title.", multiline: true }),
+          thanks: fields.text({ label: "Thank-you text", description: "Under Thank you, above the names.", multiline: true }),
+          missing: fields.text({ label: "Missing someone?", description: "The small line under the names: who to tell if a name is missing." }),
+          nextTitle: fields.text({ label: "Closing heading", description: "The last box on the page, inviting the next member in." }),
+          nextText: fields.text({ label: "Closing text", multiline: true }),
+        }, { label: "Page words", description: "The page's own text. Empty puts the original words back." }),
       },
     }),
     epoch: singleton({

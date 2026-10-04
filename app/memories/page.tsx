@@ -8,7 +8,7 @@ import { YearRail } from "@/components/memories/YearRail";
 import { Reveal } from "@/components/ui/Reveal";
 import { Sticker } from "@/components/ui/Sticker";
 import { CLUB } from "@/lib/config";
-import { MEMORIES, MEMORIES_LINKED, SHOW_SAMPLE, sampleMemories, thanks } from "@/lib/memories";
+import { MEMORIES, MEMORIES_LINKED, SHOW_SAMPLE, WORDS, sampleMemories, thanks } from "@/lib/memories";
 
 /* The club's story as a git log, oldest first: a story is told from the beginning, and reading forward
    ends on today, the people to thank, and the next chapter, which is the reader's own.
@@ -27,9 +27,7 @@ function Intro({ cover }: { cover?: Photo }) {
     <>
       <p className={`hero-fade font-mono text-[13px] ${light ? "text-white/80" : "text-ink-2"}`}>{"// git log --reverse"}</p>
       <h1 className={`hero-rise mt-4 text-[clamp(50px,12.5vw,156px)] leading-[0.9] ${light ? "text-white" : ""}`} style={{ "--d": ".08s" } as React.CSSProperties}>Memories.</h1>
-      <p className={`hero-rise mt-6 max-w-[52ch] text-[clamp(18px,1.7vw,21px)] leading-relaxed ${light ? "text-white/90" : "text-ink-2"}`} style={{ "--d": ".16s" } as React.CSSProperties}>
-        Every year of the club, kept in one place: the people who led it, the sessions, and the small moments in between. Oldest first, the way it happened.
-      </p>
+      <p className={`hero-rise mt-6 max-w-[52ch] text-[clamp(18px,1.7vw,21px)] leading-relaxed ${light ? "text-white/90" : "text-ink-2"}`} style={{ "--d": ".16s" } as React.CSSProperties}>{WORDS.intro}</p>
     </>
   );
   if (!cover) return (
@@ -96,7 +94,7 @@ export default function MemoriesPage() {
                 <div className="min-w-0">
                   <p className="font-mono text-[13px] text-ink-2">{"// git shortlog --summary --all"}</p>
                   <h2 id="thanks-h" className="mt-4 text-[clamp(46px,8vw,104px)] leading-[0.95]">Thank you.</h2>
-                  <p className="mt-6 max-w-[54ch] text-[19px] leading-relaxed text-ink-2">To everyone who has led, mentored, organised or pitched in. None of this happens without you.</p>
+                  <p className="mt-6 max-w-[54ch] text-[19px] leading-relaxed text-ink-2">{WORDS.thanks}</p>
                 </div>
                 <Sticker name="heart" size={150} tilt={-6} className="mb-2 hidden flex-none md:block" alt="" />
               </Reveal>
@@ -109,7 +107,7 @@ export default function MemoriesPage() {
                   ))}
                 </ul>
               </Reveal>
-              <p className="mt-10 text-[15px] text-ink-3">Missing someone? Tell a lead, and they&apos;ll add them to the team or the contributors list.</p>
+              <p className="mt-10 text-[15px] text-ink-3">{WORDS.missing}</p>
             </section>
 
             <section id="next" aria-labelledby="next-h" className="mt-28 sm:mt-36">
@@ -117,8 +115,8 @@ export default function MemoriesPage() {
                 <Sticker name="welcome" size={130} tilt={8} className="absolute -right-3 top-6 hidden sm:block" alt="" />
                 <span aria-hidden className="mx-auto block h-5 w-5 rounded-full border-2 border-dashed border-ink/60 bg-white" />
                 <p className="mt-4 font-mono text-[13px] text-ink-2">git checkout -b your-story</p>
-                <h2 id="next-h" className="mx-auto mt-4 max-w-[14ch] text-[clamp(40px,6.4vw,84px)]">Your story starts here.</h2>
-                <p className="mx-auto mt-6 max-w-[48ch] text-[19px] leading-relaxed text-ink-2">The next chapter is written by whoever shows up. Come to a session, make your first pull request, and you&apos;re part of it.</p>
+                <h2 id="next-h" className="mx-auto mt-4 max-w-[14ch] text-[clamp(40px,6.4vw,84px)]">{WORDS.nextTitle}</h2>
+                <p className="mx-auto mt-6 max-w-[48ch] text-[19px] leading-relaxed text-ink-2">{WORDS.nextText}</p>
                 <div className="mt-9 flex flex-wrap justify-center gap-3">
                   <Link href="/#join" className="press inline-flex rounded-md bg-ink px-6 py-3.5 font-display font-bold text-white transition-colors duration-150 hover:bg-ink/85">Join the club</Link>
                   <Link href="/#events" className="press inline-flex rounded-md border-2 border-ink px-6 py-3 font-display font-bold transition-colors duration-150 hover:bg-soft">See what&apos;s coming up</Link>

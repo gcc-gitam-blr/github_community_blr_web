@@ -1,5 +1,5 @@
 /* The Memories page: chapters from the editor, leaders from the team's real "Before" lines, photos from the gallery. */
-import { leadersFor, loadMemories, sampleMemories, thanks, type RawMemories } from "../lib/memories";
+import { leadersFor, loadMemories, loadWords, sampleMemories, thanks, type RawMemories } from "../lib/memories";
 import type { TeamMember } from "../lib/config";
 import type { Photo } from "../components/site/Lightbox";
 
@@ -48,6 +48,11 @@ ok("the sample keeps real words where the club wrote them", s.chapters[0].title 
 
 const names = thanks([{ name: "ravi", handle: "" }, { name: "Asha", handle: "" }], [{ name: "Ravi ", handle: "r" }, { name: "Bhavya", handle: "b" }] as never);
 ok("the thank-you wall lists everyone once, A to Z", names.join() === "Asha,Bhavya,ravi");
+
+const w = loadWords({ intro: "  Our years.  ", thanks: "", missing: null });
+ok("the page's words come from the editor", w.intro === "Our years.");
+ok("a cleared box puts the original words back, never a blank", w.thanks.length > 0 && w.missing.startsWith("Missing someone?") && loadWords(null).nextTitle === "Your story starts here.");
+ok("the saved page words load as they are in the file", loadWords().nextTitle === "Your story starts here." && loadWords().intro.startsWith("Every year of the club"));
 
 if (fails) { console.log(`${fails} memories check(s) failed`); process.exit(1); }
 console.log("all memories checks passed");

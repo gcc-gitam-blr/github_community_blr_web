@@ -20,7 +20,8 @@ export interface Memories { chapters: Chapter[]; cover?: Photo; photos: number; 
 type RawMoment = { title?: string | null; date?: string | null; caption?: string | null; folder?: string | null };
 type RawQuote = { text?: string | null; name?: string | null; role?: string | null };
 type RawChapter = { year?: string | null; title?: string | null; story?: string | null; started?: boolean | null; moments?: RawMoment[] | null; quotes?: RawQuote[] | null };
-export type RawMemories = { cover?: { folder?: string | null; photo?: number | null } | null; chapters?: RawChapter[] | null };
+export type RawWords = { intro?: string | null; thanks?: string | null; missing?: string | null; nextTitle?: string | null; nextText?: string | null };
+export type RawMemories = { cover?: { folder?: string | null; photo?: number | null } | null; chapters?: RawChapter[] | null; words?: RawWords | null };
 
 /** "", null and missing all mean "not set". */
 const opt = (s?: string | null) => s?.trim() || undefined;
@@ -55,7 +56,19 @@ export function thanks(team: Person[] = CLUB.team, contributors: Contributor[] =
   return [...seen.values()].sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }));
 }
 
+/** The page's own words (editor: Memories, Page words). A cleared box falls back to these, so the page never shows a blank. */
+const WORDS_DEFAULT: Record<keyof RawWords, string> = {
+  intro: "Every year of the club, kept in one place: the people who led it, the sessions, and the small moments in between. Oldest first, the way it happened.",
+  thanks: "To everyone who has led, mentored, organised or pitched in. None of this happens without you.",
+  missing: "Missing someone? Tell a lead, and they'll add them to the team or the contributors list.",
+  nextTitle: "Your story starts here.",
+  nextText: "The next chapter is written by whoever shows up. Come to a session, make your first pull request, and you're part of it.",
+};
+export const loadWords = (raw: RawWords | null | undefined = (data as RawMemories).words) =>
+  Object.fromEntries(Object.entries(WORDS_DEFAULT).map(([k, d]) => [k, opt(raw?.[k as keyof RawWords]) ?? d])) as Record<keyof RawWords, string>;
+
 export const MEMORIES = loadMemories();
+export const WORDS = loadWords();
 /** The page is linked (header search, footer, sitemap) only once real photos exist. Until then it's there, but quiet. */
 export const MEMORIES_LINKED = MEMORIES.photos > 0;
 

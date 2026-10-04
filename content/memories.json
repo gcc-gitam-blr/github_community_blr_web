@@ -21,5 +21,12 @@
       "moments": [],
       "quotes": []
     }
-  ]
+  ],
+  "words": {
+    "intro": "Every year of the club, kept in one place: the people who led it, the sessions, and the small moments in between. Oldest first, the way it happened.",
+    "thanks": "To everyone who has led, mentored, organised or pitched in. None of this happens without you.",
+    "missing": "Missing someone? Tell a lead, and they'll add them to the team or the contributors list.",
+    "nextTitle": "Your story starts here.",
+    "nextText": "The next chapter is written by whoever shows up. Come to a session, make your first pull request, and you're part of it."
+  }
 }
