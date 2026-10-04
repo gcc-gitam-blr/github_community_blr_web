@@ -2,7 +2,8 @@
   "contributors": [
     {
       "name": "Chakrawarthy",
-      "handle": "lechakrawarthy"
+      "handle": "lechakrawarthy",
+      "githubAvatar": true
     },
     {
       "name": "Lakshmi",
@@ -11,81 +12,85 @@
     },
     {
       "name": "Greeshmitha",
-      "handle": "",
-      "photo": "/team/greeshmitha.webp"
+      "photo": "/team/greeshmitha.webp",
+      "githubAvatar": true
     },
     {
       "name": "Rohit",
-      "handle": ""
+      "githubAvatar": true
     },
     {
       "name": "Afreen",
-      "handle": "",
-      "photo": "/team/afreen.webp"
+      "photo": "/team/afreen.webp",
+      "githubAvatar": true
     },
     {
       "name": "Devi Priya",
-      "handle": "",
-      "photo": "/team/devi-priya.webp"
+      "photo": "/team/devi-priya.webp",
+      "githubAvatar": true
     },
     {
       "name": "Harshitha Reddy",
-      "handle": "",
-      "photo": "/team/harshitha-reddy.webp"
+      "photo": "/team/harshitha-reddy.webp",
+      "githubAvatar": true
     },
     {
       "name": "Sreya",
-      "handle": "",
-      "photo": "/team/sreya.webp"
+      "photo": "/team/sreya.webp",
+      "githubAvatar": true
     },
     {
       "name": "Raja Sree",
-      "handle": "",
-      "photo": "/team/raja-sree.webp"
+      "photo": "/team/raja-sree.webp",
+      "githubAvatar": true
     },
     {
       "name": "Sai Laghuvar",
-      "handle": ""
+      "githubAvatar": true
     },
     {
       "name": "Nikhil",
-      "handle": ""
+      "githubAvatar": true
     },
     {
       "name": "Venkat Sai",
-      "handle": ""
+      "githubAvatar": true
     },
     {
       "name": "Santosh",
-      "handle": ""
+      "githubAvatar": true
     },
     {
       "name": "Dikshitha",
-      "handle": ""
+      "githubAvatar": true
     },
     {
       "name": "Saloni",
-      "handle": ""
+      "githubAvatar": true
     },
     {
       "name": "Ram",
-      "handle": ""
+      "githubAvatar": true
     },
     {
       "name": "Roshini",
-      "handle": ""
+      "githubAvatar": true
     },
     {
       "name": "Deeksha Dakshayini",
-      "handle": ""
+      "githubAvatar": true
     },
     {
       "name": "Harinmayi",
-      "handle": ""
+      "githubAvatar": true
     },
     {
       "name": "Pushpa",
-      "handle": ""
+      "githubAvatar": true
+    },
+    {
+      "name": "Prudhvi",
+      "githubAvatar": true
     }
   ]
 }
