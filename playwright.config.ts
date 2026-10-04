@@ -9,7 +9,7 @@ const PORT = Number(process.env.PORT) || 3100; // PORT=3101 npx playwright test 
 export default defineConfig({
   testDir: "./tests/e2e",
   globalSetup: "./tests/e2e/global-setup.ts",
-  timeout: 60_000,
+  timeout: 90_000, // the longest flows (a whole Epoch day, axe on the home page) take ~30 s alone and slow down when 3 workers share a laptop or CI runner
   expect: { timeout: 8_000 },
   fullyParallel: false, // the Epoch demo store lives in the browser; keep tests independent but orderly
   retries: process.env.CI ? 1 : 0,
