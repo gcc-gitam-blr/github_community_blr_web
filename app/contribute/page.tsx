@@ -22,12 +22,12 @@ const STEPS = [
 function IssueList({ issues, empty }: { issues: Issue[]; empty: string }) {
   if (!issues.length) return <p className="rounded-[14px] border border-dashed border-line p-6 text-[16px] text-ink-2">{empty}</p>;
   return (
-    <ul className="grid gap-3 md:grid-cols-2">
+    <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
       {issues.map((i) => (
         <li key={i.id}>
           <a href={i.url} target="_blank" rel="noopener" className="group flex h-full flex-col rounded-[14px] border border-line bg-white p-4 transition hover:border-ink">
-            <span className="flex items-center gap-2 font-mono text-[12px] text-ink-3"><IssueOpenedIcon size={14} className="text-[#1a7f37]" />{i.repo}</span>
-            <span className="mt-1.5 text-[17px] font-semibold leading-snug group-hover:text-link">{i.title}</span>
+            <span className="flex min-w-0 items-center gap-2 font-mono text-[12px] text-ink-3"><IssueOpenedIcon size={14} className="shrink-0 text-[#1a7f37]" /><span className="min-w-0 [overflow-wrap:anywhere]">{i.repo}</span></span>
+            <span className="mt-1.5 text-[17px] font-semibold leading-snug [overflow-wrap:anywhere] group-hover:text-link">{i.title}</span>
             <span className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 pt-3 text-[13px] text-ink-3">
               <span>updated {ago(i.updated)}</span>
               <span className="inline-flex items-center gap-1"><CommentIcon size={13} />{i.comments}</span>
