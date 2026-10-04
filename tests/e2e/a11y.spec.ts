@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 
 /* Automated accessibility checks (axe-core, WCAG 2.1 A/AA). They catch contrast, labels, names, roles and more.
    They don't replace trying the site with a keyboard and a screen reader, but they stop regressions. */
-const PAGES = ["/", "/learn", "/contribute", "/board", "/board/lechakrawarthy", "/memories", "/get-involved", "/privacy", "/updates", "/updates/calendar-2026-27", "/events/git-merge-26", "/epoch", "/epoch/booths", "/epoch/shop", "/epoch/register", "/epoch/leaderboard", "/epoch/guide", "/epoch/guide/organisers", "/epoch/screen", "/epoch/kiosk/vr", "/unsubscribe?e=a%40b.in&t=x", "/admin", "/no-such-page"];
+const PAGES = ["/", "/learn", "/contribute", "/board", "/board/lechakrawarthy", "/me", "/memories", "/get-involved", "/privacy", "/updates", "/updates/calendar-2026-27", "/events/git-merge-26", "/epoch", "/epoch/booths", "/epoch/shop", "/epoch/register", "/epoch/leaderboard", "/epoch/guide", "/epoch/guide/organisers", "/epoch/screen", "/epoch/kiosk/vr", "/unsubscribe?e=a%40b.in&t=x", "/admin", "/no-such-page"];
 
 // dark mode follows the visitor's system setting; Epoch keeps its own light look, so only the club pages are checked again
 const DARK = PAGES.filter((p) => !p.startsWith("/epoch") && !p.startsWith("/unsubscribe"));

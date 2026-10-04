@@ -327,3 +327,10 @@ test("each member has a board page with their badges, how to earn the rest, and 
   expect((await page.request.get("/board/lechakrawarthy/opengraph-image")).headers()["content-type"]).toContain("image/png");
   expect((await page.request.get("/board/not-a-member")).status()).toBe(404);
 });
+
+test("My club explains itself when sign-in isn't switched on, and stays out of search engines", async ({ page }) => {
+  await page.goto("/me");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("My club.");
+  await expect(page.getByText("Sign-in isn't switched on for this site yet.")).toBeVisible(); // the test build has no database
+  expect(await page.locator('meta[name="robots"]').getAttribute("content")).toContain("noindex");
+});
