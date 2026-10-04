@@ -8,9 +8,9 @@ The live checklist for the club site. Every item has a status and the exact page
 - **The content editor** works on your laptop until it's connected to GitHub: `git switch dev`, `npm install`, `npm run dev`, then open http://localhost:3000/keystatic
 - Previews show labelled **sample** content where real content doesn't exist yet (board, memories). The live site never does.
 
-**Status:** ✅ Done (on `dev`, tested) · 🟡 In progress · ⬜ Not started · 🙋 Needs you (a decision, a login or content)
+**Status:** ✅ Done (on `dev`, tested) · 🟡 In progress · ⬜ Not started · ⏸ Optional, waiting for a yes · 🙋 Needs you (a decision, a login or content)
 
-**Working order, one at a time:** ~~reliability~~ → ~~Epoch organiser tools~~ → ~~Epoch live~~ → ~~dark mode~~ → ~~contributor onboarding~~ → **ideas (now)**.
+**Working order, one at a time:** ~~reliability~~ → ~~Epoch organiser tools~~ → ~~Epoch live~~ → ~~dark mode~~ → ~~contributor onboarding~~. **Every phase is built.** What's left needs you (🙋 rows and the settings list above), plus the optional translation and the ideas below, which start when you say so.
 
 ---
 
@@ -90,7 +90,7 @@ The live checklist for the club site. Every item has a status and the exact page
 | 🙋 | 4.3 | Accessibility audit | — | Automated checks on every page are done. A manual screen-reader pass (NVDA) needs a person. |
 | ✅ | 4.4 | Site search | https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/ then press `/` | |
 | ✅ | 4.5 | "Notify me" for Epoch dates | Same as 3.13 | |
-| ⬜ | 4.6 | Kannada / Hindi | — | Optional; only if members want it. |
+| ⏸ | 4.6 | Kannada / Hindi | — | Optional, so not started: say the word if members want it. |
 | ✅ | 4.7 | Social share cards | Share any page in WhatsApp | |
 | 🙋 | 4.8 | Custom domain | — | Shortlist: `ghblr.com`, `ghblr.in`, `ghblr.club`, `gitblr.dev`. Buy one and I'll connect it. |
 
