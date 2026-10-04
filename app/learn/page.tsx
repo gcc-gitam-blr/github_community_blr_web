@@ -4,11 +4,14 @@ import { ArrowUpRightIcon } from "@primer/octicons-react";
 import { Nav } from "@/components/site/Nav";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { CheatSheet } from "@/components/site/CheatSheet";
+import { SessionArchive } from "@/components/site/SessionArchive";
+import { todayInIndia } from "@/lib/events";
 import { Sticker } from "@/components/ui/Sticker";
 import { LiveSticker } from "@/components/ui/LiveSticker";
 import { RESOURCES } from "@/lib/learn";
 
-export const metadata: Metadata = { title: "Learn", description: "A searchable Git cheat sheet and the best free resources for learning Git, GitHub and open source." };
+export const metadata: Metadata = { title: "Learn", description: "Slides and recordings from our sessions, a searchable Git cheat sheet, and the best free resources for learning Git, GitHub and open source." };
+export const revalidate = 86400; // "first up" moves on to the next session each day
 
 const LEVELS = ["Start here", "Next", "Go further"] as const;
 
@@ -26,7 +29,9 @@ export default function Learn() {
           <Sticker name="professor" size={150} tilt={6} className="mb-4 hidden md:block" alt="" />
         </div>
 
-        <section className="mt-16" aria-labelledby="resources">
+        <SessionArchive today={todayInIndia()} />
+
+        <section className="mt-20" aria-labelledby="resources">
           <h2 id="resources" className="text-[clamp(30px,4vw,48px)]">Free resources worth your time</h2>
           {LEVELS.map((lvl) => (
             <div key={lvl} className="mt-8">

@@ -42,3 +42,6 @@ export function nextEvent(today: string): { event: ClubEvent; days: number } | n
   if (!e) return null;
   return { event: e, days: Math.round((Date.parse(e.date + "T00:00:00Z") - Date.parse(today + "T00:00:00Z")) / 864e5) };
 }
+
+/** Today's date in India (YYYY-MM-DD), whatever time zone the server runs in. */
+export const todayInIndia = () => new Date(Date.now() + 330 * 60_000).toISOString().slice(0, 10);

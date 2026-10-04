@@ -1,4 +1,4 @@
-import { LinkExternalIcon, VideoIcon } from "@primer/octicons-react";
+import { BookIcon, CodeIcon, FileIcon, LinkExternalIcon, VideoIcon } from "@primer/octicons-react";
 import type { ClubEvent } from "@/lib/events";
 import { recapPhotos, youtubeId, type Recap as RecapData } from "@/lib/recap";
 import { PhotoGrid } from "./PhotoGrid";
@@ -24,16 +24,17 @@ export function Recap({ event, recap }: { event: ClubEvent; recap: RecapData }) 
           </dl>
         )}
 
-        <p className="mt-5 max-w-[62ch] whitespace-pre-line text-[17px] leading-relaxed text-ink-2">{recap.text}</p>
+        {recap.text && <p className="mt-5 max-w-[62ch] whitespace-pre-line text-[17px] leading-relaxed text-ink-2">{recap.text}</p>}
 
         {photos.length > 0 && <div className="mt-8"><PhotoGrid photos={photos} cols="columns-2 sm:columns-3" /></div>}
 
         {yt && <div className="mt-8"><VideoEmbed id={yt} title={`${event.title} — video`} /></div>}
 
-        {(recap.slides || (recap.video && !yt)) && (
+        {(recap.slides || (recap.video && !yt) || recap.materials) && (
           <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-[15px] font-semibold">
             {recap.video && !yt && <li><a href={recap.video} target="_blank" rel="noopener" className="inline-flex items-center gap-1.5 text-link hover:underline"><VideoIcon size={16} />Watch the video ↗</a></li>}
-            {recap.slides && <li><a href={recap.slides} target="_blank" rel="noopener" className="inline-flex items-center gap-1.5 text-link hover:underline"><LinkExternalIcon size={16} />Slides and materials ↗</a></li>}
+            {recap.slides && <li><a href={recap.slides} target="_blank" rel="noopener" className="inline-flex items-center gap-1.5 text-link hover:underline"><LinkExternalIcon size={16} />Slides ↗</a></li>}
+            {recap.materials?.filter((m) => m.url !== recap.slides && m.url !== recap.video).map((m) => { const Icon = { slides: FileIcon, recording: VideoIcon, code: CodeIcon, reading: BookIcon }[m.kind]; return <li key={m.url}><a href={m.url} target="_blank" rel="noopener" className="inline-flex items-center gap-1.5 text-link hover:underline"><Icon size={16} />{m.title} ↗</a></li>; })}
           </ul>
         )}
       </div>

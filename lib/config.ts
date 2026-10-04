@@ -1,4 +1,5 @@
 import type { CrewId, CrewRole } from "./crew";
+import type { Material, MaterialKind } from "./materials";
 import settings from "@/content/club/settings.json";
 import announcements from "@/content/club/announcements.json";
 import events from "@/content/club/events.json";
@@ -17,7 +18,7 @@ import home from "@/content/club/home.json";
 export type Shape = "diamond" | "square" | "ring" | "triangle";
 export type NodeColor = "blue" | "purple" | "mint" | "green";
 
-export interface Recap { text: string; numbers?: { value: number; label: string }[]; photos?: string; video?: string; slides?: string }
+export interface Recap { text: string; numbers?: { value: number; label: string }[]; photos?: string; video?: string; slides?: string; materials?: Material[] }
 export interface ClubEventData { date: string; dateLabel?: string; href?: string; luma?: string; recap?: Recap; type: string; title: string; text: string; where: string; shape: Shape; color: NodeColor }
 export interface TeamMember { name: string; role?: string; past?: string; group: "mentor" | "lead" | "member"; owner?: boolean; crew?: CrewRole[]; tags?: string[]; handle: string; photo?: string; githubAvatar?: boolean }
 export interface Contributor { name: string; handle: string; photo?: string; githubAvatar?: boolean }
@@ -27,10 +28,15 @@ const opt = (s?: string | null) => s || undefined;
 const list = <T,>(xs?: T[] | null) => (xs?.length ? xs : undefined);
 
 type Raw<T> = { [K in keyof T]?: unknown };
+const KINDS: MaterialKind[] = ["slides", "recording", "code", "reading"];
+// a recap shows once it has anything: the story, numbers, photos, a video, slides or other links
 const recap = (r?: Raw<Recap> | null): Recap | undefined => {
-  if (!r || !opt(r.text as string)) return undefined;
+  if (!r) return undefined;
   const numbers = list((r.numbers as { value: number | null; label: string }[] | undefined)?.filter((n) => n.value != null && n.label) as { value: number; label: string }[]);
-  return { text: r.text as string, numbers, photos: opt(r.photos as string), video: opt(r.video as string), slides: opt(r.slides as string) };
+  const materials = list((r.materials as { title?: string | null; url?: string | null; kind?: string | null }[] | undefined)
+    ?.filter((m) => m.title && m.url).map((m) => ({ title: m.title!, url: m.url!, kind: KINDS.includes(m.kind as MaterialKind) ? (m.kind as MaterialKind) : "reading" })));
+  const out: Recap = { text: (r.text as string) || "", numbers, photos: opt(r.photos as string), video: opt(r.video as string), slides: opt(r.slides as string), materials };
+  return out.text || out.numbers || out.video || out.slides || out.materials ? out : undefined;
 };
 const person = <T extends { handle?: string | null; photo?: string | null; githubAvatar?: boolean }>(p: T) =>
   ({ ...p, handle: p.handle ?? "", photo: opt(p.photo), githubAvatar: p.githubAvatar === false ? false : undefined });
