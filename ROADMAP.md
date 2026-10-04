@@ -10,7 +10,20 @@ The live checklist for the club site. Every item has a status and the exact page
 
 **Status:** ✅ Done (on `dev`, tested) · 🟡 In progress · ⬜ Not started · 🙋 Needs you (a decision, a login or content)
 
-**Working order, one at a time:** reliability → Epoch organiser tools → Epoch live → dark mode → contributor onboarding → ideas.
+**Working order, one at a time:** ~~reliability~~ → **Epoch organiser tools (now)** → Epoch live → dark mode → contributor onboarding → ideas.
+
+---
+
+## Settings you need to add (once, about 15 minutes)
+
+| | Where | What | Turns on |
+|---|---|---|---|
+| 🙋 | Supabase → SQL editor (or `npm run connect`) | Re-run `supabase/schema.sql` | Error reports, shared form limits, the Epoch dates list, the weekly clean-up |
+| 🙋 | Vercel → Settings → Environment Variables | `CRON_SECRET` (any long random text) | The weekly clean-up and the Monday digest |
+| 🙋 | Vercel → Settings → Environment Variables | `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API) | The clean-up, the digest and GitHub sign-in |
+| 🙋 | GitHub → Settings → Secrets → Actions | `SUPABASE_DB_URL` (Supabase → Connect → connection string) | Weekly backups |
+| 🙋 | GitHub → Settings → Variables → Actions | `SITE_URL` (the live site's address) | The uptime check |
+| 🙋 | README → "The content editor on the live site" | Create the GitHub App, add its 4 keys to Vercel | Editing content on the live site |
 
 ---
 
@@ -20,8 +33,8 @@ The live checklist for the club site. Every item has a status and the exact page
 |---|---|------|----------|-------|
 | ✅ | 0.1 | Branch previews | https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app | Every branch gets a preview. 🙋 Protect `main` in GitHub when you're ready (you said later; the repo is private). |
 | ✅ | 0.2 | Browser tests in CI | https://github.com/lechakrawarthy/github_community_blr/actions | 75 Playwright tests on every push: pages, forms, Epoch coin flow, phones down to 320 px, accessibility. |
-| 🟡 | 0.3 | Lighthouse budget in CI | (Actions tab, once merged) | Built on `chore/reliability`; being checked now. |
-| 🟡 | 0.4 | Error monitoring | (/admin, once merged) | Our own: browser errors reported to the site and shown to admins. No Sentry account needed. Built on `chore/reliability`; being checked now. |
+| ✅ | 0.3 | Lighthouse budget in CI | https://github.com/lechakrawarthy/github_community_blr/actions → newest **CI** run → *lighthouse-reports* | Accessibility under 0.95 on any of 5 key pages fails the build; slower pages only warn. |
+| ✅ | 0.4 | Error monitoring | https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/admin → **Site errors** (organiser login) | Browser errors are reported to the site itself, grouped with counts. No outside service. 🙋 Needs `supabase/schema.sql` re-run. |
 | ✅ | 0.5 | Security headers + CSP | Nothing to click | Checked on every page by the tests. |
 
 ## Phase 1 — Real content
@@ -43,7 +56,7 @@ The live checklist for the club site. Every item has a status and the exact page
 |---|---|------|----------|-------|
 | ✅ | 2.1 | Welcome email on sign-up | Join on https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/#join with your own email | |
 | ✅ | 2.2 | Weekly digest to organisers | Your inbox, Monday 9:00 | 🙋 Turns on when `CRON_SECRET` is set in Vercel. Optional `ORGANISER_EMAILS`. |
-| 🟡 | 2.3 | Durable rate limiting | Nothing to click | Built on `chore/reliability`; being checked now. |
+| ✅ | 2.3 | Durable rate limiting | Nothing to click | Form limits are counted in the database, so they hold across every server. Only a scrambled code is stored, never an IP. |
 | ✅ | 2.4 | Learning hub | https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/learn | |
 | ✅ | 2.5 | Good first issues feed | https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/contribute | The club-projects part comes back once the club has its own org. |
 | ✅ | 2.6 | Contribution board | https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/board | Sample on the preview. 🙋 Members' GitHub handles fill it. |
@@ -73,7 +86,7 @@ The live checklist for the club site. Every item has a status and the exact page
 | | # | Item | Check it | Notes |
 |---|---|------|----------|-------|
 | ⬜ | 4.1 | Dark mode | — | After the Epoch work. |
-| 🟡 | 4.2 | Home page speed on phones | (Lighthouse report in Actions, once merged) | Speed pass done; Lighthouse budget is on `chore/reliability`. |
+| ✅ | 4.2 | Home page speed on phones | https://github.com/lechakrawarthy/github_community_blr/actions → newest **CI** run → *lighthouse-reports* | Speed is measured on every push and warns if a page gets slower. |
 | 🙋 | 4.3 | Accessibility audit | — | Automated checks on every page are done. A manual screen-reader pass (NVDA) needs a person. |
 | ✅ | 4.4 | Site search | https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/ then press `/` | |
 | ✅ | 4.5 | "Notify me" for Epoch dates | Same as 3.13 | |
@@ -87,9 +100,9 @@ The live checklist for the club site. Every item has a status and the exact page
 |---|---|------|----------|-------|
 | ✅ | 5.1 | Content editor | http://localhost:3000/keystatic | Every save is a commit. 🙋 Connect it to GitHub for the live site (README, ~10 min). |
 | ⬜ | 5.2 | Contributor onboarding | — | Labelled "good first issue"s on this repo. |
-| 🟡 | 5.3 | Year-rollover guide | (docs/ROLLOVER.md, once merged) | Written on `chore/reliability`. |
-| 🟡 | 5.4 | Backups & data retention | (once merged) | Built on `chore/reliability`. |
-| 🟡 | 5.5 | Uptime check | (once merged) | Built on `chore/reliability`. |
+| ✅ | 5.3 | Year-rollover guide | https://github.com/lechakrawarthy/github_community_blr/blob/dev/docs/ROLLOVER.md | Plain steps for next year's team. |
+| ✅ | 5.4 | Backups & data retention | https://githubcommunityblr-git-dev-chakrawarths-projects.vercel.app/privacy (how long each thing is kept) | Weekly clean-up of old data, weekly backup kept 30 days. 🙋 `CRON_SECRET` in Vercel, `SUPABASE_DB_URL` secret in GitHub. |
+| ✅ | 5.5 | Uptime check | https://github.com/lechakrawarthy/github_community_blr/actions/workflows/uptime.yml | Every 6 hours; opens a "Site is down" issue if the site fails. 🙋 The `SITE_URL` repository variable. |
 
 ## Ideas for later
 
