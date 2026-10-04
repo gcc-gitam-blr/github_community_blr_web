@@ -24,3 +24,6 @@ playwright-report/
 # originals dropped here by mistake are never committed
 public/team/*
 !public/team/*.webp
+
+# Lighthouse CI reports (npm run lighthouse)
+.lighthouseci/

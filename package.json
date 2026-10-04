@@ -11,7 +11,8 @@
     "test:e2e": "playwright test",
     "connect": "tsx scripts/connect.ts",
     "build:test": "node scripts/build-test.mjs",
-    "load-test": "tsx scripts/load-test.ts"
+    "load-test": "tsx scripts/load-test.ts",
+    "lighthouse": "npx --yes @lhci/cli@0.15.1 autorun --config=lighthouserc.cjs"
   },
   "dependencies": {
     "@keystatic/core": "^0.6.9",
