@@ -113,7 +113,7 @@ All done except `CRON_SECRET`.
 | ✅ | Alumni wall | https://githubcommunityblr.vercel.app/memories#alumni | "Where they are now", alumni as forks of the club. 🙋 Add people at https://githubcommunityblr.vercel.app/keystatic → Alumni and tick "They said yes"; until then it invites past members to get in touch. |
 | ✅ | Badges | https://githubcommunityblr.vercel.app/board and each member's page, e.g. https://githubcommunityblr.vercel.app/board/lechakrawarthy | First merge, Five merged, Ten merged, Three projects, Challenge finisher: earned from real merges only. Every member page has a share card. |
 | ✅ | "My club" page | https://githubcommunityblr.vercel.app/me (also in the footer) | Sign in with GitHub: the events you came to with their certificates, your board page (merges and badges), your Epoch wallet. 🙋 Re-run `supabase/schema.sql` once more (it adds `my_attendance`). |
-| ⬜ | Monthly newsletter | https://githubcommunityblr.vercel.app/admin | A draft built from the month's updates, events and recaps; an organiser reads it, then sends it to members. |
+| ✅ | Monthly newsletter | https://githubcommunityblr.vercel.app/epoch/admin → Club sign-ups → Email everyone → **Monthly newsletter: Draft it** | Builds the month's draft from events, recaps, news, members' merges and what's coming up. Read, edit, then send; nothing goes out by itself. |
 | ⬜ | Photo uploads in the editor | https://githubcommunityblr.vercel.app/keystatic | Add photos in the editor; GitHub resizes them and strips location data, so nobody needs the script. |
 | 🙋 | Club projects showcase | — | After the club creates its own GitHub organisation: live repos, their beginner issues and contributors. |
 
