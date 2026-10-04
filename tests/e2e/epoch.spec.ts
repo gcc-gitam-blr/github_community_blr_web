@@ -183,3 +183,37 @@ test("the wallet still opens with no network", async ({ page, context }) => {
   await expect(page.getByText("Recharge points").first()).toBeVisible();
   await context.setOffline(false);
 });
+
+// demo people on the leaderboard: obviously test data, only ever in this test browser
+const seedBoard = (page: Page) => page.addInitScript(() => {
+  if (localStorage.getItem("epoch:users")) return;
+  const users = Object.fromEntries([["ada", 60], ["bob", 40], ["cy", 20]].map(([h, e], i) => [`u${i}`, { id: `u${i}`, handle: h, name: `Test ${h}`, email: `${h}@gitam.in`, coins: 0, earned: e, ticket: true, role: "attendee", createdAt: "2026-12-01" }]));
+  localStorage.setItem("epoch:users", JSON.stringify(users));
+});
+
+test("the leaderboard updates by itself when someone earns coins, and shows who climbed", async ({ page }) => {
+  await seedBoard(page);
+  await page.goto("/epoch/leaderboard");
+  await expect(page.getByRole("status")).toHaveText("Live");
+  await expect(page.locator("main ol li").first()).toContainText("Test ada");
+  await page.evaluate(() => { // another phone (here: another tab) records a win for cy
+    const u = JSON.parse(localStorage.getItem("epoch:users")!); u.u2.earned = 100; localStorage.setItem("epoch:users", JSON.stringify(u));
+    window.dispatchEvent(new StorageEvent("storage", { key: "epoch:users" }));
+  });
+  const top = page.locator("main ol li").first();
+  await expect(top).toContainText("Test cy", { timeout: 8_000 });
+  await expect(top).toContainText("↑ 2");
+  await expect(top).toContainText("+80");
+});
+
+test("the big screen fits one 16:9 frame with the leaderboard and a QR code to register", async ({ page }) => {
+  await seedBoard(page);
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto("/epoch/screen");
+  await expect(page.getByRole("region", { name: "Top earners" }).locator("li")).toHaveCount(3);
+  await expect(page.getByRole("img", { name: "QR code: get your Epoch wallet" })).toBeVisible();
+  await expect(page.locator("nav")).toHaveCount(0); // no site header or tab bar around it
+  const { w, h } = await page.evaluate(() => ({ w: document.documentElement.scrollWidth, h: document.documentElement.scrollHeight }));
+  expect(w).toBeLessThanOrEqual(1920); expect(h).toBeLessThanOrEqual(1080);
+  expect(await page.locator('meta[name="robots"]').getAttribute("content")).toContain("noindex");
+});
