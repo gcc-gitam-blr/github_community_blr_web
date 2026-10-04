@@ -107,6 +107,46 @@ revoke execute on function log_action(text, uuid, text, int, text) from public, 
 create or replace view leaderboard as select id, handle, name, earned from profiles where earned > 0;
 grant select on leaderboard to anon, authenticated;
 
+-- Live leaderboard. Transactions stay private, so nothing personal is streamed: one public row holds a
+-- counter that goes up whenever the leaderboard changes. Phones and the big screen listen to that row
+-- (Supabase Realtime) and then re-read the public leaderboard view above.
+create table if not exists leaderboard_version (
+  id int primary key default 1 check (id = 1),
+  v bigint not null default 0,
+  at timestamptz not null default now()
+);
+insert into leaderboard_version (id) values (1) on conflict do nothing;
+alter table leaderboard_version enable row level security;
+drop policy if exists "anyone reads the leaderboard version" on leaderboard_version;
+create policy "anyone reads the leaderboard version" on leaderboard_version for select using (true);
+revoke insert, update, delete on leaderboard_version from anon, authenticated;
+grant select on leaderboard_version to anon, authenticated;
+
+-- Skips the bump if another transaction is bumping right now (SKIP LOCKED), so coin wins never queue behind each
+-- other on this one row. That bump still tells every phone, and they re-read a moment later, after this one commits.
+create or replace function bump_leaderboard() returns trigger language plpgsql security definer as $$
+begin
+  update leaderboard_version set v = v + 1, at = now()
+  where id = (select id from leaderboard_version where id = 1 for update skip locked);
+  return null;
+end $$;
+revoke execute on function bump_leaderboard() from public, anon, authenticated;
+-- only changes the leaderboard shows: coins earned, or the name and handle next to them
+drop trigger if exists leaderboard_changed on profiles;
+create trigger leaderboard_changed after update of earned, name, handle on profiles for each row
+  when (old.earned is distinct from new.earned or (new.earned > 0 and (old.name is distinct from new.name or old.handle is distinct from new.handle)))
+  execute function bump_leaderboard();
+drop trigger if exists leaderboard_left on profiles;
+create trigger leaderboard_left after delete on profiles for each row when (old.earned > 0) execute function bump_leaderboard();
+
+-- Realtime only sends changes for tables in its publication. Supabase creates the publication; add the row once.
+do $$ begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+     and not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'leaderboard_version') then
+    alter publication supabase_realtime add table leaderboard_version;
+  end if;
+end $$;
+
 create or replace function register_profile(p_name text)
 returns profiles language plpgsql security definer as $$
 declare me profiles; u auth.users;

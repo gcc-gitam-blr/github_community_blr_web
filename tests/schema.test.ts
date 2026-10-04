@@ -20,6 +20,7 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
     create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb);
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.uid', true), '')::uuid $$;
     insert into auth.users values ('${ADA}', 'ada@gitam.in', '{"user_name":"ada"}'), ('${ORG}', 'org@gitam.in', '{"user_name":"org"}');
+    create publication supabase_realtime; -- Supabase makes this one for Realtime
   `);
   await db.exec(fs.readFileSync("supabase/schema.sql", "utf8"));
   ok("schema.sql runs cleanly on Postgres", true);
@@ -74,6 +75,22 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   const lb = await one<{ handle: string; earned: number }>("select handle, earned from leaderboard order by earned desc");
   ok("leaderboard counts earnings (recharge + prize), not the ticket", lb.handle === "ada" && lb.earned === 120);
   ok("ledger has every movement", (await one<{ n: number }>("select count(*)::int n from txs where user_id = $1", [ADA])).n === 5);
+
+  // the live leaderboard: a public counter that moves only when the leaderboard does
+  const version = async () => (await one<{ v: number }>("select v::int from leaderboard_version")).v;
+  ok("earning coins moved the leaderboard version (recharge + prize)", (await version()) === 2);
+  await as(ADA); const v0 = await version();
+  ok("spending coins doesn't move it", (await call("scan_booth", ["dart"])).ok && (await version()) === v0);
+  await db.query("update profiles set name = 'Ada King' where id = $1", [ADA]);
+  ok("a new name on the leaderboard moves it", (await version()) === v0 + 1);
+  await db.query("update profiles set name = 'Organiser 2' where id = $1", [ORG]);
+  ok("a new name for someone not on the leaderboard doesn't", (await version()) === v0 + 1);
+  await db.exec("grant usage on schema public to anon; set role anon");
+  let anonRead = -1, anonWrite = false;
+  try { anonRead = (await one<{ v: number }>("select v::int from leaderboard_version")).v; await db.exec("update leaderboard_version set v = 0"); anonWrite = true; } catch { /* refused */ } finally { await db.exec("reset role"); }
+  ok("anyone can read the version, without signing in", anonRead === v0 + 1);
+  ok("…but nobody can change it by hand", !anonWrite && (await version()) === v0 + 1);
+  ok("Realtime sends the version, and only that, to everyone", (await db.query<{ t: string }>("select tablename t from pg_publication_tables where pubname = 'supabase_realtime'")).rows.map((r) => r.t).join() === "leaderboard_version");
 
   // club sign-ups
   await db.query("insert into join_requests (handle, email, first_event) values ('ada', 'Ada@Gitam.in', '2026-10-07')");
