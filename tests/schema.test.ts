@@ -145,6 +145,14 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   ok("…without seeing the email address", !("email" in (cert.rows[0] ?? {})));
   ok("an unknown certificate id finds nothing", (await asApi("", "select * from certificate('00000000-0000-0000-0000-000000000099')")).rows.length === 0);
 
+  // "My club" (/me): your own attendance only, by your GitHub email or username
+  await db.query("insert into attendance (event, name, email, handle) values ('2026-10-12', 'Ada L', 'ada.other@gmail.com', 'ADA'), ('2026-10-12', 'Org', 'org@gitam.in', null)");
+  const mine = await asApi<{ id: string; event: string }>(ADA, "select * from my_attendance()");
+  ok("my_attendance finds your records by email and by GitHub username, newest first", mine.rows.map((r) => r.event).join() === "2026-10-12,2026-10-07" && mine.rows[1].id === certId);
+  ok("…and never anyone else's", (await asApi<{ event: string }>(ORG, "select * from my_attendance()")).rows.map((r) => r.event).join() === "2026-10-12");
+  ok("visitors who aren't signed in can't call it", !!(await asApi("", "set local role anon; select * from my_attendance()")).error || (await asApi("", "select * from my_attendance()")).rows.length === 0);
+  await db.query("delete from attendance where event = '2026-10-12'"); // leave the table as the checks below expect
+
   const role = async (uid: string, handle: string, r: string) => (await asApi<{ r: { ok: boolean; error?: string } }>(uid, "select set_role($1, $2) r", [handle, r])).rows[0]?.r;
   ok("an attendee can't hand out roles", !(await role(ADA, "ada", "admin"))?.ok);
   ok("an admin makes someone a volunteer (any @/case)", (await role(ORG, "@ADA", "volunteer"))?.ok === true && (await one<{ role: string }>("select role from profiles where id = $1", [ADA])).role === "volunteer");

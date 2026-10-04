@@ -466,6 +466,18 @@ language sql security definer stable as
 $$ select name, event, handle, coalesce(emailed_at, created_at) from attendance where id = p_id $$;
 grant execute on function certificate(uuid) to anon, authenticated;
 
+-- "My club" (/me): the signed-in person's own attendance, and so their certificates. Matched by the email GitHub
+-- gave them or their GitHub username; nobody can read anyone else's this way.
+create or replace function my_attendance()
+returns table (id uuid, event text, name text)
+language sql security definer stable as $$
+  select a.id, a.event, a.name from attendance a join auth.users u on u.id = auth.uid()
+  where a.email = lower(u.email) or (a.handle is not null and lower(a.handle) = lower(u.raw_user_meta_data->>'user_name'))
+  order by a.event desc
+$$;
+revoke execute on function my_attendance() from public, anon;
+grant execute on function my_attendance() to authenticated;
+
 -- Admins give people organiser access by GitHub handle (they must have signed in once).
 create or replace function set_role(p_handle text, p_role text)
 returns json language plpgsql security definer as $$
