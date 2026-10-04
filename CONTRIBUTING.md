@@ -14,15 +14,15 @@ No keys needed: without Supabase, Epoch runs in demo mode (data stays in your br
 
 ## Make a change
 
-1. Find an issue (look for **good first issue**) or open one describing what you want to do.
-2. Create a branch: `git checkout -b fix/short-description`
+1. Find an issue: [**good first issue**](https://github.com/lechakrawarthy/github_community_blr/issues?q=is%3Aopen+label%3A%22good+first+issue%22) ones are small and explain exactly which file to change. Or open one describing what you want to do.
+2. Start from `dev` and create a branch: `git switch dev && git pull && git switch -c fix/short-description`
 3. Keep commits small and focused — one idea per commit.
 4. Before pushing:
    ```bash
    npm run lint
    npm test
    ```
-5. Open a pull request. CI checks types, lint, tests and the build automatically.
+5. Open a pull request **into `dev`** (not `main`). CI checks types, lint, tests and the build automatically, and a lead reviews it with you. `dev` goes live once the leads have checked its preview.
 
 ## Where things live
 
