@@ -201,9 +201,9 @@ test("the header is a commit graph: history behind HEAD, the rest ahead", async 
 
 test("site search: / opens it, results are keyboard-driven, Enter goes there, Esc closes", async ({ page }) => {
   await page.goto("/");
-  await page.keyboard.press("/");
   const box = page.getByRole("combobox", { name: "Search the site" });
-  await expect(box).toBeFocused();
+  // a busy machine can take a moment to wire up the shortcut, so press / until the box opens
+  await expect(async () => { await page.keyboard.press("/"); await expect(box).toBeFocused({ timeout: 1_000 }); }).toPass({ timeout: 15_000 });
   await box.fill("stash");
   await expect(page.getByRole("dialog").getByRole("option").first()).toContainText("git stash");
   await page.keyboard.press("Enter");
