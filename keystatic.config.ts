@@ -1,4 +1,6 @@
 import { collection, config, fields, singleton } from "@keystatic/core";
+import gallery from "./lib/gallery.json";
+import { folders } from "./scripts/photos-lib.mjs";
 
 /* The content editor at /keystatic: forms for everything the site shows, saved as files in content/.
    Locally (npm run dev) it saves straight to your files. On the live site it signs editors in with GitHub
@@ -12,13 +14,16 @@ const SHAPES = [{ label: "Diamond", value: "diamond" }, { label: "Square", value
 const COLORS = [{ label: "Blue", value: "blue" }, { label: "Purple", value: "purple" }, { label: "Mint", value: "mint" }, { label: "Green", value: "green" }] as const;
 const CREW = ["custodian", "gatekeeper", "scout", "pipeline", "security", "alchemist", "explorer", "forge"].map((v) => ({ label: v[0].toUpperCase() + v.slice(1), value: v }));
 const req = { validation: { isRequired: true } } as const;
+// photo folders already processed by scripts/photos.mjs: pick one instead of typing its name
+const FOLDERS = [{ label: "No photos yet", value: "" }, ...folders(gallery).map((f) => ({ label: `${f.folder} (${f.photos} photo${f.photos === 1 ? "" : "s"})`, value: f.folder }))];
+const folder = (label: string, description: string) => fields.select({ label, description, options: FOLDERS, defaultValue: "" });
 const photo = fields.text({ label: "Photo", description: "Path of a processed photo, like /team/monisha-s.webp. New photos: a maintainer runs scripts/team-photos.mjs, which strips location data. Leave empty to use their GitHub avatar." });
 
 export default config({
   storage: local ? { kind: "local" } : { kind: "github", repo: "lechakrawarthy/github_community_blr", branchPrefix: "content/" },
   ui: {
     brand: { name: "Club site" },
-    navigation: { Club: ["settings", "announcements", "events", "updates", "team", "contributors", "faq", "home"], Epoch: ["epoch", "schedule"] },
+    navigation: { Club: ["settings", "announcements", "events", "updates", "team", "contributors", "faq", "home", "memories"], Epoch: ["epoch", "schedule"] },
   },
   collections: {
     updates: collection({
@@ -127,6 +132,32 @@ export default config({
           title: fields.text({ label: "Title", ...req }), text: fields.text({ label: "Text", multiline: true, ...req }),
           shape: fields.select({ label: "Shape", options: SHAPES, defaultValue: "diamond" }), color: fields.select({ label: "Colour", options: COLORS, defaultValue: "blue" }),
         }), { label: "What you'll learn", itemLabel: (p) => p.fields.title.value }),
+      },
+    }),
+    memories: singleton({
+      label: "Memories", path: "content/memories", format: { data: "json" },
+      schema: {
+        cover: fields.object({
+          folder: folder("Folder", "Empty uses the first photo of the newest year that has photos."),
+          photo: fields.integer({ label: "Photo number", description: "1 is the first photo in the folder. Empty = 1." }),
+        }, { label: "Opening photo", description: "The big photo at the top of the page." }),
+        chapters: fields.array(fields.object({
+          year: fields.text({ label: "Club year", description: "Like 2025-26. Who led that year is filled in from the team's Before lines (Former President, 2025-26).", ...req }),
+          title: fields.text({ label: "Title", description: "A few words for the year. Empty shows just the year." }),
+          story: fields.text({ label: "The story", description: "Two or three short paragraphs about the year, by someone who was there. Leave a blank line between paragraphs. Empty until you have it.", multiline: true }),
+          started: fields.checkbox({ label: "The club started this year", description: "Marks the chapter as the initial commit." }),
+          moments: fields.array(fields.object({
+            title: fields.text({ label: "Title", description: "Like First session, or The night before Epoch.", ...req }),
+            date: fields.date({ label: "Date" }),
+            caption: fields.text({ label: "Caption", description: "A sentence or two: who, what, the thing everyone remembers.", multiline: true }),
+            folder: folder("Photo folder", "Photos go in photos-inbox/<folder>/, then a maintainer runs node scripts/photos.mjs (README → Photos). New folders appear here after that."),
+          }), { label: "Moments", description: "Groups of photos. The first three show; the rest fold away.", itemLabel: (p) => `${p.fields.date.value ?? ""} ${p.fields.title.value}`.trim() }),
+          quotes: fields.array(fields.object({
+            text: fields.text({ label: "What they said", multiline: true, ...req }),
+            name: fields.text({ label: "Name", ...req }),
+            role: fields.text({ label: "Who they are", description: "Like Member, first year. Optional." }),
+          }), { label: "In their words", description: "Real words from members, shared with their permission. Optional.", itemLabel: (p) => p.fields.name.value }),
+        }), { label: "Chapters", description: "One per club year. The page shows them oldest first.", itemLabel: (p) => `${p.fields.year.value}${p.fields.title.value ? " · " + p.fields.title.value : ""}` }),
       },
     }),
     epoch: singleton({
