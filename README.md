@@ -135,6 +135,19 @@ The home page shows a gallery once there are photos. To add them:
 2. Run `node scripts/photos.mjs`. It fixes rotation, **removes hidden location/camera data**, makes three small WebP sizes, and fills `lib/gallery.json`.
 3. Commit `public/gallery` and `lib/gallery.json` (the raw `photos-inbox` is git-ignored). Only share photos of people who agreed.
 
+Re-running the script only replaces the folders that are in `photos-inbox` this time; every other folder's photos stay.
+
+## Memories (the club's story)
+
+`/memories` tells the club's story one year at a time: each year's title and story, who led it, its moments (groups of photos) and, if you like, a few real quotes. Who led each year is never typed in here: it comes from the team's **Before** lines (`Former President, 2024-25`) and, for this year, from the current team. The closing thank-you lists everyone on the team and the contributors list.
+
+To add a year's photos (no coding needed apart from step 2):
+1. Put the photos of one moment in their own folder: `photos-inbox/<moment>/`, e.g. `photos-inbox/first-session-2024/`. Optional captions as above (`captions.json`).
+2. A maintainer runs `node scripts/photos.mjs` and commits `public/gallery` and `lib/gallery.json`. These photos also appear in the home Gallery.
+3. In the content editor (`/keystatic` → **Memories**), open the year, add a moment (title, date, caption) and pick its folder from **Photo folder**. Optionally pick the big opening photo under **Opening photo**. Save.
+
+Until there is at least one photo the page is quiet: it isn't in the header, footer, search or sitemap, and search engines are asked not to index it. The links appear by themselves once photos exist. Vercel **preview** deployments show a clearly labelled sample (Octodex stickers on coloured tiles, never people) so the design can be judged; locally, run with `MEMORIES_SAMPLE=1` to see it. The live site never shows the sample.
+
 ## Stickers
 
 The Octodex stickers in `public/stickers` are generated from `public/GitHub_stickers` (47 MB, not committed) by `node scripts/stickers.mjs`. To use a different sticker, add it to the `PICK` list in that script and to `StickerName` in `components/ui/Sticker.tsx`.
