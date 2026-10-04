@@ -7,6 +7,7 @@ import { Hero } from "./home/Hero";
 import { TicketPanel } from "./home/TicketPanel";
 import { BoothSection } from "./home/BoothSection";
 import { PlanList } from "./home/PlanList";
+import { HappeningNow } from "./HappeningNow";
 import { Sponsors } from "./home/Sponsors";
 import { useEpoch } from "./EpochProvider";
 import { EpochInterest } from "@/components/site/EpochInterest";
@@ -21,6 +22,7 @@ export function EpochHome() {
   return (
     <>
       <Hero />
+      <HappeningNow />
       <section id="dates" aria-labelledby="dates-h" className="pb-[clamp(56px,8vw,96px)]">
         <div className={`${wrap} grid items-end gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,480px)]`}>
           <div><h2 id="dates-h" className="text-[clamp(30px,4vw,48px)] font-medium leading-[1.05] tracking-[-0.04em]">{EPOCH.startsAt ? "The dates are out." : "Dates aren't tagged yet."}</h2><p className="mt-3 max-w-[44ch] text-[17px] leading-snug text-mute">{EPOCH.startsAt ? "Get your ticket now and your coins are waiting at the desk." : "Leave your email and we'll tell you the day they're announced, so you can plan around exams."}</p></div>
