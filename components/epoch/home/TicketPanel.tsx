@@ -5,8 +5,8 @@ import { EPOCH, RECHARGE_POINTS, STARTER_COINS, priceLabel } from "@/lib/epoch/c
 
 /* How the economy works, told with the thing you actually hold: a paper ticket whose stub is your coins. */
 const RULES = [
-  ["Check in, get your coins", `Show your QR at the registration desk. They check you in and ${STARTER_COINS} coins land in your profile — once.`],
-  ["Spend at the booths", "Every booth has a price per session — VR is 40. Merch is paid in coins too, so nobody needs cash on the day."],
+  ["Pay at the desk, get your coins", `Pay for your ticket at the registration desk and show your QR. They check you in and ${STARTER_COINS} coins land in your profile — once.`],
+  ["Spend at the booths", "Every booth has a price per session — VR is 40. Merch is paid in coins too, so you never need cash at a booth."],
   ["Recharge, once each", `Running low? Win a quick game at a recharge point for +${RECHARGE_POINTS[0].coins}. There are ${RECHARGE_POINTS.length}, and each works once per person.`],
 ];
 
