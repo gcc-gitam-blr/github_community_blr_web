@@ -1,7 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { Metadata } from "next";
+import { EpochProvider } from "@/components/epoch/EpochProvider";
 import { Host } from "@/components/quiz/Host";
+import { HostGate } from "@/components/quiz/HostGate";
 
 export const metadata: Metadata = { title: "Host a quiz" };
 
@@ -11,5 +13,5 @@ const quizzes = () => fs.readdirSync(DIR).filter((f) => f.endsWith(".md")).sort(
   .map((f) => ({ slug: f.replace(/\.md$/, ""), text: fs.readFileSync(path.join(DIR, f), "utf8") }));
 
 export default function HostPage() {
-  return <Host quizzes={quizzes()} />;
+  return <EpochProvider><HostGate><Host quizzes={quizzes()} /></HostGate></EpochProvider>;
 }
