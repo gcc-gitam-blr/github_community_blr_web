@@ -653,3 +653,15 @@ drop policy if exists "staff save quiz runs" on quiz_runs;
 create policy "staff save quiz runs" on quiz_runs for insert with check (my_role() in ('volunteer','admin'));
 drop policy if exists "staff update quiz runs" on quiz_runs;
 create policy "staff update quiz runs" on quiz_runs for update using (my_role() in ('volunteer','admin'));
+
+-- Quizzes saved for later (/quiz/host → Save for later): the questions as written. Nobody can join one until it's hosted.
+create table if not exists quiz_sets (
+  id text primary key check (length(id) <= 64),
+  title text not null check (length(title) <= 200),
+  body text not null check (length(body) <= 100000),
+  saved_by uuid default auth.uid(),
+  updated_at timestamptz not null default now()
+);
+alter table quiz_sets enable row level security;
+drop policy if exists "staff manage quiz sets" on quiz_sets;
+create policy "staff manage quiz sets" on quiz_sets for all using (my_role() in ('volunteer','admin')) with check (my_role() in ('volunteer','admin'));
