@@ -11,6 +11,7 @@ import { HostGame, SAVE, type Player, type Run, type Saved } from "@/lib/quiz/ga
 import { forget, loadRuns, saveRun, toCsv } from "@/lib/quiz/history";
 import { deleteSet, loadSets, saveSet, type QuizSet } from "@/lib/quiz/sets";
 import { useClientValue } from "@/lib/useClientValue";
+import { useConfirm } from "@/components/ui/Confirm";
 import { Glyph, Progress, Rich, TILES, fmt } from "./Bits";
 
 /* /quiz/host — the projector. Pick a quiz (or paste one), show the code, run it, look back on old ones.
@@ -61,7 +62,9 @@ function Setup({ quizzes, resume, onStart, onResume, onView }: { quizzes: Source
     setSaved(`Saved "${s.title}". It's in your list; nobody can join until you host it.`); clear();
   };
   const edit = (s: QuizSet) => { setText(s.text); setTitle(s.title); setEditing(s.id); setSaved(""); box.current?.scrollIntoView({ behavior: "smooth", block: "center" }); };
-  const drop = async (s: QuizSet) => { if (!confirm(`Delete "${s.title}"?`)) return; await deleteSet(s.id); setSets((xs) => (xs ?? []).filter((x) => x.id !== s.id)); if (editing === s.id) clear(); };
+  const [ask, dialog] = useConfirm();
+  const drop = async (s: QuizSet) => {
+    if (!(await ask({ dark: true, danger: true, command: `$ git branch -D ${slug(s.title)}`, title: `Delete "${s.title}"?`, body: "The saved questions go for good. Past results of this quiz stay.", yes: "Delete quiz" }))) return; await deleteSet(s.id); setSaved(""); setSets((xs) => (xs ?? []).filter((x) => x.id !== s.id)); if (editing === s.id) clear(); };
 
   const load = async (f?: File) => {
     if (!f) return;
@@ -72,6 +75,7 @@ function Setup({ quizzes, resume, onStart, onResume, onView }: { quizzes: Source
 
   return (
     <main className="min-h-dvh bg-[#0b0b0f] px-4 pb-20 pt-10 text-white sm:px-6 md:px-10 md:pt-14">
+      {dialog}
       <div className="mx-auto max-w-[1100px]">
         <div className="flex items-end justify-between gap-4">
           <div>
@@ -179,11 +183,13 @@ function Setup({ quizzes, resume, onStart, onResume, onView }: { quizzes: Source
   );
 }
 
+const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 32) || "quiz";
 const when = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
 /* ---------------- looking back ---------------- */
 
 function Results({ run, onBack }: { run: Run; onBack: () => void }) {
+  const [ask, dialog] = useConfirm();
   const download = () => {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([toCsv(run)], { type: "text/csv" }));
@@ -192,13 +198,14 @@ function Results({ run, onBack }: { run: Run; onBack: () => void }) {
   };
   return (
     <main className="min-h-dvh bg-[#0b0b0f] px-4 pb-20 pt-8 text-white sm:px-6 md:px-10">
+      {dialog}
       <div className="mx-auto max-w-[900px]">
         <button onClick={onBack} className="flex items-center gap-2 text-[14px] text-white/60 hover:text-white"><ArrowLeftIcon size={16} />All quizzes</button>
         <p className="mt-8 font-mono text-[13px] text-white/50">$ git show {run.code} · {when(run.at)}</p>
         <h1 className="mt-2 text-[clamp(32px,5vw,56px)]">{run.title}</h1>
         <div className="mt-4 flex flex-wrap gap-2">
           <button onClick={download} className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-[14px] font-semibold text-[#0b0b0f]"><DownloadIcon size={14} />Download results (CSV)</button>
-          <button onClick={() => { if (confirm("Remove this quiz from this browser's history?")) { forget(run.id); onBack(); } }} className="flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-[14px] text-white/70 hover:text-white"><TrashIcon size={14} />Remove</button>
+          <button onClick={async () => { if (await ask({ dark: true, danger: true, command: `$ git tag -d ${run.code}`, title: "Remove from history?", body: <>The results of <b className="text-white">{run.title}</b> are removed from this browser. Download the CSV first if you want to keep them.</>, yes: "Remove" })) { forget(run.id); onBack(); } }} className="flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-[14px] text-white/70 hover:text-white"><TrashIcon size={14} />Remove</button>
         </div>
 
         <h2 className="mt-10 font-mono text-[13px] font-normal tracking-normal text-white/50">$ git shortlog -sn --points · {run.players.length} played</h2>
@@ -271,18 +278,24 @@ function Stage({ start, onExit }: { start: Saved; onExit: (run?: Run) => void })
   }, [game]);
 
   const next = () => game.next();
+  const [ask, dialog] = useConfirm();
+  const end = async () => {
+    if (phase !== "end" && !(await ask({ dark: true, danger: true, command: `$ git push origin --delete ${code}`, title: "End this quiz for everyone?", body: list.length ? `${list.length} ${list.length === 1 ? "person is" : "people are"} playing. Their phones will stop, and an unfinished quiz isn't saved to past quizzes.` : "Nobody has joined yet.", yes: "End quiz", no: "Keep playing" }))) return;
+    onExit();
+  };
   const left = Math.max(0, Math.ceil((deadline - now) / 1000));
   const sticker = new Map(list.map((p) => [p.id, p.sticker]));
 
   return (
     <div className="flex min-h-dvh flex-col bg-[#0b0b0f] px-4 py-4 text-white md:h-dvh md:overflow-hidden md:px-[3.5vw] md:py-[3.5vh]">
+      {dialog}
       <header className="flex items-center gap-3 text-[14px] md:gap-[1.2vw] md:text-[2.2vh]">
         <span className="hidden font-mono text-white/50 sm:inline">git quiz</span>
         <span className="min-w-0 truncate font-semibold">{quiz.title}</span>
         <span className="ml-auto flex shrink-0 items-center gap-1.5 text-white/60"><PeopleIcon size={16} />{list.length}</span>
         <span className="flex shrink-0 items-center gap-1.5 font-mono text-white/60" title={live ? "Connected" : "Connecting"}><span className={`h-2 w-2 rounded-full ${live ? "bg-[#3fc84e]" : "animate-blink bg-[#ffc933]"}`} aria-hidden />{code}</span>
         <button onClick={() => document.documentElement.requestFullscreen?.().catch(() => {})} className="hidden rounded-full p-2 text-white/60 hover:bg-white/10 hover:text-white md:block" aria-label="Full screen"><ScreenFullIcon size={18} /></button>
-        <button onClick={() => { if (phase === "end" || confirm("End this quiz for everyone?")) onExit(); }} className="rounded-full p-2 text-white/60 hover:bg-white/10 hover:text-white" aria-label="End quiz"><XIcon size={18} /></button>
+        <button onClick={() => void end()} className="rounded-full p-2 text-white/60 hover:bg-white/10 hover:text-white" aria-label="End quiz"><XIcon size={18} /></button>
       </header>
 
       {phase !== "lobby" && phase !== "end" && <Progress index={index} total={quiz.questions.length} className="mt-4 text-[12px] md:mt-[2.5vh] md:text-[1.8vh]" />}
