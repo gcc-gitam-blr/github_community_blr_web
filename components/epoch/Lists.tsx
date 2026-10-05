@@ -16,6 +16,7 @@ import type { Audience, ClubMessage, EventFeedback, JoinRequest, Reward } from "
 import { KINDS } from "@/lib/contact";
 import { CLUB } from "@/lib/config";
 import { clubStats, type ClubStats } from "@/lib/stats";
+import { useConfirm } from "@/components/ui/Confirm";
 
 export function BoothsPage() {
   return <Frame title="Where coins go." sub="Recharge points earn. Everything else spends."><BoothSection /></Frame>;
@@ -212,9 +213,10 @@ export function SignUps() {
   };
   useEffect(() => { if (me?.role === "admin") store?.epochInterestCount?.().then(setWaiting); }, [store, me?.role]);
   const count = audience === "epoch" ? waiting ?? 0 : rows?.length ?? 0;
+  const [ask, dialog] = useConfirm();
   const send = async () => {
     if (!store?.broadcast) return;
-    if (!window.confirm(`Email ${count} people? This can't be undone.`)) return;
+    if (!(await ask({ title: `Email ${count} ${count === 1 ? "person" : "people"}?`, body: <>Subject: <b>{subject || "(no subject)"}</b>. Emails can&apos;t be called back once they&apos;re sent.</>, yes: `Send to ${count}` }))) return;
     setSending(true); setResult(null);
     const r = await store.broadcast(subject, message, audience); setSending(false);
     if (r.ok) { setResult({ k: "ok", t: `Sent to ${r.sent} of ${r.total}${r.failed ? ` (${r.failed} failed)` : ""}.` }); setSubject(""); setMessage(""); } else setResult({ k: "err", t: r.error });
@@ -228,6 +230,7 @@ export function SignUps() {
 
   return (
     <section className={`${glass} no-print mb-4 p-6 sm:p-8`}>
+      {dialog}
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div><h2 className="text-[28px] font-medium tracking-[-0.03em]">Club sign-ups</h2><p className={label}>From the “Join the club” form on the home page.</p></div>
         {rows && rows.length > 0 && <button onClick={csv} className={btnSoft}>Download CSV</button>}
