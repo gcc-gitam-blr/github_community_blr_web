@@ -376,3 +376,10 @@ html.lenis, html.lenis body { height: auto; }
     & .bg-\[\#f6f8fa\] { background-color: #0a0a0a; } & .bg-\[\#fff6d6\] { background-color: rgb(187 128 9 / .1); } /* code blocks; Epoch's cream card becomes a warm tint */
   }
 }
+
+/* ---------- our own confirm dialog (components/ui/Confirm.tsx) ---------- */
+@keyframes confirm-in { from { opacity: 0; transform: translateY(8px) scale(.97); } }
+@keyframes confirm-scrim { from { opacity: 0; } }
+dialog.confirm[open] { animation: confirm-in 200ms var(--ease-out); }
+dialog.confirm[open]::backdrop { animation: confirm-scrim 200ms var(--ease-out); }
+@media (prefers-reduced-motion: reduce) { dialog.confirm[open], dialog.confirm[open]::backdrop { animation: none; } }
