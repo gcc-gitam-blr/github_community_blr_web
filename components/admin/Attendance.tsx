@@ -5,6 +5,7 @@ import { CLUB } from "@/lib/config";
 import { fromLine, fromLumaCsv, type Attendee, type Import } from "@/lib/attendance";
 import { addAttendees, attendance, removeAttendee, sendCertificates, type AttendanceRow } from "@/lib/admin/client";
 import type { JoinRequest } from "@/lib/epoch/types";
+import { useConfirm } from "@/components/ui/Confirm";
 
 /* Who actually came to each event, and their certificates. Certificates go only to people listed here —
    never to everyone who signed up. */
@@ -24,6 +25,7 @@ export function Attendance({ admin }: { admin: boolean }) {
   const [rows, setRows] = useState<AttendanceRow[] | null>(null);
   const [note, setNote] = useState<{ k: "ok" | "err"; t: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [ask, dialog] = useConfirm();
   const [mode, setMode] = useState<Mode>("luma");
   const [preview, setPreview] = useState<Import | null>(null);
   const [joins, setJoins] = useState<JoinRequest[] | null>(null);
@@ -59,7 +61,7 @@ export function Attendance({ admin }: { admin: boolean }) {
 
   const send = async (ids?: string[]) => {
     const n = ids?.length ?? unsent;
-    if (!window.confirm(`Email ${n} certificate${n === 1 ? "" : "s"} for ${title}? This can't be undone.`)) return;
+    if (!(await ask({ title: `Email ${n} certificate${n === 1 ? "" : "s"}?`, body: <>For <b>{title}</b>. Emails can&apos;t be called back once they&apos;re sent.</>, yes: `Send ${n} email${n === 1 ? "" : "s"}` }))) return;
     setBusy(true); setNote(null);
     const r = await sendCertificates(event, ids); setBusy(false);
     setNote(r.ok ? { k: "ok", t: `Sent ${r.sent} of ${r.total}${r.failed ? ` — ${r.failed} failed, try again later` : ""}.` } : { k: "err", t: r.error });
@@ -76,6 +78,7 @@ export function Attendance({ admin }: { admin: boolean }) {
 
   return (
     <div className="space-y-4">
+      {dialog}
       <div className={`${card} flex flex-wrap items-end gap-4 p-5`}>
         <label className="min-w-[260px] flex-1">
           <span className="mb-1.5 block text-[13px] text-ink-2">Event</span>
@@ -158,7 +161,7 @@ export function Attendance({ admin }: { admin: boolean }) {
                     <td className="whitespace-nowrap px-5 text-right">
                       <a href={`/certificates/${r.id}`} target="_blank" rel="noopener" className="text-link hover:underline">View</a>
                       {admin && <button onClick={() => send([r.id])} disabled={busy} className="ml-4 text-link hover:underline">{r.emailed_at ? "Re-send" : "Send"}</button>}
-                      <button onClick={async () => { if (window.confirm(`Remove ${r.name}? Their certificate link will stop working.`)) { const x = await removeAttendee(r.id); if (!x.ok) setNote({ k: "err", t: x.error }); await load(); } }} className="ml-4 text-[#a40e26] hover:underline">Remove</button>
+                      <button onClick={async () => { if (await ask({ danger: true, title: `Remove ${r.name}?`, body: "Their certificate link will stop working.", yes: "Remove" })) { const x = await removeAttendee(r.id); if (!x.ok) setNote({ k: "err", t: x.error }); await load(); } }} className="ml-4 text-[#a40e26] hover:underline">Remove</button>
                     </td>
                   </tr>
                 ))}
