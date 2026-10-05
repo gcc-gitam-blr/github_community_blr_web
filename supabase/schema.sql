@@ -634,3 +634,22 @@ create or replace function unsubscribe_join(p_email text) returns void language 
   update epoch_interest set unsubscribed = true where lower(email) = lower(p_email);
 $$;
 grant execute on function unsubscribe_join(text) to anon, authenticated;
+
+-- Live quizzes (/quiz/host): each finished quiz's final table and per-question counts, so organisers can look back.
+-- Playing needs nothing here (it runs over Realtime broadcast); only the record of a finished quiz is kept.
+create table if not exists quiz_runs (
+  id text primary key check (length(id) <= 64),
+  title text not null check (length(title) <= 200),
+  code text not null,
+  players int not null default 0,
+  result jsonb not null,
+  hosted_by uuid default auth.uid(),
+  created_at timestamptz not null default now()
+);
+alter table quiz_runs enable row level security;
+drop policy if exists "staff read quiz runs" on quiz_runs;
+create policy "staff read quiz runs" on quiz_runs for select using (my_role() in ('volunteer','admin'));
+drop policy if exists "staff save quiz runs" on quiz_runs;
+create policy "staff save quiz runs" on quiz_runs for insert with check (my_role() in ('volunteer','admin'));
+drop policy if exists "staff update quiz runs" on quiz_runs;
+create policy "staff update quiz runs" on quiz_runs for update using (my_role() in ('volunteer','admin'));
