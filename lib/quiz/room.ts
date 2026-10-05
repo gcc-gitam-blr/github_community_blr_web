@@ -19,10 +19,11 @@ export type RoomState = {
   question?: Omit<QuizQuestion, "answer">; remaining?: number; // ms left when sent: phones count down from their own clock
   answer?: number; counts?: number[];
   results: Record<string, Result>;
+  people: Record<string, [string, string]>; // id → [name, sticker], so phones can show who else is here
 };
 export type Msg =
   | { t: "state"; state: RoomState }
-  | { t: "hello"; id: string; name: string }
+  | { t: "hello"; id: string; name: string; sticker?: string }
   | { t: "answer"; id: string; index: number; choice: number };
 
 export interface Room {
@@ -78,4 +79,6 @@ export async function openRoom(code: string, role: "host" | "player", onMsg: (m:
 
 /** Each player gets an Octodex sticker, the same one every time for the same id. */
 export const STICKERS = ["octocat", "coder", "jetpack", "maker", "professor", "riveter", "skate", "adventure", "waldo", "pop", "cherry", "founder", "mentor", "heart", "swag", "support"] as const;
-export const stickerFor = (id: string) => STICKERS[[...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % STICKERS.length];
+export type StickerId = (typeof STICKERS)[number];
+export const isSticker = (s: unknown): s is StickerId => STICKERS.includes(s as StickerId);
+export const stickerFor = (id: string): StickerId => STICKERS[[...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % STICKERS.length];

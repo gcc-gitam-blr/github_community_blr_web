@@ -1,15 +1,16 @@
 import type { Quiz } from "./parse";
-import { openRoom, points, type Msg, type Phase, type Result, type Room, type RoomState } from "./room";
+import { isSticker, openRoom, points, stickerFor, type Msg, type Phase, type Result, type Room, type RoomState } from "./room";
 
 /* The host's side of a live quiz, outside React: who's playing, who answered what and when, the scores.
    The host screen reads it through useSyncExternalStore; every change makes a new snapshot. */
 
-export type Player = { id: string; name: string; score: number; streak: number; gained: number; right: number; joined: number };
-export type Saved = { code: string; quiz: Quiz; phase: Phase; index: number; players: Player[]; kicked: string[] };
+export type Player = { id: string; name: string; sticker: string; score: number; streak: number; gained: number; right: number; joined: number };
+export type Round = { counts: number[]; answered: number };
+export type Saved = { code: string; quiz: Quiz; phase: Phase; index: number; players: Player[]; kicked: string[]; rounds?: Round[]; started?: number };
 export type Snapshot = {
   phase: Phase; index: number; live: boolean; deadline: number;
   players: Player[]; // best first
-  answered: number; counts: number[];
+  answered: number; answeredIds: string[]; counts: number[];
   before: string[] | null; // the order before this round's points, so the board can slide into the new one
 };
 
@@ -22,6 +23,7 @@ export class HostGame {
   private answers = new Map<string, { choice: number; ms: number }>();
   private shownAt = 0; private deadline = 0; private seq = 0; private live = false;
   private before: string[] | null = null;
+  private rounds: Round[]; readonly started: number;
   private room: Room | null = null;
   private pending?: ReturnType<typeof setTimeout>;
   private subs = new Set<() => void>();
@@ -29,7 +31,8 @@ export class HostGame {
 
   constructor(s: Saved, private store: Pick<Storage, "setItem"> | null = typeof localStorage === "undefined" ? null : localStorage) {
     this.code = s.code; this.quiz = s.quiz; this.phase = s.phase; this.index = s.index;
-    this.players = new Map(s.players.map((p) => [p.id, { ...p }])); this.kicked = new Set(s.kicked);
+    this.players = new Map(s.players.map((p) => [p.id, { ...p, sticker: p.sticker || stickerFor(p.id) }])); this.kicked = new Set(s.kicked);
+    this.rounds = s.rounds ?? []; this.started = s.started ?? Date.now();
     // after a refresh mid-question, that question gets its full time again
     if (this.phase === "question") this.ask(this.index, false); else this.changed(false);
   }
@@ -64,7 +67,7 @@ export class HostGame {
         const taken = new Set([...this.players.values()].map((p) => p.name.toLowerCase()));
         let name = want;
         for (let k = 2; taken.has(name.toLowerCase()); k++) name = `${want.slice(0, 17)} ${k}`;
-        this.players.set(m.id, { id: m.id, name, score: 0, streak: 0, gained: 0, right: 0, joined: Date.now() });
+        this.players.set(m.id, { id: m.id, name, sticker: isSticker(m.sticker) ? m.sticker : stickerFor(m.id), score: 0, streak: 0, gained: 0, right: 0, joined: Date.now() });
         this.changed(false);
       }
       this.send(true); // a burst of people joining is answered with one update, not one each
@@ -94,6 +97,7 @@ export class HostGame {
       if (a && a.choice === q.answer) { p.streak++; p.right++; p.gained = points(a.ms, q.time, p.streak); p.score += p.gained; }
       else { p.streak = 0; p.gained = 0; }
     });
+    this.rounds[this.index] = { counts: this.tally(), answered: this.answers.size };
     this.phase = "reveal"; this.changed();
   }
 
@@ -107,13 +111,14 @@ export class HostGame {
   /** What every phone sees: the question (never its answer until the reveal) and each player's own line. */
   state(): RoomState {
     const { phase, index } = this, q = this.quiz.questions[index];
-    const results: Record<string, Result> = {};
+    const results: Record<string, Result> = {}, people: Record<string, [string, string]> = {};
     this.ranked().forEach((p, i) => {
       const a = this.answers.get(p.id), open = phase === "lobby" || phase === "question";
       results[p.id] = [p.score, i + 1, p.gained, open || !a ? -1 : a.choice === q.answer ? 1 : 0, p.streak];
+      people[p.id] = [p.name, p.sticker];
     });
     return {
-      phase, title: this.quiz.title, index, total: this.quiz.questions.length, seq: ++this.seq, results,
+      phase, title: this.quiz.title, index, total: this.quiz.questions.length, seq: ++this.seq, results, people,
       ...(phase === "question" || phase === "reveal" ? { question: { q: q.q, options: q.options, time: q.time } } : {}),
       ...(phase === "question" ? { remaining: Math.max(0, this.deadline - Date.now()) } : {}),
       ...(phase === "reveal" ? { answer: q.answer, counts: this.tally() } : {}),
@@ -127,10 +132,25 @@ export class HostGame {
   }
 
   private changed(broadcast = true) {
-    this.snap = { phase: this.phase, index: this.index, live: this.live, deadline: this.deadline, players: this.ranked().map((p) => ({ ...p })), answered: this.answers.size, counts: this.tally(), before: this.before };
+    this.snap = { phase: this.phase, index: this.index, live: this.live, deadline: this.deadline, players: this.ranked().map((p) => ({ ...p })), answered: this.answers.size, answeredIds: [...this.answers.keys()], counts: this.tally(), before: this.before };
     if (broadcast) this.send();
-    try { this.store?.setItem(SAVE, JSON.stringify({ code: this.code, quiz: this.quiz, phase: this.phase, index: this.index, players: [...this.players.values()], kicked: [...this.kicked] } satisfies Saved)); }
+    try { this.store?.setItem(SAVE, JSON.stringify({ code: this.code, quiz: this.quiz, phase: this.phase, index: this.index, players: [...this.players.values()], kicked: [...this.kicked], rounds: this.rounds, started: this.started } satisfies Saved)); }
     catch { /* a refresh just starts over */ }
     this.subs.forEach((f) => f());
   }
+
+  /** The finished quiz, for the host's history: the final table and how each question went. */
+  summary(): Run {
+    return {
+      id: `${this.code}-${this.started}`, code: this.code, title: this.quiz.title, at: new Date(this.started).toISOString(),
+      players: this.ranked().map((p) => ({ name: p.name, sticker: p.sticker, score: p.score, right: p.right })),
+      questions: this.quiz.questions.map((q, i) => ({ q: q.q, options: q.options, answer: q.answer, counts: this.rounds[i]?.counts ?? q.options.map(() => 0), answered: this.rounds[i]?.answered ?? 0 })),
+    };
+  }
 }
+
+export type Run = {
+  id: string; code: string; title: string; at: string;
+  players: { name: string; sticker: string; score: number; right: number }[];
+  questions: { q: string; options: string[]; answer: number; counts: number[]; answered: number }[];
+};
