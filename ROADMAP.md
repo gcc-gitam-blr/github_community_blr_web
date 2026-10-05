@@ -1,6 +1,6 @@
 # Roadmap
 
-The live checklist for the club site. Every item has a status and the exact page to open to check it. This file is updated as work lands, so it is the place to look. Last updated: 4 October 2026.
+The live checklist for the club site. Every item has a status and the exact page to open to check it. This file is updated as work lands, so it is the place to look. Last updated: 5 October 2026.
 
 ## How to check
 
@@ -115,6 +115,7 @@ All done except `CRON_SECRET`.
 | ✅ | "My club" page | https://githubcommunityblr.vercel.app/me (also in the footer) | Sign in with GitHub: the events you came to with their certificates, your board page (merges and badges), your Epoch wallet. 🙋 Re-run `supabase/schema.sql` once more (it adds `my_attendance`). |
 | ✅ | Monthly newsletter | https://githubcommunityblr.vercel.app/epoch/admin → Club sign-ups → Email everyone → **Monthly newsletter: Draft it** | Builds the month's draft from events, recaps, news, members' merges and what's coming up. Read, edit, then send; nothing goes out by itself. |
 | ✅ | Photo uploads | https://githubcommunityblr.vercel.app/photos | Log in to the editor once, then pick the event and choose photos on your phone or laptop. They're resized and stripped of location data on your device, then added to the gallery, recap and Memories in one commit. No script needed. |
+| ✅ | Live quiz | Projector: https://githubcommunityblr.vercel.app/quiz/host · phones: https://githubcommunityblr.vercel.app/quiz | Kahoot-style, Git-flavoured: the big screen shows a join code (a short commit SHA) and a QR; phones answer with four shapes; right answers are "Merged!", wrong ones a "Conflict"; scores as `git shortlog`, then a podium. Paste questions in almost any format (task lists, "A) … Answer: B") or save them in `content/quizzes/`. Nothing is stored; it runs over Supabase Realtime. 🙋 Send the PDFs/text of your questions and they get turned into ready-to-host quizzes. |
 | 🙋 | Club projects showcase | — | After the club creates its own GitHub organisation: live repos, their beginner issues and contributors. |
 
 Decided against: QR check-in at the door (Luma already does it), Kannada/Hindi.
