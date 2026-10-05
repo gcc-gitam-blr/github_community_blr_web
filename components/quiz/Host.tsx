@@ -2,13 +2,14 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, DownloadIcon, FlameIcon, HistoryIcon, PeopleIcon, PlayIcon, ScreenFullIcon, TrashIcon, UploadIcon, XIcon } from "@primer/octicons-react";
+import { ArrowLeftIcon, ArrowRightIcon, BookmarkIcon, CheckIcon, DownloadIcon, PencilIcon, FlameIcon, HistoryIcon, PeopleIcon, PlayIcon, ScreenFullIcon, TrashIcon, UploadIcon, XIcon } from "@primer/octicons-react";
 import { Sticker, type StickerName } from "@/components/ui/Sticker";
 import { useWakeLock } from "@/components/epoch/Kiosk";
 import { parseQuiz, type Quiz } from "@/lib/quiz/parse";
 import { hasRealtime, newCode } from "@/lib/quiz/room";
 import { HostGame, SAVE, type Player, type Run, type Saved } from "@/lib/quiz/game";
 import { forget, loadRuns, saveRun, toCsv } from "@/lib/quiz/history";
+import { deleteSet, loadSets, saveSet, type QuizSet } from "@/lib/quiz/sets";
 import { useClientValue } from "@/lib/useClientValue";
 import { Glyph, Progress, Rich, TILES, fmt } from "./Bits";
 
@@ -45,6 +46,22 @@ function Setup({ quizzes, resume, onStart, onResume, onView }: { quizzes: Source
   const file = useRef<HTMLInputElement>(null);
   const [runs, setRuns] = useState<Run[] | null>(null);
   useEffect(() => { let on = true; void loadRuns().then((r) => { if (on) setRuns(r); }); return () => { on = false; }; }, []);
+  // saved for later: written now, hosted another day
+  const [sets, setSets] = useState<QuizSet[] | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [saved, setSaved] = useState("");
+  const box = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => { let on = true; void loadSets().then((r) => { if (on) setSets(r); }); return () => { on = false; }; }, []);
+  const mine = useMemo(() => (sets ?? []).map((s) => ({ ...s, quiz: { ...parseQuiz(s.text), title: s.title } })), [sets]);
+  const clear = () => { setText(""); setTitle(null); setFileName(""); setEditing(null); };
+  const keep = async () => {
+    if (!pasted?.questions.length) return;
+    const s = await saveSet({ id: editing ?? undefined, title: finalTitle, text });
+    setSets((xs) => [s, ...(xs ?? []).filter((x) => x.id !== s.id)]);
+    setSaved(`Saved "${s.title}". It's in your list; nobody can join until you host it.`); clear();
+  };
+  const edit = (s: QuizSet) => { setText(s.text); setTitle(s.title); setEditing(s.id); setSaved(""); box.current?.scrollIntoView({ behavior: "smooth", block: "center" }); };
+  const drop = async (s: QuizSet) => { if (!confirm(`Delete "${s.title}"?`)) return; await deleteSet(s.id); setSets((xs) => (xs ?? []).filter((x) => x.id !== s.id)); if (editing === s.id) clear(); };
 
   const load = async (f?: File) => {
     if (!f) return;
@@ -79,6 +96,19 @@ function Setup({ quizzes, resume, onStart, onResume, onView }: { quizzes: Source
           <section aria-labelledby="ready-h">
             <h2 id="ready-h" className="font-mono text-[13px] font-normal tracking-normal text-white/50">ready to play</h2>
             <ul className="mt-3 grid gap-3">
+              {mine.map((s, n) => (
+                <li key={s.id} className="flex items-stretch gap-2">
+                  <button onClick={() => onStart(s.quiz)} disabled={!s.quiz.questions.length} className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition-colors hover:border-white/25 hover:bg-white/[0.07] disabled:opacity-50 sm:gap-4 sm:p-5">
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-[#0b0b0f] sm:h-12 sm:w-12" style={{ background: TILES[(n + 1) % 4].color }}><Glyph i={(n + 1) % 4} className="h-6 w-6" /></span>
+                    <span className="min-w-0 flex-1"><b className="block text-[16px] font-semibold leading-snug sm:text-[18px]">{s.title}</b><span className="font-mono text-[12.5px] text-white/50">{s.quiz.questions.length} questions · saved {when(s.at)}</span></span>
+                    <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#3fc84e] px-4 py-2 text-[14px] font-semibold text-[#0b0b0f]"><PlayIcon size={14} />Host</span>
+                  </button>
+                  <span className="flex shrink-0 flex-col gap-2">
+                    <button onClick={() => edit(s)} aria-label={`Edit ${s.title}`} title="Edit" className="grid flex-1 place-items-center rounded-xl border border-white/10 px-3 text-white/70 hover:border-white/30 hover:text-white"><PencilIcon size={16} /></button>
+                    <button onClick={() => void drop(s)} aria-label={`Delete ${s.title}`} title="Delete" className="grid flex-1 place-items-center rounded-xl border border-white/10 px-3 text-white/70 hover:border-[#ff7b72]/60 hover:text-[#ff7b72]"><TrashIcon size={16} /></button>
+                  </span>
+                </li>
+              ))}
               {ready.map((s, n) => (
                 <li key={s.slug}>
                   <button onClick={() => onStart(s.quiz)} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition-colors hover:border-white/25 hover:bg-white/[0.07] sm:gap-4 sm:p-5">
@@ -94,11 +124,12 @@ function Setup({ quizzes, resume, onStart, onResume, onView }: { quizzes: Source
 
           <section aria-labelledby="paste-h" className="min-w-0">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 id="paste-h" className="font-mono text-[13px] font-normal tracking-normal text-white/50">or bring your own</h2>
+              <h2 id="paste-h" className="font-mono text-[13px] font-normal tracking-normal text-white/50">{editing ? "editing a saved quiz" : "or bring your own"}</h2>
               <button onClick={() => file.current?.click()} className="flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-[14px] text-white/80 hover:border-white/35 hover:text-white"><UploadIcon size={14} />Open a file</button>
               <input ref={file} type="file" accept=".txt,.md,.markdown,.pdf,text/plain" hidden onChange={(e) => { void load(e.target.files?.[0]); e.target.value = ""; }} />
             </div>
-            <textarea value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} aria-label="Questions"
+            {saved && <p role="status" className="mt-3 flex items-start gap-2 rounded-xl bg-[#3fc84e]/10 px-3 py-2.5 text-[14px] text-[#9be9a8]"><BookmarkIcon size={16} className="mt-0.5 shrink-0" />{saved}</p>}
+            <textarea ref={box} value={text} onChange={(e) => { setText(e.target.value); setSaved(""); }} spellCheck={false} aria-label="Questions"
               placeholder={"Paste your questions here.\n\n1. Which command stages a file?\nA) git push\nB) git add\nAnswer: B\n\n## What does git clone do?\n- [ ] Makes a branch\n- [x] Copies a repository"}
               className="mt-3 h-[260px] w-full resize-y rounded-2xl border border-white/10 bg-white/[0.04] p-4 font-mono text-[13.5px] leading-relaxed text-white placeholder:text-white/30 focus:border-white/30 focus:outline-none md:h-[300px]" />
             {pasted && (
@@ -110,7 +141,12 @@ function Setup({ quizzes, resume, onStart, onResume, onView }: { quizzes: Source
                 </label>
                 <p className="mt-3 flex items-center gap-2"><span className="text-[#3fc84e]"><CheckIcon size={16} /></span><b>{pasted.questions.length} question{pasted.questions.length === 1 ? "" : "s"} ready</b></p>
                 {pasted.problems.map((p) => <p key={p.line + p.message} className="mt-1.5 flex gap-2 text-[#ffb4a8]"><XIcon size={16} className="mt-0.5 shrink-0" /><span><span className="font-mono text-white/50">line {p.line}</span> {p.message}</span></p>)}
-                <button disabled={!pasted.questions.length} onClick={() => onStart({ title: finalTitle, questions: pasted.questions })} className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[#3fc84e] px-5 py-3 font-semibold text-[#0b0b0f] disabled:opacity-40 sm:w-auto"><PlayIcon size={16} />Host these {pasted.questions.length}</button>
+                <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                  <button disabled={!pasted.questions.length} onClick={() => void keep()} className="flex items-center justify-center gap-2 rounded-full bg-white px-5 py-3 font-semibold text-[#0b0b0f] disabled:opacity-40"><BookmarkIcon size={16} />{editing ? "Save changes" : "Save for later"}</button>
+                  <button disabled={!pasted.questions.length} onClick={() => onStart({ title: finalTitle, questions: pasted.questions })} className="flex items-center justify-center gap-2 rounded-full border border-[#3fc84e]/60 px-5 py-3 font-semibold text-[#3fc84e] hover:bg-[#3fc84e]/10 disabled:opacity-40"><PlayIcon size={16} />Host now</button>
+                  {editing && <button onClick={clear} className="px-3 py-3 text-[14px] text-white/55 hover:text-white">Cancel</button>}
+                </div>
+                <p className="mt-2 text-[12.5px] text-white/40">Saving doesn&apos;t open anything. Players can only join once you press Host and show the code.</p>
               </div>
             )}
             <p className="mt-3 text-[13px] leading-relaxed text-white/45">Tick the right answer with <code className="font-mono text-white/70">- [x]</code>, or write <code className="font-mono text-white/70">Answer: B</code> under lettered options. 2–4 options a question; add <code className="font-mono text-white/70">time: 30</code> for more seconds.</p>
