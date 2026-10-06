@@ -27,3 +27,6 @@ public/team/*
 
 # Lighthouse CI reports (npm run lighthouse)
 .lighthouseci/
+
+# demo videos (npm run demo:video): share them, don't commit them
+demo-video/

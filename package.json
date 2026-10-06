@@ -12,6 +12,7 @@
     "connect": "tsx scripts/connect.ts",
     "build:test": "node scripts/build-test.mjs",
     "load-test": "tsx scripts/load-test.ts",
+    "demo:video": "tsx scripts/demo-video.ts",
     "lighthouse": "npx --yes @lhci/cli@0.15.1 autorun --config=lighthouserc.cjs"
   },
   "dependencies": {
