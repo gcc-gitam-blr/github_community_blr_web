@@ -182,6 +182,10 @@ The Octodex stickers in `public/stickers` are generated from `public/GitHub_stic
 - **Lighthouse** runs in the same CI job on the same demo build: `/`, `/epoch`, `/events/git-merge-26`, `/board` and `/learn`, one phone-sized run each (about 2 minutes). Accessibility below 0.95 on any page fails CI. Performance only warns, against budgets set a little under the scores measured on 4 October 2026 (`lighthouserc.cjs`); raise them as pages get faster. The reports are under the run → Artifacts → *lighthouse-reports*. Locally: `npm run build:test`, then `npm run lighthouse` (set `PORT` if 3100 is busy).
 - `tests/e2e.epoch.mjs` — the whole coin flow clicked through the real pages (instructions at the top of the file).
 
+## Demo video: how Epoch works
+
+`npm run build:test`, then `npm run demo:video` records a 90-second walkthrough for attendees, clicked through the real pages in demo mode (never the real database): sign-up, check-in at the desk, a booth, a recharge point, the shop, a receipt and the leaderboard, with captions and a visible cursor. It saves `demo-video/epoch-attendee.webm` (plays in any browser, VLC and YouTube) and `epoch-attendee.srt`, the same captions as subtitles or a script to read a voiceover from. Re-run it whenever the pages change; the numbers in the captions come from `lib/epoch/config.ts`. The steps and wording are in [`scripts/demo-video.ts`](scripts/demo-video.ts).
+
 ## Email: welcome message and organiser broadcasts
 
 When someone joins through the form, the site emails them a welcome (WhatsApp link, next event, what to do first).
