@@ -1,9 +1,13 @@
 name: CI
 
+# Pushes run on main only: dev is kept level with main, so running it there too paid for the same commit twice.
+# Pull requests still run it. Notes and docs can't break the site, so they don't spend ~10 minutes.
 on:
   push:
-    branches: [main, dev]
+    branches: [main]
+    paths-ignore: ["**.md", "docs/**", ".github/workflows/uptime.yml", ".github/workflows/backup.yml"]
   pull_request:
+    paths-ignore: ["**.md", "docs/**", ".github/workflows/uptime.yml", ".github/workflows/backup.yml"]
 
 concurrency:
   group: ci-${{ github.ref }}
