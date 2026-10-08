@@ -3,7 +3,8 @@ name: Backup
 # Every Sunday, a copy of the club's data (the "public" part of the Supabase database) is saved as a
 # gzipped SQL file and kept for 30 days under Actions → Backup → the run → Artifacts.
 # Needs the repository secret SUPABASE_DB_URL (Supabase → Connect → Session pooler). Without it the run
-# says so and stops, green. Optional: BACKUP_PASSPHRASE encrypts the file (gpg); keep the passphrase safe.
+# says so and stops, green. Also needs BACKUP_PASSPHRASE: the file is always encrypted (gpg), because anyone signed in to GitHub can download a public
+# repo's artifacts. Keep the passphrase safe.
 # How to restore: README → Backups.
 
 on:
@@ -42,10 +43,8 @@ jobs:
           file="club-data-$(date -u +%F).sql.gz"
           /usr/lib/postgresql/17/bin/pg_dump "$SUPABASE_DB_URL" --schema=public --data-only --no-owner --no-privileges \
             --exclude-table-data=public.rate_hits | gzip -9 > "$file"
-          if [ -n "$BACKUP_PASSPHRASE" ]; then
-            gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" --symmetric --cipher-algo AES256 "$file"
-            rm "$file"; file="$file.gpg"
-          fi
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" --symmetric --cipher-algo AES256 "$file"
+          rm "$file"; file="$file.gpg"
           echo "FILE=$file" >> "$GITHUB_ENV"
           echo "Saved $file ($(du -h "$file" | cut -f1))"
       - uses: actions/upload-artifact@v4
