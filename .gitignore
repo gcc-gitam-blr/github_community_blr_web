@@ -9,6 +9,13 @@ Thumbs.db
 *.log
 next-env.d.ts
 *.tsbuildinfo
+.claude/
+.agents/
+.serena/
+.mcp.json
+skills-lock.json
+scripts/dbhub.mjs
+scripts/dbhub.toml
 
 # raw sticker source (47 MB); run `node scripts/stickers.mjs` to regenerate public/stickers
 public/GitHub_stickers/
