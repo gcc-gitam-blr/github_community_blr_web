@@ -22,7 +22,7 @@ const folder = (label: string, description: string) => fields.select({ label, de
 const photo = fields.text({ label: "Photo", description: "Path of a processed photo, like /team/monisha-s.webp. New photos: a maintainer runs scripts/team-photos.mjs, which strips location data. Leave empty to use their GitHub avatar." });
 
 export default config({
-  storage: local ? { kind: "local" } : { kind: "github", repo: "lechakrawarthy/github_community_blr", branchPrefix: "content/" },
+  storage: local ? { kind: "local" } : { kind: "github", repo: "gcc-gitam-blr/github_community_blr_web", branchPrefix: "content/" },
   ui: {
     brand: { name: "Club site" },
     navigation: { Club: ["settings", "announcements", "events", "updates", "team", "contributors", "alumni", "challenge", "faq", "home", "memories"], Epoch: ["epoch", "schedule"] },

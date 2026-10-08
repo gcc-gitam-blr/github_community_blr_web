@@ -34,8 +34,8 @@ All done except `CRON_SECRET`.
 | | # | Item | Check it | Notes |
 |---|---|------|----------|-------|
 | ✅ | 0.1 | Branch previews | https://githubcommunityblr.vercel.app | Every branch gets a preview. 🙋 Protect `main` in GitHub when you're ready (you said later; the repo is private). |
-| ✅ | 0.2 | Browser tests in CI | https://github.com/lechakrawarthy/github_community_blr/actions | 75 Playwright tests on every push: pages, forms, Epoch coin flow, phones down to 320 px, accessibility. |
-| ✅ | 0.3 | Lighthouse budget in CI | https://github.com/lechakrawarthy/github_community_blr/actions → newest **CI** run → *lighthouse-reports* | Accessibility under 0.95 on any of 5 key pages fails the build; slower pages only warn. |
+| ✅ | 0.2 | Browser tests in CI | https://github.com/gcc-gitam-blr/github_community_blr_web/actions | 75 Playwright tests on every push: pages, forms, Epoch coin flow, phones down to 320 px, accessibility. |
+| ✅ | 0.3 | Lighthouse budget in CI | https://github.com/gcc-gitam-blr/github_community_blr_web/actions → newest **CI** run → *lighthouse-reports* | Accessibility under 0.95 on any of 5 key pages fails the build; slower pages only warn. |
 | ✅ | 0.4 | Error monitoring | https://githubcommunityblr.vercel.app/admin → **Site errors** (organiser login) | Browser errors are reported to the site itself, grouped with counts. No outside service. 🙋 Needs `supabase/schema.sql` re-run. |
 | ✅ | 0.5 | Security headers + CSP | Nothing to click | Checked on every page by the tests. |
 
@@ -88,7 +88,7 @@ All done except `CRON_SECRET`.
 | | # | Item | Check it | Notes |
 |---|---|------|----------|-------|
 | ✅ | 4.1 | Dark mode | https://githubcommunityblr.vercel.app/ with your phone or laptop set to dark mode (or Chrome DevTools → Rendering → prefers-color-scheme: dark) | True black. Follows the system until you choose: the ☀/☾ switch in the header, or System · Light · Dark in the footer and the phone menu. Every club page is checked for contrast in dark mode too. Epoch and the content editor keep their own light look. |
-| ✅ | 4.2 | Home page speed on phones | https://github.com/lechakrawarthy/github_community_blr/actions → newest **CI** run → *lighthouse-reports* | Speed is measured on every push and warns if a page gets slower. |
+| ✅ | 4.2 | Home page speed on phones | https://github.com/gcc-gitam-blr/github_community_blr_web/actions → newest **CI** run → *lighthouse-reports* | Speed is measured on every push and warns if a page gets slower. |
 | 🙋 | 4.3 | Accessibility audit | — | Automated checks on every page are done. A manual screen-reader pass (NVDA) needs a person. |
 | ✅ | 4.4 | Site search | https://githubcommunityblr.vercel.app/ then press `/` | |
 | ✅ | 4.5 | "Notify me" for Epoch dates | Same as 3.13 | |
@@ -100,10 +100,10 @@ All done except `CRON_SECRET`.
 | | # | Item | Check it | Notes |
 |---|---|------|----------|-------|
 | ✅ | 5.1 | Content editor | https://githubcommunityblr.vercel.app/keystatic | Every save is a commit. 🙋 Connect it to GitHub for the live site (README, ~10 min). |
-| ✅ | 5.2 | Contributor onboarding | https://github.com/lechakrawarthy/github_community_blr/issues?q=is%3Aopen+label%3A%22good+first+issue%22 | 5 starter issues (#7–#11), each naming the exact file; CONTRIBUTING.md points to them and says pull requests go to `dev`. 🙋 The repo is private: add members as collaborators so they can pick them up. |
-| ✅ | 5.3 | Year-rollover guide | https://github.com/lechakrawarthy/github_community_blr/blob/main/docs/ROLLOVER.md | Plain steps for next year's team. |
+| ✅ | 5.2 | Contributor onboarding | https://github.com/gcc-gitam-blr/github_community_blr_web/issues?q=is%3Aopen+label%3A%22good+first+issue%22 | 5 starter issues (#7–#11), each naming the exact file; CONTRIBUTING.md points to them and says pull requests go to `dev`. 🙋 The repo is private: add members as collaborators so they can pick them up. |
+| ✅ | 5.3 | Year-rollover guide | https://github.com/gcc-gitam-blr/github_community_blr_web/blob/main/docs/ROLLOVER.md | Plain steps for next year's team. |
 | ✅ | 5.4 | Backups & data retention | https://githubcommunityblr.vercel.app/privacy (how long each thing is kept) | Weekly clean-up of old data, weekly backup kept 30 days. 🙋 `CRON_SECRET` in Vercel, `SUPABASE_DB_URL` secret in GitHub. |
-| ✅ | 5.5 | Uptime check | https://github.com/lechakrawarthy/github_community_blr/actions/workflows/uptime.yml | Every 6 hours; opens a "Site is down" issue if the site fails. 🙋 The `SITE_URL` repository variable. |
+| ✅ | 5.5 | Uptime check | https://github.com/gcc-gitam-blr/github_community_blr_web/actions/workflows/uptime.yml | Every 6 hours; opens a "Site is down" issue if the site fails. 🙋 The `SITE_URL` repository variable. |
 
 ## Phase 6 — New features (building now, in this order)
 

@@ -6,7 +6,7 @@ import type { Photo } from "@/components/site/PhotoGrid";
 export const SIZES = [{ w: 480, s: "sm" }, { w: 960, s: "md" }, { w: 1800, s: "lg" }] as const;
 export const MAX_PER_UPLOAD = 30;
 export const MAX_IMAGE_BYTES = 1_500_000; // one resized WebP; a 1800px photo is usually 200–500 KB
-export const REPO = "lechakrawarthy/github_community_blr", BRANCH = "main";
+export const REPO = "gcc-gitam-blr/github_community_blr_web", BRANCH = "main";
 
 export const folderOk = (f: string) => /^[a-z0-9]+(-[a-z0-9]+)*$/.test(f) && f.length <= 80;
 export const toFolder = (s: string) => s.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);

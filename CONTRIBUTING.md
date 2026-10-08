@@ -14,7 +14,7 @@ No keys needed: without Supabase, Epoch runs in demo mode (data stays in your br
 
 ## Make a change
 
-1. Find an issue: [**good first issue**](https://github.com/lechakrawarthy/github_community_blr/issues?q=is%3Aopen+label%3A%22good+first+issue%22) ones are small and explain exactly which file to change. Or open one describing what you want to do.
+1. Find an issue: [**good first issue**](https://github.com/gcc-gitam-blr/github_community_blr_web/issues?q=is%3Aopen+label%3A%22good+first+issue%22) ones are small and explain exactly which file to change. Or open one describing what you want to do.
 2. Start from `dev` and create a branch: `git switch dev && git pull && git switch -c fix/short-description`
 3. Keep commits small and focused — one idea per commit.
 4. Before pushing:
