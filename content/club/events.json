@@ -10,13 +10,14 @@
       "shape": "diamond",
       "color": "blue",
       "recap": {
-        "text": "The event was all about Git and GitHub. We talked about how GitHub is important in the developer community and how much impact it has on people. Apart from that, we differentiated between Git and GitHub.\n\nWe did a completely hands-on session where we initialized Git by setting up email and usernames, created a repository, cloned it, added some demo files, committed them, and pushed them.\n\nLater on, we spoke about what is happening in the GitHub developer community, like how many people are joining every second. We looked back at Octoverse and went over current trends, such as how TypeScript recently overtook Python, and all those related topics.\n\nAfter that, we had a quiz on the session with a lot of good answers and participants, followed by goodies for the top three winners. That is basically all that happened.",
+        "text": "GitHub 101 - Event Recap\n\nGitHub 101, hosted by the GitHub Community Club (GCC), was a hands-on workshop designed to introduce participants to Git, GitHub, and their role in the modern developer ecosystem.\n\nThe session began with an introduction to the importance of GitHub in the developer community, its impact on collaboration and open-source development, and the key differences between Git and GitHub. Participants then moved into a practical walkthrough of the Git workflow, where they configured their Git usernames and email addresses, created and cloned repositories, added files, staged changes, committed their work, and pushed their first commits to GitHub.\n\nBeyond the fundamentals, the workshop explored the evolving GitHub developer ecosystem through insights from GitHub's Octoverse report and emerging trends in software development, including the growing adoption of TypeScript and its recent rise in popularity.\n\nThe event concluded with an interactive quiz that tested participants' understanding of the session. With enthusiastic participation and plenty of engaging responses, the quiz added a competitive edge to the workshop, with goodies awarded to the top three winners.\n\nOverall, GitHub 101 combined practical learning, community insights, and friendly competition, giving participants a stronger foundation in Git and GitHub and encouraging them to take their next steps as developers and contributors to the open-source community.",
         "numbers": [
           {
-            "value": 25,
+            "value": 28,
             "label": "Attendees"
           }
         ],
+        "video": "https://youtu.be/pBy1zgt0XPc?si=gXuc4HzCfw6ShAvb",
         "slides": "https://drive.google.com/file/d/1AfjbDZ-QPbVDMZ5qJdR2QOIT4BvlCyXs/view?usp=sharing",
         "materials": [],
         "photos": "https://drive.google.com/drive/folders/1mbETJbrx58f_tJEleAfmat3hdJtsdnPH"
