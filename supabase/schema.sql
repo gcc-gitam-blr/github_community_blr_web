@@ -149,7 +149,7 @@ end $$;
 
 create or replace function register_profile(p_name text)
 returns profiles language plpgsql security definer as $$
-declare me profiles; u auth.users;
+declare me profiles; u auth.users; pr text;
 begin
   select * into me from profiles where id = auth.uid();
   if found then return me; end if;
@@ -157,6 +157,9 @@ begin
   insert into profiles (id, handle, name, email)
   values (u.id, coalesce(u.raw_user_meta_data->>'user_name', split_part(u.email,'@',1)), p_name, u.email)
   returning * into me;
+  -- an admin may have granted this GitHub username access before their first sign-in
+  delete from pending_roles where handle = lower(me.handle) returning role into pr;
+  if pr is not null then update profiles set role = pr where id = me.id returning * into me; end if;
   return me;
 end $$;
 
@@ -478,7 +481,18 @@ $$;
 revoke execute on function my_attendance() from public, anon;
 grant execute on function my_attendance() to authenticated;
 
--- Admins give people organiser access by GitHub handle (they must have signed in once).
+-- Access granted to a GitHub username that hasn't signed in yet. Applied by register_profile on first sign-in.
+create table if not exists pending_roles (
+  handle text primary key check (handle = lower(handle)),
+  role text not null check (role in ('volunteer','admin')),
+  created_at timestamptz not null default now()
+);
+alter table pending_roles enable row level security;
+drop policy if exists "admins read pending roles" on pending_roles;
+create policy "admins read pending roles" on pending_roles for select using (my_role() = 'admin');
+grant select on pending_roles to authenticated;
+
+-- Admins give people organiser access by GitHub handle (works before or after their first sign-in).
 create or replace function set_role(p_handle text, p_role text)
 returns json language plpgsql security definer as $$
 declare h text := lower(ltrim(trim(p_handle), '@')); t uuid;
@@ -490,7 +504,13 @@ begin
   end if;
   -- losing organiser access also takes them off their booth
   update profiles set role = p_role, booth = case when p_role = 'attendee' then null else booth end where lower(handle) = h returning id into t;
-  if not found then return json_build_object('ok', false, 'error', 'Nobody with that GitHub username has signed in yet. Ask them to sign in at /admin once.'); end if;
+  if not found then
+    -- not signed in yet: remember the grant; it applies the first time they sign in
+    if h !~ '^[a-z0-9]([a-z0-9-]{0,38})$' then return json_build_object('ok', false, 'error', 'That doesn''t look like a GitHub username.'); end if;
+    if p_role = 'attendee' then delete from pending_roles where handle = h;
+    else insert into pending_roles (handle, role) values (h, p_role) on conflict (handle) do update set role = excluded.role, created_at = now(); end if;
+    return json_build_object('ok', true, 'pending', true);
+  end if;
   perform log_action('role', t, null, null, p_role);
   return json_build_object('ok', true);
 end $$;

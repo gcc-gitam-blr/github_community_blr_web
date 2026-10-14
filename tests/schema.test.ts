@@ -159,7 +159,13 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   ok("a volunteer can now read attendance", (await asApi(ADA, "select * from attendance")).rows.length === 1);
   ok("a volunteer still can't hand out roles", !(await role(ADA, "org", "attendee"))?.ok);
   ok("admins can't change their own role", /own role/.test((await role(ORG, "org", "attendee"))?.error ?? ""));
-  ok("an unknown handle is explained", /signed in yet/.test((await role(ORG, "nobody-here", "volunteer"))?.error ?? ""));
+  ok("an unknown handle is remembered until they sign in", (await role(ORG, "nobody-here", "volunteer"))?.ok === true && (await one<{ role: string }>("select role from pending_roles where handle = 'nobody-here'")).role === "volunteer");
+  ok("…and a nonsense handle is refused", !(await role(ORG, "not a handle!", "volunteer"))?.ok);
+  const NEW = "00000000-0000-0000-0000-0000000000ee";
+  await db.query("insert into auth.users values ($1, 'new@gitam.in', '{\"user_name\":\"Nobody-Here\"}')", [NEW]);
+  await as(NEW); await db.query("select register_profile('New Volunteer')");
+  ok("…and applies the first time they sign in", (await one<{ role: string }>("select role from profiles where id = $1", [NEW])).role === "volunteer" && !(await one("select 1 from pending_roles where handle = 'nobody-here'")));
+  await as(ORG);
   ok("a made-up role is refused", !(await role(ORG, "ada", "superuser"))?.ok);
 
   // ---- Epoch organisers: booths for volunteers, reversals, search and the audit log ----

@@ -37,3 +37,5 @@ public/team/*
 
 # demo videos (npm run demo:video): share them, don't commit them
 demo-video/
+.vercel
+.env*
