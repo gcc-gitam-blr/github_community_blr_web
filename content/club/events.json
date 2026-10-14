@@ -10,13 +10,21 @@
       "shape": "diamond",
       "color": "blue",
       "recap": {
-        "numbers": [],
-        "materials": []
+        "text": "The event was all about Git and GitHub. We talked about how GitHub is important in the developer community and how much impact it has on people. Apart from that, we differentiated between Git and GitHub.\n\nWe did a completely hands-on session where we initialized Git by setting up email and usernames, created a repository, cloned it, added some demo files, committed them, and pushed them.\n\nLater on, we spoke about what is happening in the GitHub developer community, like how many people are joining every second. We looked back at Octoverse and went over current trends, such as how TypeScript recently overtook Python, and all those related topics.\n\nAfter that, we had a quiz on the session with a lot of good answers and participants, followed by goodies for the top three winners. That is basically all that happened.",
+        "numbers": [
+          {
+            "value": 25,
+            "label": "Attendees"
+          }
+        ],
+        "slides": "https://drive.google.com/file/d/1AfjbDZ-QPbVDMZ5qJdR2QOIT4BvlCyXs/view?usp=sharing",
+        "materials": [],
+        "photos": "https://drive.google.com/drive/folders/1mbETJbrx58f_tJEleAfmat3hdJtsdnPH"
       }
     },
     {
       "title": "GIT Merge 26",
-      "date": "2026-10-15",
+      "date": "2026-10-28",
       "type": "Open Source",
       "text": "A GitHub and open-source event: learn Git, explore open source, make beginner-friendly contributions.",
       "where": "GITAM Bengaluru",
@@ -29,7 +37,7 @@
       }
     },
     {
-      "title": "EPOCH — GitHub Technical Month",
+      "title": "EPOCH - GitHub Technical Month",
       "date": "2026-12-01",
       "dateLabel": "December 2026",
       "type": "Flagship",

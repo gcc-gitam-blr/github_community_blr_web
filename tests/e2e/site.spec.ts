@@ -77,6 +77,7 @@ test.describe("club site", () => {
   test("security headers are set", async ({ request }) => {
     const h = (await request.get("/")).headers();
     expect(h["content-security-policy"]).toContain("default-src 'self'");
+    expect(h["content-security-policy"]).toContain("https://raw.githubusercontent.com");
     expect(h["x-frame-options"]).toBe("DENY");
     expect(h["x-content-type-options"]).toBe("nosniff");
   });
