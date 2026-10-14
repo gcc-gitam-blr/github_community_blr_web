@@ -37,9 +37,9 @@ test.describe("club site", () => {
     expect(await ics.text()).toContain("SUMMARY:GIT Merge 26");
   });
 
-  test("Learn GitHub is on 7 October, matching Luma", async ({ request }) => {
+  test("Learn GitHub is on 12 October, matching Luma", async ({ request }) => {
     const ics = await (await request.get("/events/learn-github-and-make-your-first-contribution/event.ics")).text();
-    expect(ics).toContain("DTSTART;VALUE=DATE:20261007");
+    expect(ics).toContain("DTSTART;VALUE=DATE:20261012");
   });
 
   test("the calendar file lists all six events", async ({ request }) => {
@@ -229,9 +229,9 @@ test("the team: mentors, the five leads, everyone else, and their crew roles", a
     await expect(team.getByRole("heading", { name })).toBeVisible();
     await expect(team.getByText(role, { exact: true })).toBeVisible();
   }
-  for (const name of ["Geethika", "Aravind K", "Vishnu Teja", "Venkata Madhu K", "Bhavana", "Niharika", "Apsara", "Lokesh", "Manogna"]) await expect(team.getByRole("heading", { name })).toBeVisible();
+  for (const name of ["Geethika", "Aravind K", "Bhavana", "Niharika", "Apsara", "Lokesh", "Manogna"]) await expect(team.getByRole("heading", { name })).toBeVisible();
   // the crew roles, as assigned
-  for (const [label, n] of [["Git Custodian I", 2], ["Code Gatekeeper I", 2], ["Pipeline Architect I", 2], ["Secrets & Security Officer I", 2], ["Issue Alchemist I", 2], ["Stack Explorer I", 1], ["Tech Scout I", 2], ["Onboarding Forge I", 1]] as const) await expect(team.getByText(label, { exact: true })).toHaveCount(n);
+  for (const [label, n] of [["Git Custodian I", 2], ["Code Gatekeeper I", 2], ["Pipeline Architect I", 1], ["Secrets & Security Officer I", 1], ["Issue Alchemist I", 2], ["Stack Explorer I", 1], ["Tech Scout I", 2], ["Onboarding Forge I", 1]] as const) await expect(team.getByText(label, { exact: true })).toHaveCount(n);
   await team.getByText("How our tech roles work").click();
   await expect(team.getByText(/merge conflicts newer members run into/)).toBeVisible();
   await expect(team.getByText(/first pull request/).first()).toBeVisible(); // Onboarding Forge is explained too
