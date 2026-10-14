@@ -110,9 +110,9 @@ export function EventsYear() {
             const past = today && e.date < today && !e.href; const on = e === sel;
             return (
               <li key={e.date}>
-                <button type="button" onClick={() => setSel(e)} className={`grid w-full grid-cols-[92px_1fr] items-baseline gap-3 rounded-xl px-3 py-3 text-left transition ${on ? "bg-soft" : "hover:bg-soft/60"} ${past ? "opacity-50" : ""}`}>
+                <button type="button" onClick={() => setSel(e)} className={`grid w-full grid-cols-[92px_1fr] items-baseline gap-3 rounded-xl px-3 py-3 text-left transition ${on ? "bg-soft" : "hover:bg-soft/60"}`}>
                   <span className="font-mono text-[12.5px] text-ink-3">{e.dateLabel ? e.dateLabel.replace(" 2026", "") : new Date(e.date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
-                  <span className={`text-[15.5px] leading-snug ${on ? "font-semibold" : ""}`}>{e.title}{e.href && <span className="ml-2 rounded-full bg-[#ffd966] px-2 py-0.5 font-mono text-[11px] font-bold">flagship</span>}</span>
+                  <span className={`text-[15.5px] leading-snug ${on ? "font-semibold" : ""} ${past ? "text-ink-3" : ""}`}>{e.title}{e.href && <span className="ml-2 rounded-full bg-[#ffd966] px-2 py-0.5 font-mono text-[11px] font-bold">flagship</span>}</span>
                 </button>
               </li>
             );

@@ -13,7 +13,7 @@ const post = (body: unknown, ip: string) => new Request("http://x/api/feedback",
 (async () => {
   const dbPort = await new Promise<number>((r) => fake.listen(0, "127.0.0.1", () => r((fake.address() as AddressInfo).port)));
   const { validateFeedback } = await import("../lib/feedback");
-  const good = { event: "2026-10-07", rating: 5, liked: "Mentors were great", improve: "More time", elapsedMs: 5000 };
+  const good = { event: "2026-10-12", rating: 5, liked: "Mentors were great", improve: "More time", elapsedMs: 5000 };
 
   ok("a normal submission is valid", validateFeedback(good) === null);
   ok("liked/improve are optional", validateFeedback({ event: "2026-10-12", rating: 3, elapsedMs: 5000 }) === null);
@@ -26,7 +26,7 @@ const post = (body: unknown, ip: string) => new Request("http://x/api/feedback",
   Object.assign(process.env, { NEXT_PUBLIC_SUPABASE_URL: `http://127.0.0.1:${dbPort}`, NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon" });
   const { POST } = await import("../app/api/feedback/route");
   let r = await POST(post(good, "1.1.1.1"));
-  ok("a valid submission is saved (201)", r.status === 201 && saved.length === 1 && saved[0].rating === 5 && saved[0].event === "2026-10-07");
+  ok("a valid submission is saved (201)", r.status === 201 && saved.length === 1 && saved[0].rating === 5 && saved[0].event === "2026-10-12");
   ok("it stores no name, email or IP — only the answers", Object.keys(saved[0]).sort().join() === "event,improve,liked,rating");
   r = await POST(post({ ...good, liked: "  ", improve: "" }, "1.1.1.2"));
   ok("blank answers are stored as null", saved[1].liked === null && saved[1].improve === null);

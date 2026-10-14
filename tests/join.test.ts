@@ -1,9 +1,10 @@
 /* Club sign-up: the shared validator and the /api/join endpoint (called directly, no server needed). */
 import { MIN_FILL_MS, validateJoin } from "../lib/join";
+import { CLUB } from "../lib/config";
 import { POST } from "../app/api/join/route";
 
 let fails = 0; const ok = (n: string, c: boolean) => { console.log((c ? "PASS" : "FAIL") + "  " + n); if (!c) fails++; };
-const EVENT = "2026-10-07";
+const EVENT = CLUB.events[0].date;
 const good = { handle: "ada", email: "ada@gitam.in", firstEvent: EVENT, elapsedMs: 10_000 };
 const post = (body: unknown, ip = "1.1.1.1") => POST(new Request("http://x/api/join", { method: "POST", headers: { "content-type": "application/json", "x-forwarded-for": ip }, body: JSON.stringify(body) }));
 

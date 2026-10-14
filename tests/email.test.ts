@@ -102,7 +102,7 @@ const settle = () => new Promise((r) => setTimeout(r, 300));
   const human = { elapsedMs: 20_000 };
 
   inbox.length = 0;
-  let r = await join(postJson("http://x/api/join", { handle: "ada", email: "Ada@Gitam.in", firstEvent: "2026-10-07", ...human }, { "x-forwarded-for": "9.9.9.1" }));
+  let r = await join(postJson("http://x/api/join", { handle: "ada", email: "Ada@Gitam.in", firstEvent: "2026-10-12", ...human }, { "x-forwarded-for": "9.9.9.1" }));
   await settle();
   ok("join: a new sign-up is stored and answered 201", r.status === 201 && db.joins.length === 1 && db.joins[0].email === "ada@gitam.in");
   ok("join: exactly one welcome email arrives, addressed to them", inbox.length === 1 && toOf(inbox[0]) === "ada@gitam.in");
@@ -111,7 +111,7 @@ const settle = () => new Promise((r) => setTimeout(r, 300));
   ok("join: the unsubscribe link in the email is signed and valid", verifyToken("ada@gitam.in", new URL(link).searchParams.get("t") ?? ""));
 
   inbox.length = 0;
-  r = await join(postJson("http://x/api/join", { handle: "ada", email: "ada@gitam.in", firstEvent: "2026-10-07", ...human }, { "x-forwarded-for": "9.9.9.2" }));
+  r = await join(postJson("http://x/api/join", { handle: "ada", email: "ada@gitam.in", firstEvent: "2026-10-12", ...human }, { "x-forwarded-for": "9.9.9.2" }));
   await settle();
   ok("join: signing up twice says 'already on the list' and sends no second email", r.status === 200 && (await r.json()).status === "exists" && inbox.length === 0);
 
