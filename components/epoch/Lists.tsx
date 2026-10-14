@@ -104,15 +104,11 @@ export function AdminPage() {
   );
 
   return (
-    <Frame title="Organiser desk." sub={`Check people in once they've paid at the desk (${STARTER_COINS} ${EPOCH.currency}, once), fix mistakes, and print the booth QR sheet.`} aside={<div className="no-print flex flex-wrap gap-2"><Link href="/epoch/scan" className={btnInk}>Scan a wallet</Link><button onClick={() => window.print()} className={btnSoft}>Print QR sheet</button></div>}>
+    <Frame title="Organiser desk." sub={`Check people in once they've paid at the desk (${STARTER_COINS} ${EPOCH.currency}, once), fix mistakes, and print the booth QR sheet.`} aside={<div className="no-print flex flex-wrap gap-2"><Link href="/epoch/scan" className={btnInk}>Scan a wallet</Link><Link href="/admin" className={btnSoft}>Club admin ↗</Link><button onClick={() => window.print()} className={btnSoft}>Print QR sheet</button></div>}>
       <MyPost />
       <FindAttendee />
       <Team />
       <AuditLog />
-      <ClubStatsPanel />
-      <SignUps />
-      <Inbox />
-      <FeedbackSummary />
       <h2 className="no-print mb-4 mt-12 text-[28px] font-medium tracking-[-0.03em]">Booth QR codes</h2>
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 print:grid-cols-3">
         {printable.map((b) => (

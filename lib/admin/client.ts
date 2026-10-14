@@ -42,10 +42,16 @@ export async function people(): Promise<Person[]> {
   return (data ?? []) as Person[];
 }
 
-export async function setRole(handle: string, role: Person["role"]): Promise<Res> {
+export async function setRole(handle: string, role: Person["role"]): Promise<Res<{ pending?: boolean }>> {
   const { data, error } = await supabase().rpc("set_role", { p_handle: handle, p_role: role });
   if (error) return { ok: false, error: error.message };
-  return data?.ok ? { ok: true } : { ok: false, error: data?.error ?? "Couldn't change the role." };
+  return data?.ok ? { ok: true, pending: !!data.pending } : { ok: false, error: data?.error ?? "Couldn't change the role." };
+}
+
+/** Access granted to usernames that haven't signed in yet (admins only). */
+export async function pendingRoles(): Promise<{ handle: string; role: Person["role"] }[]> {
+  const { data } = await supabase().from("pending_roles").select("handle, role").order("created_at", { ascending: false });
+  return (data ?? []) as { handle: string; role: Person["role"] }[];
 }
 
 export async function sendCertificates(event: string, ids?: string[]): Promise<Res<{ sent: number; failed: number; total: number }>> {

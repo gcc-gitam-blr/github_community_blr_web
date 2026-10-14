@@ -114,7 +114,7 @@ export function AdminApp() {
         </nav>
         <div className="min-w-0 space-y-4">
           <h1 className="text-[28px]">{SECTIONS.find((s) => s.id === section)!.label}</h1>
-          {!admin && <p className="text-[14px] text-ink-3">You&apos;re a volunteer: you can see everything and mark attendance; sending emails and changing roles is for admins.</p>}
+          {!admin && <p className="text-[14px] text-ink-3">You&apos;re a volunteer: you can mark attendance and check people in; sending emails and changing roles is for admins.</p>}
           {section === "overview" && <ClubStatsPanel />}
           {section === "attendance" && <Attendance admin={admin} />}
           {section === "signups" && <SignUps />}
