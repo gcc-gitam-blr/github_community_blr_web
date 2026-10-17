@@ -5,9 +5,11 @@ import { useEpoch } from "@/components/epoch/EpochProvider";
 import { ClubStatsPanel, FeedbackSummary, Inbox, SignUps } from "@/components/epoch/Lists";
 import { ensureProfile, signedInUser } from "@/lib/admin/client";
 import { Attendance } from "./Attendance";
+import { Meetings } from "./Meetings";
 import { Members } from "./Members";
 import { Proposals } from "./Proposals";
 import { Recruitment } from "./Recruitment";
+import { Tasks } from "./Tasks";
 import { People } from "./People";
 import { SiteErrors } from "./SiteErrors";
 import { ClubMark } from "@/components/ui/ClubMark";
@@ -24,6 +26,8 @@ const SECTIONS = [
   { id: "members", label: "Members", core: true },
   { id: "recruitment", label: "Recruitment", core: true },
   { id: "proposals", label: "Event proposals", core: true },
+  { id: "tasks", label: "Tasks", core: true },
+  { id: "meetings", label: "Meetings & decisions", core: true },
   { id: "people", label: "People & roles" },
   { id: "errors", label: "Site errors", admin: true },
 ] as const satisfies readonly { id: string; label: string; admin?: boolean; core?: boolean }[];
@@ -132,6 +136,8 @@ export function AdminApp() {
           {current === "members" && <Members admin={admin} />}
           {current === "recruitment" && <Recruitment admin={admin} meId={me.id} />}
           {current === "proposals" && <Proposals admin={admin} meId={me.id} />}
+          {current === "tasks" && <Tasks admin={admin} meId={me.id} />}
+          {current === "meetings" && <Meetings admin={admin} meId={me.id} />}
           {current === "people" && <People admin={admin} me={me.handle} />}
           {current === "errors" && (admin ? <SiteErrors /> : <p className="text-ink-2">Error reports are for admins.</p>)}
         </div>
