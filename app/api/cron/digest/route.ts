@@ -37,7 +37,9 @@ export async function GET(req: Request) {
   const w = await db.rpc("appointment_warnings");
   if (w.error) console.error("digest: appointment_warnings failed (is supabase/schema.sql up to date?):", w.error.message);
   else await db.rpc("sync_profile_roles");
-  const digest = buildDigest({ signups: s.data ?? [], messages: m.data ?? [], feedback: f.data ?? [], access: w.error ? undefined : w.data }, now);
+  const tw = await db.rpc("task_warnings");
+  if (tw.error) console.error("digest: task_warnings failed (is supabase/schema.sql up to date?):", tw.error.message);
+  const digest = buildDigest({ signups: s.data ?? [], messages: m.data ?? [], feedback: f.data ?? [], access: w.error ? undefined : w.data, tasks: tw.error ? undefined : tw.data }, now);
   if (!digest) return json({ ok: true, sent: 0, skipped: "Nothing happened this week." });
 
   // admins are whoever holds an active admin appointment today (appointment_admin_emails), not the profile's role copy

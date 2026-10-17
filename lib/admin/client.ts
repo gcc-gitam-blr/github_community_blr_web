@@ -181,3 +181,41 @@ export const cancelProposal = (id: number, reason: string) => rpcRes("cancel_pro
 export const completeProposal = (id: number, outcome: string, attendanceEvent: string | null, attendanceNote: string) => rpcRes("complete_proposal", { p_id: id, p_outcome: outcome, p_attendance_event: attendanceEvent, p_attendance_note: attendanceNote });
 export const setChecklistItem = (item: number, state: ChecklistItem["state"], note: string) => rpcRes("set_checklist_item", { p_item: item, p_state: state, p_note: note });
 export const linkProposalEvent = (id: number, slug: string) => rpcRes("link_proposal_event", { p_id: id, p_slug: slug });
+
+// ---- Tasks, meetings and decisions ----
+export type TaskStatus = "todo" | "doing" | "blocked" | "done" | "dropped";
+export interface Task { id: number; title: string; details: string | null; owner_id: string; creator_id: string; due_on: string; status: TaskStatus; proposal_id: number | null; meeting_id: number | null; completed_at: string | null }
+export interface Meeting { id: number; title: string; held_on: string; kind: "core" | "general" | "planning" | "review" | "other"; agenda: string | null; minutes: string | null; created_by: string | null; minutes_finalised_at: string | null }
+export interface MeetingNote { id: number; meeting_id: number; author_id: string | null; note: string; created_at: string }
+export interface DecisionRow { id: number; meeting_id: number | null; title: string; decision: string; rationale: string | null; decided_on: string; status: "active" | "superseded"; supersedes_id: number | null }
+export async function tasks(): Promise<Task[]> {
+  const { data } = await supabase().from("tasks").select("*").order("due_on").limit(2000);
+  return (data ?? []) as Task[];
+}
+/** Everyone who may own a task (a core or admin appointment today), for the owner pickers. Names come from list_people. */
+export async function owners(): Promise<{ id: string; handle: string; name: string; role: string }[]> {
+  const { data } = await supabase().rpc("list_people");
+  return ((data ?? []) as { id: string; handle: string; name: string; role: string }[]).filter((p) => p.role === "core" || p.role === "admin");
+}
+export const createTask = (title: string, details: string, owner: string, dueOn: string, meeting: number | null = null) => rpcRes<{ id: number }>("create_task", { p_title: title, p_details: details, p_owner_handle: owner, p_due_on: dueOn || null, p_meeting: meeting });
+export const setTaskStatus = (id: number, status: TaskStatus) => rpcRes("set_task_status", { p_id: id, p_status: status });
+export const reassignTask = (id: number, owner: string | null, dueOn: string | null) => rpcRes("reassign_task", { p_id: id, p_owner_handle: owner, p_due_on: dueOn });
+export async function meetings(): Promise<{ list: Meeting[]; notes: MeetingNote[]; attendees: { meeting_id: number; user_id: string }[]; decisions: DecisionRow[]; names: Record<string, string> }> {
+  const [m, n, a, d] = await Promise.all([
+    supabase().from("meetings").select("*").order("held_on", { ascending: false }).limit(300),
+    supabase().from("meeting_notes").select("*").order("created_at"),
+    supabase().from("meeting_attendees").select("*"),
+    supabase().from("decisions").select("*").order("decided_on", { ascending: false }).order("id", { ascending: false }).limit(1000),
+  ]);
+  const attendees = (a.data ?? []) as { meeting_id: number; user_id: string }[];
+  const ids = [...new Set([...attendees.map((x) => x.user_id), ...((n.data ?? []) as MeetingNote[]).map((x) => x.author_id).filter(Boolean) as string[]])];
+  const names = ids.length ? Object.fromEntries(((await supabase().from("profiles").select("id, name").in("id", ids)).data ?? []).map((x) => [x.id as string, x.name as string])) : {};
+  return { list: (m.data ?? []) as Meeting[], notes: (n.data ?? []) as MeetingNote[], attendees, decisions: (d.data ?? []) as DecisionRow[], names };
+}
+export const createMeeting = (title: string, heldOn: string, kind: Meeting["kind"], agenda: string) => rpcRes<{ id: number }>("create_meeting", { p_title: title, p_held_on: heldOn || null, p_kind: kind, p_agenda: agenda });
+export const updateMeeting = (id: number, title: string, agenda: string, minutes: string) => rpcRes("update_meeting", { p_id: id, p_title: title, p_agenda: agenda, p_minutes: minutes });
+export const setAttendees = (id: number, handles: string[]) => rpcRes<{ count: number }>("set_attendees", { p_id: id, p_handles: handles });
+export const finaliseMinutes = (id: number) => rpcRes("finalise_minutes", { p_id: id });
+export const addMinutesNote = (id: number, note: string) => rpcRes("add_minutes_note", { p_id: id, p_note: note });
+export const recordDecision = (meeting: number | null, title: string, decision: string, rationale: string, on: string) => rpcRes<{ id: number }>("record_decision", { p_meeting: meeting, p_title: title, p_decision: decision, p_rationale: rationale, p_decided_on: on });
+export const supersedeDecision = (old: number, title: string, decision: string, rationale: string) => rpcRes<{ id: number }>("supersede_decision", { p_old: old, p_title: title, p_decision: decision, p_rationale: rationale });

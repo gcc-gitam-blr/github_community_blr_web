@@ -1541,3 +1541,282 @@ revoke execute on function create_proposal(text, text, date, text, text, int, in
   decide_proposal(bigint, text, text), cancel_proposal(bigint, text), complete_proposal(bigint, text, text, text), set_checklist_item(bigint, text, text), link_proposal_event(bigint, text) from public, anon;
 grant execute on function create_proposal(text, text, date, text, text, int, int), update_proposal(bigint, text, text, date, text, text, int, int), submit_proposal(bigint),
   decide_proposal(bigint, text, text), cancel_proposal(bigint, text), complete_proposal(bigint, text, text, text), set_checklist_item(bigint, text, text), link_proposal_event(bigint, text) to authenticated;
+
+-- ============================================================
+-- Tasks, meetings, minutes and the decisions register (admin → Tasks, Meetings & decisions).
+-- A task has one owner and a due date from the moment it exists. A meeting has an agenda, attendees and minutes; once the
+-- minutes are finalised they never change (a correction is a new note beside them). Decisions are only ever added: to
+-- change one, an admin records a new decision that supersedes it, and both stay on the record. Action items from a
+-- meeting are ordinary tasks that point at the meeting. Nothing is written directly; every change is a function below
+-- and is logged in crm_audit (ids and states only).
+-- ============================================================
+create table if not exists meetings (
+  id bigint generated always as identity primary key,
+  title text not null check (length(trim(title)) between 3 and 120),
+  held_on date not null,
+  kind text not null default 'core' check (kind in ('core','general','planning','review','other')),
+  agenda text check (agenda is null or length(agenda) <= 3000),
+  minutes text check (minutes is null or length(minutes) <= 10000),
+  created_by uuid references profiles(id) on delete set null,
+  created_at timestamptz not null default now(),
+  minutes_finalised_at timestamptz
+);
+create table if not exists meeting_attendees (
+  meeting_id bigint not null references meetings on delete cascade,
+  user_id uuid not null references profiles on delete cascade,
+  primary key (meeting_id, user_id)
+);
+create table if not exists meeting_notes ( -- corrections and additions to finalised minutes
+  id bigint generated always as identity primary key,
+  meeting_id bigint not null references meetings on delete cascade,
+  author_id uuid references profiles(id) on delete set null,
+  note text not null check (length(trim(note)) between 3 and 2000),
+  created_at timestamptz not null default now()
+);
+create table if not exists decisions (
+  id bigint generated always as identity primary key,
+  meeting_id bigint references meetings on delete set null,
+  title text not null check (length(trim(title)) between 3 and 140),
+  decision text not null check (length(trim(decision)) between 3 and 2000),
+  rationale text check (rationale is null or length(rationale) <= 2000),
+  decided_on date not null,
+  recorded_by uuid references profiles(id) on delete set null,
+  status text not null default 'active' check (status in ('active','superseded')),
+  supersedes_id bigint references decisions,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists decisions_one_successor on decisions (supersedes_id) where supersedes_id is not null;
+create table if not exists tasks (
+  id bigint generated always as identity primary key,
+  title text not null check (length(trim(title)) between 3 and 140),
+  details text check (details is null or length(details) <= 2000),
+  owner_id uuid not null references profiles(id),
+  creator_id uuid not null references profiles(id),
+  due_on date not null,
+  status text not null default 'todo' check (status in ('todo','doing','blocked','done','dropped')),
+  proposal_id bigint references event_proposals on delete set null,
+  meeting_id bigint references meetings on delete set null,
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now(), completed_at timestamptz
+);
+create index if not exists tasks_owner on tasks (owner_id, status, due_on);
+alter table meetings enable row level security;
+alter table meeting_attendees enable row level security;
+alter table meeting_notes enable row level security;
+alter table decisions enable row level security;
+alter table tasks enable row level security;
+revoke insert, update, delete on meetings, meeting_attendees, meeting_notes, decisions, tasks from anon, authenticated;
+drop policy if exists "core and admins read meetings" on meetings;
+create policy "core and admins read meetings" on meetings for select using (my_role() in ('core','admin'));
+drop policy if exists "core and admins read attendees" on meeting_attendees;
+create policy "core and admins read attendees" on meeting_attendees for select using (my_role() in ('core','admin'));
+drop policy if exists "core and admins read meeting notes" on meeting_notes;
+create policy "core and admins read meeting notes" on meeting_notes for select using (my_role() in ('core','admin'));
+drop policy if exists "core and admins read decisions" on decisions;
+create policy "core and admins read decisions" on decisions for select using (my_role() in ('core','admin'));
+drop policy if exists "core and admins read tasks" on tasks;
+create policy "core and admins read tasks" on tasks for select using (my_role() in ('core','admin'));
+
+-- A decision's words never change, and none is ever deleted. The only edit is the one supersede_decision makes: active → superseded.
+create or replace function decisions_guard() returns trigger language plpgsql set search_path = public, pg_temp as $$
+begin
+  if tg_op = 'UPDATE' and current_setting('club.superseding', true) = 'on' and old.status = 'active' and new.status = 'superseded'
+     and (new.id, new.title, new.decision, new.rationale, new.decided_on, new.meeting_id, new.recorded_by, new.supersedes_id) is not distinct from (old.id, old.title, old.decision, old.rationale, old.decided_on, old.meeting_id, old.recorded_by, old.supersedes_id) then
+    return new;
+  end if;
+  raise exception 'decisions are never changed or deleted; record a new one that supersedes it';
+end $$;
+drop trigger if exists decisions_guard on decisions;
+create trigger decisions_guard before update or delete on decisions for each row execute function decisions_guard();
+
+-- Finalised minutes never change.
+create or replace function meetings_guard() returns trigger language plpgsql set search_path = public, pg_temp as $$
+begin
+  if tg_op = 'DELETE' then raise exception 'meetings are kept'; end if;
+  if old.minutes_finalised_at is not null and (new.minutes is distinct from old.minutes or new.minutes_finalised_at is distinct from old.minutes_finalised_at or new.held_on is distinct from old.held_on) then
+    raise exception 'finalised minutes can''t be changed; add a note instead';
+  end if;
+  return new;
+end $$;
+drop trigger if exists meetings_guard on meetings;
+create trigger meetings_guard before update or delete on meetings for each row execute function meetings_guard();
+
+-- Can this person own tasks? They must hold an active core or admin appointment today. Internal.
+create or replace function can_own_tasks(p_uid uuid) returns boolean language sql security definer stable set search_path = public, pg_temp as $$
+  select role_of(p_uid) in ('core','admin')
+$$;
+revoke execute on function can_own_tasks(uuid) from public, anon, authenticated;
+
+-- ---- tasks ----
+create or replace function create_task(p_title text, p_details text, p_owner_handle text, p_due_on date, p_proposal bigint default null, p_meeting bigint default null)
+returns json language plpgsql security definer set search_path = public, pg_temp as $$
+declare o uuid; tid bigint;
+begin
+  if my_role() not in ('core','admin') then return json_build_object('ok', false, 'error', 'Only the core team can create tasks.'); end if;
+  if p_due_on is null or p_due_on < today_ist() then return json_build_object('ok', false, 'error', 'Pick a due date that is today or later.'); end if;
+  select id into o from profiles where lower(handle) = lower(ltrim(trim(coalesce(p_owner_handle, '')), '@'));
+  if o is null or not can_own_tasks(o) then return json_build_object('ok', false, 'error', 'The owner must hold a core or admin appointment, and have signed in.'); end if;
+  if p_proposal is not null and not exists (select 1 from event_proposals where id = p_proposal) then return json_build_object('ok', false, 'error', 'That event proposal doesn''t exist.'); end if;
+  if p_meeting is not null and not exists (select 1 from meetings where id = p_meeting) then return json_build_object('ok', false, 'error', 'That meeting doesn''t exist.'); end if;
+  insert into tasks (title, details, owner_id, creator_id, due_on, proposal_id, meeting_id)
+  values (trim(p_title), nullif(trim(coalesce(p_details, '')), ''), o, auth.uid(), p_due_on, p_proposal, p_meeting) returning id into tid;
+  perform crm_log('task_created', 'task', tid::text, jsonb_build_object('owner', o, 'due_on', p_due_on));
+  return json_build_object('ok', true, 'id', tid);
+exception when check_violation then return json_build_object('ok', false, 'error', 'Give the task a title of 3 to 140 characters.');
+end $$;
+
+-- The owner, the creator or an admin moves a task along. todo | doing | blocked | done | dropped.
+create or replace function set_task_status(p_id bigint, p_status text) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare t tasks;
+begin
+  select * into t from tasks where id = p_id for update;
+  if not found or my_role() not in ('core','admin') or not (t.owner_id = auth.uid() or t.creator_id = auth.uid() or my_role() = 'admin') then
+    return json_build_object('ok', false, 'error', 'Only the owner, the creator or an admin can change this task.');
+  end if;
+  if p_status is null or p_status not in ('todo','doing','blocked','done','dropped') then return json_build_object('ok', false, 'error', 'Pick todo, doing, blocked, done or dropped.'); end if;
+  update tasks set status = p_status, updated_at = now(), completed_at = case when p_status = 'done' then coalesce(completed_at, now()) else null end where id = p_id;
+  perform crm_log('task_status', 'task', p_id::text, jsonb_build_object('from', t.status, 'to', p_status));
+  return json_build_object('ok', true);
+end $$;
+
+-- The creator or an admin changes the owner or the due date.
+create or replace function reassign_task(p_id bigint, p_owner_handle text default null, p_due_on date default null) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare t tasks; o uuid;
+begin
+  select * into t from tasks where id = p_id for update;
+  if not found or my_role() not in ('core','admin') or not (t.creator_id = auth.uid() or my_role() = 'admin') then
+    return json_build_object('ok', false, 'error', 'Only the creator or an admin can reassign this task or change its date.');
+  end if;
+  if p_owner_handle is not null then
+    select id into o from profiles where lower(handle) = lower(ltrim(trim(p_owner_handle), '@'));
+    if o is null or not can_own_tasks(o) then return json_build_object('ok', false, 'error', 'The owner must hold a core or admin appointment, and have signed in.'); end if;
+  end if;
+  if p_due_on is not null and p_due_on < today_ist() then return json_build_object('ok', false, 'error', 'Pick a due date that is today or later.'); end if;
+  update tasks set owner_id = coalesce(o, owner_id), due_on = coalesce(p_due_on, due_on), updated_at = now() where id = p_id;
+  perform crm_log('task_reassigned', 'task', p_id::text, jsonb_build_object('owner', coalesce(o, t.owner_id), 'due_on', coalesce(p_due_on, t.due_on)));
+  return json_build_object('ok', true);
+end $$;
+
+-- For the Monday digest (server key only): open tasks that are overdue, and open tasks whose owner no longer has access.
+create or replace function task_warnings() returns json language sql security definer stable set search_path = public, pg_temp as $$
+  select json_build_object(
+    'overdue', coalesce((select json_agg(json_build_object('id', t.id, 'title', t.title, 'owner', p.handle, 'days', today_ist() - t.due_on) order by t.due_on)
+                           from tasks t join profiles p on p.id = t.owner_id where t.status in ('todo','doing','blocked') and t.due_on < today_ist()), '[]'::json),
+    'orphaned', coalesce((select json_agg(json_build_object('id', t.id, 'title', t.title, 'owner', p.handle) order by t.due_on)
+                           from tasks t join profiles p on p.id = t.owner_id where t.status in ('todo','doing','blocked') and not can_own_tasks(t.owner_id)), '[]'::json))
+$$;
+
+-- ---- meetings ----
+create or replace function create_meeting(p_title text, p_held_on date, p_kind text, p_agenda text) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare mid bigint;
+begin
+  if my_role() not in ('core','admin') then return json_build_object('ok', false, 'error', 'Only the core team can create meetings.'); end if;
+  if p_held_on is null then return json_build_object('ok', false, 'error', 'Pick the date of the meeting.'); end if;
+  insert into meetings (title, held_on, kind, agenda, created_by) values (trim(p_title), p_held_on, coalesce(p_kind, 'core'), nullif(trim(coalesce(p_agenda, '')), ''), auth.uid()) returning id into mid;
+  perform crm_log('meeting_created', 'meeting', mid::text, '{}');
+  return json_build_object('ok', true, 'id', mid);
+exception when check_violation then return json_build_object('ok', false, 'error', 'Give the meeting a title of 3 to 120 characters, and keep the agenda under 3000.');
+end $$;
+
+-- The creator or an admin edits the agenda and minutes until the minutes are finalised.
+create or replace function update_meeting(p_id bigint, p_title text, p_agenda text, p_minutes text) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare m meetings;
+begin
+  select * into m from meetings where id = p_id for update;
+  if not found or my_role() not in ('core','admin') or not (m.created_by = auth.uid() or my_role() = 'admin') then return json_build_object('ok', false, 'error', 'Only the person who created the meeting or an admin can edit it.'); end if;
+  if m.minutes_finalised_at is not null then return json_build_object('ok', false, 'error', 'The minutes are final. Add a note instead.'); end if;
+  update meetings set title = trim(p_title), agenda = nullif(trim(coalesce(p_agenda, '')), ''), minutes = nullif(trim(coalesce(p_minutes, '')), '') where id = p_id;
+  perform crm_log('meeting_updated', 'meeting', p_id::text, '{}');
+  return json_build_object('ok', true);
+exception when check_violation then return json_build_object('ok', false, 'error', 'Give the meeting a title of 3 to 120 characters; agenda up to 3000 and minutes up to 10000.');
+end $$;
+
+create or replace function set_attendees(p_id bigint, p_handles text[]) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare m meetings; ids uuid[];
+begin
+  select * into m from meetings where id = p_id for update;
+  if not found or my_role() not in ('core','admin') or not (m.created_by = auth.uid() or my_role() = 'admin') then return json_build_object('ok', false, 'error', 'Only the person who created the meeting or an admin can change who attended.'); end if;
+  if m.minutes_finalised_at is not null then return json_build_object('ok', false, 'error', 'The minutes are final. Add a note instead.'); end if;
+  if coalesce(array_length(p_handles, 1), 0) > 60 then return json_build_object('ok', false, 'error', 'That is more than 60 people.'); end if;
+  select coalesce(array_agg(id), '{}') into ids from profiles where lower(handle) in (select lower(ltrim(trim(h), '@')) from unnest(coalesce(p_handles, '{}')) h);
+  delete from meeting_attendees where meeting_id = p_id;
+  insert into meeting_attendees (meeting_id, user_id) select p_id, u from unnest(ids) u;
+  perform crm_log('attendees_set', 'meeting', p_id::text, jsonb_build_object('count', coalesce(array_length(ids, 1), 0)));
+  return json_build_object('ok', true, 'count', coalesce(array_length(ids, 1), 0));
+end $$;
+
+create or replace function finalise_minutes(p_id bigint) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare m meetings;
+begin
+  select * into m from meetings where id = p_id for update;
+  if not found or my_role() not in ('core','admin') or not (m.created_by = auth.uid() or my_role() = 'admin') then return json_build_object('ok', false, 'error', 'Only the person who created the meeting or an admin can finalise the minutes.'); end if;
+  if m.minutes_finalised_at is not null then return json_build_object('ok', false, 'error', 'The minutes are already final.'); end if;
+  if m.minutes is null or length(trim(m.minutes)) < 10 then return json_build_object('ok', false, 'error', 'Write the minutes first.'); end if;
+  update meetings set minutes_finalised_at = now() where id = p_id;
+  perform crm_log('minutes_finalised', 'meeting', p_id::text, '{}');
+  return json_build_object('ok', true);
+end $$;
+
+-- A correction or addition beside final minutes. Anyone on the core team or an admin can add one; nobody can edit or remove it.
+create or replace function add_minutes_note(p_id bigint, p_note text) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare nid bigint;
+begin
+  if my_role() not in ('core','admin') then return json_build_object('ok', false, 'error', 'Only the core team can add notes.'); end if;
+  if not exists (select 1 from meetings where id = p_id and minutes_finalised_at is not null) then return json_build_object('ok', false, 'error', 'Notes are for meetings whose minutes are final.'); end if;
+  insert into meeting_notes (meeting_id, author_id, note) values (p_id, auth.uid(), trim(p_note)) returning id into nid;
+  perform crm_log('minutes_note', 'meeting', p_id::text, jsonb_build_object('note', nid));
+  return json_build_object('ok', true);
+exception when check_violation then return json_build_object('ok', false, 'error', 'A note needs 3 to 2000 characters.');
+end $$;
+
+-- ---- decisions: only ever added ----
+-- An admin records a decision, with or without a meeting; the person who created a meeting can record decisions made at it.
+create or replace function record_decision(p_meeting bigint, p_title text, p_decision text, p_rationale text, p_decided_on date) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare did bigint; m meetings;
+begin
+  if my_role() not in ('core','admin') then return json_build_object('ok', false, 'error', 'Only the core team and admins record decisions.'); end if;
+  if p_meeting is not null then
+    select * into m from meetings where id = p_meeting;
+    if not found then return json_build_object('ok', false, 'error', 'That meeting doesn''t exist.'); end if;
+  end if;
+  if my_role() <> 'admin' and (p_meeting is null or m.created_by is distinct from auth.uid()) then
+    return json_build_object('ok', false, 'error', 'Admins record decisions; the person who created a meeting can record the ones made at it.');
+  end if;
+  if p_decided_on is null or p_decided_on > today_ist() then return json_build_object('ok', false, 'error', 'A decision is dated today or earlier.'); end if;
+  insert into decisions (meeting_id, title, decision, rationale, decided_on, recorded_by) values (p_meeting, trim(p_title), trim(p_decision), nullif(trim(coalesce(p_rationale, '')), ''), p_decided_on, auth.uid()) returning id into did;
+  perform crm_log('decision_recorded', 'decision', did::text, jsonb_build_object('meeting', p_meeting));
+  return json_build_object('ok', true, 'id', did);
+exception when check_violation then return json_build_object('ok', false, 'error', 'Give the decision a title (3+ characters) and the decision itself.');
+end $$;
+
+-- Replace a decision with a new one. Both stay on the record: the old is marked superseded and linked to its successor. Admins only.
+create or replace function supersede_decision(p_old bigint, p_title text, p_decision text, p_rationale text) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare o decisions; did bigint;
+begin
+  if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins supersede a decision.'); end if;
+  select * into o from decisions where id = p_old for update;
+  if not found then return json_build_object('ok', false, 'error', 'That decision doesn''t exist.'); end if;
+  if o.status <> 'active' then return json_build_object('ok', false, 'error', 'That decision has already been superseded. Supersede the current one.'); end if;
+  insert into decisions (meeting_id, title, decision, rationale, decided_on, recorded_by, supersedes_id) values (o.meeting_id, trim(p_title), trim(p_decision), nullif(trim(coalesce(p_rationale, '')), ''), today_ist(), auth.uid(), o.id) returning id into did;
+  perform set_config('club.superseding', 'on', true);
+  update decisions set status = 'superseded' where id = o.id;
+  perform set_config('club.superseding', 'off', true);
+  perform crm_log('decision_superseded', 'decision', o.id::text, jsonb_build_object('by', did));
+  return json_build_object('ok', true, 'id', did);
+exception when check_violation then return json_build_object('ok', false, 'error', 'Give the new decision a title (3+ characters) and the decision itself.');
+end $$;
+
+revoke execute on function create_task(text, text, text, date, bigint, bigint), set_task_status(bigint, text), reassign_task(bigint, text, date), create_meeting(text, date, text, text),
+  update_meeting(bigint, text, text, text), set_attendees(bigint, text[]), finalise_minutes(bigint), add_minutes_note(bigint, text), record_decision(bigint, text, text, text, date), supersede_decision(bigint, text, text, text) from public, anon;
+grant execute on function create_task(text, text, text, date, bigint, bigint), set_task_status(bigint, text), reassign_task(bigint, text, date), create_meeting(text, date, text, text),
+  update_meeting(bigint, text, text, text), set_attendees(bigint, text[]), finalise_minutes(bigint), add_minutes_note(bigint, text), record_decision(bigint, text, text, text, date), supersede_decision(bigint, text, text, text) to authenticated;
+revoke execute on function task_warnings() from public, anon, authenticated;
+grant execute on function task_warnings() to service_role;

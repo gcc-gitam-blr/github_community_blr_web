@@ -122,6 +122,9 @@ export function digestEmail(d: Digest, site: string): Mail {
   if (d.messages.length) lines.push(["Get involved messages", d.messages.map((m) => `${m.label}: ${m.count}`).join(" · ")]);
   for (const f of d.feedback) lines.push([`Feedback: ${f.event}`, `${f.average} / 5 from ${f.count} ${f.count === 1 ? "rating" : "ratings"}`]);
   if (d.access?.tooFewAdmins) lines.push(["Access: too few admins", `${d.access.activeAdmins} active ${d.access.activeAdmins === 1 ? "admin" : "admins"}. Appoint another under People & roles so the club is never locked out.`]);
+  const some = <T,>(xs: T[], f: (x: T) => string) => xs.slice(0, 5).map(f).join(" · ") + (xs.length > 5 ? ` · and ${xs.length - 5} more` : "");
+  if (d.tasks?.overdue.length) lines.push([`Overdue tasks: ${d.tasks.overdue.length}`, some(d.tasks.overdue, (t) => `${t.title} (@${t.owner}, ${t.days} ${t.days === 1 ? "day" : "days"} late)`)]);
+  if (d.tasks?.orphaned.length) lines.push([`Tasks to reassign: ${d.tasks.orphaned.length}`, "Their owner no longer has access. " + some(d.tasks.orphaned, (t) => `${t.title} (@${t.owner})`)]);
   if (d.access?.ending.length) lines.push(["Access ending within 14 days", d.access.ending.map((e) => `@${e.handle} (${e.role}) ${e.daysLeft === 0 ? "ends today" : `in ${e.daysLeft} ${e.daysLeft === 1 ? "day" : "days"}`}`).join(" · ")]);
   const rows = lines.map(([k, v]) => `<tr><td style="padding:10px 0;border-top:1px solid #d0d7de"><b>${esc(k)}</b><br><span style="color:#59636e">${esc(v)}</span></td></tr>`).join("");
   const html = frame(`The club's week: ${digestHeadline(d)}`, `<h1 style="font-size:22px;line-height:1.3;margin:0 0 6px">The club&#39;s week</h1>

@@ -5,9 +5,11 @@ import { useEpoch } from "@/components/epoch/EpochProvider";
 import { ClubStatsPanel, FeedbackSummary, Inbox, SignUps } from "@/components/epoch/Lists";
 import { ensureProfile, signedInUser } from "@/lib/admin/client";
 import { Attendance } from "./Attendance";
+import { Meetings } from "./Meetings";
 import { Members } from "./Members";
 import { Proposals } from "./Proposals";
 import { Recruitment } from "./Recruitment";
+import { Tasks } from "./Tasks";
 import { People } from "./People";
 import { SiteErrors } from "./SiteErrors";
 import { ClubMark } from "@/components/ui/ClubMark";
@@ -16,17 +18,19 @@ import { ClubMark } from "@/components/ui/ClubMark";
    signed out → "Sign in with GitHub"; signed in but not an organiser → ask an admin; organisers → the dashboard. */
 // `core`: for the core team and admins (volunteers are event-day staff: attendance and the Epoch desk). `admin`: admins only.
 const SECTIONS = [
-  { id: "overview", label: "Overview", core: true },
-  { id: "attendance", label: "Attendance & certificates" },
-  { id: "signups", label: "Sign-ups & email", core: true },
-  { id: "messages", label: "Messages", core: true },
-  { id: "feedback", label: "Feedback", core: true },
-  { id: "members", label: "Members", core: true },
-  { id: "recruitment", label: "Recruitment", core: true },
-  { id: "proposals", label: "Event proposals", core: true },
-  { id: "people", label: "People & roles" },
-  { id: "errors", label: "Site errors", admin: true },
-] as const satisfies readonly { id: string; label: string; admin?: boolean; core?: boolean }[];
+  { id: "overview", label: "Overview", group: "Club", core: true },
+  { id: "attendance", label: "Attendance & certificates", group: "Club" },
+  { id: "signups", label: "Sign-ups & email", group: "Club", core: true },
+  { id: "messages", label: "Messages", group: "Club", core: true },
+  { id: "feedback", label: "Feedback", group: "Club", core: true },
+  { id: "members", label: "Members", group: "People", core: true },
+  { id: "recruitment", label: "Recruitment", group: "People", core: true },
+  { id: "people", label: "People & roles", group: "People" },
+  { id: "proposals", label: "Event proposals", group: "Work", core: true },
+  { id: "tasks", label: "Tasks", group: "Work", core: true },
+  { id: "meetings", label: "Meetings & decisions", group: "Work", core: true },
+  { id: "errors", label: "Site errors", group: "Site", admin: true },
+] as const satisfies readonly { id: string; label: string; group: string; admin?: boolean; core?: boolean }[];
 type Section = (typeof SECTIONS)[number]["id"];
 
 const card = "rounded-[12px] border border-line bg-white p-6 sm:p-8";
@@ -114,9 +118,12 @@ export function AdminApp() {
     <Shell who={me.handle} onSignOut={signOut}>
       <div className="grid grid-cols-1 gap-8 md:grid-cols-[240px_minmax(0,1fr)]">
         <nav aria-label="Admin sections" className="-mx-5 flex min-w-0 gap-1 overflow-x-auto px-5 md:mx-0 md:flex-col md:px-0">
-          {allowed.map((s) => (
-            <a key={s.id} href={`#${s.id}`} aria-current={current === s.id ? "page" : undefined}
-              className={`relative whitespace-nowrap rounded-md px-3 py-2 text-[14.5px] ${current === s.id ? "bg-white font-semibold shadow-[inset_0_0_0_1px_var(--color-line)] md:before:absolute md:before:-left-2 md:before:bottom-1.5 md:before:top-1.5 md:before:w-1 md:before:rounded md:before:bg-[#fd8c73]" : "text-ink-2 hover:bg-white/70"}`}>{s.label}</a>
+          {allowed.map((s, i) => (
+            <span key={s.id} className="contents">
+              {(i === 0 || allowed[i - 1].group !== s.group) && <span aria-hidden className={`hidden px-3 pb-1 font-mono text-[11.5px] uppercase tracking-wide text-ink-3 md:block ${i ? "pt-3" : ""}`}>{s.group}</span>}
+              <a href={`#${s.id}`} aria-current={current === s.id ? "page" : undefined}
+                className={`relative whitespace-nowrap rounded-md px-3 py-2 text-[14.5px] ${current === s.id ? "bg-white font-semibold shadow-[inset_0_0_0_1px_var(--color-line)] md:before:absolute md:before:-left-2 md:before:bottom-1.5 md:before:top-1.5 md:before:w-1 md:before:rounded md:before:bg-[#fd8c73]" : "text-ink-2 hover:bg-white/70"}`}>{s.label}</a>
+            </span>
           ))}
           <hr className="my-2 hidden border-line md:block" />
           <Link href="/epoch/admin" className="whitespace-nowrap rounded-md px-3 py-2 text-[14.5px] text-ink-2 hover:bg-white/70">Epoch desk ↗</Link>
@@ -132,6 +139,8 @@ export function AdminApp() {
           {current === "members" && <Members admin={admin} />}
           {current === "recruitment" && <Recruitment admin={admin} meId={me.id} />}
           {current === "proposals" && <Proposals admin={admin} meId={me.id} />}
+          {current === "tasks" && <Tasks admin={admin} meId={me.id} />}
+          {current === "meetings" && <Meetings admin={admin} meId={me.id} />}
           {current === "people" && <People admin={admin} me={me.handle} />}
           {current === "errors" && (admin ? <SiteErrors /> : <p className="text-ink-2">Error reports are for admins.</p>)}
         </div>
