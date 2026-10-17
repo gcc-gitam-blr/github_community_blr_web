@@ -48,7 +48,7 @@ export default config({
         name: fields.text({ label: "Club name", ...req }),
         university: fields.text({ label: "University", ...req }),
         year: fields.text({ label: "Club year", description: "Like 2026-27.", ...req }),
-        githubOrg: fields.text({ label: "GitHub organisation", description: "Its login, like github-community-gitam. Shows its live repos and beginner issues. Empty hides them." }),
+        githubOrg: fields.text({ label: "GitHub organisation", description: "Its login, like gcc-gitam-blr. Shows its live repos and beginner issues. Empty hides them." }),
         joinUrl: fields.url({ label: "Join link", description: "Where Join the club sends people: the WhatsApp community, a form…" }),
         email: fields.text({ label: "Club email", description: "Shown in the footer and on the privacy page. Only a real, monitored address." }),
         lumaCalendar: fields.url({ label: "Luma calendar (club)" }),
