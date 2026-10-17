@@ -31,7 +31,7 @@ export function EpochInterest({ dark = false, className = "" }: { dark?: boolean
     try {
       const j = await (await fetch("/api/epoch-interest", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) })).json();
       if (j.ok) setState(j.status); else { setErr(j.error ?? "Something went wrong."); setState("idle"); }
-    } catch { setErr("Network error — please try again."); setState("idle"); }
+    } catch { setErr("Network error. Please try again."); setState("idle"); }
   };
 
   // the address unsubscribed earlier and stays that way; say so rather than promise an email that won't come

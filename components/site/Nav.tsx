@@ -13,6 +13,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { useActiveSection } from "./useActiveSection";
 import { NAV_LINKS } from "./nav-links";
 import { ClubMark } from "@/components/ui/ClubMark";
+import { MemberButton } from "./MemberButton";
 
 /* The header is a commit graph. Each place on the site is a commit on one branch; where you are is HEAD.
    Commits behind HEAD are filled and joined by a solid line (history); the ones ahead are hollow on a
@@ -81,6 +82,7 @@ export function Nav() {
 
           <SiteSearch />
           <ThemeToggle className="hidden lg:inline-flex" />
+          <MemberButton />
           <a href={href("/#join")} className="press hidden h-9 flex-none items-center whitespace-nowrap rounded-full bg-ink px-4 font-display text-[14px] font-bold text-white transition-colors duration-150 hover:bg-ink/85 lg:inline-flex">
             <span className="head-join-long">Join the club</span><span className="head-join-short">Join</span>
           </a>

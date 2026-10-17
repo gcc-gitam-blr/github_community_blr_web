@@ -1,4 +1,5 @@
 "use client";
+import { tabKeys } from "@/components/ui/tabKeys";
 import { useCallback, useEffect, useState } from "react";
 import {
   createPolicy, discardPolicyDraft, policies as loadPolicies, publishPolicyVersion, savePolicyDraft, setPolicyOwner,
@@ -76,8 +77,8 @@ function PolicyItem({ p, data, admin, meId, busy, run }: { p: PolicyRow; data: D
 
           {versions.length > 0 && (
             <div>
-              <div role="tablist" aria-label="Versions" className="flex flex-wrap gap-1">
-                {versions.map((x) => <button key={x.id} role="tab" aria-selected={shown === x.version} onClick={() => setShown(x.version)} className={`rounded-md px-3 py-1.5 text-[14px] ${shown === x.version ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>Version {x.version}</button>)}
+              <div role="tablist" onKeyDown={tabKeys} aria-label="Versions" className="flex flex-wrap gap-1">
+                {versions.map((x) => <button key={x.id} role="tab" aria-selected={shown === x.version} tabIndex={(shown === x.version) ? 0 : -1} onClick={() => setShown(x.version)} className={`rounded-md px-3 py-1.5 text-[14px] ${shown === x.version ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>Version {x.version}</button>)}
               </div>
               {v && <>
                 <p className="mt-2 text-[13.5px] text-ink-3">Written by {who(v.author_id)}, approved by {who(v.approved_by)} on {niceDate(v.approved_on)} · in effect from {niceDate(v.effective_on)} · review by {niceDate(v.review_due_on)}</p>

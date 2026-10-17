@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { badgesByMember } from "@/lib/badges";
-import { boardMembers, counted, loadBoard } from "@/lib/board";
+import { boardMembers, counted } from "@/lib/board";
+import { loadClubBoard } from "@/lib/board-server";
 import { CHALLENGE, challengeState } from "@/lib/challenge";
 
 /* Share card for a member's page: their name, what they merged, and their badges. */
@@ -14,8 +15,8 @@ const COLORS: Record<string, [string, string]> = { "first-merge": ["#fbefff", "#
 
 export default async function OG({ params }: { params: Promise<{ handle: string }> }) {
   const handle = (await params).handle;
-  const member = boardMembers().find((m) => m.handle.toLowerCase() === handle.toLowerCase())!;
-  const { prs, members } = await loadBoard();
+  const { prs, members } = await loadClubBoard();
+  const member = members.find((m) => m.handle.toLowerCase() === handle.toLowerCase()) ?? { name: handle, handle };
   const mine = counted(prs, [member]);
   const challenge = CHALLENGE && challengeState(CHALLENGE) !== "upcoming" ? CHALLENGE : undefined;
   const badges = badgesByMember(prs, members, challenge).get(member.handle.toLowerCase()) ?? [];

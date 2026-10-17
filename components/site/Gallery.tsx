@@ -1,4 +1,5 @@
 "use client";
+import { tabKeys } from "@/components/ui/tabKeys";
 import { useMemo, useState } from "react";
 import gallery from "@/lib/gallery.json";
 import { PhotoGrid, type Photo } from "./PhotoGrid";
@@ -24,9 +25,9 @@ export function Gallery({ photos = PHOTOS }: { photos?: Photo[] }) {
         </div>
 
         {events.length > 1 && (
-          <div role="tablist" aria-label="Filter photos by event" className="mb-8 flex flex-wrap gap-2">
+          <div role="tablist" onKeyDown={tabKeys} aria-label="Filter photos by event" className="mb-8 flex flex-wrap gap-2">
             {[["all", "All"], ...events].map(([id, label]) => (
-              <button key={id} role="tab" aria-selected={filter === id} onClick={() => setFilter(id)} className={`rounded-full border px-4 py-2 text-[14px] font-medium transition ${filter === id ? "border-ink bg-ink text-white" : "border-line bg-white hover:border-ink"}`}>{label}</button>
+              <button key={id} role="tab" aria-selected={filter === id} tabIndex={(filter === id) ? 0 : -1} onClick={() => setFilter(id)} className={`rounded-full border px-4 py-2 text-[14px] font-medium transition ${filter === id ? "border-ink bg-ink text-white" : "border-line bg-white hover:border-ink"}`}>{label}</button>
             ))}
           </div>
         )}

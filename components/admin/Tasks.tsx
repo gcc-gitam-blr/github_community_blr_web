@@ -1,4 +1,5 @@
 "use client";
+import { tabKeys } from "@/components/ui/tabKeys";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createTask, owners as loadOwners, reassignTask, setTaskStatus, tasks as loadTasks, type Task, type TaskStatus } from "@/lib/admin/client";
 import { daysLeft, niceDate, todayIST } from "@/lib/admin/appointments";
@@ -54,9 +55,9 @@ export function Tasks({ admin, meId }: { admin: boolean; meId: string }) {
       <section className={card} aria-labelledby="tasks-h">
         <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-3">
           <h2 id="tasks-h" className="mr-2 text-[18px]">Tasks</h2>
-          <div role="tablist" aria-label="Which tasks" className="flex flex-wrap gap-1">
+          <div role="tablist" onKeyDown={tabKeys} aria-label="Which tasks" className="flex flex-wrap gap-1">
             {([["mine", "Mine"], ["overdue", "Overdue"], ["open", "All open"], ["done", "Finished"]] as [Group, string][]).map(([g, label]) => (
-              <button key={g} role="tab" aria-selected={group === g} onClick={() => setPicked(g)} className={`rounded-md px-3 py-1.5 text-[14px] ${group === g ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>{label} <span className={group === g ? "text-white/70" : "text-ink-3"}>{counts[g]}</span></button>
+              <button key={g} role="tab" aria-selected={group === g} tabIndex={(group === g) ? 0 : -1} onClick={() => setPicked(g)} className={`rounded-md px-3 py-1.5 text-[14px] ${group === g ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>{label} <span className={group === g ? "text-white/70" : "text-ink-3"}>{counts[g]}</span></button>
             ))}
           </div>
         </div>

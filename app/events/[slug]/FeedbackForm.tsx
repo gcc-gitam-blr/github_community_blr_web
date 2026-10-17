@@ -24,7 +24,7 @@ export function FeedbackForm({ date, title }: { date: string; title: string }) {
     try {
       const r = await fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const j = await r.json(); if (j.ok) setState("done"); else { setErr(j.error ?? "Something went wrong."); setState("idle"); }
-    } catch { setErr("Network error — please try again."); setState("idle"); }
+    } catch { setErr("Network error. Please try again."); setState("idle"); }
   };
 
   if (state === "done") return <section className="mt-6 rounded-[12px] border-2 border-ink bg-[#dafbe1] p-6" role="status"><h2 className="text-[22px]">Thank you!</h2><p className="mt-1 text-ink-2">Your feedback helps us make the next session better.</p></section>;

@@ -12,7 +12,7 @@ const item = (id: number, extra: object = {}) => ({ id, title: `Issue ${id}`, ht
   ok("repo name is read from the API url", w[0].repo === "o/r" && w[0].labels.includes("docs"));
   ok("the world query asks for open, unassigned, uncommented beginner issues", decodeURIComponent(calls[0]).includes('label:"good first issue"') && decodeURIComponent(calls[0]).includes("no:assignee") && decodeURIComponent(calls[0]).includes("comments:0"));
   await clubIssues();
-  ok("the club query is limited to the club's organisation", decodeURIComponent(calls[1]).includes("org:github-community-gitam"));
+  ok("the club query is limited to the club's organisation", decodeURIComponent(calls[1]).includes("org:gcc-gitam-blr"));
   globalThis.fetch = (async () => new Response("rate limited", { status: 403 })) as typeof fetch;
   ok("a GitHub error gives an empty list, not a crash", (await worldIssues()).length === 0);
   globalThis.fetch = (async () => { throw new Error("offline"); }) as typeof fetch;

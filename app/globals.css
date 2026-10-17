@@ -364,7 +364,7 @@ html.lenis, html.lenis body { height: auto; }
     /* GitHub's light tints → its dark ones: success, attention, danger, accent, done */
     & .bg-\[\#dafbe1\] { background-color: rgb(46 160 67 / .16); } & :is(.text-\[\#1a7f37\], .text-\[\#116329\]) { color: #3fb950; }
     & .border-\[\#4ac26b66\] { border-color: rgb(46 160 67 / .4); }
-    & .bg-\[\#fff8c5\] { background-color: rgb(187 128 9 / .16); } & :is(.text-\[\#7d4e00\], .text-\[\#9a6700\]) { color: #d29922; }
+    & .bg-\[\#fff8c5\] { background-color: rgb(187 128 9 / .16); } & :is(.text-\[\#7d4e00\], .text-\[\#9a6700\], .text-\[\#4d2d00\]) { color: #d29922; }
     & :is(.border-\[\#d4a72c66\], .border-\[\#d4a72c\]) { border-color: rgb(187 128 9 / .4); }
     & .bg-\[\#ffebe9\] { background-color: rgb(248 81 73 / .16); } & :is(.text-\[\#a40e26\], .text-\[\#cf222e\]) { color: #ff7b72; }
     & .border-\[\#ff818266\] { border-color: rgb(248 81 73 / .4); }

@@ -274,3 +274,31 @@ export async function auditLog(): Promise<{ rows: AuditRow[]; names: Record<stri
   const names = ids.length ? Object.fromEntries(((await supabase().from("profiles").select("id, name").in("id", ids)).data ?? []).map((x) => [x.id as string, x.name as string])) : {};
   return { rows, names };
 }
+
+// ---- One member's history (the core team's view of a person) ----
+export interface MemberHistory {
+  events: { event: string; title: string }[];
+  role: { role: string; title: string | null; ends_on: string | null } | null;
+  projects: { id: number; title: string; status: string; owner: boolean }[];
+  interests: { domains: string[]; skills: string[]; wants: string | null } | null;
+}
+/** Everything the club knows about one member, gathered from the other tabs (each read is limited by the database as usual). */
+export async function memberHistory(m: Member): Promise<MemberHistory> {
+  const sb = supabase();
+  const ors = [`email.eq.${m.email.toLowerCase()}`, ...(m.handle ? [`handle.ilike.${m.handle}`] : [])].join(",");
+  const [att, people] = await Promise.all([sb.from("attendance").select("event").or(ors), m.user_id ? sb.rpc("list_people") : Promise.resolve({ data: [] })]);
+  const { CLUB } = await import("@/lib/config");
+  const events = [...new Set(((att.data ?? []) as { event: string }[]).map((a) => a.event))].sort().map((e) => ({ event: e, title: CLUB.events.find((x) => x.date === e)?.title ?? e }));
+  const me = ((people.data ?? []) as { id: string; role: string; title: string | null; ends_on: string | null }[]).find((p) => p.id === m.user_id);
+  let projects: MemberHistory["projects"] = [], interests: MemberHistory["interests"] = null;
+  if (m.user_id) {
+    const [pm, mi] = await Promise.all([sb.from("project_members").select("project_id, role").eq("user_id", m.user_id), sb.from("member_interests").select("domains, skills, wants").eq("user_id", m.user_id).maybeSingle()]);
+    const rows = (pm.data ?? []) as { project_id: number; role: string }[];
+    if (rows.length) {
+      const { data } = await sb.from("project_ideas").select("id, title, status").in("id", rows.map((r) => r.project_id));
+      projects = ((data ?? []) as { id: number; title: string; status: string }[]).map((p) => ({ ...p, owner: rows.find((r) => r.project_id === p.id)?.role === "owner" }));
+    }
+    interests = (mi.data as MemberHistory["interests"]) ?? null;
+  }
+  return { events, role: me && me.role !== "attendee" ? { role: me.role, title: me.title, ends_on: me.ends_on } : null, projects, interests };
+}

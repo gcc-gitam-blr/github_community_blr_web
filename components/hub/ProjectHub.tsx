@@ -1,4 +1,5 @@
 "use client";
+import { tabKeys } from "@/components/ui/tabKeys";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { hasSupabase } from "@/lib/epoch/store";
@@ -65,9 +66,9 @@ export function ProjectHub() {
         <p className="min-w-0 flex-1 text-[18px]"><b>{st.who.name}</b> <span className="font-mono text-[14px] text-ink-3">@{st.who.handle}</span></p>
         <button type="button" onClick={signOut} className="rounded-full border border-line px-3 py-1.5 text-[13.5px] text-ink-2 transition hover:border-ink hover:text-ink">Sign out</button>
       </div>
-      <div role="tablist" aria-label="Project hub" className="mt-8 flex flex-wrap gap-1 border-b border-line pb-3">
+      <div role="tablist" onKeyDown={tabKeys} aria-label="Project hub" className="mt-8 flex flex-wrap gap-1 border-b border-line pb-3">
         {TABS.map(([id, label]) => (
-          <button key={id} role="tab" id={`tab-${id}`} aria-selected={tab === id} aria-controls="hub-panel" onClick={() => setTab(id)} className={`rounded-md px-4 py-2.5 text-[16px] ${tab === id ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>
+          <button key={id} role="tab" id={`tab-${id}`} aria-selected={tab === id} tabIndex={(tab === id) ? 0 : -1} aria-controls="hub-panel" onClick={() => setTab(id)} className={`rounded-md px-4 py-2.5 text-[16px] ${tab === id ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>
             {label}{id === "teams" && pendingForMe > 0 && <span className="ml-2 rounded-full bg-[#fd8c73] px-2 py-0.5 text-[12px] font-bold text-ink">{pendingForMe}</span>}
           </button>
         ))}

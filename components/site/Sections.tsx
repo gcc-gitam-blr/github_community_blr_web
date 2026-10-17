@@ -29,7 +29,7 @@ export function About() {
       <div className={`${wrap} grid grid-cols-[minmax(0,1fr)] items-center gap-[clamp(36px,6vw,88px)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]`}>
         <div>
           <Head tag="// about the club" title={<>A community that <em className="hl">commits</em> to each other.</>}>
-            We&apos;re the GitHub Community Club at GITAM University Bengaluru — students helping students learn the tools real software teams use. You don&apos;t need any experience: we start from the basics and build up together.
+            We&apos;re the GitHub Community Club at GITAM University Bengaluru: students helping students learn the tools real software teams use. You don&apos;t need any experience: we start from the basics and build up together.
           </Head>
           <Reveal delay={0.1}>
             <p className="mb-4 font-mono text-[13px] text-ink-2">What we do</p>
@@ -92,7 +92,7 @@ export function Events() {
   return (
     <section id="events" className={pad}>
       <div className={wrap}>
-        <Head tag="// events · 2026-27" title={<>The year, as a<br />contribution graph.</>}>Every event is a green square. December is gold — that&apos;s Epoch. Pick a day to see what&apos;s on.</Head>
+        <Head tag="// events · 2026-27" title={<>The year, as a<br />contribution graph.</>}>Every event is a green square. December is gold: that&apos;s Epoch. Pick a day to see what&apos;s on.</Head>
         <EventsYear />
         <LatestUpdates />
         {CLUB.lumaCalendar && <a href={CLUB.lumaCalendar} target="_blank" rel="noopener" className="mt-6 inline-flex items-center gap-2 font-semibold text-link hover:underline">See every event and RSVP on Luma ↗</a>}
@@ -116,15 +116,36 @@ async function getRepos(): Promise<Repo[]> {
   } catch { return []; }
 }
 
+/** Member projects the core team featured (public_projects), cached for an hour like the repositories. */
+interface Featured { id: number; title: string; summary: string; status: string; repo_url: string | null; team_count: number; club: boolean }
+async function getFeatured(): Promise<Featured[]> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return [];
+  try {
+    const res = await fetch(`${url}/rest/v1/rpc/public_projects`, { method: "POST", headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body: "{}", next: { revalidate: 3600 } });
+    const j = res.ok ? await res.json() : [];
+    return Array.isArray(j) ? (j as Featured[]) : [];
+  } catch { return []; }
+}
+
 export async function Projects() {
-  const repos = await getRepos();
-  if (!repos.length) return null;
+  const [repos, featured] = await Promise.all([getRepos(), getFeatured()]);
+  if (!repos.length && !featured.length) return null;
   return (
     <section id="projects" className={`${pad} bg-soft`}>
       <div className={wrap}>
-        <Head tag="// projects" title={<>Things we&apos;ve<br />actually shipped.</>}>Live from our GitHub organisation — the most recently updated. Star one, fork one, open a pull request.</Head>
+        <Head tag="// projects" title={<>Things we&apos;ve<br />actually shipped.</>}>{featured.length ? "What members built together, and our repositories on GitHub. Star one, fork one, open a pull request." : "Live from our GitHub organisation, the most recently updated. Star one, fork one, open a pull request."}</Head>
         <ul className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {repos.slice(0, 6).map((r, i) => (
+          {featured.slice(0, 3).map((p, i) => (
+            <Reveal as="li" key={`p${p.id}`} delay={(i % 3) * 0.08}>
+              <a href="/projects" className="flex min-h-[200px] flex-col gap-3.5 rounded-[18px] border-2 border-ink bg-white p-[26px] transition duration-300 hover:-translate-y-1.5">
+                <span className="w-fit rounded-full bg-[#dafbe1] px-2.5 py-0.5 text-[12.5px] font-semibold text-[#116329]">{p.club ? "Club project" : "Built by members"} · {p.team_count} {p.team_count === 1 ? "person" : "people"}</span>
+                <h3 className="text-[20px] leading-snug">{p.title}</h3>
+                <p className="flex-1 text-[15.5px] text-ink-2">{p.summary}</p>
+              </a>
+            </Reveal>
+          ))}
+          {repos.slice(0, Math.max(0, 6 - Math.min(featured.length, 3))).map((r, i) => (
             <Reveal as="li" key={r.name} delay={(i % 3) * 0.08}>
               <a href={r.url} target="_blank" rel="noopener" className="flex min-h-[200px] flex-col gap-3.5 rounded-[18px] border border-line bg-white p-[26px] transition duration-300 hover:-translate-y-1.5 hover:border-ink hover:shadow-[0_8px_30px_-12px_rgba(11,11,15,.18)]">
                 <h3 className="break-all font-mono text-lg font-bold tracking-tight text-link">{r.name}</h3>

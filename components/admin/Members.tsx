@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { createMember, exportMembers, importMembers, members as loadMembers, setMemberStatus, updateMember, type ImportReport } from "@/lib/admin/client";
+import { createMember, exportMembers, importMembers, memberHistory, members as loadMembers, setMemberStatus, updateMember, type ImportReport, type MemberHistory } from "@/lib/admin/client";
 import { RETENTION } from "@/lib/retention";
 import { MEMBER_COLUMNS, membersCsv, parseMembersCsv, type Member, type MemberRow } from "@/lib/admin/members";
 
@@ -15,6 +15,8 @@ const blank: MemberRow = { handle: "", name: "", email: "", team: "", joined_on:
 
 export function Members({ admin }: { admin: boolean }) {
   const [list, setList] = useState<Member[] | null>(null);
+  const [open, setOpen] = useState<string | null>(null); const [hist, setHist] = useState<Record<string, MemberHistory>>({});
+  const toggle = async (m: Member) => { if (open === m.id) return setOpen(null); setOpen(m.id); if (!hist[m.id]) { const h = await memberHistory(m); setHist((x) => ({ ...x, [m.id]: h })); } };
   const [q, setQ] = useState(""); const [show, setShow] = useState<"all" | Member["status"]>("active");
   const [form, setForm] = useState<MemberRow>(blank); const [editing, setEditing] = useState<string | null>(null);
   const [note, setNote] = useState<{ k: "ok" | "err"; t: string } | null>(null); const [busy, setBusy] = useState(false);
@@ -114,12 +116,28 @@ export function Members({ admin }: { admin: boolean }) {
                     <button onClick={() => edit(m)} className="text-ink-2 underline-offset-4 hover:underline" aria-label={`Edit ${m.name}`}>Edit</button>
                   </span>
                 ) : <span className="rounded-full border border-line px-2.5 py-0.5 text-[13px]">{STATUS_LABEL[m.status]}</span>}
+                <button onClick={() => void toggle(m)} aria-expanded={open === m.id} className="text-ink-2 underline-offset-4 hover:underline" aria-label={`History of ${m.name}`}>{open === m.id ? "Close" : "History"}</button>
+                {open === m.id && <History h={hist[m.id]} />}
               </li>
             ))}
           </ul>
         )}
       </section>
       <p className="text-[13.5px] text-ink-3">People who stay inactive for {RETENTION.membersMonths} months are deleted automatically; active members and alumni are kept. Every change here is recorded in the audit log.</p>
+    </div>
+  );
+}
+
+/** One member at a glance: events they came to, their access, their projects and what they're into. */
+function History({ h }: { h?: MemberHistory }) {
+  if (!h) return <div className="h-16 basis-full" aria-busy="true" />;
+  const box = "rounded-lg bg-soft px-4 py-3";
+  return (
+    <div className="mt-2 grid basis-full gap-3 sm:grid-cols-2">
+      <div className={box}><p className="font-mono text-[12px] text-ink-3">Events · {h.events.length}</p>{h.events.length ? <ul className="mt-1 text-[14px]">{h.events.map((e) => <li key={e.event}>{e.title} <span className="text-ink-3">{e.event}</span></li>)}</ul> : <p className="mt-1 text-[14px] text-ink-2">No attendance recorded yet.</p>}</div>
+      <div className={box}><p className="font-mono text-[12px] text-ink-3">Access</p><p className="mt-1 text-[14px]">{h.role ? <>{h.role.role}{h.role.title ? ` · ${h.role.title}` : ""}{h.role.ends_on ? ` · until ${h.role.ends_on}` : ""}</> : <span className="text-ink-2">No organiser access (or hasn&apos;t signed in).</span>}</p></div>
+      <div className={box}><p className="font-mono text-[12px] text-ink-3">Projects · {h.projects.length}</p>{h.projects.length ? <ul className="mt-1 text-[14px]">{h.projects.map((p) => <li key={p.id}>{p.title} <span className="text-ink-3">{p.status}{p.owner ? " · owner" : ""}</span></li>)}</ul> : <p className="mt-1 text-[14px] text-ink-2">Not on a project yet.</p>}</div>
+      <div className={box}><p className="font-mono text-[12px] text-ink-3">Into</p>{h.interests ? <p className="mt-1 text-[14px]">{h.interests.domains.join(", ")}{h.interests.skills.length ? <span className="block font-mono text-[13px] text-ink-2">{h.interests.skills.join(", ")}</span> : null}{h.interests.wants ? <span className="block text-ink-2">&ldquo;{h.interests.wants}&rdquo;</span> : null}</p> : <p className="mt-1 text-[14px] text-ink-2">Hasn&apos;t filled in the project hub survey.</p>}</div>
     </div>
   );
 }

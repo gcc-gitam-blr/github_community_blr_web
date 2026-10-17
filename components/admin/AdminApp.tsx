@@ -9,6 +9,7 @@ import { Assets } from "./Assets";
 import { Attendance } from "./Attendance";
 import { Meetings } from "./Meetings";
 import { Members } from "./Members";
+import { NeedsYou } from "./NeedsYou";
 import { Proposals } from "./Proposals";
 import { Recruitment } from "./Recruitment";
 import { Tasks } from "./Tasks";
@@ -22,7 +23,7 @@ import { ClubMark } from "@/components/ui/ClubMark";
    signed out → "Sign in with GitHub"; signed in but not an organiser → ask an admin; organisers → the dashboard. */
 // `core`: for the core team and admins (volunteers are event-day staff: attendance and the Epoch desk). `admin`: admins only.
 const SECTIONS = [
-  { id: "overview", label: "Overview", group: "Club", core: true },
+  { id: "overview", label: "Needs you", group: "Club", core: true },
   { id: "attendance", label: "Attendance & certificates", group: "Club" },
   { id: "signups", label: "Sign-ups & email", group: "Club", core: true },
   { id: "messages", label: "Messages", group: "Club", core: true },
@@ -139,7 +140,7 @@ export function AdminApp() {
         <div className="min-w-0 space-y-4">
           <h1 className="text-[28px]">{SECTIONS.find((s) => s.id === current)!.label}</h1>
           {!admin && <p className="text-[14px] text-ink-3">You&apos;re {me.role === "core" ? "on the core team" : "a volunteer"}: you can mark attendance and check people in; sending emails and changing who has access is for admins.</p>}
-          {current === "overview" && <ClubStatsPanel />}
+          {current === "overview" && <><NeedsYou meId={me.id} admin={admin} /><ClubStatsPanel /></>}
           {current === "attendance" && <Attendance admin={admin} />}
           {current === "signups" && <SignUps />}
           {current === "messages" && <Inbox />}

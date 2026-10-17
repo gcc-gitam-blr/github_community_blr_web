@@ -29,7 +29,7 @@ export function ApplyForm() {
   );
   if (state === "done" || state === "exists") return (
     <div role="status" className="mt-6 rounded-[18px] border-2 border-ink bg-[#dafbe1] p-6">
-      <h2 className="text-[26px]">{state === "exists" ? "You've already applied" : "Application sent — thank you!"}</h2>
+      <h2 className="text-[26px]">{state === "exists" ? "You've already applied" : "Application sent. Thank you!"}</h2>
       <p className="mt-2 text-[16px] text-ink-2">{state === "exists" ? "We have your application for this round already, so there's nothing more to do." : "The reviewers will read it and get back to you by email. If you gave a working address you'll also get a confirmation."}</p>
     </div>
   );
@@ -44,7 +44,7 @@ export function ApplyForm() {
       const j = await r.json();
       if (j.ok) setState(j.status === "exists" ? "exists" : "done");
       else { if (j.closed) setRound(null); setErr(j.error ?? "Something went wrong."); setState("idle"); }
-    } catch { setErr("Network error — please try again."); setState("idle"); }
+    } catch { setErr("Network error. Please try again."); setState("idle"); }
   };
 
   return (

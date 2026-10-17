@@ -16,7 +16,7 @@ export default async function Unsubscribe({ searchParams }: { searchParams: Prom
       <main className="mx-auto min-h-[70vh] w-full max-w-[560px] px-5 pb-24 pt-[140px]">
         {done ? (<>
           <h1 className="text-[40px]">You&apos;re unsubscribed.</h1>
-          <p className="mt-4 text-[18px] text-ink-2">We won&apos;t email you again. You&apos;re always welcome at our events — they&apos;re announced in the WhatsApp community and on Instagram.</p>
+          <p className="mt-4 text-[18px] text-ink-2">We won&apos;t email you again. You&apos;re always welcome at our events. They&apos;re announced in the WhatsApp community and on Instagram.</p>
         </>) : valid ? (<>
           <h1 className="text-[40px]">Unsubscribe from club emails?</h1>
           <p className="mt-4 text-[18px] text-ink-2">We&apos;ll stop sending event updates and Epoch news (including the Epoch dates list) to <b>{e}</b>.</p>

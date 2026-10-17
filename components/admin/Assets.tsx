@@ -1,4 +1,5 @@
 "use client";
+import { tabKeys } from "@/components/ui/tabKeys";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   assets as loadAssets, completeHandover, handovers as loadHandovers, saveAsset, setAssetNotes, setHandoverItem, startHandover,
@@ -33,9 +34,9 @@ export function Assets({ admin, meId }: { admin: boolean; meId: string }) {
     <div className="space-y-4">
       {note && <p role={note.k === "err" ? "alert" : "status"} className={`rounded-md px-4 py-3 text-[14.5px] ${note.k === "err" ? "bg-[#ffebe9] text-[#a40e26]" : "bg-[#dafbe1] text-[#116329]"}`}>{note.t}</p>}
       <p className="rounded-md bg-[#fff8c5] px-4 py-3 text-[14.5px] text-[#4d2d00]"><b>Never put a password, token or key here.</b> Write where it is kept instead, for example &ldquo;in the club password manager&rdquo;. This page refuses text that looks like a secret.</p>
-      <div role="tablist" aria-label="Registry or handover" className="flex gap-1">
-        <button role="tab" aria-selected={view === "registry"} onClick={() => setView("registry")} className={`rounded-md px-3 py-1.5 text-[14.5px] ${view === "registry" ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>Registry {flagged > 0 && <span className={view === "registry" ? "text-white/70" : "text-[#9a6700]"}>{flagged} to check</span>}</button>
-        <button role="tab" aria-selected={view === "handover"} onClick={() => setView("handover")} className={`rounded-md px-3 py-1.5 text-[14.5px] ${view === "handover" ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>Handover checklist</button>
+      <div role="tablist" onKeyDown={tabKeys} aria-label="Registry or handover" className="flex gap-1">
+        <button role="tab" aria-selected={view === "registry"} tabIndex={(view === "registry") ? 0 : -1} onClick={() => setView("registry")} className={`rounded-md px-3 py-1.5 text-[14.5px] ${view === "registry" ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>Registry {flagged > 0 && <span className={view === "registry" ? "text-white/70" : "text-[#9a6700]"}>{flagged} to check</span>}</button>
+        <button role="tab" aria-selected={view === "handover"} tabIndex={(view === "handover") ? 0 : -1} onClick={() => setView("handover")} className={`rounded-md px-3 py-1.5 text-[14.5px] ${view === "handover" ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>Handover checklist</button>
       </div>
       {view === "registry" ? <Registry data={data} admin={admin} meId={meId} busy={busy} run={run} /> : <HandoverView ho={ho} admin={admin} busy={busy} run={run} />}
     </div>
@@ -131,9 +132,9 @@ function HandoverView({ ho, admin, busy, run }: { ho: { lists: Handover[]; items
             <span className="rounded-full border border-line px-2.5 py-0.5 text-[13px]">{current.status === "complete" ? `Complete ${current.completed_at ? niceDate(current.completed_at.slice(0, 10)) : ""}` : `${left} left`}</span>
             {admin && current.status === "open" && <button disabled={busy || left > 0} onClick={() => void run(completeHandover(current.id), "The handover is complete.")} className={`${btn} ml-auto`}>Mark the handover complete</button>}
           </div>
-          <div role="tablist" aria-label="Steps" className="flex flex-wrap gap-1 border-b border-line px-5 py-2">
+          <div role="tablist" onKeyDown={tabKeys} aria-label="Steps" className="flex flex-wrap gap-1 border-b border-line px-5 py-2">
             {groups.map(([name, items]) => { const n = items.filter((i) => i.state === "open").length; return (
-              <button key={name} role="tab" aria-selected={shownCat === name} onClick={() => setCat(name)} className={`rounded-md px-3 py-1.5 text-[14px] ${shownCat === name ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>{name.replace(/^\d+\.\s*/, "")} {n > 0 && <span className={shownCat === name ? "text-white/70" : "text-ink-3"}>{n}</span>}</button>
+              <button key={name} role="tab" aria-selected={shownCat === name} tabIndex={(shownCat === name) ? 0 : -1} onClick={() => setCat(name)} className={`rounded-md px-3 py-1.5 text-[14px] ${shownCat === name ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>{name.replace(/^\d+\.\s*/, "")} {n > 0 && <span className={shownCat === name ? "text-white/70" : "text-ink-3"}>{n}</span>}</button>
             ); })}
           </div>
           <ul className="divide-y divide-line">

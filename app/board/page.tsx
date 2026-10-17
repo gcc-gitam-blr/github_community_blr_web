@@ -3,11 +3,13 @@ import Link from "next/link";
 import { GitMergeIcon, RepoIcon } from "@primer/octicons-react";
 import { Nav } from "@/components/site/Nav";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { JourneyRail, NextBand } from "@/components/site/Journey";
 import { Face } from "@/components/site/Team";
 import { Sticker } from "@/components/ui/Sticker";
 import { Challenge } from "@/components/site/Challenge";
 import { ago } from "@/lib/issues";
-import { BOARD_SINCE, SHOW_SAMPLE, loadBoard, sampleBoard, type MergedPr, type Row } from "@/lib/board";
+import { BOARD_SINCE, SHOW_SAMPLE, sampleBoard, type MergedPr, type Row } from "@/lib/board";
+import { loadClubBoard } from "@/lib/board-server";
 import { badgesByMember, type Badge } from "@/lib/badges";
 import { BadgeRow } from "@/components/site/Badges";
 import { CHALLENGE, challengeProgress, challengeState, sampleChallenge } from "@/lib/challenge";
@@ -58,7 +60,7 @@ function Recent({ prs }: { prs: MergedPr[] }) {
 }
 
 export default async function Board() {
-  const live = await loadBoard();
+  const live = await loadClubBoard();
   const sample = SHOW_SAMPLE && !live.rows.length;
   const now = new Date();
   const { ok, members, prs, rows, recent } = sample ? { ...live, ...sampleBoard(now) } : live;
@@ -78,6 +80,7 @@ export default async function Board() {
           </div>
           <Sticker name="maker" size={150} tilt={6} className="mb-4 hidden md:block" alt="" />
         </div>
+        <JourneyRail at="board" />
 
         {sample && <p className="mt-10 rounded-lg border border-[#d4a72c66] bg-[#fff8c5] px-4 py-3 text-[15px] text-[#7d4e00]">Sample board and challenge, with GitHub&apos;s mascot accounts: shown on preview deployments only while no member has a merge, never on the live site.</p>}
         {!ok && <p role="status" className="mt-10 rounded-lg border border-[#d4a72c66] bg-[#fff8c5] px-4 py-3 text-[15px] text-[#7d4e00]">GitHub didn&apos;t answer every request just now, so the board may be missing a few people. It refreshes within the hour.</p>}
@@ -111,10 +114,11 @@ export default async function Board() {
         )}
 
         <p className="mt-16 max-w-[64ch] text-[15px] text-ink-2">
-          The board follows the {members.length} members whose GitHub handle is on the site. Not on it? Ask a lead to add your handle to the team or contributors list.
+          The board follows {members.length} {members.length === 1 ? "person" : "people"}: the team, contributors, and members who switched it on. Not on it? Sign in to <Link href="/me" className="font-semibold text-link hover:underline">My club</Link> and tick <b>Show me on the board</b>.
           Pull requests into your own repositories don&apos;t count; this is about contributing to projects that aren&apos;t yours.
         </p>
       </main>
+      <NextBand cmd="git push" title={<>Then build something<br />with the club.</>} text="Members team up on projects of their own: share an idea, find people with the skills you're missing, and ship it together." href="/hub" cta="Open the project hub" second={{ href: "/projects", label: "See what's been built" }} />
       <SiteFooter />
     </>
   );

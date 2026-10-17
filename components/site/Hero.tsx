@@ -20,14 +20,14 @@ const EDGES: [string, string][] = [["a", "b"], ["a", "c"], ["b", "d"], ["c", "e"
 export function Hero() {
   return (
     <>
-      <section id="top" className="relative overflow-hidden bg-[radial-gradient(60%_50%_at_82%_40%,rgba(180,139,230,.10),transparent_70%),radial-gradient(50%_50%_at_8%_90%,rgba(63,200,78,.08),transparent_70%)] pt-[clamp(112px,12vw,150px)]">
+      <section id="top" className="relative overflow-hidden bg-[radial-gradient(60%_50%_at_82%_40%,rgba(180,139,230,.10),transparent_70%),radial-gradient(50%_50%_at_8%_90%,rgba(63,200,78,.08),transparent_70%)] pt-[clamp(136px,12vw,150px)]">
         <div className="mx-auto grid w-full max-w-[1240px] items-center gap-10 px-5 pb-[clamp(56px,7vw,96px)] md:px-[clamp(20px,5vw,72px)] lg:grid-cols-[1.25fr_.75fr]">
           <div className="min-w-0">
             <p className="hero-fade mb-6 font-mono text-[13px] text-ink-2">GITAM University Bengaluru · GitHub Community Club</p>
             <div className="hero-rise" style={{ "--d": "0.05s" } as React.CSSProperties}>
               <h1 className="text-[clamp(44px,6.4vw,94px)] leading-[0.94]">Code.<br />Collaborate.<br />Contribute<span aria-hidden className="ml-[.1em] animate-blink tracking-[-0.08em]">&gt;_</span></h1>
             </div>
-            <p className="hero-fade mt-8 max-w-[46ch] text-[clamp(18px,1.6vw,20px)] text-ink-2" style={{ "--d": "0.15s" } as React.CSSProperties}>The GitHub Community Club at GITAM Bengaluru. We learn Git and GitHub together, contribute to open source, and run hands-on workshops — no experience needed.</p>
+            <p className="hero-fade mt-8 max-w-[46ch] text-[clamp(18px,1.6vw,20px)] text-ink-2" style={{ "--d": "0.15s" } as React.CSSProperties}>The GitHub Community Club at GITAM Bengaluru. We learn Git and GitHub together, contribute to open source, and run hands-on workshops. No experience needed.</p>
             <div className="hero-fade mt-9 flex flex-wrap items-center gap-8" style={{ "--d": "0.25s" } as React.CSSProperties}>
               <a href="#join" className="lift rounded-md border-2 border-ink bg-ink px-[26px] py-[15px] font-display font-bold text-white">Join the club</a>
               <a href="#events" className="group inline-flex items-center gap-2 font-semibold text-link">See what&apos;s next <span className="transition-transform group-hover:translate-x-1.5">→</span></a>

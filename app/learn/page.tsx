@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowUpRightIcon } from "@primer/octicons-react";
 import { Nav } from "@/components/site/Nav";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { JourneyRail, NextBand } from "@/components/site/Journey";
 import { CheatSheet } from "@/components/site/CheatSheet";
 import { SessionArchive } from "@/components/site/SessionArchive";
 import { todayInIndia } from "@/lib/events";
@@ -24,10 +25,11 @@ export default function Learn() {
           <div className="max-w-[760px]">
             <p className="font-mono text-[13px] text-ink-2">{"// learn"}</p>
             <h1 className="mt-4 text-[clamp(40px,6.4vw,84px)]">Learn Git &amp; GitHub,<br />at your own pace.</h1>
-            <p className="mt-5 max-w-[56ch] text-[19px] text-ink-2">Everything we teach in our sessions, in one place — plus the best free material on the internet. Start at the top; skip what you already know.</p>
+            <p className="mt-5 max-w-[56ch] text-[19px] text-ink-2">Everything we teach in our sessions in one place, plus the best free material on the internet. Start at the top; skip what you already know.</p>
           </div>
           <Sticker name="professor" size={150} tilt={6} className="mb-4 hidden md:block" alt="" />
         </div>
+        <JourneyRail at="learn" />
 
         <SessionArchive today={todayInIndia()} />
 
@@ -71,6 +73,7 @@ export default function Learn() {
           <Link href="/#join" className="press mt-4 inline-flex rounded-md bg-ink px-5 py-3 font-display font-bold text-white sm:mt-0">Join the club</Link>
         </div>
       </main>
+      <NextBand cmd="gh pr create" title={<>Next commit:<br />your first pull request.</>} text="Reading is step one. The real thing is a small change to a project you didn't write, reviewed by someone who did. Fixing a typo counts." href="/contribute" cta="Make your first contribution" second={{ href: "/#events", label: "Or learn it at a session" }} />
       <SiteFooter />
     </>
   );

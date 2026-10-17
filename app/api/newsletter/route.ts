@@ -1,6 +1,7 @@
 import { EVENTS, eventSlug, todayInIndia } from "@/lib/events";
 import { getUpdates } from "@/lib/updates";
-import { boardMembers, counted, loadBoard } from "@/lib/board";
+import { counted } from "@/lib/board";
+import { loadClubBoard } from "@/lib/board-server";
 import { defaultMonth, newsletterDraft } from "@/lib/newsletter";
 import { SITE_URL } from "@/lib/site";
 import { istDay } from "@/lib/challenge";
@@ -13,8 +14,8 @@ export async function GET(req: Request) {
   const today = todayInIndia();
   const asked = new URL(req.url).searchParams.get("month") ?? "";
   const month = /^\d{4}-(0[1-9]|1[0-2])$/.test(asked) ? asked : defaultMonth(today);
-  const board = await loadBoard().catch(() => null); // GitHub being slow mustn't stop the draft
-  const members = boardMembers();
+  const board = await loadClubBoard().catch(() => null); // GitHub being slow mustn't stop the draft
+  const members = board?.members ?? [];
   const inMonth = board ? counted(board.prs, members).filter((p) => istDay(p.merged).slice(0, 7) === month) : []; // by the date in India
   const people = [...new Set(inMonth.map((p) => members.find((m) => m.handle.toLowerCase() === p.author.toLowerCase())?.name ?? p.author))];
   const draft = newsletterDraft({

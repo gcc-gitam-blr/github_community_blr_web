@@ -32,9 +32,9 @@ const COLUMNS: { title: string; links: L[] }[] = [
 function nextUpLine() {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const next = [...CLUB.events].sort((a, b) => a.date.localeCompare(b.date)).find((e) => new Date(e.date + "T00:00:00") >= today);
-  if (!next) return "That's a wrap for this year — see you next year.";
+  if (!next) return "That's a wrap for this year. See you next year.";
   const d = Math.round((new Date(next.date + "T00:00:00").getTime() - today.getTime()) / 864e5);
-  return `Next: ${next.title} — ${d === 0 ? "today" : d === 1 ? "tomorrow" : `in ${d} days`}`;
+  return `Next: ${next.title}, ${d === 0 ? "today" : d === 1 ? "tomorrow" : `in ${d} days`}`;
 }
 
 function NextUp() {
