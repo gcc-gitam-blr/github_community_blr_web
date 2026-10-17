@@ -335,6 +335,7 @@ html.lenis, html.lenis body { height: auto; }
   color-scheme: dark;
   --color-paper: #000; --color-soft: #0a0a0a; --color-mist: #262626; --color-line: #262626;
   --color-ink: #f2f2f2; --color-ink-2: #a8a8a8; --color-ink-3: #8c8c8c; --color-link: #58a6ff;
+  --color-mute: #8c8c8c; --color-hair: rgba(255, 255, 255, .1); /* Epoch's panels reused in /admin (Sign-ups, Messages, Feedback, the stats) */
 }
 :root[data-theme="dark"]:not(:has([data-light-only])) body { background: #000; }
 :root[data-theme="dark"]:not(:has([data-light-only])) .head-pill { background: rgba(10, 10, 10, .72); border-color: rgba(255, 255, 255, .1); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 12px 32px -16px rgba(0, 0, 0, .9); }
@@ -342,19 +343,23 @@ html.lenis, html.lenis body { height: auto; }
 :root[data-theme="dark"]:not(:has([data-light-only])) .phone-menu__panel { background: #0a0a0a; }
 /* light islands: pastel badges, the green band and prints keep dark text, whatever the theme */
 :root[data-theme="dark"]:not(:has([data-light-only])) :is(.print, .cert, .bg-brand, .bg-\[\#fd8c73\], .bg-\[\#d8f5dd\], .bg-\[\#fffdf8\], .bg-\[\#ffc933\], .bg-\[\#ffd966\], .bg-\[\#b9e0f7\], .bg-node-blue, .bg-node-purple, .bg-node-mint, .bg-gold, [style*="background"]) {
-  --color-ink: #0b0b0f; --color-ink-2: #3a3d44; --color-ink-3: #57606a; --color-line: #e4e8e6; color: #0b0b0f;
+  --color-ink: #0b0b0f; --color-ink-2: #3a3d44; --color-ink-3: #57606a; --color-line: #e4e8e6; --color-mute: #595866; --color-hair: rgba(18, 18, 26, .09); color: #0b0b0f;
 }
 /* a certificate is paper whatever the theme: its white boxes (the git log record, the QR frame) stay white */
 :root[data-theme="dark"]:not(:has([data-light-only])) .cert .bg-white { background-color: #fff; }
 :root[data-theme="dark"]:not(:has([data-light-only])) .cert .border-ink { border-color: #0b0b0f; }
 /* …but a dark card inside a light island (the join form on the green band) keeps light text */
 :root[data-theme="dark"]:not(:has([data-light-only])) :is(.bg-brand, .bg-\[\#ffd966\], .bg-\[\#dafbe1\]) :is(.bg-white, .bg-ink) {
-  --color-ink: #f2f2f2; --color-ink-2: #a8a8a8; --color-ink-3: #8c8c8c; --color-line: #262626; color: #f2f2f2;
+  --color-ink: #f2f2f2; --color-ink-2: #a8a8a8; --color-ink-3: #8c8c8c; --color-line: #262626; --color-mute: #8c8c8c; --color-hair: rgba(255, 255, 255, .1); color: #f2f2f2;
 }
 @layer utilities {
   :where(:root[data-theme="dark"]:not(:has([data-light-only]))) {
     & .bg-white, & .file\:bg-white::file-selector-button { background-color: #0a0a0a; }
+    & .bg-white { --color-soft: #161616; } /* inside a card, "soft" (table heads, the selected row, hover) is a step lighter than the card, not the same black */
     & .bg-white\/85 { background-color: rgb(10 10 10 / .85); } & .bg-white\/80 { background-color: rgb(10 10 10 / .8); }
+    & .bg-white\/75 { background-color: rgb(10 10 10 / .75); } & .bg-white\/70 { background-color: rgb(10 10 10 / .7); } /* Epoch's fields, cards and notices in /admin */
+    & .bg-white\/65 { background-color: rgb(10 10 10 / .65); } & .bg-white\/60 { background-color: rgb(10 10 10 / .6); } & .bg-white\/50 { background-color: rgb(10 10 10 / .5); }
+    & .bg-red-50\/80 { background-color: rgb(248 81 73 / .16); } & .text-red-800 { color: #ff7b72; }
     & .hover\:bg-white\/70:hover { background-color: rgb(23 23 23 / .7); }
     & .bg-ink { background-color: #1c1c1c; } /* buttons and bands; lines drawn with before:/after:bg-ink follow the text colour */
     & .hover\:bg-ink:hover, & .focus\:bg-ink:focus, & .hover\:bg-ink\/85:hover { background-color: #2a2a2a; }
