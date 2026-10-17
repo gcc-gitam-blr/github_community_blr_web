@@ -13,6 +13,7 @@ import { Proposals } from "./Proposals";
 import { Recruitment } from "./Recruitment";
 import { Tasks } from "./Tasks";
 import { People } from "./People";
+import { ProjectsAdmin } from "./ProjectsAdmin";
 import { Policies } from "./Policies";
 import { SiteErrors } from "./SiteErrors";
 import { ClubMark } from "@/components/ui/ClubMark";
@@ -28,6 +29,7 @@ const SECTIONS = [
   { id: "feedback", label: "Feedback", group: "Club", core: true },
   { id: "members", label: "Members", group: "People", core: true },
   { id: "recruitment", label: "Recruitment", group: "People", core: true },
+  { id: "projects", label: "Projects", group: "People", core: true },
   { id: "people", label: "People & roles", group: "People" },
   { id: "proposals", label: "Event proposals", group: "Work", core: true },
   { id: "tasks", label: "Tasks", group: "Work", core: true },
@@ -150,6 +152,7 @@ export function AdminApp() {
           {current === "assets" && <Assets admin={admin} meId={me.id} />}
           {current === "policies" && <Policies admin={admin} meId={me.id} />}
           {current === "activity" && <Activity />}
+          {current === "projects" && <ProjectsAdmin admin={admin} meId={me.id} />}
           {current === "people" && <People admin={admin} me={me.handle} />}
           {current === "errors" && (admin ? <SiteErrors /> : <p className="text-ink-2">Error reports are for admins.</p>)}
         </div>
