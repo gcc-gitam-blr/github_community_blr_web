@@ -37,6 +37,15 @@ const accessMail = digestEmail(ending, "https://club.test");
 ok("the email names who and when", accessMail.text.includes("@cy (core) in 3 days") && accessMail.text.includes("@vi (volunteer) ends today"));
 ok("…and says what to do when there are too few admins", digestEmail(low, "https://club.test").text.includes("Appoint another"));
 
+// tasks: nothing overdue says nothing; overdue tasks and tasks whose owner lost access are listed
+ok("no overdue or orphaned tasks adds nothing", buildDigest({ ...quiet, tasks: { overdue: [], orphaned: [] } }, now) === null);
+const tk = buildDigest({ ...quiet, tasks: { overdue: [{ id: 1, title: "Print posters", owner: "cy", days: 3 }, { id: 2, title: "Book hall", owner: "dan", days: 1 }], orphaned: [{ id: 3, title: "Send budget", owner: "vi" }] } }, now)!;
+ok("overdue tasks, even in a quiet week, make a digest and a headline", !!tk && digestHeadline(tk) === "2 overdue tasks, 1 task to reassign");
+const tkMail = digestEmail(tk, "https://club.test");
+ok("the email names the task, the owner and how late; and who has to be replaced", tkMail.text.includes("Print posters (@cy, 3 days late)") && tkMail.text.includes("Book hall (@dan, 1 day late)") && tkMail.text.includes("Send budget (@vi)") && tkMail.text.includes("no longer has access"));
+const many = buildDigest({ ...quiet, tasks: { overdue: Array.from({ length: 8 }, (_, i) => ({ id: i, title: `T${i}`, owner: "cy", days: 2 })), orphaned: [] } }, now)!;
+ok("a long list is cut to five with a count", digestEmail(many, "https://club.test").text.includes("and 3 more"));
+
 // who gets it
 const admins = [{ email: "Lead@Gitam.in" }, { email: null }, { email: "lead@gitam.in" }, { email: "second@gitam.in" }];
 ok("without ORGANISER_EMAILS, every admin with an email gets it once", digestRecipients(undefined, admins).join() === "lead@gitam.in,second@gitam.in");
