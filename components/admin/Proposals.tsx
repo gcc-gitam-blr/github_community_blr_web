@@ -1,4 +1,5 @@
 "use client";
+import { tabKeys } from "@/components/ui/tabKeys";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   cancelProposal, completeProposal, createProposal, decideProposal, linkProposalEvent, proposals as loadProposals, setChecklistItem, submitProposal, updateProposal,
@@ -76,9 +77,9 @@ export function Proposals({ admin, meId }: { admin: boolean; meId: string }) {
       <section className={card} aria-labelledby="list-h">
         <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-3">
           <h2 id="list-h" className="mr-2 text-[18px]">Proposals</h2>
-          <div role="tablist" aria-label="Which proposals" className="flex flex-wrap gap-1">
+          <div role="tablist" onKeyDown={tabKeys} aria-label="Which proposals" className="flex flex-wrap gap-1">
             {([["decide", "Waiting for a decision"], ["mine", "Mine"], ["coming", "Approved"], ["past", "Closed"]] as [Group, string][]).filter(([g]) => admin || g !== "decide").map(([g, label]) => (
-              <button key={g} role="tab" aria-selected={group === g} onClick={() => setPicked(g)} className={`rounded-md px-3 py-1.5 text-[14px] ${group === g ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>{label} <span className={group === g ? "text-white/70" : "text-ink-3"}>{counts[g]}</span></button>
+              <button key={g} role="tab" aria-selected={group === g} tabIndex={(group === g) ? 0 : -1} onClick={() => setPicked(g)} className={`rounded-md px-3 py-1.5 text-[14px] ${group === g ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>{label} <span className={group === g ? "text-white/70" : "text-ink-3"}>{counts[g]}</span></button>
             ))}
           </div>
         </div>

@@ -1,4 +1,5 @@
 "use client";
+import { tabKeys } from "@/components/ui/tabKeys";
 import { useState } from "react";
 import { SCHEDULE } from "@/lib/epoch/config";
 import { useHappening } from "../HappeningNow";
@@ -12,9 +13,9 @@ export function PlanList() {
   const d = SCHEDULE.find((s) => s.day === day)!;
   return (
     <div>
-      <div role="tablist" aria-label="Day" className="mb-8 inline-flex rounded-full border border-hair bg-white/50 p-1 backdrop-blur">
+      <div role="tablist" onKeyDown={tabKeys} aria-label="Day" className="mb-8 inline-flex rounded-full border border-hair bg-white/50 p-1 backdrop-blur">
         {SCHEDULE.map((s) => (
-          <button key={s.day} role="tab" aria-selected={day === s.day} onClick={() => setDay(s.day)} className={`rounded-full px-6 py-2.5 text-[15px] transition ${day === s.day ? "bg-ink text-white" : "text-mute hover:text-ink"}`}>{s.label}</button>
+          <button key={s.day} role="tab" aria-selected={day === s.day} tabIndex={(day === s.day) ? 0 : -1} onClick={() => setDay(s.day)} className={`rounded-full px-6 py-2.5 text-[15px] transition ${day === s.day ? "bg-ink text-white" : "text-mute hover:text-ink"}`}>{s.label}</button>
         ))}
       </div>
       <ol className="border-t border-hair">

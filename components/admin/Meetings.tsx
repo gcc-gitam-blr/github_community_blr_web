@@ -1,4 +1,5 @@
 "use client";
+import { tabKeys } from "@/components/ui/tabKeys";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   addMinutesNote, createMeeting, createTask, finaliseMinutes, meetings as loadMeetings, owners as loadOwners, recordDecision, setAttendees, supersedeDecision, tasks as loadTasks, updateMeeting,
@@ -32,9 +33,9 @@ export function Meetings({ admin, meId }: { admin: boolean; meId: string }) {
   return (
     <div className="space-y-4">
       {note && <p role={note.k === "err" ? "alert" : "status"} className={`rounded-md px-4 py-3 text-[14.5px] ${note.k === "err" ? "bg-[#ffebe9] text-[#a40e26]" : "bg-[#dafbe1] text-[#116329]"}`}>{note.t}</p>}
-      <div role="tablist" aria-label="Meetings or decisions" className="flex gap-1">
+      <div role="tablist" onKeyDown={tabKeys} aria-label="Meetings or decisions" className="flex gap-1">
         {([["meetings", "Meetings"], ["decisions", "Decisions"]] as const).map(([v, label]) => (
-          <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)} className={`rounded-md px-3 py-1.5 text-[14.5px] ${view === v ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>{label}</button>
+          <button key={v} role="tab" aria-selected={view === v} tabIndex={(view === v) ? 0 : -1} onClick={() => setView(v)} className={`rounded-md px-3 py-1.5 text-[14.5px] ${view === v ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>{label}</button>
         ))}
       </div>
 

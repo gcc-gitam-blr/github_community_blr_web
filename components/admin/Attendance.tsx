@@ -1,4 +1,5 @@
 "use client";
+import { tabKeys } from "@/components/ui/tabKeys";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useEpoch } from "@/components/epoch/EpochProvider";
 import { CLUB } from "@/lib/config";
@@ -94,9 +95,9 @@ export function Attendance({ admin }: { admin: boolean }) {
       <section className={card} aria-labelledby="add-h">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3">
           <h2 id="add-h" className="text-[18px]">Add people who came</h2>
-          <div role="tablist" aria-label="How to add" className="flex rounded-md border border-line p-0.5 text-[13.5px]">
+          <div role="tablist" onKeyDown={tabKeys} aria-label="How to add" className="flex rounded-md border border-line p-0.5 text-[13.5px]">
             {([["luma", "Luma check-ins"], ["signups", "From sign-ups"], ["hand", "By hand"]] as [Mode, string][]).map(([m, l]) => (
-              <button key={m} role="tab" aria-selected={mode === m} onClick={() => setMode(m)} className={`rounded px-3 py-1.5 ${mode === m ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>{l}</button>
+              <button key={m} role="tab" aria-selected={mode === m} tabIndex={(mode === m) ? 0 : -1} onClick={() => setMode(m)} className={`rounded px-3 py-1.5 ${mode === m ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>{l}</button>
             ))}
           </div>
         </div>

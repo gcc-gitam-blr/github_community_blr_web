@@ -1,4 +1,5 @@
 "use client";
+import { tabKeys } from "@/components/ui/tabKeys";
 import { useMemo, useState } from "react";
 import { postIdea, requestToJoin, withdrawRequest, type Idea, type JoinRequest, type TeamMember } from "@/lib/hub/client";
 import { DOMAINS, IDEA_STATUS, LIMITS, domainLabel } from "@/lib/projects";
@@ -18,9 +19,9 @@ export function Ideas({ uid, data, names, reload }: { uid: string; data: { ideas
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end gap-3">
-        <div role="tablist" aria-label="Which ideas" className="flex flex-wrap gap-1">
+        <div role="tablist" onKeyDown={tabKeys} aria-label="Which ideas" className="flex flex-wrap gap-1">
           {([["open", "Looking for people"], ["mine", "My projects"], ["shipped", "Shipped"]] as const).map(([k, label]) => (
-            <button key={k} role="tab" aria-selected={show === k} onClick={() => setShow(k)} className={`rounded-md px-3.5 py-2 text-[15px] ${show === k ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>{label}</button>
+            <button key={k} role="tab" aria-selected={show === k} tabIndex={(show === k) ? 0 : -1} onClick={() => setShow(k)} className={`rounded-md px-3.5 py-2 text-[15px] ${show === k ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>{label}</button>
           ))}
         </div>
         <label className="ml-auto text-[14px]"><span className="sr-only">Filter by area</span>

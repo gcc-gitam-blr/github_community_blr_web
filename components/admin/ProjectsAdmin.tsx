@@ -1,4 +1,5 @@
 "use client";
+import { tabKeys } from "@/components/ui/tabKeys";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   allInterests, decidePublishing, ideas as loadIdeas, postIdea, setIdeaStatus, setProjectOwner, summary, unpublishProject,
@@ -31,9 +32,9 @@ export function ProjectsAdmin({ admin, meId }: { admin: boolean; meId: string })
   return (
     <div className="space-y-4">
       {note && <p role={note.k === "err" ? "alert" : "status"} className={`rounded-md px-4 py-3 text-[14.5px] ${note.k === "err" ? "bg-[#ffebe9] text-[#a40e26]" : "bg-[#dafbe1] text-[#116329]"}`}>{note.t}</p>}
-      <div role="tablist" aria-label="Projects" className="flex flex-wrap gap-1">
+      <div role="tablist" onKeyDown={tabKeys} aria-label="Projects" className="flex flex-wrap gap-1">
         {([["survey", "What members like"], ["review", `To feature${queue.length ? ` (${queue.length})` : ""}`], ["all", "All projects"]] as const).map(([v, label]) => (
-          <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)} className={`rounded-md px-3 py-1.5 text-[14.5px] ${view === v ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>{label}</button>
+          <button key={v} role="tab" aria-selected={view === v} tabIndex={(view === v) ? 0 : -1} onClick={() => setView(v)} className={`rounded-md px-3 py-1.5 text-[14.5px] ${view === v ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>{label}</button>
         ))}
       </div>
 
@@ -117,8 +118,8 @@ function AllProjects({ data, admin, busy, run }: { data: Data | null; admin: boo
     <section className={card} aria-labelledby="all-h">
       <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-3">
         <h2 id="all-h" className="mr-2 text-[18px]">All projects</h2>
-        <div role="tablist" aria-label="Status" className="flex flex-wrap gap-1">
-          {(Object.keys(IDEA_STATUS) as IdeaStatus[]).map((s) => <button key={s} role="tab" aria-selected={st === s} onClick={() => setSt(s)} className={`rounded-md px-3 py-1.5 text-[14px] ${st === s ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>{IDEA_STATUS[s]} <span className={st === s ? "text-white/70" : "text-ink-3"}>{counts[s]}</span></button>)}
+        <div role="tablist" onKeyDown={tabKeys} aria-label="Status" className="flex flex-wrap gap-1">
+          {(Object.keys(IDEA_STATUS) as IdeaStatus[]).map((s) => <button key={s} role="tab" aria-selected={st === s} tabIndex={(st === s) ? 0 : -1} onClick={() => setSt(s)} className={`rounded-md px-3 py-1.5 text-[14px] ${st === s ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>{IDEA_STATUS[s]} <span className={st === s ? "text-white/70" : "text-ink-3"}>{counts[s]}</span></button>)}
         </div>
       </div>
       {data === null ? <p className="p-5 text-ink-3">Loading…</p> : rows.length === 0 ? <p className="p-5 text-ink-3">Nothing here.</p> : (
