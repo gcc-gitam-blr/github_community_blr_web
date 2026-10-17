@@ -2166,3 +2166,382 @@ revoke execute on function create_policy(text, text, text), set_policy_owner(big
 grant execute on function create_policy(text, text, text), set_policy_owner(bigint, text), save_policy_draft(bigint, text), discard_policy_draft(bigint), publish_policy_version(bigint, date, date) to authenticated;
 revoke execute on function policy_reviews_due() from public, anon, authenticated;
 grant execute on function policy_reviews_due() to service_role;
+
+-- ============================================================
+-- Project hub (the /hub page for members, Admin → Projects for the core team, and /projects for everyone).
+-- 1. Interest survey: every active member can say which areas they like, their skills, and what they'd like to build.
+--    Their answers are private: the core team and admins see them to plan projects; other members only see counts, plus the
+--    people who ticked "let teammates find me".
+-- 2. Project ideas: members post ideas, others ask to join, the owner accepts. The core team can post club projects that
+--    everyone can join, based on what the survey shows.
+-- 3. The website: a team asks to be featured; a core or admin who is NOT the owner reviews it. Only then does it appear on
+--    /projects, with GitHub names only for the members who agreed. Editing a featured project sends it back for review.
+-- Who takes part: active members (see Members) and the core team. Nothing is written directly; every change is a function
+-- below, logged in crm_audit (ids and states only).
+-- ============================================================
+create or replace function domain_list() returns text[] language sql immutable set search_path = pg_catalog as $$
+  select array['web','mobile','ai-ml','data','cloud-devops','security','game-dev','design-ux','open-source','hardware-iot','other']
+$$;
+
+-- Tidy a list of tags (skills): lower-case, trimmed, no repeats, 2 to 24 characters of letters, digits and + # . - space.
+create or replace function clean_tags(p_in text[], p_max int) returns text[] language plpgsql immutable set search_path = pg_catalog as $$
+declare t text; out text[] := '{}';
+begin
+  foreach t in array coalesce(p_in, '{}') loop
+    t := lower(btrim(t));
+    if t = '' then continue; end if;
+    if t !~ '^[a-z0-9][a-z0-9+#. -]{1,23}$' then raise exception 'bad tag'; end if;
+    if not (t = any(out)) then out := out || t; end if;
+  end loop;
+  if cardinality(out) > p_max then raise exception 'too many tags'; end if;
+  return out;
+end $$;
+
+create or replace function clean_domains(p_in text[], p_min int, p_max int) returns text[] language plpgsql immutable set search_path = pg_catalog, public as $$
+declare d text; out text[] := '{}';
+begin
+  foreach d in array coalesce(p_in, '{}') loop
+    if not (d = any(domain_list())) then raise exception 'bad domain'; end if;
+    if not (d = any(out)) then out := out || d; end if;
+  end loop;
+  if cardinality(out) < p_min or cardinality(out) > p_max then raise exception 'bad domain count'; end if;
+  return out;
+end $$;
+
+-- Members and the core team take part. Used by the policies below (signed-in users only).
+create or replace function can_take_part() returns boolean language sql security definer stable set search_path = public, pg_temp as $$
+  select my_role() in ('core','admin') or exists (select 1 from members m where m.user_id = auth.uid() and m.status = 'active')
+$$;
+
+create table if not exists member_interests (
+  user_id uuid primary key references profiles(id) on delete cascade,
+  domains text[] not null check (cardinality(domains) between 1 and 5),
+  skills text[] not null default '{}' check (cardinality(skills) <= 8),
+  wants text check (wants is null or length(wants) <= 280),
+  hours text check (hours is null or hours in ('1-2','3-5','6+')),
+  discoverable boolean not null default false, -- true = other members may find them by skill
+  updated_at timestamptz not null default now()
+);
+create table if not exists project_ideas (
+  id bigint generated always as identity primary key,
+  title text not null check (length(trim(title)) between 3 and 100),
+  summary text not null check (length(trim(summary)) between 10 and 600),
+  domains text[] not null check (cardinality(domains) between 1 and 3),
+  skills_wanted text[] not null default '{}' check (cardinality(skills_wanted) <= 8),
+  team_size int check (team_size is null or team_size between 2 and 12), -- null = open to everyone (club projects)
+  repo_url text check (repo_url is null or repo_url ~* '^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/?$'),
+  status text not null default 'idea' check (status in ('idea','forming','building','shipped','archived')),
+  origin text not null default 'member' check (origin in ('member','club')),
+  owner_id uuid references profiles(id) on delete set null,
+  publish_state text not null default 'private' check (publish_state in ('private','requested','published')),
+  publish_note text check (publish_note is null or length(publish_note) <= 300),
+  published_at timestamptz,
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now()
+);
+create index if not exists project_ideas_status on project_ideas (status, created_at desc);
+create table if not exists project_members (
+  project_id bigint not null references project_ideas on delete cascade,
+  user_id uuid not null references profiles(id) on delete cascade,
+  role text not null default 'member' check (role in ('owner','member')),
+  shows_publicly boolean not null default false, -- their GitHub name may appear on /projects
+  joined_at timestamptz not null default now(),
+  primary key (project_id, user_id)
+);
+create table if not exists project_requests (
+  id bigint generated always as identity primary key,
+  project_id bigint not null references project_ideas on delete cascade,
+  user_id uuid not null references profiles(id) on delete cascade,
+  message text check (message is null or length(message) <= 300),
+  status text not null default 'pending' check (status in ('pending','accepted','declined','withdrawn')),
+  created_at timestamptz not null default now(), decided_at timestamptz,
+  unique (project_id, user_id)
+);
+alter table member_interests enable row level security;
+alter table project_ideas enable row level security;
+alter table project_members enable row level security;
+alter table project_requests enable row level security;
+revoke insert, update, delete on member_interests, project_ideas, project_members, project_requests from anon, authenticated;
+drop policy if exists "read own interests, core and admins read all" on member_interests;
+create policy "read own interests, core and admins read all" on member_interests for select to authenticated using (user_id = auth.uid() or my_role() in ('core','admin'));
+drop policy if exists "members read project ideas" on project_ideas;
+create policy "members read project ideas" on project_ideas for select to authenticated using (can_take_part());
+drop policy if exists "members read project teams" on project_members;
+create policy "members read project teams" on project_members for select to authenticated using (can_take_part());
+drop policy if exists "owners, requesters and the core team read requests" on project_requests;
+create policy "owners, requesters and the core team read requests" on project_requests for select to authenticated using (
+  user_id = auth.uid() or my_role() in ('core','admin') or exists (select 1 from project_ideas p where p.id = project_requests.project_id and p.owner_id = auth.uid()));
+
+-- ---- the interest survey ----
+create or replace function save_interests(p_domains text[], p_skills text[], p_wants text, p_hours text, p_discoverable boolean) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare d text[]; s text[]; w text := nullif(trim(coalesce(p_wants, '')), '');
+begin
+  if not can_take_part() then return json_build_object('ok', false, 'error', 'The project hub is for active members of the club.'); end if;
+  begin d := clean_domains(p_domains, 1, 5); exception when others then return json_build_object('ok', false, 'error', 'Pick between 1 and 5 areas from the list.'); end;
+  begin s := clean_tags(p_skills, 8); exception when others then return json_build_object('ok', false, 'error', 'Add up to 8 skills, each 2 to 24 characters (letters, numbers, + # . -).'); end;
+  if w is not null and (length(w) > 280 or looks_like_secret(w)) then return json_build_object('ok', false, 'error', 'Keep "what I''d like to build" under 280 characters, and no passwords or keys.'); end if;
+  if p_hours is not null and p_hours not in ('1-2','3-5','6+') then return json_build_object('ok', false, 'error', 'Pick how many hours a week.'); end if;
+  insert into member_interests (user_id, domains, skills, wants, hours, discoverable) values (auth.uid(), d, s, w, p_hours, coalesce(p_discoverable, false))
+  on conflict (user_id) do update set domains = excluded.domains, skills = excluded.skills, wants = excluded.wants, hours = excluded.hours, discoverable = excluded.discoverable, updated_at = now();
+  perform crm_log('interests_saved', 'interests', null, jsonb_build_object('discoverable', coalesce(p_discoverable, false)));
+  return json_build_object('ok', true);
+end $$;
+
+create or replace function delete_interests() returns json language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  delete from member_interests where user_id = auth.uid();
+  perform crm_log('interests_deleted', 'interests', null, '{}');
+  return json_build_object('ok', true);
+end $$;
+
+-- What the club is into. The core team and admins see exact counts; members see a count only when at least 3 people share it,
+-- so a small number can't point at one person.
+create or replace function survey_summary() returns json language plpgsql security definer stable set search_path = public, pg_temp as $$
+declare staff boolean := my_role() in ('core','admin'); res json;
+begin
+  if not can_take_part() then return json_build_object('allowed', false); end if;
+  select json_build_object('allowed', true, 'responses', (select count(*) from member_interests),
+    'members', case when staff then (select count(*) from members where status = 'active') end,
+    'domains', coalesce((select json_agg(json_build_object('domain', d.domain, 'count', case when staff or d.n >= 3 then d.n end) order by d.n desc, d.domain)
+        from (select x as domain, count(*)::int n from member_interests, unnest(domains) x group by x) d), '[]'::json),
+    'skills', coalesce((select json_agg(json_build_object('skill', k.skill, 'count', k.n) order by k.n desc, k.skill)
+        from (select x as skill, count(*)::int n from member_interests, unnest(skills) x group by x having staff or count(*) >= 3 order by count(*) desc, x limit 12) k), '[]'::json),
+    'hours', coalesce((select json_object_agg(h.hours, case when staff or h.n >= 3 then h.n end) from (select hours, count(*)::int n from member_interests where hours is not null group by hours) h), '{}'::json)) into res;
+  return res;
+end $$;
+
+-- Members who ticked "let teammates find me", filtered by area and/or skill. Never anyone who didn't opt in.
+create or replace function find_teammates(p_domain text default null, p_skill text default null)
+returns table (handle text, name text, domains text[], skills text[], wants text, hours text)
+language plpgsql security definer stable set search_path = public, pg_temp as $$
+declare sk text := nullif(lower(btrim(coalesce(p_skill, ''))), '');
+begin
+  if not can_take_part() then return; end if;
+  return query
+    select p.handle, p.name, i.domains, i.skills, i.wants, i.hours
+      from member_interests i join profiles p on p.id = i.user_id
+      join members m on m.user_id = i.user_id and m.status = 'active'
+     where i.discoverable and i.user_id <> auth.uid()
+       and (p_domain is null or p_domain = any(i.domains))
+       and (sk is null or exists (select 1 from unnest(i.skills) s where s = sk or s like sk || '%'))
+     order by p.name limit 40;
+end $$;
+
+-- ---- ideas and teams ----
+create or replace function post_idea(p_title text, p_summary text, p_domains text[], p_skills text[], p_team_size int, p_repo_url text, p_club boolean default false) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare d text[]; s text[]; pid bigint; r text := nullif(trim(coalesce(p_repo_url, '')), ''); sm text := trim(coalesce(p_summary, ''));
+begin
+  if not can_take_part() then return json_build_object('ok', false, 'error', 'The project hub is for active members of the club.'); end if;
+  if coalesce(p_club, false) and my_role() not in ('core','admin') then return json_build_object('ok', false, 'error', 'Only the core team posts club projects.'); end if;
+  begin d := clean_domains(p_domains, 1, 3); exception when others then return json_build_object('ok', false, 'error', 'Pick between 1 and 3 areas from the list.'); end;
+  begin s := clean_tags(p_skills, 8); exception when others then return json_build_object('ok', false, 'error', 'Add up to 8 skills, each 2 to 24 characters (letters, numbers, + # . -).'); end;
+  if p_team_size is not null and p_team_size not between 2 and 12 then return json_build_object('ok', false, 'error', 'A team is 2 to 12 people.'); end if;
+  if p_team_size is null and not coalesce(p_club, false) then return json_build_object('ok', false, 'error', 'Say how many people you need (2 to 12).'); end if;
+  if looks_like_secret(sm) or looks_like_secret(p_title) then return json_build_object('ok', false, 'error', 'That looks like a password, key or token. Never post those.'); end if;
+  if (select count(*) from project_ideas where owner_id = auth.uid() and status in ('idea','forming','building')) >= 5 then return json_build_object('ok', false, 'error', 'You already have 5 active projects. Finish or archive one first.'); end if;
+  insert into project_ideas (title, summary, domains, skills_wanted, team_size, repo_url, origin, owner_id) values (trim(p_title), sm, d, s, p_team_size, r, case when coalesce(p_club, false) then 'club' else 'member' end, auth.uid()) returning id into pid;
+  insert into project_members (project_id, user_id, role) values (pid, auth.uid(), 'owner');
+  perform crm_log('idea_posted', 'project', pid::text, jsonb_build_object('club', coalesce(p_club, false)));
+  return json_build_object('ok', true, 'id', pid);
+exception when check_violation then return json_build_object('ok', false, 'error', 'Check the title (3 to 100 characters), the summary (10 to 600) and that the repository link is a github.com/owner/repo address.');
+end $$;
+
+-- The owner edits their idea. Changing what the public sees (title, summary, areas, skills or the repository) on a featured
+-- project sends it back to the core team for a fresh look, so the public page is never edited around the review.
+create or replace function update_idea(p_id bigint, p_title text, p_summary text, p_domains text[], p_skills text[], p_team_size int, p_repo_url text) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p project_ideas; d text[]; s text[]; r text := nullif(trim(coalesce(p_repo_url, '')), ''); sm text := trim(coalesce(p_summary, '')); changed boolean;
+begin
+  select * into p from project_ideas where id = p_id for update;
+  if not found or not can_take_part() or p.owner_id is distinct from auth.uid() then return json_build_object('ok', false, 'error', 'Only the owner can edit a project.'); end if;
+  if p.status = 'archived' then return json_build_object('ok', false, 'error', 'An archived project can''t be edited.'); end if;
+  begin d := clean_domains(p_domains, 1, 3); exception when others then return json_build_object('ok', false, 'error', 'Pick between 1 and 3 areas from the list.'); end;
+  begin s := clean_tags(p_skills, 8); exception when others then return json_build_object('ok', false, 'error', 'Add up to 8 skills, each 2 to 24 characters (letters, numbers, + # . -).'); end;
+  if p_team_size is not null and p_team_size not between 2 and 12 then return json_build_object('ok', false, 'error', 'A team is 2 to 12 people.'); end if;
+  if p_team_size is null and p.origin = 'member' then return json_build_object('ok', false, 'error', 'Say how many people you need (2 to 12).'); end if;
+  if p_team_size is not null and p_team_size < (select count(*) from project_members where project_id = p_id) then return json_build_object('ok', false, 'error', 'The team already has more people than that.'); end if;
+  if looks_like_secret(sm) or looks_like_secret(p_title) then return json_build_object('ok', false, 'error', 'That looks like a password, key or token. Never post those.'); end if;
+  changed := trim(p_title) is distinct from p.title or sm is distinct from p.summary or d is distinct from p.domains or s is distinct from p.skills_wanted or r is distinct from p.repo_url;
+  update project_ideas set title = trim(p_title), summary = sm, domains = d, skills_wanted = s, team_size = p_team_size, repo_url = r, updated_at = now(),
+         publish_state = case when p.publish_state = 'published' and changed then 'requested' else publish_state end,
+         published_at = case when p.publish_state = 'published' and changed then null else published_at end where id = p_id;
+  perform crm_log('idea_updated', 'project', p_id::text, jsonb_build_object('back_to_review', p.publish_state = 'published' and changed));
+  return json_build_object('ok', true, 'back_to_review', p.publish_state = 'published' and changed);
+exception when check_violation then return json_build_object('ok', false, 'error', 'Check the title (3 to 100 characters), the summary (10 to 600) and that the repository link is a github.com/owner/repo address.');
+end $$;
+
+-- idea → forming | building | archived; forming → idea | building | archived; building → forming | shipped | archived;
+-- shipped → building | archived. The owner or an admin; only an admin brings an archived project back (as an idea).
+create or replace function set_idea_status(p_id bigint, p_status text) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p project_ideas;
+begin
+  select * into p from project_ideas where id = p_id for update;
+  if not found or not can_take_part() or not (p.owner_id = auth.uid() or my_role() = 'admin') then return json_build_object('ok', false, 'error', 'Only the owner or an admin can change a project''s status.'); end if;
+  if not ((p.status = 'idea' and p_status in ('forming','building','archived')) or (p.status = 'forming' and p_status in ('idea','building','archived'))
+          or (p.status = 'building' and p_status in ('forming','shipped','archived')) or (p.status = 'shipped' and p_status in ('building','archived'))
+          or (p.status = 'archived' and p_status = 'idea' and my_role() = 'admin')) then
+    return json_build_object('ok', false, 'error', 'A ' || p.status || ' project can''t become ' || coalesce(p_status, 'that') || '.');
+  end if;
+  update project_ideas set status = p_status, updated_at = now(),
+         publish_state = case when p_status = 'archived' then 'private' else publish_state end,
+         published_at = case when p_status = 'archived' then null else published_at end where id = p_id;
+  if p_status = 'archived' then update project_requests set status = 'withdrawn', decided_at = now() where project_id = p_id and status = 'pending'; end if;
+  perform crm_log('idea_status', 'project', p_id::text, jsonb_build_object('from', p.status, 'to', p_status));
+  return json_build_object('ok', true);
+end $$;
+
+create or replace function request_to_join(p_id bigint, p_message text default '') returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p project_ideas; msg text := nullif(trim(coalesce(p_message, '')), ''); rid bigint; r project_requests;
+begin
+  if not can_take_part() then return json_build_object('ok', false, 'error', 'The project hub is for active members of the club.'); end if;
+  select * into p from project_ideas where id = p_id;
+  if not found or p.status not in ('idea','forming','building') then return json_build_object('ok', false, 'error', 'That project isn''t looking for people.'); end if;
+  if exists (select 1 from project_members where project_id = p_id and user_id = auth.uid()) then return json_build_object('ok', false, 'error', 'You are already on this team.'); end if;
+  if p.team_size is not null and (select count(*) from project_members where project_id = p_id) >= p.team_size then return json_build_object('ok', false, 'error', 'This team is full.'); end if;
+  if msg is not null and (length(msg) > 300 or looks_like_secret(msg)) then return json_build_object('ok', false, 'error', 'Keep your message under 300 characters, and no passwords or keys.'); end if;
+  select * into r from project_requests where project_id = p_id and user_id = auth.uid();
+  if found and r.status in ('pending','accepted') then return json_build_object('ok', false, 'error', 'You have already asked to join this project.'); end if;
+  if found and r.status = 'declined' then return json_build_object('ok', false, 'error', 'The owner has already answered your request.'); end if;
+  insert into project_requests (project_id, user_id, message) values (p_id, auth.uid(), msg)
+  on conflict (project_id, user_id) do update set status = 'pending', message = excluded.message, created_at = now(), decided_at = null returning id into rid;
+  perform crm_log('request_sent', 'project', p_id::text, jsonb_build_object('request', rid));
+  return json_build_object('ok', true);
+end $$;
+
+create or replace function withdraw_request(p_request bigint) returns json language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  update project_requests set status = 'withdrawn', decided_at = now() where id = p_request and user_id = auth.uid() and status = 'pending';
+  if not found then return json_build_object('ok', false, 'error', 'There is no pending request to withdraw.'); end if;
+  perform crm_log('request_withdrawn', 'project', p_request::text, '{}');
+  return json_build_object('ok', true);
+end $$;
+
+-- The owner (or an admin) answers a request. Accepting adds the person to the team, unless the team is full.
+create or replace function decide_request(p_request bigint, p_accept boolean) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare r project_requests; p project_ideas;
+begin
+  select * into r from project_requests where id = p_request for update;
+  if not found then return json_build_object('ok', false, 'error', 'That request isn''t available to you.'); end if;
+  select * into p from project_ideas where id = r.project_id for update;
+  if not can_take_part() or not (p.owner_id = auth.uid() or my_role() = 'admin') then return json_build_object('ok', false, 'error', 'That request isn''t available to you.'); end if;
+  if r.status <> 'pending' then return json_build_object('ok', false, 'error', 'That request has already been answered.'); end if;
+  if coalesce(p_accept, false) then
+    if p.status not in ('idea','forming','building') then return json_build_object('ok', false, 'error', 'This project isn''t looking for people.'); end if;
+    if p.team_size is not null and (select count(*) from project_members where project_id = p.id) >= p.team_size then return json_build_object('ok', false, 'error', 'The team is full.'); end if;
+    if role_of(r.user_id) = 'none' or not exists (select 1 from members m where m.user_id = r.user_id and m.status = 'active') and role_of(r.user_id) not in ('core','admin') then
+      return json_build_object('ok', false, 'error', 'That person is no longer an active member.');
+    end if;
+    insert into project_members (project_id, user_id) values (p.id, r.user_id) on conflict do nothing;
+    update project_ideas set status = case when status = 'idea' then 'forming' else status end, updated_at = now() where id = p.id;
+  end if;
+  update project_requests set status = case when coalesce(p_accept, false) then 'accepted' else 'declined' end, decided_at = now() where id = p_request;
+  perform crm_log('request_decided', 'project', p.id::text, jsonb_build_object('accepted', coalesce(p_accept, false)));
+  return json_build_object('ok', true);
+end $$;
+
+create or replace function leave_project(p_id bigint) returns json language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  delete from project_members where project_id = p_id and user_id = auth.uid() and role <> 'owner';
+  if not found then return json_build_object('ok', false, 'error', 'The owner can''t leave: hand the project to someone else, or archive it.'); end if;
+  update project_requests set status = 'withdrawn', decided_at = now() where project_id = p_id and user_id = auth.uid();
+  perform crm_log('member_left_project', 'project', p_id::text, '{}');
+  return json_build_object('ok', true);
+end $$;
+
+create or replace function remove_project_member(p_id bigint, p_user uuid) returns json language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if not exists (select 1 from project_ideas where id = p_id and (owner_id = auth.uid() or my_role() = 'admin')) or not can_take_part() then return json_build_object('ok', false, 'error', 'Only the owner or an admin can remove someone.'); end if;
+  delete from project_members where project_id = p_id and user_id = p_user and role <> 'owner';
+  if not found then return json_build_object('ok', false, 'error', 'That person is not a member of this team, or is its owner.'); end if;
+  update project_requests set status = 'withdrawn', decided_at = now() where project_id = p_id and user_id = p_user;
+  perform crm_log('project_member_removed', 'project', p_id::text, jsonb_build_object('user', p_user));
+  return json_build_object('ok', true);
+end $$;
+
+-- An admin hands a project to another member of its team (the owner has left the club, say).
+create or replace function set_project_owner(p_id bigint, p_handle text) returns json language plpgsql security definer set search_path = public, pg_temp as $$
+declare o uuid;
+begin
+  if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins hand a project to someone else.'); end if;
+  select id into o from profiles where lower(handle) = lower(ltrim(trim(coalesce(p_handle, '')), '@'));
+  if o is null or not exists (select 1 from project_members where project_id = p_id and user_id = o) then return json_build_object('ok', false, 'error', 'The new owner has to be on the project''s team already.'); end if;
+  update project_members set role = 'member' where project_id = p_id and role = 'owner';
+  update project_members set role = 'owner' where project_id = p_id and user_id = o;
+  update project_ideas set owner_id = o, updated_at = now() where id = p_id;
+  perform crm_log('project_owner', 'project', p_id::text, jsonb_build_object('owner', o));
+  return json_build_object('ok', true);
+end $$;
+
+-- Each person decides whether their GitHub name appears on the public page for a featured project.
+create or replace function set_public_credit(p_id bigint, p_show boolean) returns json language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  update project_members set shows_publicly = coalesce(p_show, false) where project_id = p_id and user_id = auth.uid();
+  if not found then return json_build_object('ok', false, 'error', 'You are not on this team.'); end if;
+  perform crm_log('public_credit', 'project', p_id::text, jsonb_build_object('show', coalesce(p_show, false)));
+  return json_build_object('ok', true);
+end $$;
+
+-- ---- the website ----
+create or replace function request_publishing(p_id bigint) returns json language plpgsql security definer set search_path = public, pg_temp as $$
+declare p project_ideas;
+begin
+  select * into p from project_ideas where id = p_id for update;
+  if not found or not can_take_part() or p.owner_id is distinct from auth.uid() then return json_build_object('ok', false, 'error', 'Only the owner can ask for a project to be featured.'); end if;
+  if p.status not in ('building','shipped') then return json_build_object('ok', false, 'error', 'A project can be featured once it is being built.'); end if;
+  if length(p.summary) < 40 then return json_build_object('ok', false, 'error', 'Write a summary of at least a couple of sentences first.'); end if;
+  if p.publish_state <> 'private' then return json_build_object('ok', false, 'error', 'It is already ' || case p.publish_state when 'requested' then 'waiting for a review' else 'featured' end || '.'); end if;
+  update project_ideas set publish_state = 'requested', publish_note = null, updated_at = now() where id = p_id;
+  perform crm_log('publish_requested', 'project', p_id::text, '{}');
+  return json_build_object('ok', true);
+end $$;
+
+-- The core team or an admin, who must not be the project's owner, features it on the website or sends it back with a reason.
+create or replace function decide_publishing(p_id bigint, p_approve boolean, p_note text default '') returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare p project_ideas; n text := nullif(trim(coalesce(p_note, '')), '');
+begin
+  if my_role() not in ('core','admin') then return json_build_object('ok', false, 'error', 'Only the core team and admins feature projects.'); end if;
+  select * into p from project_ideas where id = p_id for update;
+  if not found then return json_build_object('ok', false, 'error', 'Project not found.'); end if;
+  if p.owner_id is not distinct from auth.uid() or exists (select 1 from project_members where project_id = p_id and user_id = auth.uid() and role = 'owner') then return json_build_object('ok', false, 'error', 'You can''t review your own project. Ask someone else on the core team.'); end if;
+  if p.publish_state <> 'requested' then return json_build_object('ok', false, 'error', 'This project isn''t waiting for a review.'); end if;
+  if not coalesce(p_approve, false) and (n is null or length(n) < 3) then return json_build_object('ok', false, 'error', 'Say what to change, so the team knows what to do next.'); end if;
+  if n is not null and (length(n) > 300 or looks_like_secret(n)) then return json_build_object('ok', false, 'error', 'Keep the note under 300 characters.'); end if;
+  update project_ideas set publish_state = case when coalesce(p_approve, false) then 'published' else 'private' end, publish_note = n,
+         published_at = case when coalesce(p_approve, false) then now() else null end, updated_at = now() where id = p_id;
+  perform crm_log('publish_decided', 'project', p_id::text, jsonb_build_object('approved', coalesce(p_approve, false)));
+  return json_build_object('ok', true);
+end $$;
+
+create or replace function unpublish_project(p_id bigint) returns json language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if not exists (select 1 from project_ideas where id = p_id and (owner_id = auth.uid() or my_role() in ('core','admin'))) then return json_build_object('ok', false, 'error', 'Only the owner or the core team can take a project off the website.'); end if;
+  update project_ideas set publish_state = 'private', published_at = null, updated_at = now() where id = p_id and publish_state <> 'private';
+  if not found then return json_build_object('ok', false, 'error', 'It isn''t on the website.'); end if;
+  perform crm_log('project_unpublished', 'project', p_id::text, '{}');
+  return json_build_object('ok', true);
+end $$;
+
+-- What /projects shows (server key only): featured projects, with GitHub names only for members who agreed.
+create or replace function public_projects() returns json language sql security definer stable set search_path = public, pg_temp as $$
+  select coalesce(json_agg(json_build_object('id', p.id, 'title', p.title, 'summary', p.summary, 'domains', p.domains, 'skills', p.skills_wanted, 'status', p.status,
+      'repo_url', p.repo_url, 'club', p.origin = 'club', 'team_count', (select count(*) from project_members m where m.project_id = p.id),
+      'people', coalesce((select json_agg(pr.handle order by pr.handle) from project_members m join profiles pr on pr.id = m.user_id where m.project_id = p.id and m.shows_publicly), '[]'::json))
+      order by p.published_at desc), '[]'::json)
+  from project_ideas p where p.publish_state = 'published' and p.status <> 'archived'
+$$;
+
+revoke execute on function can_take_part(), save_interests(text[], text[], text, text, boolean), delete_interests(), survey_summary(), find_teammates(text, text),
+  post_idea(text, text, text[], text[], int, text, boolean), update_idea(bigint, text, text, text[], text[], int, text), set_idea_status(bigint, text), request_to_join(bigint, text),
+  withdraw_request(bigint), decide_request(bigint, boolean), leave_project(bigint), remove_project_member(bigint, uuid), set_project_owner(bigint, text), set_public_credit(bigint, boolean),
+  request_publishing(bigint), decide_publishing(bigint, boolean, text), unpublish_project(bigint) from public, anon;
+grant execute on function can_take_part(), save_interests(text[], text[], text, text, boolean), delete_interests(), survey_summary(), find_teammates(text, text),
+  post_idea(text, text, text[], text[], int, text, boolean), update_idea(bigint, text, text, text[], text[], int, text), set_idea_status(bigint, text), request_to_join(bigint, text),
+  withdraw_request(bigint), decide_request(bigint, boolean), leave_project(bigint), remove_project_member(bigint, uuid), set_project_owner(bigint, text), set_public_credit(bigint, boolean),
+  request_publishing(bigint), decide_publishing(bigint, boolean, text), unpublish_project(bigint) to authenticated;
+revoke execute on function public_projects() from public, anon, authenticated;
+grant execute on function public_projects() to service_role;
