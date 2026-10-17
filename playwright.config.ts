@@ -15,6 +15,6 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["list"]] : "list",
   use: { baseURL: `http://localhost:${PORT}`, trace: "retain-on-failure", ...devices["Desktop Chrome"], channel: process.env.CI ? undefined : "msedge" },
-  webServer: { command: `npx next start -p ${PORT}`, url: `http://localhost:${PORT}`, reuseExistingServer: !process.env.CI, timeout: 60_000, env: { NODE_ENV: "test" } },
+  webServer: { command: `npx next start -p ${PORT}`, url: `http://localhost:${PORT}`, reuseExistingServer: !process.env.CI, timeout: 60_000, env: { NODE_ENV: "test", CERT_SAMPLE: "1" } } // CERT_SAMPLE: the certificate designs are checked too,
   projects: [{ name: "desktop", testIgnore: /phone.spec.ts/ }, { name: "phone", use: { ...devices["Pixel 7"], channel: process.env.CI ? undefined : "msedge" }, testMatch: /phone\.spec\.ts/ }],
 });
