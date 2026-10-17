@@ -4,7 +4,14 @@ For whoever runs the site in 2027-28 (and every year after). Most of it happens 
 open `https://<the site>/keystatic`, sign in with GitHub, change things, press **Save**. The site
 updates itself a minute or two later. Set aside an evening; nothing here needs code.
 
-Do the steps in order. Tick them off in a GitHub issue so the next team can see what was done.
+Do the steps in order. **Tick them off in the app:** an admin opens `/admin` → **Assets & handover** → *Handover checklist*,
+starts a handover for the new term, and ticks each step as it is done (or waives it, with a reason). It has the
+same eight steps as below, one group at a time, and it keeps the record. The handover can only be completed when every
+step is done or waived. This page explains each step.
+
+Before you start, open the **Registry** tab in the same place: every account the club depends on (domain, Vercel,
+Supabase, GitHub, the club Gmail, Luma and so on) should have an **owner** and a different **backup**, both with current
+access. The page and the Monday digest warn about any that don't. Never write a password or key there; say where it is kept.
 
 ## 1. Get the keys
 
