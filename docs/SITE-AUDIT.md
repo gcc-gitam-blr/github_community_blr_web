@@ -32,7 +32,7 @@ behind it was read. Section 9 lists what this audit changed; section 10 is what'
 | Pages ended without a next step | High | **Fixed**: the same bands on Learn, Contribute, Board, Projects and Updates |
 | On phones, the "New · Epoch" pill covered the top line of the home hero | Medium | **Fixed** |
 | In dark mode, warning text added with the admin tools stayed dark brown on a dark background | Medium | **Fixed** |
-| The admin's Overview, Sign-ups, Messages and Feedback panels use Epoch's glassy style inside the GitHub-styled admin | Low | Left: they are shared with the Epoch desk; worth unifying when either is next touched |
+| The admin's Overview, Sign-ups, Messages and Feedback panels use Epoch's glassy style inside the GitHub-styled admin | Low | **Fixed**: the admin has its own parts now (one kit for every tab), a home that greets you, and a menu drawn as a branch |
 | Lots of single-column white space on wide screens on Board, Projects and My club when there's no data | Low | Better now (bands, path, member card); goes away as real data arrives |
 
 ## 3. Finding your way (information architecture)
@@ -151,7 +151,7 @@ the writing pass. Every change has its tests, and the full suite passes.
    - ask members to sign in to My club, fill in "What I'm into" in the hub, and tick *Show me on the board*.
 2. **Use it for one month, then look at the activity log** (Admin → Activity): which tabs nobody touched? Hide or
    merge those rather than adding new ones.
-3. **Unify the admin's Overview, Sign-ups, Messages and Feedback panels** with the rest of the admin style.
+3. ~~Unify the admin's Overview, Sign-ups, Messages and Feedback panels with the rest of the admin style.~~ Done.
 4. **Email nudges for members** (optional): "your certificate is ready", "someone asked to join your project". These
    are the two moments most likely to bring someone back. Only worth it once members actually use the hub.
 5. **Revisit the six-month question for the first round of recruitment**: applications still open after a round

@@ -6,14 +6,11 @@ import {
   type DecisionRow, type Meeting, type MeetingNote, type Task,
 } from "@/lib/admin/client";
 import { niceDate, todayIST } from "@/lib/admin/appointments";
+import { Composer, State, btn, btnSoft, card, count, head, input } from "./kit";
 
 /* Meetings and the decisions register. Minutes can be edited until they are finalised, then never again (a correction
    is a note beside them). A decision is never edited or deleted: an admin records a new one that supersedes it, and
    both stay. Action items are tasks that point at the meeting. The database enforces all of it. */
-const card = "rounded-[12px] border border-line bg-white";
-const btn = "inline-flex items-center justify-center rounded-md bg-ink px-4 py-2.5 text-[14.5px] font-semibold text-white transition hover:bg-ink/85 disabled:opacity-50";
-const btnSoft = "inline-flex items-center justify-center rounded-md border border-line bg-white px-3 py-2 text-[14px] font-semibold transition hover:bg-soft disabled:opacity-50";
-const input = "w-full rounded-md border border-line bg-white px-3 py-2.5 text-[15px]";
 const KINDS: Meeting["kind"][] = ["core", "general", "planning", "review", "other"];
 type Data = { list: Meeting[]; notes: MeetingNote[]; attendees: { meeting_id: number; user_id: string }[]; decisions: DecisionRow[]; names: Record<string, string> };
 type Note = { k: "ok" | "err"; t: string } | null;
@@ -40,18 +37,17 @@ export function Meetings({ admin, meId }: { admin: boolean; meId: string }) {
       </div>
 
       {view === "meetings" ? (<>
-        <section className={`${card} p-5`} aria-labelledby="mtg-h">
-          <h2 id="mtg-h" className="text-[18px]">New meeting</h2>
-          <form onSubmit={(e) => { e.preventDefault(); void run(createMeeting(f.title, f.held, f.kind, f.agenda), "Meeting created.").then((ok) => ok && setF({ ...f, title: "", agenda: "" })); }} className="mt-4 grid gap-3 sm:grid-cols-2">
+        <Composer id="mtg-h" title="New meeting">
+          <form onSubmit={(e) => { e.preventDefault(); void run(createMeeting(f.title, f.held, f.kind, f.agenda), "Meeting created.").then((ok) => ok && setF({ ...f, title: "", agenda: "" })); }} className="grid gap-3 sm:grid-cols-2">
             <label className="text-[14px] font-semibold sm:col-span-2">Title<input className={`${input} mt-1 font-normal`} value={f.title} maxLength={120} onChange={(e) => setF({ ...f, title: e.target.value })} /></label>
             <label className="text-[14px] font-semibold">Date<input type="date" className={`${input} mt-1 font-normal`} value={f.held} onChange={(e) => setF({ ...f, held: e.target.value })} /></label>
             <label className="text-[14px] font-semibold">Kind<select className={`${input} mt-1 font-normal`} value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value as Meeting["kind"] })}>{KINDS.map((k) => <option key={k} value={k}>{k[0].toUpperCase() + k.slice(1)}</option>)}</select></label>
             <label className="text-[14px] font-semibold sm:col-span-2">Agenda <span className="font-normal text-ink-3">(optional)</span><textarea rows={2} maxLength={3000} className={`${input} mt-1 font-normal`} value={f.agenda} onChange={(e) => setF({ ...f, agenda: e.target.value })} /></label>
             <div className="sm:col-span-2"><button disabled={busy || f.title.trim().length < 3 || !f.held} className={btn}>Create meeting</button></div>
           </form>
-        </section>
+        </Composer>
         <section className={card} aria-labelledby="mlist-h">
-          <h2 id="mlist-h" className="border-b border-line px-5 py-3 text-[18px]">Meetings <span className="ml-1 rounded-full bg-soft px-2 py-0.5 text-[12px] font-normal text-ink-3">{data?.list.length ?? 0}</span></h2>
+          <div className={head}><h2 id="mlist-h" className="text-[18px]">Meetings</h2><span className={count}>{data?.list.length ?? 0}</span></div>
           {data === null ? <p className="p-5 text-ink-3">Loading…</p> : data.list.length === 0 ? <p className="p-5 text-ink-3">No meetings yet.</p> : (
             <ul className="divide-y divide-line">
               {data.list.map((m) => <MeetingRow key={m.id} m={m} data={data} tasks={taskList.filter((t) => t.meeting_id === m.id)} team={team} mine={m.created_by === meId} admin={admin} busy={busy} run={run} />)}
@@ -76,7 +72,7 @@ function MeetingRow({ m, data, tasks, team, mine, admin, busy, run }: { m: Meeti
       <details className="group">
         <summary className="flex cursor-pointer list-none flex-wrap items-center gap-3 px-5 py-3 text-[14.5px] hover:bg-soft/60">
           <b>{m.title}</b><span className="text-ink-3">{niceDate(m.held_on)}</span>
-          <span className="rounded-full border border-line px-2.5 py-0.5 text-[13px]">{final ? "Minutes final" : m.minutes ? "Minutes in draft" : "No minutes yet"}</span>
+          <State tone={final ? "done" : m.minutes ? "draft" : "muted"}>{final ? "Minutes final" : m.minutes ? "Minutes in draft" : "No minutes yet"}</State>
           {tasks.length > 0 && <span className="text-[13.5px] text-ink-3">{tasks.length} action {tasks.length === 1 ? "item" : "items"}</span>}
           <span className="ml-auto text-[13px] text-ink-3 group-open:hidden">Open</span>
         </summary>
@@ -154,8 +150,7 @@ function Register({ data, admin, busy, run }: { data: Data | null; admin: boolea
   return (
     <>
       {admin && (
-        <section className={`${card} p-5`} aria-labelledby="dec-h">
-          <h2 id="dec-h" className="text-[18px]">Record a decision</h2>
+        <Composer id="dec-h" title="Record a decision made outside a meeting">
           <p className="mt-1 text-[14px] text-ink-2">For decisions that weren&apos;t made at a meeting listed here. Decisions made at a meeting are recorded on that meeting.</p>
           <form onSubmit={(e) => { e.preventDefault(); void run(recordDecision(null, d.title, d.decision, d.why, d.on), "Decision recorded.").then((ok) => ok && setD({ ...d, title: "", decision: "", why: "" })); }} className="mt-3 grid gap-3 sm:grid-cols-2">
             <label className="text-[14px] font-semibold">Title<input value={d.title} maxLength={140} onChange={(e) => setD({ ...d, title: e.target.value })} className={`${input} mt-1 font-normal`} /></label>
@@ -164,7 +159,7 @@ function Register({ data, admin, busy, run }: { data: Data | null; admin: boolea
             <label className="text-[14px] font-semibold sm:col-span-2">Why <span className="font-normal text-ink-3">(optional)</span><input value={d.why} maxLength={2000} onChange={(e) => setD({ ...d, why: e.target.value })} className={`${input} mt-1 font-normal`} /></label>
             <div className="sm:col-span-2"><button disabled={busy || d.title.trim().length < 3 || d.decision.trim().length < 3} className={btn}>Record decision</button></div>
           </form>
-        </section>
+        </Composer>
       )}
       <section className={card} aria-labelledby="reg-h">
         <div className="flex flex-wrap items-center gap-3 border-b border-line px-5 py-3">
@@ -180,7 +175,7 @@ function Register({ data, admin, busy, run }: { data: Data | null; admin: boolea
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <b className={x.status === "superseded" ? "text-ink-3" : ""}>{x.title}</b>
                   <span className="text-[13.5px] text-ink-3">{niceDate(x.decided_on)}{meetingOf(x.meeting_id) ? ` · ${meetingOf(x.meeting_id)!.title}` : ""}</span>
-                  {x.status === "superseded" && <span className="rounded-full border border-line px-2.5 py-0.5 text-[13px] text-ink-3">Superseded</span>}
+                  {x.status === "superseded" && <State tone="muted">Superseded</State>}
                   {admin && x.status === "active" && <button disabled={busy} onClick={() => { setReplacing(replacing === x.id ? null : x.id); setN({ title: x.title, decision: "", why: "" }); }} className="ml-auto text-ink-2 underline-offset-4 hover:underline" aria-expanded={replacing === x.id} aria-label={`Supersede ${x.title}`}>Supersede</button>}
                 </div>
                 <p className={`mt-1 whitespace-pre-wrap ${x.status === "superseded" ? "text-ink-3" : "text-ink-2"}`}>{x.decision}</p>

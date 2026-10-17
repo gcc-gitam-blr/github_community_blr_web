@@ -265,6 +265,32 @@ html.lenis, html.lenis body { height: auto; }
   .mini-label { animation: none; }
 }
 
+/* ---------- the admin's menu (components/admin/AdminApp.tsx): its sections hang off one branch, like the site's menu ----------
+   phones: a row of commits to swipe through; from tablets up: a vertical branch with a node per group and HEAD in green */
+.adm-branch { position: relative; display: flex; gap: 4px; } /* relative: the counts' hidden words stay inside the scrolling row on phones */
+.adm-group { display: none; }
+.adm-link { display: flex; align-items: center; gap: 10px; white-space: nowrap; border-radius: 999px; padding: 7px 12px 7px 10px; font-size: 14.5px; color: var(--color-ink-2);
+  transition: background-color 150ms ease, color 150ms ease; }
+.adm-branch .is-head .adm-link { color: var(--color-ink); font-weight: 650; background: #fff; box-shadow: inset 0 0 0 1px var(--color-line); }
+.adm-count { flex: none; min-width: 20px; padding: 2px 6px; border-radius: 999px; background: #fd8c73; color: #0b0b0f; text-align: center; font: 700 11.5px/1.25 var(--font-mono); }
+.adm-out { display: none; }
+@media (hover: hover) and (pointer: fine) { .adm-link:hover { color: var(--color-ink); background: rgb(11 11 15 / .045); } .adm-branch .is-head .adm-link:hover { background: #fff; } }
+@media (min-width: 768px) {
+  .adm-branch { position: relative; flex-direction: column; gap: 1px; }
+  .adm-branch::before { content: ""; position: absolute; left: 15px; top: 10px; bottom: 16px; width: 2px; border-radius: 2px; background: rgb(11 11 15 / .22); }
+  .adm-group { position: relative; display: flex; align-items: center; gap: 10px; padding: 16px 0 6px 6px; font: 600 11.5px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--color-ink-3); }
+  .adm-group:first-child { padding-top: 0; }
+  .adm-link { position: relative; flex: 1; min-width: 0; border-radius: 8px; padding: 7px 10px; }
+  .adm-out { display: flex; align-items: center; gap: 6px; margin: 14px 0 0 32px; font-size: 14px; color: var(--color-ink-2); }
+  .adm-out:hover { color: var(--color-ink); text-decoration: underline; text-underline-offset: 4px; }
+}
+:root[data-theme="dark"]:not(:has([data-light-only])) .adm-branch .is-head .adm-link { background: #161616; }
+:root[data-theme="dark"]:not(:has([data-light-only])) .adm-branch::before { background: rgb(255 255 255 / .16); }
+@media (hover: hover) and (pointer: fine) {
+  :root[data-theme="dark"]:not(:has([data-light-only])) .adm-link:hover { background: rgb(255 255 255 / .06); }
+  :root[data-theme="dark"]:not(:has([data-light-only])) .adm-branch .is-head .adm-link:hover { background: #161616; }
+}
+
 /* ---------- site search (components/site/SiteSearch.tsx) — only animates when opened with a click ---------- */
 @keyframes search-scrim { from { opacity: 0; } }
 @keyframes search-panel { from { opacity: 0; transform: translateY(-6px) scale(.98); } }
@@ -339,7 +365,8 @@ html.lenis, html.lenis body { height: auto; }
 }
 :root[data-theme="dark"]:not(:has([data-light-only])) body { background: #000; }
 :root[data-theme="dark"]:not(:has([data-light-only])) .head-pill { background: rgba(10, 10, 10, .72); border-color: rgba(255, 255, 255, .1); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 12px 32px -16px rgba(0, 0, 0, .9); }
-:root[data-theme="dark"]:not(:has([data-light-only])) :is(.commit-node, .mini-dot) { background: #000; }
+/* only the empty nodes go black: committed ones stay filled and HEAD stays green */
+:root[data-theme="dark"]:not(:has([data-light-only])) :is(.commit:not(.is-past, .is-head) .commit-node:not(.is-coin), .mini-dot:not(.is-past, .is-head, .is-coin)) { background: #000; }
 :root[data-theme="dark"]:not(:has([data-light-only])) .phone-menu__panel { background: #0a0a0a; }
 /* light islands: pastel badges, the green band and prints keep dark text, whatever the theme */
 :root[data-theme="dark"]:not(:has([data-light-only])) :is(.print, .cert, .bg-brand, .bg-\[\#fd8c73\], .bg-\[\#d8f5dd\], .bg-\[\#fffdf8\], .bg-\[\#ffc933\], .bg-\[\#ffd966\], .bg-\[\#b9e0f7\], .bg-node-blue, .bg-node-purple, .bg-node-mint, .bg-gold, [style*="background"]) {
