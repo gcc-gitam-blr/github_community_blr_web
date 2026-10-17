@@ -2320,8 +2320,8 @@ begin
   return query
     select p.handle, p.name, i.domains, i.skills, i.wants, i.hours
       from member_interests i join profiles p on p.id = i.user_id
-      join members m on m.user_id = i.user_id and m.status = 'active'
      where i.discoverable and i.user_id <> auth.uid()
+       and (role_of(i.user_id) in ('core','admin') or exists (select 1 from members m where m.user_id = i.user_id and m.status = 'active'))
        and (p_domain is null or p_domain = any(i.domains))
        and (sk is null or exists (select 1 from unnest(i.skills) s where s = sk or s like sk || '%'))
      order by p.name limit 40;
