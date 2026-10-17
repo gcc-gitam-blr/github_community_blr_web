@@ -150,7 +150,7 @@ export function Attendance({ admin }: { admin: boolean }) {
           </div>
         </div>
         {rows === null ? <p className="p-5 text-ink-3">Loading…</p> : rows.length === 0 ? <p className="p-5 text-ink-3">Nobody yet. Add the people who came, above.</p> : (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">{/* relative: keeps the hidden "Actions" label inside the scroll, or it widens the page on phones */}
             <table className="w-full min-w-[640px] text-left text-[14.5px]">
               <thead className="bg-soft text-[13px] text-ink-2"><tr><th className="px-5 py-2 font-normal">Name</th><th className="font-normal">Email</th><th className="font-normal">Certificate</th><th className="px-5 text-right font-normal"><span className="sr-only">Actions</span></th></tr></thead>
               <tbody>

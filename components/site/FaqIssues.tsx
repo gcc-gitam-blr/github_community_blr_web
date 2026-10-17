@@ -7,7 +7,7 @@ const LABELS: Record<number, { t: string; c: string }[]> = {
   0: [{ t: "epoch", c: "bg-[#ffd966]" }],
   1: [{ t: "epoch", c: "bg-[#ffd966]" }, { t: "coins", c: "bg-[#b9e0f7]" }],
   2: [{ t: "epoch", c: "bg-[#ffd966]" }, { t: "coins", c: "bg-[#b9e0f7]" }],
-  3: [{ t: "good first issue", c: "bg-[#b48be6] text-white" }],
+  3: [{ t: "good first issue", c: "bg-[#8250df] text-white" }],
   4: [{ t: "question", c: "bg-[#d8f5dd]" }],
 };
 

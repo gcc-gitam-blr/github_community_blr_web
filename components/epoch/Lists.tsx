@@ -331,10 +331,11 @@ export function FeedbackSummary() {
             return (
               <li key={e.date}>
                 <p className="flex flex-wrap items-baseline gap-x-3 text-[19px] font-medium">{e.title}<span className="text-[15px] font-normal text-mute">★ {avg.toFixed(1)} · {list.length} response{list.length === 1 ? "" : "s"}</span></p>
-                <ul className="mt-2 max-h-[220px] space-y-2 overflow-y-auto" data-lenis-prevent>
+                {/* it scrolls, so it takes keyboard focus: the arrow keys then scroll it */}
+                <ul tabIndex={0} aria-label={`What people wrote about ${e.title}`} className="mt-2 max-h-[220px] space-y-2 overflow-y-auto rounded-xl outline-offset-2 focus-visible:outline-2 focus-visible:outline-link" data-lenis-prevent>
                   {list.filter((f) => f.liked || f.improve).map((f) => (
                     <li key={f.id} className="rounded-xl bg-ink/[.04] px-4 py-3 text-[14.5px] leading-relaxed">
-                      <span className="font-mono text-[12px] text-mute">{"★".repeat(f.rating)}</span>
+                      <span role="img" aria-label={`${f.rating} of 5`} className="font-mono text-[12px] text-mute">{"★".repeat(f.rating)}</span>
                       {f.liked && <p><b className="font-medium">Liked:</b> {f.liked}</p>}
                       {f.improve && <p><b className="font-medium">Improve:</b> {f.improve}</p>}
                     </li>
