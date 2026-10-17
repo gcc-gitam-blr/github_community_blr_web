@@ -58,7 +58,7 @@ export function NextBand({ cmd, title, text, href, cta, second, tone = "brand" }
         </div>
         <div className="flex flex-wrap items-center gap-6 lg:justify-end">
           <Link href={href} className={`lift rounded-md border-2 px-[26px] py-[15px] font-display font-bold ${dark ? "border-brand bg-brand text-ink" : "border-ink bg-ink text-white"}`}>{cta}</Link>
-          {second && <Link href={second.href} className={`group inline-flex items-center gap-2 font-semibold ${dark ? "text-white" : "text-ink"} underline-offset-4 hover:underline`}>{second.label} <span className="transition-transform group-hover:translate-x-1">→</span></Link>}
+          {second && <a href={second.href} {...(second.href.endsWith(".ics") ? { download: true } : {})} className={`group inline-flex items-center gap-2 font-semibold ${dark ? "text-white" : "text-ink"} underline-offset-4 hover:underline`}>{second.label} <span className="transition-transform group-hover:translate-x-1">→</span></a>}
         </div>
       </div>
     </section>
