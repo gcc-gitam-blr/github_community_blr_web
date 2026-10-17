@@ -28,7 +28,7 @@ const EXPECTED: Record<string, string[]> = {
   // appointments: each checks my_role() = 'admin' (or organiser, for list_people) itself
   grant_appointment: SIGNED_IN, end_appointment: SIGNED_IN, list_people: SIGNED_IN,
   role_of: NOBODY, crm_log: NOBODY, profile_role_mirror: NOBODY, appointment_changed: NOBODY, // internal: other functions and triggers only
-  sync_profile_roles: SERVER, appointment_warnings: SERVER, bootstrap_admin: SERVER, // the weekly digest, and the first admin from the SQL editor
+  sync_profile_roles: SERVER, appointment_warnings: SERVER, admin_emails: SERVER, bootstrap_admin: SERVER, // the weekly digest, and the first admin from the SQL editor
   booth_tx: NOBODY, log_action: NOBODY, bump_leaderboard: NOBODY, // internal: other functions and triggers only
   my_role: ANYONE, // used by row-level-security policies, so every role must be able to run it; it only ever answers about the caller
   // public by design: a certificate is verified by its unguessable id; browser error reports are capped at 2000 a day
