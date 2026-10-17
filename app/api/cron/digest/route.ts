@@ -33,10 +33,15 @@ export async function GET(req: Request) {
     db.from("event_feedback").select("event, rating").gte("created_at", since).limit(2000),
   ]);
   if (s.error || m.error || f.error) return json({ ok: false, error: "Couldn't read the past week." }, 502);
-  const digest = buildDigest({ signups: s.data ?? [], messages: m.data ?? [], feedback: f.data ?? [] }, now);
+  // access that is about to end, and whether two admins remain; also lets the display copies of roles catch up with expired appointments
+  const w = await db.rpc("appointment_warnings");
+  if (w.error) console.error("digest: appointment_warnings failed (is supabase/schema.sql up to date?):", w.error.message);
+  else await db.rpc("sync_profile_roles");
+  const digest = buildDigest({ signups: s.data ?? [], messages: m.data ?? [], feedback: f.data ?? [], access: w.error ? undefined : w.data }, now);
   if (!digest) return json({ ok: true, sent: 0, skipped: "Nothing happened this week." });
 
-  const admins = process.env.ORGANISER_EMAILS?.trim() ? [] : (await db.from("profiles").select("email").eq("role", "admin")).data ?? [];
+  // admins are whoever holds an active admin appointment today (appointment_admin_emails), not the profile's role copy
+  const admins = process.env.ORGANISER_EMAILS?.trim() ? [] : ((await db.rpc("admin_emails")).data ?? []) as { email: string | null }[];
   const to = digestRecipients(process.env.ORGANISER_EMAILS, admins);
   if (!to.length) return json({ ok: true, sent: 0, skipped: "No organiser email to send to (set ORGANISER_EMAILS, or make someone admin)." });
   const mail = digestEmail(digest, SITE_URL);

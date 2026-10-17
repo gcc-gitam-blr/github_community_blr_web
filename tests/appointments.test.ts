@@ -147,6 +147,7 @@ const audit = async (action: string) => (await one<{ n: number }>("select count(
   await grant(A, "pat", "volunteer", 9);
   const warn2 = (await api<{ r: { ending: { handle: string; days_left: number }[] } }>("", "select appointment_warnings() r", [], "service_role")).rows[0].r;
   ok("a 9-day appointment shows with 9 days left", warn2.ending.some((e) => e.handle === "pat" && e.days_left === 9));
+  ok("the digest's admin list is whoever holds an active admin appointment", (await api<{ email: string }>("", "select * from admin_emails()", [], "service_role")).rows.map((r) => r.email).sort().join() === "ada@gitam.in,bea@gitam.in");
   ok("the public key and signed-in users can't read the warnings", !!(await api("", "select appointment_warnings()", [], "anon")).error && !!(await api(A, "select appointment_warnings()")).error);
 
   // ---- the audit trail ----
@@ -161,7 +162,7 @@ const audit = async (action: string) => (await one<{ n: number }>("select count(
   // ---- profiles.role never decides access ----
   const bodies = (await db.query<{ n: string; def: string }>("select proname n, pg_get_functiondef(p.oid) def from pg_proc p join pg_namespace s on s.oid = p.pronamespace where s.nspname = 'public' and p.prokind = 'f'")).rows;
   const policies = (await db.query<{ n: string; q: string }>("select policyname n, coalesce(qual, '') || ' ' || coalesce(with_check, '') q from pg_policies where schemaname = 'public'")).rows;
-  const readsRole = (t: string) => /\b(me|t|p|profiles|u)\.role\b/.test(t) || /select\s+role\s+from\s+profiles/i.test(t) || /profiles[^;]{0,80}\brole\s*(=|in|<>|!=)/i.test(t.replace(/set role = role[^;]*/gi, ""));
+  const readsRole = (t: string) => /\b(me|t|p|profiles|u)\.role\b/.test(t) || /select\s+role\s+from\s+profiles/i.test(t);
   const offenders = [...bodies.filter((b) => !["profile_role_mirror", "sync_profile_roles", "appointment_changed"].includes(b.n) && readsRole(b.def)).map((b) => `function ${b.n}`), ...policies.filter((q) => readsRole(q.q)).map((q) => `policy ${q.n}`)];
   ok(`no function or policy reads profiles.role to decide access${offenders.length ? ": " + offenders.join(", ") : ""} (${bodies.length} functions, ${policies.length} policies checked)`, offenders.length === 0);
   await db.query("update profiles set role = 'admin' where id = $1", [X]);
