@@ -89,7 +89,7 @@ export async function clientErrors(): Promise<ErrorRow[] | null> {
 }
 
 /** Calls one of the database's functions that answer { ok, error?, … }; the database decides whether the caller may. */
-async function rpcRes<T extends object = object>(fn: string, args: Record<string, unknown>, failed = "That didn't work. Please try again."): Promise<Res<T>> {
+export async function rpcRes<T extends object = object>(fn: string, args: Record<string, unknown>, failed = "That didn't work. Please try again."): Promise<Res<T>> {
   const { data, error } = await supabase().rpc(fn, args);
   if (error) return { ok: false, error: error.message };
   return data?.ok ? { ok: true, ...(data as T) } : { ok: false, error: data?.error ?? failed };
