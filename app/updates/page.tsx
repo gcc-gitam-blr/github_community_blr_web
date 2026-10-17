@@ -3,6 +3,7 @@ import Link from "next/link";
 import { RssIcon } from "@primer/octicons-react";
 import { Nav } from "@/components/site/Nav";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { NextBand } from "@/components/site/Journey";
 import { UpdateTag } from "@/components/site/UpdateTag";
 import { getUpdates, updateDate } from "@/lib/updates";
 import { GitHubChangelog } from "@/components/site/GitHubChangelog";
@@ -43,6 +44,7 @@ export default function UpdatesPage() {
 
         <GitHubChangelog variant="full" />
       </main>
+      <NextBand cmd="git pull" title={<>Don&apos;t miss<br />the next one.</>} text="Join the club in one step: you get a welcome email, the WhatsApp community, and every session as it's announced." href="/#join" cta="Join the club" second={{ href: "/calendar.ics", label: "Add the whole year to your calendar" }} />
       <SiteFooter />
     </>
   );
