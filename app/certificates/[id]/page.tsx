@@ -48,7 +48,7 @@ export default async function CertificatePage({ params }: { params: Promise<{ id
       </p>
       <Certificate name={c.name} handle={c.handle} event={eventByDate(c.event)} eventKey={c.event} issued={fmt(c.issued)} number={certNumber(id)} url={url} />
       <div className="mx-auto mt-8 max-w-[1040px] space-y-4">
-        <CertActions linkedin={linkedinUrl({ event: c.event, id, issued: c.issued, site: SITE_URL })} />
+        <CertActions linkedin={linkedinUrl({ event: c.event, id, issued: c.issued, site: SITE_URL })} url={url} title={`${c.name}: ${eventByDate(c.event)?.title ?? c.event}`} />
         <p className="no-print text-center text-[14px]"><Link href="/" className="text-link hover:underline">{CLUB.name} →</Link></p>
       </div>
     </main>
