@@ -79,6 +79,7 @@ export default config({
           text: fields.text({ label: "Description", multiline: true, ...req }),
           where: fields.text({ label: "Where", defaultValue: "GITAM Bengaluru", ...req }),
           luma: fields.url({ label: "Luma RSVP link" }),
+          proposalId: fields.integer({ label: "Proposal number", description: "The number of this event's approved proposal under Admin → Event proposals. Leave empty for past events." }),
           href: fields.text({ label: "Own section", description: "Only for Epoch: /epoch." }),
           shape: fields.select({ label: "Timeline shape", options: SHAPES, defaultValue: "diamond" }),
           color: fields.select({ label: "Timeline colour", options: COLORS, defaultValue: "blue" }),
