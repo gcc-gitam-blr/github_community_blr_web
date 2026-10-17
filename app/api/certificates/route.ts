@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { certificateUrl, eventByDate, linkedinUrl } from "@/lib/certificates";
-import { emailConfigured, sendEmail } from "@/lib/email/send";
+import { batchMailer, emailConfigured } from "@/lib/email/send";
 import { certificateEmail } from "@/lib/email/templates";
 import { SITE_URL } from "@/lib/site";
 
@@ -36,15 +36,26 @@ export async function POST(req: Request) {
   if (!rows?.length) return json({ ok: false, error: body.ids?.length ? "Nobody selected." : "Everyone here already has their certificate." }, 422);
   if (rows.length > MAX_PER_SEND) return json({ ok: false, error: `That's more than ${MAX_PER_SEND} people — send in batches.` }, 422);
 
-  const sentIds: string[] = []; let failed = 0;
-  const queue = [...rows], now = new Date().toISOString();
-  await Promise.all(Array.from({ length: 5 }, async () => {
-    for (let r = queue.shift(); r; r = queue.shift()) {
-      const url = certificateUrl(SITE_URL, r.id);
-      const mail = certificateEmail({ name: r.name, eventTitle: event.title, url, linkedin: linkedinUrl({ event: event.date, id: r.id, issued: now, site: SITE_URL }), site: SITE_URL });
-      if ((await sendEmail(r.email, mail)).sent) sentIds.push(r.id); else failed++;
-    }
-  }));
-  if (sentIds.length) await db.from("attendance").update({ emailed_at: now }).in("id", sentIds);
-  return json({ ok: true, sent: sentIds.length, failed, total: rows.length });
+  // one login for the whole batch, tried before anything is sent: a wrong password stops here, with what to do
+  const mailer = await batchMailer();
+  try {
+    const problem = await mailer.check();
+    if (problem) return json({ ok: false, error: `Nothing was sent. ${problem}` }, 502);
+    const sentIds: string[] = []; let failed = 0, why: string | undefined;
+    // stop starting new emails in time to record who got one before the function's 60 s are up; the rest go next time
+    const queue = [...rows], now = new Date().toISOString(), stopAt = Date.now() + 45_000;
+    await Promise.all(Array.from({ length: 3 }, async () => {
+      while (queue.length && Date.now() < stopAt) {
+        const r = queue.shift()!;
+        const url = certificateUrl(SITE_URL, r.id);
+        const mail = certificateEmail({ name: r.name, eventTitle: event.title, url, linkedin: linkedinUrl({ event: event.date, id: r.id, issued: now, site: SITE_URL }), site: SITE_URL });
+        const res = await mailer.send(r.email, mail);
+        if (res.sent) sentIds.push(r.id);
+        else { failed++; why ??= res.why; console.error("certificate email failed:", res.error); }
+      }
+    }));
+    if (sentIds.length) await db.from("attendance").update({ emailed_at: now }).in("id", sentIds);
+    if (!sentIds.length && failed) return json({ ok: false, error: `Nothing was sent. ${why ?? ""}`.trim() }, 502);
+    return json({ ok: true, sent: sentIds.length, failed, left: queue.length, total: rows.length, ...(why ? { problem: why } : {}) });
+  } finally { mailer.close(); }
 }

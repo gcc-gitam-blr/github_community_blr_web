@@ -64,7 +64,9 @@ export function Attendance({ admin }: { admin: boolean }) {
     if (!(await ask({ title: `Email ${n} certificate${n === 1 ? "" : "s"}?`, body: <>For <b>{title}</b>. Emails can&apos;t be called back once they&apos;re sent.</>, yes: `Send ${n} email${n === 1 ? "" : "s"}` }))) return;
     setBusy(true); setNote(null);
     const r = await sendCertificates(event, ids); setBusy(false);
-    setNote(r.ok ? { k: "ok", t: `Sent ${r.sent} of ${r.total}${r.failed ? ` — ${r.failed} failed, try again later` : ""}.` } : { k: "err", t: r.error });
+    setNote(r.ok
+      ? { k: r.failed ? "err" : "ok", t: `Sent ${r.sent} of ${r.total}.${r.left ? ` ${r.left} still to send: press the button again.` : ""}${r.failed ? ` ${r.failed} failed. ${r.problem ?? "Try again later."}` : ""}` }
+      : { k: "err", t: r.error });
     await load();
   };
 

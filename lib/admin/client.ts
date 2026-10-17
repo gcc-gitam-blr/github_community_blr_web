@@ -73,7 +73,8 @@ export async function pendingRoles(): Promise<Pending[]> {
   return (data ?? []) as Pending[];
 }
 
-export async function sendCertificates(event: string, ids?: string[]): Promise<Res<{ sent: number; failed: number; total: number }>> {
+/** `left`: not tried yet (the batch stops before the server's time limit); `problem`: why some failed, in words. */
+export async function sendCertificates(event: string, ids?: string[]): Promise<Res<{ sent: number; failed: number; total: number; left?: number; problem?: string }>> {
   const { data: { session } } = await supabase().auth.getSession();
   if (!session) return { ok: false, error: "Sign in again." };
   try {

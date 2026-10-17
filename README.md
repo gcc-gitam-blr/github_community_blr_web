@@ -283,6 +283,8 @@ Epoch has **no passwords** — attendees sign in with GitHub — so there is no 
 5. Redeploy. Join the form once with your own email — the welcome should arrive within seconds.
 
 Gmail allows about 500 emails a day; the broadcast stops at 450 per send. For bigger lists, use Resend with a verified domain (`RESEND_API_KEY`).
+
+**If emails stop sending,** the admin says why when you press send. The usual one is *"Gmail refused the login"*: the App Password was cancelled, which Google does when the account's password changes or 2-Step Verification is turned off. Make a new one at <https://myaccount.google.com/apppasswords>, replace `SMTP_PASS` in Vercel (and in `.env.local`), and redeploy. Nothing is sent twice: people who already got their certificate are remembered, so pressing *Email certificates* again sends only the rest.
 Without any of these settings the site works normally and just doesn't send email.
 
 ## Keeping it running
