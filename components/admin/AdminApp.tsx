@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useEpoch } from "@/components/epoch/EpochProvider";
 import { ClubStatsPanel, FeedbackSummary, Inbox, SignUps } from "@/components/epoch/Lists";
 import { ensureProfile, signedInUser } from "@/lib/admin/client";
+import { Assets } from "./Assets";
 import { Attendance } from "./Attendance";
 import { Meetings } from "./Meetings";
 import { Members } from "./Members";
@@ -29,6 +30,7 @@ const SECTIONS = [
   { id: "proposals", label: "Event proposals", group: "Work", core: true },
   { id: "tasks", label: "Tasks", group: "Work", core: true },
   { id: "meetings", label: "Meetings & decisions", group: "Work", core: true },
+  { id: "assets", label: "Assets & handover", group: "Work", core: true },
   { id: "errors", label: "Site errors", group: "Site", admin: true },
 ] as const satisfies readonly { id: string; label: string; group: string; admin?: boolean; core?: boolean }[];
 type Section = (typeof SECTIONS)[number]["id"];
@@ -141,6 +143,7 @@ export function AdminApp() {
           {current === "proposals" && <Proposals admin={admin} meId={me.id} />}
           {current === "tasks" && <Tasks admin={admin} meId={me.id} />}
           {current === "meetings" && <Meetings admin={admin} meId={me.id} />}
+          {current === "assets" && <Assets admin={admin} meId={me.id} />}
           {current === "people" && <People admin={admin} me={me.handle} />}
           {current === "errors" && (admin ? <SiteErrors /> : <p className="text-ink-2">Error reports are for admins.</p>)}
         </div>
