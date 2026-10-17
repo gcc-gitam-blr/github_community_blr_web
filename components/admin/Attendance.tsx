@@ -7,11 +7,10 @@ import { fromLine, fromLumaCsv, type Attendee, type Import } from "@/lib/attenda
 import { addAttendees, attendance, removeAttendee, sendCertificates, type AttendanceRow } from "@/lib/admin/client";
 import type { JoinRequest } from "@/lib/epoch/types";
 import { useConfirm } from "@/components/ui/Confirm";
+import { State, btn, card } from "./kit";
 
 /* Who actually came to each event, and their certificates. Certificates go only to people listed here —
    never to everyone who signed up. */
-const card = "rounded-[12px] border border-line bg-white";
-const btn = "inline-flex items-center justify-center rounded-md bg-ink px-4 py-2.5 text-[14.5px] font-semibold text-white transition hover:bg-ink/85 disabled:opacity-50";
 const soft = "inline-flex items-center justify-center rounded-md border border-line bg-white px-4 py-2.5 text-[14.5px] font-semibold transition hover:border-ink/40 disabled:opacity-50";
 const today = () => new Date().toISOString().slice(0, 10);
 const events = [...CLUB.events].filter((e) => !e.dateLabel).sort((a, b) => a.date.localeCompare(b.date));
@@ -158,7 +157,7 @@ export function Attendance({ admin }: { admin: boolean }) {
                   <tr key={r.id} className="border-t border-line">
                     <td className="px-5 py-2.5"><span className="font-semibold">{r.name}</span>{r.handle && <span className="ml-2 text-ink-3">@{r.handle}</span>}</td>
                     <td className="text-ink-2">{r.email}</td>
-                    <td>{r.emailed_at ? <span className="text-[#116329]">Sent {new Date(r.emailed_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span> : <span className="text-ink-3">Not sent</span>}</td>
+                    <td>{r.emailed_at ? <State tone="ok">Sent {new Date(r.emailed_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</State> : <State tone="draft">Not sent</State>}</td>
                     <td className="whitespace-nowrap px-5 text-right">
                       <a href={`/certificates/${r.id}`} target="_blank" rel="noopener" className="text-link hover:underline">View</a>
                       {admin && <button onClick={() => send([r.id])} disabled={busy} className="ml-4 text-link hover:underline">{r.emailed_at ? "Re-send" : "Send"}</button>}
