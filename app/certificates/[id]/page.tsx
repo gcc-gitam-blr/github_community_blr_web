@@ -11,10 +11,10 @@ import { SITE_URL } from "@/lib/site";
 
 /* A certificate of participation, and its public proof: whoever opens this link sees who it was issued to and for
    which event, read straight from the club's attendance records. Prints as one A4 landscape page.
-   /certificates/sample shows every event's design with a made-up name, on preview deployments and locally only. */
+   /certificates/sample shows every event's design with a made-up name: on preview deployments, in `npm run dev`, or with CERT_SAMPLE=1. */
 export const dynamic = "force-dynamic";
 type Cert = { name: string; event: string; handle: string | null; issued: string };
-const SAMPLES_ON = process.env.VERCEL_ENV === "preview" || process.env.CERT_SAMPLE === "1" || process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test";
+const SAMPLES_ON = process.env.VERCEL_ENV === "preview" || process.env.CERT_SAMPLE === "1" || process.env.NODE_ENV === "development";
 const SAMPLE_ID = "00000000-0000-4000-8000-0000000c0ffe";
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
 
