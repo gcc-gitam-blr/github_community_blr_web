@@ -1157,15 +1157,15 @@ end $$;
 -- ---- reviewing ----
 create or replace function review_application(p_app bigint, p_score int, p_notes text default '')
 returns json language plpgsql security definer set search_path = public, pg_temp as $$
-declare a applications; n text := nullif(trim(coalesce(p_notes, '')), '');
+declare ap applications; n text := nullif(trim(coalesce(p_notes, '')), '');
 begin
   if not can_see_application(p_app) then return json_build_object('ok', false, 'error', 'That application isn''t available to you.'); end if;
   if not exists (select 1 from applications a join campaign_reviewers r on r.campaign_id = a.campaign_id where a.id = p_app and r.user_id = auth.uid()) then
     return json_build_object('ok', false, 'error', 'You can review an application only if you are assigned to its campaign.');
   end if;
   if is_own_application(p_app) then return json_build_object('ok', false, 'error', 'You can''t review your own application.'); end if;
-  select * into a from applications where id = p_app;
-  if a.status not in ('submitted','screening','interview') then return json_build_object('ok', false, 'error', 'This application is no longer open for review.'); end if;
+  select * into ap from applications where id = p_app;
+  if ap.status not in ('submitted','screening','interview') then return json_build_object('ok', false, 'error', 'This application is no longer open for review.'); end if;
   if p_score is null or p_score not between 1 and 5 then return json_build_object('ok', false, 'error', 'Score from 1 to 5.'); end if;
   if n is not null and length(n) > 2000 then return json_build_object('ok', false, 'error', 'Keep notes under 2000 characters.'); end if;
   insert into application_reviews (application_id, reviewer_id, score, notes) values (p_app, auth.uid(), p_score, n)
