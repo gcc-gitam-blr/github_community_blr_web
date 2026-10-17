@@ -22,6 +22,7 @@ All done except `CRON_SECRET`.
 |---|---|---|---|
 | ✅ | Supabase → SQL editor (or `npm run connect`) | Re-run `supabase/schema.sql` | Error reports, shared form limits, the Epoch dates list, the weekly clean-up, booths for volunteers, reversals and the audit log |
 | 🙋 | Vercel → Settings → Environment Variables | `CRON_SECRET` (any long random text) | The weekly clean-up and the Monday digest |
+| 🙋 | Supabase → SQL editor | **Members and recruitment update:** re-run `supabase/schema.sql` (after the appointments update above has been applied). Then create the first round under `/admin` → Recruitment, add reviewers, and open it. Volunteers stop seeing sign-ups, messages and feedback straight away. | Members, recruitment rounds and the core-team application form |
 | 🙋 | Supabase → SQL editor | **Appointments update, in this order, back to back:** (1) re-run `supabase/schema.sql`; (2) open `supabase/backfill-appointments.sql`, set the end date on its first line, run STEP 1 and read the list, then STEP 2 and STEP 3. Until step 2 has run, nobody has organiser access, because roles are now appointments with end dates. | Roles that end by themselves, the core role, the digest's access warnings |
 | ✅ | Vercel → Settings → Environment Variables | `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API) | The clean-up, the digest and GitHub sign-in |
 | ✅ | GitHub → Settings → Secrets → Actions | `SUPABASE_DB_URL` (Supabase → Connect → connection string) | Weekly backups |

@@ -5,21 +5,26 @@ import { useEpoch } from "@/components/epoch/EpochProvider";
 import { ClubStatsPanel, FeedbackSummary, Inbox, SignUps } from "@/components/epoch/Lists";
 import { ensureProfile, signedInUser } from "@/lib/admin/client";
 import { Attendance } from "./Attendance";
+import { Members } from "./Members";
+import { Recruitment } from "./Recruitment";
 import { People } from "./People";
 import { SiteErrors } from "./SiteErrors";
 import { ClubMark } from "@/components/ui/ClubMark";
 
 /* The club's admin dashboard. Who may see it is decided by the database (an active appointment), not by this page:
    signed out → "Sign in with GitHub"; signed in but not an organiser → ask an admin; organisers → the dashboard. */
+// `core`: for the core team and admins (volunteers are event-day staff: attendance and the Epoch desk). `admin`: admins only.
 const SECTIONS = [
-  { id: "overview", label: "Overview" },
+  { id: "overview", label: "Overview", core: true },
   { id: "attendance", label: "Attendance & certificates" },
-  { id: "signups", label: "Sign-ups & email" },
-  { id: "messages", label: "Messages" },
-  { id: "feedback", label: "Feedback" },
+  { id: "signups", label: "Sign-ups & email", core: true },
+  { id: "messages", label: "Messages", core: true },
+  { id: "feedback", label: "Feedback", core: true },
+  { id: "members", label: "Members", core: true },
+  { id: "recruitment", label: "Recruitment", core: true },
   { id: "people", label: "People & roles" },
   { id: "errors", label: "Site errors", admin: true },
-] as const satisfies readonly { id: string; label: string; admin?: boolean }[];
+] as const satisfies readonly { id: string; label: string; admin?: boolean; core?: boolean }[];
 type Section = (typeof SECTIONS)[number]["id"];
 
 const card = "rounded-[12px] border border-line bg-white p-6 sm:p-8";
@@ -100,28 +105,32 @@ export function AdminApp() {
     </section></Shell>
   );
 
-  const admin = me.role === "admin";
+  const admin = me.role === "admin", core = admin || me.role === "core";
+  const allowed = SECTIONS.filter((s) => (admin || !("admin" in s)) && (core || !("core" in s)));
+  const current = (allowed.some((s) => s.id === section) ? section : allowed[0].id) as Section;
   return (
     <Shell who={me.handle} onSignOut={signOut}>
       <div className="grid grid-cols-1 gap-8 md:grid-cols-[240px_minmax(0,1fr)]">
         <nav aria-label="Admin sections" className="-mx-5 flex min-w-0 gap-1 overflow-x-auto px-5 md:mx-0 md:flex-col md:px-0">
-          {SECTIONS.filter((s) => admin || !("admin" in s)).map((s) => (
-            <a key={s.id} href={`#${s.id}`} aria-current={section === s.id ? "page" : undefined}
-              className={`relative whitespace-nowrap rounded-md px-3 py-2 text-[14.5px] ${section === s.id ? "bg-white font-semibold shadow-[inset_0_0_0_1px_var(--color-line)] md:before:absolute md:before:-left-2 md:before:bottom-1.5 md:before:top-1.5 md:before:w-1 md:before:rounded md:before:bg-[#fd8c73]" : "text-ink-2 hover:bg-white/70"}`}>{s.label}</a>
+          {allowed.map((s) => (
+            <a key={s.id} href={`#${s.id}`} aria-current={current === s.id ? "page" : undefined}
+              className={`relative whitespace-nowrap rounded-md px-3 py-2 text-[14.5px] ${current === s.id ? "bg-white font-semibold shadow-[inset_0_0_0_1px_var(--color-line)] md:before:absolute md:before:-left-2 md:before:bottom-1.5 md:before:top-1.5 md:before:w-1 md:before:rounded md:before:bg-[#fd8c73]" : "text-ink-2 hover:bg-white/70"}`}>{s.label}</a>
           ))}
           <hr className="my-2 hidden border-line md:block" />
           <Link href="/epoch/admin" className="whitespace-nowrap rounded-md px-3 py-2 text-[14.5px] text-ink-2 hover:bg-white/70">Epoch desk ↗</Link>
         </nav>
         <div className="min-w-0 space-y-4">
-          <h1 className="text-[28px]">{SECTIONS.find((s) => s.id === section)!.label}</h1>
+          <h1 className="text-[28px]">{SECTIONS.find((s) => s.id === current)!.label}</h1>
           {!admin && <p className="text-[14px] text-ink-3">You&apos;re {me.role === "core" ? "on the core team" : "a volunteer"}: you can mark attendance and check people in; sending emails and changing who has access is for admins.</p>}
-          {section === "overview" && <ClubStatsPanel />}
-          {section === "attendance" && <Attendance admin={admin} />}
-          {section === "signups" && <SignUps />}
-          {section === "messages" && <Inbox />}
-          {section === "feedback" && <FeedbackSummary />}
-          {section === "people" && <People admin={admin} me={me.handle} />}
-          {section === "errors" && (admin ? <SiteErrors /> : <p className="text-ink-2">Error reports are for admins.</p>)}
+          {current === "overview" && <ClubStatsPanel />}
+          {current === "attendance" && <Attendance admin={admin} />}
+          {current === "signups" && <SignUps />}
+          {current === "messages" && <Inbox />}
+          {current === "feedback" && <FeedbackSummary />}
+          {current === "members" && <Members admin={admin} />}
+          {current === "recruitment" && <Recruitment admin={admin} meId={me.id} />}
+          {current === "people" && <People admin={admin} me={me.handle} />}
+          {current === "errors" && (admin ? <SiteErrors /> : <p className="text-ink-2">Error reports are for admins.</p>)}
         </div>
       </div>
     </Shell>

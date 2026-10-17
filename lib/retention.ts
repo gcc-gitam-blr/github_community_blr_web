@@ -6,4 +6,7 @@ export const RETENTION = {
   messagesMonths: 12, // Get involved messages
   feedbackMonths: 12, // anonymous event feedback
   errorsDays: 30, // error reports from browsers
+  applicationsMonths: 6, // rejected or withdrawn applications, counted from the day their campaign closed
+  membersMonths: 24, // a member who became inactive (active members and alumni are kept)
+  auditMonths: 36, // the club's audit log of who changed what
 } as const;

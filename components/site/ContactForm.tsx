@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { KINDS, validateContact, type Kind } from "@/lib/contact";
 import { CLUB } from "@/lib/config";
+import { ApplyForm } from "./ApplyForm";
 
 // Instagram DMs open straight from ig.me/m/<account>; used while the club inbox isn't switched on.
 const insta = CLUB.socials.find((s) => s.label === "Instagram")?.href.match(/instagram\.com\/([^/?#]+)/)?.[1];
@@ -9,6 +10,22 @@ const DM_URL = insta ? `https://ig.me/m/${insta}` : CLUB.joinUrl;
 
 /* The Get involved form: pick what it's about, then say who you are. */
 const field = "w-full rounded-lg border border-line bg-white px-4 py-3 text-[16px] outline-none transition focus:border-ink";
+
+function KindPicker({ kind, setKind }: { kind: Kind; setKind: (k: Kind) => void }) {
+  return (
+    <fieldset>
+        <legend className="mb-3 font-mono text-[13px] text-ink-2">What is this about?</legend>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {KINDS.map((k) => (
+            <label key={k.id} className={`cursor-pointer rounded-xl border-2 p-3.5 transition ${kind === k.id ? "border-ink bg-[#dafbe1]" : "border-line hover:border-ink/50"}`}>
+              <input type="radio" name="kind" value={k.id} checked={kind === k.id} onChange={() => setKind(k.id)} className="sr-only" />
+              <span className="block font-semibold">{k.label}</span><span className="mt-0.5 block text-[14px] leading-snug text-ink-2">{k.blurb}</span>
+            </label>
+          ))}
+        </div>
+    </fieldset>
+  );
+}
 
 export function ContactForm({ initial = "question" }: { initial?: Kind }) {
   const [kind, setKind] = useState<Kind>(initial);
@@ -57,24 +74,22 @@ export function ContactForm({ initial = "question" }: { initial?: Kind }) {
     </div>
   );
 
+  // joining the core team has its own application form (open rounds only), not a free-text message
+  if (kind === "apply") return (
+    <div className="relative rounded-[18px] border border-line bg-white p-6 shadow-[0_30px_80px_-40px_rgba(11,11,15,.25)] sm:p-8">
+      <KindPicker kind={kind} setKind={setKind} />
+      <ApplyForm />
+    </div>
+  );
+
   return (
     <form onSubmit={submit} noValidate className="relative rounded-[18px] border border-line bg-white p-6 shadow-[0_30px_80px_-40px_rgba(11,11,15,.25)] sm:p-8">
-      <fieldset>
-        <legend className="mb-3 font-mono text-[13px] text-ink-2">What is this about?</legend>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {KINDS.map((k) => (
-            <label key={k.id} className={`cursor-pointer rounded-xl border-2 p-3.5 transition ${kind === k.id ? "border-ink bg-[#dafbe1]" : "border-line hover:border-ink/50"}`}>
-              <input type="radio" name="kind" value={k.id} checked={kind === k.id} onChange={() => setKind(k.id)} className="sr-only" />
-              <span className="block font-semibold">{k.label}</span><span className="mt-0.5 block text-[14px] leading-snug text-ink-2">{k.blurb}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      <KindPicker kind={kind} setKind={setKind} />
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <label className="block"><span className="mb-1.5 block text-[14px] font-medium">Your name</span><input className={field} value={v.name} onChange={set("name")} autoComplete="name" /></label>
         <label className="block"><span className="mb-1.5 block text-[14px] font-medium">Email</span><input className={field} type="email" value={v.email} onChange={set("email")} autoComplete="email" /></label>
-        <label className="block sm:col-span-2"><span className="mb-1.5 block text-[14px] font-medium">GitHub username {kind === "apply" ? "" : <span className="font-normal text-ink-3">(optional)</span>}</span><input className={field} value={v.handle} onChange={set("handle")} placeholder="@your-handle" autoComplete="off" spellCheck={false} /></label>
+        <label className="block sm:col-span-2"><span className="mb-1.5 block text-[14px] font-medium">GitHub username <span className="font-normal text-ink-3">(optional)</span></span><input className={field} value={v.handle} onChange={set("handle")} placeholder="@your-handle" autoComplete="off" spellCheck={false} /></label>
         <label className="block sm:col-span-2"><span className="mb-1.5 block text-[14px] font-medium">{cur.ask}</span><textarea className={field} rows={6} value={v.message} onChange={set("message")} maxLength={3000} /></label>
       </div>
 

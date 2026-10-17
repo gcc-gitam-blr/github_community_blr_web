@@ -322,7 +322,7 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   await db.exec("set role service_role");
   const pruned = (await db.query<{ r: Record<string, number> }>("select prune_old_data() r")).rows[0]?.r;
   await db.exec("reset role");
-  ok("prune_old_data deletes one old row of each kind", JSON.stringify(pruned) === JSON.stringify({ signups: 1, messages: 1, feedback: 1, errors: 1 }));
+  ok("prune_old_data deletes one old row of each kind", JSON.stringify(pruned) === JSON.stringify({ signups: 1, messages: 1, feedback: 1, errors: 1, applications: 0, members: 0, audit: 0 }));
   const left = async (sql: string) => (await db.query<{ v: string }>(sql)).rows.map((r) => r.v).join();
   ok(`sign-ups are kept ${RETENTION.signUpsMonths} months (lib/retention.ts and the SQL agree)`, (await left("select handle v from join_requests")) === "new");
   ok(`messages are kept ${RETENTION.messagesMonths} months`, (await left("select name v from messages")) === "new");

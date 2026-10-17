@@ -72,7 +72,7 @@ const audit = async (action: string) => (await one<{ n: number }>("select count(
   // ---- what each role can reach ----
   await db.query("insert into join_requests (handle, email, first_event) values ('new', 'new@x.in', '2026-10-07')");
   const reads = async (u: string) => (await api<{ handle: string }>(u, "select handle from join_requests")).rows.length;
-  ok("sign-ups are read by volunteer, core and admin but not by an attendee", (await reads(V)) === 1 && (await reads(C)) === 1 && (await reads(A)) === 1 && (await reads(X)) === 0);
+  ok("sign-ups are read by core and admin; volunteers (event-day staff) and attendees don't", (await reads(V)) === 0 && (await reads(C)) === 1 && (await reads(A)) === 1 && (await reads(X)) === 0);
   ok("a core member can check people in at the desk, like a volunteer", (await api<{ r: { ok: boolean } }>(C, "select issue_ticket($1, 398) r", [X])).rows[0]?.r.ok === true);
   ok("…but can't award coins or change roles (admins only)", (await api<{ r: { ok: boolean } }>(C, "select award_coins($1, 50, 'x') r", [X])).rows[0]?.r.ok === false && (await grant(C, "xan", "volunteer", 30))?.ok === false);
   ok("a volunteer can't grant or end anything", (await grant(V, "xan", "volunteer", 30))?.ok === false);
