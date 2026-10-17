@@ -58,3 +58,13 @@ export const setPublicCredit = (id: number, show: boolean) => rpcRes("set_public
 export const requestPublishing = (id: number) => rpcRes("request_publishing", { p_id: id });
 export const decidePublishing = (id: number, approve: boolean, note: string) => rpcRes("decide_publishing", { p_id: id, p_approve: approve, p_note: note });
 export const unpublishProject = (id: number) => rpcRes("unpublish_project", { p_id: id });
+
+/** Core team and admins: everyone's answers (the database refuses anyone else), with names. */
+export async function allInterests(): Promise<(Interests & { user_id: string; handle: string; name: string })[]> {
+  const { data } = await supabase().from("member_interests").select("user_id, domains, skills, wants, hours, discoverable").order("updated_at", { ascending: false });
+  const rows = (data ?? []) as (Interests & { user_id: string })[];
+  if (!rows.length) return [];
+  const { data: ps } = await supabase().from("profiles").select("id, handle, name").in("id", rows.map((r) => r.user_id));
+  const who = Object.fromEntries((ps ?? []).map((p) => [p.id as string, p as { handle: string; name: string }]));
+  return rows.map((r) => ({ ...r, handle: who[r.user_id]?.handle ?? "", name: who[r.user_id]?.name ?? "A member" }));
+}

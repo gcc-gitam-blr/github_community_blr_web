@@ -56,6 +56,8 @@ export function MyClub() {
         <button type="button" onClick={signOut} className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-[13.5px] text-ink-2 transition hover:border-ink hover:text-ink"><SignOutIcon size={14} />Sign out</button>
       </div>
 
+      <p className="mt-6 rounded-xl border border-line bg-white px-4 py-3 text-[16px] text-ink-2">Want to build something with other members? <Link href="/hub" className="font-semibold text-link hover:underline">Open the project hub →</Link></p>
+
       <section className="mt-10" aria-labelledby="came">
         <h2 id="came" className="flex items-center gap-2 text-[24px]"><CalendarIcon size={20} />Events you came to</h2>
         {st.attended.length ? (
