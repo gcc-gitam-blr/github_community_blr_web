@@ -1,13 +1,13 @@
-import { createClient } from "@supabase/supabase-js";
+import { serverDb } from "@/lib/supabase-server";
 import { verifyToken } from "@/lib/email/token";
 
 /* Unsubscribe from club emails. Works three ways:
    POST (mail apps' one-click button), GET (redirects to the confirmation page), form POST from that page. */
 async function unsubscribe(email: string, token: string) {
   if (!email || !verifyToken(email, token)) return false;
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return false;
-  const { error } = await createClient(url, key, { auth: { persistSession: false } }).rpc("unsubscribe_join", { p_email: email });
+  const db = serverDb();
+  if (!db) return false;
+  const { error } = await db.rpc("unsubscribe_join", { p_email: email });
   return !error;
 }
 

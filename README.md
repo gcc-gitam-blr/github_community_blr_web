@@ -1,6 +1,44 @@
 # GitHub Community Club BLR
 
+[![CI](https://github.com/gcc-gitam-blr/github_community_blr_web/actions/workflows/ci.yml/badge.svg)](https://github.com/gcc-gitam-blr/github_community_blr_web/actions/workflows/ci.yml)
+
 Website for the GitHub Community Club at GITAM University Bengaluru — **Code. Collaborate. Contribute.** — plus **Epoch**, our annual fest: registration, Epoch Coins, QR scanning, a shop and a live leaderboard.
+
+It is built and run by students, in the open. You can read every line, run it on your laptop in a minute, and send a pull request ([CONTRIBUTING.md](CONTRIBUTING.md)).
+
+## Quick start
+
+```bash
+git clone https://github.com/gcc-gitam-blr/github_community_blr_web.git
+cd github_community_blr_web
+npm install
+npm run dev        # http://localhost:3000
+```
+
+No keys needed: the club site works as is, and Epoch runs in **demo mode** (its data stays in your browser). Everything that stores data — sign-ups, messages, email, the real Epoch — switches on when you connect Supabase and Gmail; see [Switch on messages, sign-ups and email](#switch-on-messages-sign-ups-and-email-5-minutes).
+
+## Contents
+
+- [Quick start](#quick-start) · [Where things live](#where-things-live) · [Stack](#stack) · [Features at a glance](#features-at-a-glance)
+- **Setting up:** [Messages, sign-ups and email](#switch-on-messages-sign-ups-and-email-5-minutes) · [Club admin](#club-admin-attendance-and-certificates) · [Settings](#settings-environment-variables) · [Make it yours](#make-it-yours)
+- **Epoch:** [Going live](#epoch-going-live-for-the-fest) · [Design](#epoch-whats-in-the-design)
+- **Running the club:** [Email](#email-welcome-message-and-organiser-broadcasts) · [Keeping it running](#keeping-it-running) · [Security and personal data](#security-and-personal-data) · [Tests](#tests)
+- **Handing over:** [docs/ROLLOVER.md](docs/ROLLOVER.md) · [docs/RESTORE.md](docs/RESTORE.md)
+
+## Where things live
+
+| I want to… | Go to |
+| --- | --- |
+| Change club content (events, team, FAQ, updates) | `content/`, or the editor at `/keystatic` |
+| Change Epoch dates, ticket, sponsors, schedule | `content/epoch/`, or `/keystatic` |
+| Change Epoch coins, booths, merch | `lib/epoch/config.ts` (and the same values in `supabase/schema.sql`) |
+| Edit a page or a section of the home page | `app/` (routes), `components/site/`, `components/epoch/` |
+| Change the admin dashboard | `components/admin/`, shown at `/admin` |
+| Change the database | `supabase/schema.sql` (safe to re-run), then run it in Supabase |
+| Change what a form accepts | `lib/join.ts`, `lib/contact.ts`, `lib/feedback.ts` and their `app/api/*` routes |
+| Add a test | `tests/*.test.ts` (and add it to the `test` script in `package.json`) |
+| Hand the club over to the next team | [docs/ROLLOVER.md](docs/ROLLOVER.md) |
+| Recover lost data | [docs/RESTORE.md](docs/RESTORE.md) |
 
 ## Stack
 
@@ -15,7 +53,7 @@ Website for the GitHub Community Club at GITAM University Bengaluru — **Code. 
 ## Features at a glance
 
 - **Club site** — git-graph hero, contribution-graph calendar of the year, a page per event (laid out like a GitHub release, with its own calendar file, share image and schema.org data), FAQ as closed issues, joining as a pull request.
-- **Club sign-ups** — the Join form posts to `/api/join` (validated, rate-limited, honeypot; with Supabase connected the limit is counted in the database, so it holds across every Vercel server) and stores rows in Supabase's `join_requests`; organisers see them on `/epoch/admin` with a CSV export. Without Supabase it falls back to `joinUrl` / `email`.
+- **Club sign-ups** — the Join form posts to `/api/join` (validated, rate-limited, honeypot; with Supabase connected the limit is counted in the database, so it holds across every Vercel server). The server then saves the row through the database function `submit_join` into `join_requests`; organisers see them on `/epoch/admin` with a CSV export. Without Supabase it falls back to `joinUrl` / `email`.
 - **Epoch** — coin economy with ticket verification, recharge points, booths, merch, leaderboard, QR scanning and a command bar (press `/`).
 - **Installable & offline** — Epoch has a web app manifest and a service worker: attendees can add the wallet to their home screen, and the wallet, QR pass and booths still open without signal.
 - **Calendar** — `/calendar.ics` (whole year) and `/events/<slug>/event.ics` (one event).
@@ -62,6 +100,7 @@ It works on the production address. Preview deployments and `localhost` automati
 | Variable | What it does |
 | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Live Epoch + stored club sign-ups. Empty = demo mode. |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Server only, never `NEXT_PUBLIC_`.** The public forms (sign-up, contact, feedback, Epoch list, unsubscribe) and the rate limit save through database functions that only this key may run, so nobody can skip the site's spam checks by calling Supabase directly. Also used by GitHub sign-in on the site's own address, the weekly clean-up and the digest. |
 | `NEXT_PUBLIC_SITE_URL` | Optional custom domain. On Vercel the production domain is used automatically. |
 | `NEXT_PUBLIC_EPOCH_MODE` | `live` / `off` forces Epoch's live state. |
 | `NEXT_PUBLIC_ANALYTICS` | `on` loads cookie-free Vercel Analytics + Speed Insights (enable them in the Vercel dashboard first). |
@@ -225,7 +264,7 @@ A new club year? Follow [docs/ROLLOVER.md](docs/ROLLOVER.md): year label, team, 
 
 **Backups.** Supabase's free plan has no backups, so `.github/workflows/backup.yml` saves one every Sunday: all the club's data (the `public` tables) as a gzipped SQL file, kept 30 days under Actions → *Backup* → the run → Artifacts. Add the repository secret `SUPABASE_DB_URL` (Supabase → Connect → Session pooler, with the password filled in) under Settings → Secrets and variables → Actions; without it the run skips. The file holds names and emails and anyone who can read the repo can download it, so you can add a `BACKUP_PASSPHRASE` secret to have it encrypted. Run it now from Actions → *Backup* → Run workflow.
 
-To restore (you need `psql`, which comes with PostgreSQL):
+The full, step-by-step version (with a rehearsal into a scratch project) is in [docs/RESTORE.md](docs/RESTORE.md). In short, to restore (you need `psql`, which comes with PostgreSQL):
 1. Download the artifact and unzip it. If it ends in `.gpg`: `gpg --decrypt club-data-….sql.gz.gpg > club-data.sql.gz`.
 2. Into a **new or emptied** database: run `supabase/schema.sql` first (SQL Editor or `npm run connect`), then `gunzip -c club-data-….sql.gz | psql "<connection string>"`.
 3. Into the **same** project after a bad delete, restore only the damaged table, here `join_requests`: empty it (`truncate join_requests;` in the SQL Editor), then `gunzip -c club-data-….sql.gz | sed -n '/^COPY public.join_requests /,/^\\\.$/p' | psql "<connection string>"`. Restoring the whole file over a working database would wind the id counters back, so don't.
@@ -235,6 +274,15 @@ Epoch accounts (`profiles`, `txs`) belong to Supabase sign-ins, which aren't in 
 **Is the site up?** `.github/workflows/uptime.yml` opens the live home page and `/epoch` every 6 hours. If either fails three tries in a row it opens one **Site is down** issue (or comments on it), which emails everyone watching the repo, and closes it once the site answers again. Set the repository variable `SITE_URL` (Settings → Secrets and variables → Actions → Variables, e.g. `https://your-site.vercel.app`); without it the check skips. Scheduled runs only happen from `main`. For a check every 5 minutes with email or app alerts, add the site to a free [UptimeRobot](https://uptimerobot.com) account (New monitor → HTTP(s) → the site's address); it needs nothing from this repo.
 
 **Errors on visitors' phones** show on `/admin` → *Site errors* (see above).
+
+## Security and personal data
+
+- **The database decides, not the page.** Row-level security is on for every table, and anything that moves coins or changes a role runs inside a database function that checks who is asking. Hiding a button is only cosmetic.
+- **Public forms can't be skipped.** Browsers never write to the form tables. The server checks the honeypot, the fill time and a per-visitor rate limit, then saves through a function only the server key can run (`supabase/schema.sql`, last section). `tests/security.test.ts` fails if a function becomes callable by the public key by accident, or loses its pinned `search_path`.
+- **No secrets in the repository.** Keys live in Vercel and GitHub secrets, never in code; `.env.local` is git-ignored. If a key leaks, rotate it following [docs/ROLLOVER.md](docs/ROLLOVER.md).
+- **Collect little, keep it briefly.** Names, emails and GitHub usernames only. Old data is deleted on a schedule (see [Keeping it running](#keeping-it-running)) and `/privacy` says the same numbers.
+- **Who can edit the live site.** Anyone with write access to this repository can edit content through `/keystatic`, so grant access carefully and turn on two-factor sign-in for every collaborator.
+- Found a security problem? Please tell a club lead privately rather than opening a public issue.
 
 ## Epoch typeface
 

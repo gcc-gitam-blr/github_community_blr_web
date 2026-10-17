@@ -1,8 +1,8 @@
-import { createClient } from "@supabase/supabase-js";
 import { validateFeedback, type FeedbackInput, type FeedbackResult } from "@/lib/feedback";
 import { rateLimited } from "@/lib/ratelimit";
+import { serverDb } from "@/lib/supabase-server";
 
-/* POST /api/feedback — anonymous event feedback saved to Supabase (table event_feedback). */
+/* POST /api/feedback — anonymous event feedback saved to Supabase (through submit_feedback). */
 const reply = (b: FeedbackResult, status = 200) => Response.json(b, { status });
 
 export async function POST(req: Request) {
@@ -13,9 +13,10 @@ export async function POST(req: Request) {
   if (problem) return reply({ ok: false, error: problem }, 422);
   if (await rateLimited(req, "feedback", 12)) return reply({ ok: false, error: "Too many submissions from here — please try again later." }, 429);
 
-  const URL = process.env.NEXT_PUBLIC_SUPABASE_URL, KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!URL || !KEY) return reply({ ok: false, error: "Feedback isn't connected yet — tell us on WhatsApp instead." }, 503);
-  const { error } = await createClient(URL, KEY, { auth: { persistSession: false } }).from("event_feedback").insert({ event: input.event, rating: input.rating, liked: input.liked?.trim() || null, improve: input.improve?.trim() || null });
+  const db = serverDb();
+  if (!db) return reply({ ok: false, error: "Feedback isn't connected yet — tell us on WhatsApp instead." }, 503);
+  const { data, error } = await db.rpc("submit_feedback", { p_event: input.event, p_rating: input.rating, p_liked: input.liked?.trim() || null, p_improve: input.improve?.trim() || null });
   if (error) return reply({ ok: false, error: "Couldn't save that — please try again." }, 502);
+  if (data === "busy") return reply({ ok: false, error: "Lots of feedback right now — please try again in a little while." }, 429);
   return reply({ ok: true }, 201);
 }

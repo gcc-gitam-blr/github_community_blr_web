@@ -9,7 +9,11 @@ const inbox: ParsedMail[] = [];
 const smtp = new SMTPServer({ authOptional: true, disabledCommands: ["STARTTLS"], allowInsecureAuth: true, onAuth: (_a, _s, cb) => cb(null, { user: 1 }), onData(s, _x, cb) { simpleParser(s).then((m) => { inbox.push(m); cb(); }).catch(cb); } });
 const saved: Record<string, unknown>[] = []; let dbFails = false;
 const fake = http.createServer((req, res) => { let b = ""; req.on("data", (c) => (b += c)); req.on("end", () => {
-  if (req.url?.startsWith("/rest/v1/messages") && req.method === "POST") { if (dbFails) { res.writeHead(500); return res.end("{}"); } saved.push(JSON.parse(b)); res.writeHead(201); return res.end(); }
+  if (req.url?.startsWith("/rest/v1/rpc/submit_message") && req.method === "POST") {
+    if (dbFails) { res.writeHead(500); return res.end("{}"); }
+    const p = JSON.parse(b); saved.push({ kind: p.p_kind, name: p.p_name, email: p.p_email, handle: p.p_handle, message: p.p_message });
+    res.writeHead(200, { "content-type": "application/json" }); return res.end('"created"');
+  }
   res.writeHead(404); res.end();
 }); });
 const post = (body: unknown, ip: string) => new Request("http://x/api/contact", { method: "POST", headers: { "content-type": "application/json", "x-forwarded-for": ip }, body: JSON.stringify(body) });

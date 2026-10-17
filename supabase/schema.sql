@@ -77,7 +77,7 @@ alter table audit_log enable row level security;
 
 -- 'none' (never null) for visitors without a profile: `null not in (...)` is not true in SQL, so a null role
 -- would slip past the organiser checks below.
-create or replace function my_role() returns text language sql security definer stable as
+create or replace function my_role() returns text language sql security definer set search_path = public, pg_temp stable as
 $$ select coalesce((select role from profiles where id = auth.uid()), 'none') $$;
 
 drop policy if exists "read own profile" on profiles;
@@ -96,7 +96,7 @@ create policy "admins read the audit log" on audit_log for select using (my_role
 
 -- One audit row, as the signed-in organiser. Internal: only the functions below call it.
 create or replace function log_action(p_action text, p_target uuid, p_booth text, p_amount int, p_detail text default '')
-returns void language sql security definer as $$
+returns void language sql security definer set search_path = public, pg_temp as $$
   insert into audit_log (actor, actor_handle, action, target, target_handle, booth, amount, detail)
   values (auth.uid(), coalesce((select handle from profiles where id = auth.uid()), 'unknown'), p_action,
           p_target, (select handle from profiles where id = p_target), p_booth, p_amount, coalesce(p_detail, ''));
@@ -124,7 +124,7 @@ grant select on leaderboard_version to anon, authenticated;
 
 -- Skips the bump if another transaction is bumping right now (SKIP LOCKED), so coin wins never queue behind each
 -- other on this one row. That bump still tells every phone, and they re-read a moment later, after this one commits.
-create or replace function bump_leaderboard() returns trigger language plpgsql security definer as $$
+create or replace function bump_leaderboard() returns trigger language plpgsql security definer set search_path = public, pg_temp as $$
 begin
   update leaderboard_version set v = v + 1, at = now()
   where id = (select id from leaderboard_version where id = 1 for update skip locked);
@@ -148,7 +148,7 @@ do $$ begin
 end $$;
 
 create or replace function register_profile(p_name text)
-returns profiles language plpgsql security definer as $$
+returns profiles language plpgsql security definer set search_path = public, pg_temp as $$
 declare me profiles; u auth.users; pr text;
 begin
   select * into me from profiles where id = auth.uid();
@@ -166,7 +166,7 @@ end $$;
 -- organiser desk: check the attendee in and credit their starter coins. Once per attendee.
 -- Any volunteer can check people in (the desk), whether or not they also run a booth.
 create or replace function issue_ticket(p_user uuid, p_coins int default 398)
-returns json language plpgsql security definer as $$
+returns json language plpgsql security definer set search_path = public, pg_temp as $$
 declare t profiles; amt int := p_coins;
 begin
   if my_role() not in ('volunteer','admin') then return json_build_object('ok', false, 'error', 'Organiser access required.'); end if;
@@ -182,7 +182,7 @@ end $$;
 -- The coin rules for one booth scan, for whoever is being charged or paid. Internal: called by scan_booth
 -- (the attendee scans the booth's code) and staff_scan (the booth's volunteer scans the attendee's wallet).
 create or replace function booth_tx(p_user uuid, p_booth text, p_staff boolean default false)
-returns json language plpgsql security definer as $$
+returns json language plpgsql security definer set search_path = public, pg_temp as $$
 declare b booths; me profiles; d int; last_at timestamptz;
 begin
   select * into b from booths where id = p_booth;
@@ -213,12 +213,12 @@ begin
 end $$;
 
 create or replace function scan_booth(p_booth text)
-returns json language sql security definer as $$ select booth_tx(auth.uid(), p_booth, false) $$;
+returns json language sql security definer set search_path = public, pg_temp as $$ select booth_tx(auth.uid(), p_booth, false) $$;
 
 -- A booth's volunteer scans an attendee's wallet: charges the session, or pays out a recharge point once
 -- they've passed. Volunteers only at their own booth; admins at any.
 create or replace function staff_scan(p_user uuid, p_booth text)
-returns json language plpgsql security definer as $$
+returns json language plpgsql security definer set search_path = public, pg_temp as $$
 declare me profiles; r json;
 begin
   select * into me from profiles where id = auth.uid();
@@ -232,7 +232,7 @@ begin
 end $$;
 
 create or replace function redeem_reward(p_reward text)
-returns json language plpgsql security definer as $$
+returns json language plpgsql security definer set search_path = public, pg_temp as $$
 declare r rewards; me profiles;
 begin
   select * into r from rewards where id = p_reward for update;
@@ -248,7 +248,7 @@ end $$;
 
 -- Prizes and manual corrections: admins only (volunteers are limited to the desk and their own booth).
 create or replace function award_coins(p_user uuid, p_delta int, p_reason text)
-returns json language plpgsql security definer as $$
+returns json language plpgsql security definer set search_path = public, pg_temp as $$
 declare t profiles;
 begin
   if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins can award or deduct coins.'); end if;
@@ -268,7 +268,7 @@ end $$;
 --   • a recharge payout or award takes the coins back, and off the leaderboard; the recharge point stays used
 --   • a check-in takes the starter coins back and sets the ticket to pending, so the desk can verify the right person
 create or replace function reverse_tx(p_tx bigint, p_reason text default '')
-returns json language plpgsql security definer as $$
+returns json language plpgsql security definer set search_path = public, pg_temp as $$
 declare me profiles; o txs; t profiles; amt int;
 begin
   select * into me from profiles where id = auth.uid();
@@ -298,7 +298,7 @@ end $$;
 -- Staff find an attendee by name, GitHub username or email (someone whose phone died, or who lost their QR).
 create or replace function find_attendees(p_q text)
 returns table (id uuid, handle text, name text, email text, coins int, earned int, ticket boolean, role text, booth text, created_at timestamptz)
-language plpgsql security definer stable as $$
+language plpgsql security definer set search_path = public, pg_temp stable as $$
 declare raw text := lower(ltrim(trim(coalesce(p_q, '')), '@')); q text;
 begin
   if my_role() not in ('volunteer','admin') or length(raw) < 2 then return; end if;
@@ -310,7 +310,7 @@ end $$;
 
 -- An attendee's recent transactions, to reverse one: admins see all, a volunteer only their own booth's.
 create or replace function staff_txs(p_user uuid)
-returns setof txs language plpgsql security definer stable as $$
+returns setof txs language plpgsql security definer set search_path = public, pg_temp stable as $$
 declare me profiles;
 begin
   select * into me from profiles where id = auth.uid();
@@ -363,8 +363,8 @@ on conflict do nothing;
 
 -- ============================================================
 -- Club sign-ups (the "Join the club" form on the home page)
--- Anyone may INSERT one row (the site's /api/join validates first);
--- only volunteers/admins can read them, on the organiser desk.
+-- Nobody inserts directly: the site's /api/join validates, then calls submit_join (end of this file) with the
+-- server-only key. Only volunteers/admins can read them, on the organiser desk.
 -- ============================================================
 create table if not exists join_requests (
   id bigint generated always as identity primary key,
@@ -375,11 +375,10 @@ create table if not exists join_requests (
 );
 create unique index if not exists join_requests_one_per_email on join_requests (lower(email));
 alter table join_requests enable row level security;
-drop policy if exists "anyone can sign up" on join_requests;
-create policy "anyone can sign up" on join_requests for insert to anon, authenticated with check (true);
+drop policy if exists "anyone can sign up" on join_requests; -- earlier versions let anyone insert; only submit_join writes now
 drop policy if exists "staff read sign-ups" on join_requests;
 create policy "staff read sign-ups" on join_requests for select using (my_role() in ('volunteer','admin'));
-grant insert on join_requests to anon, authenticated;
+revoke insert on join_requests from anon, authenticated;
 
 -- ============================================================
 -- Email: welcome + organiser broadcasts (see lib/email, app/api/join, app/api/broadcast)
@@ -404,7 +403,7 @@ create policy "admins log broadcasts" on broadcasts for insert with check (my_ro
 
 -- ============================================================
 -- "Get involved" messages: core-team applications, sponsors, speakers, questions.
--- Anyone may send one (the site validates and rate-limits first); only staff can read them.
+-- Written only by submit_message (end of this file), which the site calls after validating and rate-limiting; only staff can read them.
 -- ============================================================
 create table if not exists messages (
   id bigint generated always as identity primary key,
@@ -417,13 +416,12 @@ create table if not exists messages (
 );
 alter table messages enable row level security;
 drop policy if exists "anyone can send a message" on messages;
-create policy "anyone can send a message" on messages for insert to anon, authenticated with check (true);
 drop policy if exists "staff read messages" on messages;
 create policy "staff read messages" on messages for select using (my_role() in ('volunteer','admin'));
-grant insert on messages to anon, authenticated;
+revoke insert on messages from anon, authenticated;
 
 -- ============================================================
--- Event feedback: anonymous, one row per submission. Anyone may send; only staff can read.
+-- Event feedback: anonymous, one row per submission. Written only by submit_feedback (end of this file); only staff can read.
 -- ============================================================
 create table if not exists event_feedback (
   id bigint generated always as identity primary key,
@@ -435,10 +433,9 @@ create table if not exists event_feedback (
 );
 alter table event_feedback enable row level security;
 drop policy if exists "anyone can send feedback" on event_feedback;
-create policy "anyone can send feedback" on event_feedback for insert to anon, authenticated with check (true);
 drop policy if exists "staff read feedback" on event_feedback;
 create policy "staff read feedback" on event_feedback for select using (my_role() in ('volunteer','admin'));
-grant insert on event_feedback to anon, authenticated;
+revoke insert on event_feedback from anon, authenticated;
 
 -- ============================================================
 -- Attendance and certificates (the /admin dashboard)
@@ -465,7 +462,7 @@ grant select, insert, update, delete on attendance to authenticated;
 
 create or replace function certificate(p_id uuid)
 returns table (name text, event text, handle text, issued timestamptz)
-language sql security definer stable as
+language sql security definer set search_path = public, pg_temp stable as
 $$ select name, event, handle, coalesce(emailed_at, created_at) from attendance where id = p_id $$;
 grant execute on function certificate(uuid) to anon, authenticated;
 
@@ -473,7 +470,7 @@ grant execute on function certificate(uuid) to anon, authenticated;
 -- gave them or their GitHub username; nobody can read anyone else's this way.
 create or replace function my_attendance()
 returns table (id uuid, event text, name text)
-language sql security definer stable as $$
+language sql security definer set search_path = public, pg_temp stable as $$
   select a.id, a.event, a.name from attendance a join auth.users u on u.id = auth.uid()
   where a.email = lower(u.email) or (a.handle is not null and lower(a.handle) = lower(u.raw_user_meta_data->>'user_name'))
   order by a.event desc
@@ -494,7 +491,7 @@ grant select on pending_roles to authenticated;
 
 -- Admins give people organiser access by GitHub handle (works before or after their first sign-in).
 create or replace function set_role(p_handle text, p_role text)
-returns json language plpgsql security definer as $$
+returns json language plpgsql security definer set search_path = public, pg_temp as $$
 declare h text := lower(ltrim(trim(p_handle), '@')); t uuid;
 begin
   if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins can change roles.'); end if;
@@ -520,7 +517,7 @@ grant execute on function set_role(text, text) to authenticated;
 -- Admins put a volunteer on a booth (or take them off it with an empty booth). What a volunteer can do follows:
 -- with a booth, scan wallets and reverse recent scans there; without one, ticket check-in at the desk.
 create or replace function assign_booth(p_handle text, p_booth text)
-returns json language plpgsql security definer as $$
+returns json language plpgsql security definer set search_path = public, pg_temp as $$
 declare h text := lower(ltrim(trim(p_handle), '@')); b text := nullif(trim(coalesce(p_booth, '')), ''); t profiles;
 begin
   if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins can assign booths.'); end if;
@@ -551,7 +548,7 @@ alter table rate_hits enable row level security;
 -- Counts one hit for p_key and answers whether it's still within p_limit hits per p_window_seconds.
 -- One statement, so two servers counting the same visitor at once can't both slip through.
 create or replace function rate_hit(p_key text, p_limit int, p_window_seconds int)
-returns boolean language plpgsql security definer as $$
+returns boolean language plpgsql security definer set search_path = public, pg_temp as $$
 declare n int; w interval := make_interval(secs => greatest(1, least(coalesce(p_window_seconds, 600), 86400)));
 begin
   if p_key is null or length(p_key) not between 1 and 100 then return false; end if;
@@ -563,8 +560,9 @@ begin
   returning hits into n;
   return n <= p_limit;
 end $$;
-revoke execute on function rate_hit(text, int, int) from public;
-grant execute on function rate_hit(text, int, int) to anon, authenticated;
+-- Server-only: with the public key anyone could write endless counter rows, or fill the table.
+revoke execute on function rate_hit(text, int, int) from public, anon, authenticated;
+grant execute on function rate_hit(text, int, int) to service_role;
 
 -- ============================================================
 -- Errors from visitors' browsers (components/ui/ErrorReporter.tsx → /api/errors), so we hear when
@@ -587,7 +585,7 @@ create policy "admins read errors" on client_errors for select using (my_role() 
 grant select on client_errors to authenticated;
 
 create or replace function log_client_error(p_message text, p_stack text, p_path text, p_browser text)
-returns boolean language plpgsql security definer as $$
+returns boolean language plpgsql security definer set search_path = public, pg_temp as $$
 begin
   if coalesce(p_message, '') = '' or coalesce(p_path, '') = '' then return false; end if;
   -- a broken release on every phone, or someone scripting it: 2000 a day is plenty to see the pattern
@@ -607,7 +605,7 @@ grant execute on function log_client_error(text, text, text, text) to anon, auth
 -- Attendance is kept, so certificates stay verifiable; Epoch data is cleared by hand (docs/ROLLOVER.md).
 -- ============================================================
 create or replace function prune_old_data()
-returns json language plpgsql security definer as $$
+returns json language plpgsql security definer set search_path = public, pg_temp as $$
 declare s int; m int; f int; e int;
 begin
   delete from join_requests where created_at < now() - interval '18 months'; get diagnostics s = row_count;
@@ -636,7 +634,7 @@ create policy "admins read epoch interest" on epoch_interest for select using (m
 
 -- 'created', 'exists' or 'unsubscribed'. An address that unsubscribed stays unsubscribed: someone else typing it in
 -- can't undo that, so the form says it won't be emailed instead of claiming it's on the list.
-create or replace function epoch_interest_join(p_email text) returns text language plpgsql security definer as $$
+create or replace function epoch_interest_join(p_email text) returns text language plpgsql security definer set search_path = public, pg_temp as $$
 declare e text := lower(trim(p_email));
 begin
   if e is null or length(e) > 254 or e !~ '^[^\s@]+@[^\s@]+\.[^\s@]+$' then raise exception 'invalid email'; end if;
@@ -644,16 +642,19 @@ begin
   if found then return 'created'; end if;
   return case when exists (select 1 from epoch_interest where lower(email) = e and unsubscribed) then 'unsubscribed' else 'exists' end;
 end $$;
-revoke execute on function epoch_interest_join(text) from public;
-grant execute on function epoch_interest_join(text) to anon, authenticated;
+-- Server-only (the site checks the address and the rate limit first); with the public key anyone could stuff the list.
+revoke execute on function epoch_interest_join(text) from public, anon, authenticated;
+grant execute on function epoch_interest_join(text) to service_role;
 
 -- Anyone with a valid signed link can unsubscribe (the site checks the signature before calling this).
 -- One link, every list: club sign-ups and the Epoch interest list.
-create or replace function unsubscribe_join(p_email text) returns void language sql security definer as $$
+create or replace function unsubscribe_join(p_email text) returns void language sql security definer set search_path = public, pg_temp as $$
   update join_requests set unsubscribed = true where lower(email) = lower(p_email);
   update epoch_interest set unsubscribed = true where lower(email) = lower(p_email);
 $$;
-grant execute on function unsubscribe_join(text) to anon, authenticated;
+-- Server-only: the signed link is checked by the site, so calling this with the public key must not unsubscribe anyone.
+revoke execute on function unsubscribe_join(text) from public, anon, authenticated;
+grant execute on function unsubscribe_join(text) to service_role;
 
 -- Live quizzes (/quiz/host): each finished quiz's final table and per-question counts, so organisers can look back.
 -- Playing needs nothing here (it runs over Realtime broadcast); only the record of a finished quiz is kept.
@@ -685,3 +686,39 @@ create table if not exists quiz_sets (
 alter table quiz_sets enable row level security;
 drop policy if exists "staff manage quiz sets" on quiz_sets;
 create policy "staff manage quiz sets" on quiz_sets for all using (my_role() in ('volunteer','admin')) with check (my_role() in ('volunteer','admin'));
+
+-- ============================================================
+-- The public forms write through these. The site's server calls them with its server-only key (service_role) after the
+-- honeypot, the minimum fill time and the per-visitor rate limit, so calling the database straight from a browser with
+-- the public key can no longer skip those checks. Each also stops a runaway script with a limit per hour across all visitors.
+-- A fork without SUPABASE_SERVICE_ROLE_KEY can let the public key call them instead (the forms then work, but anyone with
+-- that key can skip the per-visitor checks): grant execute on function submit_join(text, text, text),
+-- submit_message(text, text, text, text, text), submit_feedback(text, int, text, text), epoch_interest_join(text) to anon;
+-- ============================================================
+create or replace function submit_join(p_handle text, p_email text, p_first_event text)
+returns text language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if (select count(*) from join_requests where created_at > now() - interval '1 hour') >= 300 then return 'busy'; end if;
+  insert into join_requests (handle, email, first_event) values (trim(p_handle), lower(trim(p_email)), p_first_event)
+  on conflict ((lower(email))) do nothing;
+  return case when found then 'created' else 'exists' end; -- 'exists': that email already signed up
+end $$;
+
+create or replace function submit_message(p_kind text, p_name text, p_email text, p_handle text, p_message text)
+returns text language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if (select count(*) from messages where created_at > now() - interval '1 hour') >= 200 then return 'busy'; end if;
+  insert into messages (kind, name, email, handle, message) values (p_kind, trim(p_name), lower(trim(p_email)), nullif(trim(coalesce(p_handle, '')), ''), trim(p_message));
+  return 'created';
+end $$;
+
+create or replace function submit_feedback(p_event text, p_rating int, p_liked text, p_improve text)
+returns text language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if (select count(*) from event_feedback where created_at > now() - interval '1 hour') >= 600 then return 'busy'; end if;
+  insert into event_feedback (event, rating, liked, improve) values (p_event, p_rating, nullif(trim(coalesce(p_liked, '')), ''), nullif(trim(coalesce(p_improve, '')), ''));
+  return 'created';
+end $$;
+
+revoke execute on function submit_join(text, text, text), submit_message(text, text, text, text, text), submit_feedback(text, int, text, text) from public, anon, authenticated;
+grant execute on function submit_join(text, text, text), submit_message(text, text, text, text, text), submit_feedback(text, int, text, text) to service_role;
