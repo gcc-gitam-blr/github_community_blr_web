@@ -75,14 +75,20 @@ It asks for three things and checks each one before moving on:
 2. **Gmail**: the club address + an [App Password](https://myaccount.google.com/apppasswords). It sends you a test email.
 3. **Vercel** (optional): a [token](https://vercel.com/account/tokens), and it saves the same settings on the live site. Redeploy once afterwards.
 
-Everything is saved in `.env.local` (never committed). To make someone an organiser after they sign in to Epoch once: `npm run connect -- admin <github-handle>`.
+Everything is saved in `.env.local` (never committed). To make someone an admin after they have signed in once at `/admin`: `npm run connect -- admin <github-handle> <YYYY-MM-DD>` (the day their access ends).
 
 ## Club admin, attendance and certificates
 
 `/admin` is the core team's dashboard: club stats, sign-ups (and emailing everyone), Get involved messages, event feedback, **attendance & certificates**, and **people & roles**.
 
-- **Who gets in** is decided by the database (`profiles.role`): *admin* (everything), *volunteer* (sees everything, marks attendance), everyone else sees "ask an admin".
-- **The first admin** is set once in Supabase → SQL Editor: `update profiles set role = 'admin' where handle = 'your-github-username';` (sign in at `/admin` once first). After that, admins add people under **People & roles**.
+- **Who gets in** is decided by the database, from *appointments*: a role, a start and an end date. When the end date passes, access stops by itself, on the very next request. The roles are *volunteer* (event-day staff: attendance, the Epoch desk and booths), *core* (the core team: also sees sign-ups, messages and feedback) and *admin* (everything, including who has access). Everyone else sees "ask an admin". Dates are India dates.
+- **The first admin** is made once in Supabase → SQL Editor, after that person has signed in at `/admin`: `select bootstrap_admin('your-github-username', '2027-06-30');` (or `npm run connect -- admin your-github-username 2027-06-30`). After that, admins appoint people under **People & roles**: pick the role, an optional title (President, Events lead…) and the day it ends. The same form changes a role or extends a term, and **End access** takes it away early.
+- **Rules the database enforces:** only admins change access; nobody changes their own; the last active admin can't be removed; every change is written to `crm_audit`, which nobody can edit. The Monday digest warns when fewer than two admins are active or someone's access ends within 14 days, so keep at least two admins at all times.
+- **Members and recruitment** (core team and admins; only admins change anything):
+  - **Members** is the club's people list: add one, edit, mark active / alumni / inactive, import a spreadsheet (a CSV with `name`, `email` and optionally `handle`, `team`, `joined_on`; it is checked first and nothing is saved if any row is wrong) and download the list. Someone who stays inactive for 24 months is deleted automatically.
+  - **Recruitment** runs a round: an admin creates it (name, club year, the dates applications are accepted), picks reviewers (people with a core or admin appointment), and opens it. While a round is open, **Get involved → Join the core team** shows the application form (name, email, GitHub username, preferred team, two short answers); otherwise it says applications are closed. Only the round's assigned reviewers and admins can read applications; a reviewer sees only their own scores; nobody can review, decide or onboard their own application. An application goes New → Screening → Interview, an admin then selects, waitlists or declines it (the reason is kept), and a selected applicant is onboarded into Members. Becoming a member gives no access: give an appointment under *People & roles* if they need one. Declined or withdrawn applications are deleted 6 months after the round closes.
+  - Volunteers (event-day staff) no longer read sign-ups, messages or feedback; core and admins do. Downloading sign-ups or members is logged in the audit log.
+- **Updating an older database:** after pulling the appointments update, run `supabase/schema.sql` and then, straight away, `supabase/backfill-appointments.sql` (its first lines explain it). It turns the roles people already have into appointments with an end date you choose; until it runs, nobody has organiser access.
 - **Certificates go only to people who attended.** After an event, open **Attendance & certificates**, pick the event and add who came: import Luma's guest list (Event → Guests → ⋯ → Export as CSV — only checked-in guests are taken), pick from club sign-ups, or type them in. Then **Email certificates**. Each person gets a link to their certificate page — printable as an A4 PDF, with an *Add to LinkedIn* button and a QR code anyone can scan to verify it.
 - **Site errors** (admins only): when a page breaks in someone's browser, the message, the page and the browser family (never what they typed) go to `/api/errors` and show here, the same error from many phones folded into one line with a count. No third-party account needed; reports are deleted after 30 days. Needs `supabase/schema.sql` re-run once.
 
@@ -147,7 +153,7 @@ Things that are **empty until you fill them in** (the site hides them rather tha
 2. Run [`supabase/schema.sql`](supabase/schema.sql) in the SQL editor. All coin movement happens in database functions, so a tampered browser can't mint coins, and recharge points work once per attendee.
 3. Enable **Authentication → Providers → GitHub**, with redirect URL `https://<your-domain>/epoch/register`.
 4. Copy `.env.example` to `.env.local` and fill in the URL and anon key.
-5. After you sign in once, make yourself admin: `update profiles set role = 'admin' where handle = 'your-handle';`
+5. After you sign in once, make yourself admin: `select bootstrap_admin('your-handle', '2027-06-30');` (the day your access ends; you can extend it later under *People & roles*).
 6. Open `/epoch/admin`, **print the QR sheet**, and put one code on each booth.
 
 > **Updating an existing database:** after pulling new Epoch features, run `supabase/schema.sql` again (`npm run connect`, or paste it into the SQL editor). It only adds what's missing, so it is safe to re-run; the organiser tools below need it.
@@ -238,7 +244,7 @@ one link takes the address off both lists.
 Get involved messages by kind, and the average feedback rating per event, with a link to `/admin`. Quiet weeks send nothing.
 To turn it on, add in Vercel: `CRON_SECRET` (any long random text; Vercel sends it with each cron call and the route
 refuses anything else), `SUPABASE_SERVICE_ROLE_KEY` (it reads staff-only tables with no one signed in) and optionally
-`ORGANISER_EMAILS` (otherwise it goes to every profile with role `admin`). Without them it does nothing and says why.
+`ORGANISER_EMAILS` (otherwise it goes to everyone with an active admin appointment). Without them it does nothing and says why.
 
 Epoch has **no passwords** — attendees sign in with GitHub — so there is no "forgot password" email to build.
 

@@ -1,4 +1,5 @@
-export type Role = "attendee" | "volunteer" | "admin";
+/** The live role from the database: an appointment decides it (volunteer = event-day staff, core = core team, admin). */
+export type Role = "attendee" | "volunteer" | "core" | "admin";
 
 export interface Profile {
   id: string;

@@ -77,7 +77,7 @@ async function main() {
   const t0 = performance.now();
   // 1. doors open
   await Promise.all([...phones, ...desks].map((u, i) => rpc(u, "register_profile", [`Person ${i}`])));
-  await pool.query("update profiles set role = 'volunteer' where id = any($1)", [desks]);
+  await pool.query("insert into appointments (user_id, role, ends_on) select u, 'volunteer', today_ist() + 7 from unnest($1::uuid[]) u", [desks]);
   const t1 = performance.now();
 
   // 2. check-in: every ticket verified once; 10% of people get scanned by two desks at the same moment
@@ -105,11 +105,11 @@ async function main() {
   // 4. mistakes: a volunteer runs each spend booth; for a sample of booth charges, that volunteer and an admin both press
   //    Reverse at the same moment (and the volunteer double-taps). Exactly one reversal may land.
   const admin = desks[0];
-  await pool.query("update profiles set role = 'admin' where id = $1", [admin]);
+  await pool.query("insert into appointments (user_id, role, ends_on) values ($1, 'admin', today_ist() + 7)", [admin]);
   const runners = new Map<string, string>(); // booth -> its volunteer (a fresh one, so desks keep checking in)
   for (const b of spend) { const v = randomUUID(); runners.set(b, v); await pool.query("insert into auth.users values ($1, $2, $3)", [v, `vol-${b}@gitam.in`, { user_name: `vol-${b}` }]); }
   await Promise.all([...runners.values()].map((v, i) => rpc(v, "register_profile", [`Volunteer ${i}`])));
-  for (const [b, v] of runners) await pool.query("update profiles set role = 'volunteer', booth = $2 where id = $1", [v, b]);
+  for (const [b, v] of runners) { await pool.query("insert into appointments (user_id, role, ends_on) values ($1, 'volunteer', today_ist() + 7)", [v]); await pool.query("update profiles set booth = $2 where id = $1", [v, b]); }
   const charges = (await pool.query<{ id: string; ref: string }>("select id::text, ref from txs where ref like 'booth:%' and ref not like 'booth:recharge-%' and delta < 0 order by random() limit $1", [UNDOS])).rows;
   const undos: (R | null)[][] = [];
   await Promise.all(charges.map(async (c) => {

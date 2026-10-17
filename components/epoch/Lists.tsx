@@ -10,6 +10,8 @@ import { AuditLog, FindAttendee, Team } from "./Desk";
 import { MyPost } from "./Staff";
 import { useEpoch } from "./EpochProvider";
 import { qr } from "@/lib/epoch/store";
+import { exportSignups } from "@/lib/admin/client";
+import { csvCell } from "@/lib/admin/members";
 import { useLiveLeaderboard, type BoardLink } from "@/lib/epoch/live";
 import { BOOTHS, STARTER_COINS, EPOCH } from "@/lib/epoch/config";
 import type { Audience, ClubMessage, EventFeedback, JoinRequest, Reward } from "@/lib/epoch/types";
@@ -218,9 +220,10 @@ export function SignUps() {
     if (r.ok) { setResult({ k: "ok", t: `Sent to ${r.sent} of ${r.total}${r.failed ? ` (${r.failed} failed)` : ""}.` }); setSubject(""); setMessage(""); } else setResult({ k: "err", t: r.error });
   };
 
-  const csv = () => {
-    const q = (s: string) => `"${s.replace(/"/g, '""')}"`;
-    const body = ["handle,email,first_event,signed_up", ...(rows ?? []).map((r) => [r.handle, r.email, eventName(r.firstEvent), r.createdAt].map(q).join(","))].join("\n");
+  const csv = async () => {
+    const list = await exportSignups(); // goes through a database function, so every download is recorded in the audit log
+    if (!list) return setResult({ k: "err", t: "Couldn't export. Please try again." });
+    const body = ["handle,email,first_event,signed_up", ...list.map((r) => [r.handle, r.email, eventName(r.first_event), r.created_at].map(csvCell).join(","))].join("\n");
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([body], { type: "text/csv" })); a.download = "club-sign-ups.csv"; a.click(); URL.revokeObjectURL(a.href);
   };
 

@@ -10,6 +10,7 @@ import { applySchema, checkEmail, checkSupabase, makeAdmin, mergeEnv, newSecret,
 let fails = 0; const ok = (n: string, c: boolean) => { console.log((c ? "PASS" : "FAIL") + "  " + n); if (!c) fails++; };
 const res = (status: number, body = "") => new Response(body, { status });
 
+const UNTIL = new Date(Date.now() + 365 * 864e5).toISOString().slice(0, 10); // a year from now: the database refuses terms over 3 years
 (async () => {
   // .env.local editing
   const before = "# Supabase\nNEXT_PUBLIC_SUPABASE_URL=\nKEEP=me\n";
@@ -41,10 +42,11 @@ const res = (status: number, body = "") => new Response(body, { status });
   if (!first.ok) console.log(first.error);
   ok("…and running it again is fine", (await applySchema(conn, sql, { ssl: false })).ok);
   ok("a broken connection string is reported, not thrown", !(await applySchema("postgresql://nobody@127.0.0.1:1/x", sql, { ssl: false })).ok);
-  ok("make-admin explains that the person must sign in first", /sign in once/.test(((await makeAdmin(conn, "ada", { ssl: false })) as { error: string }).error));
+  ok("make-admin explains that the person must sign in first", /sign in once/.test(((await makeAdmin(conn, "ada", UNTIL, { ssl: false })) as { error: string }).error));
   await db.exec(`insert into auth.users values ('00000000-0000-0000-0000-00000000000a', 'a@b.in', '{}');
     insert into profiles (id, handle, name) values ('00000000-0000-0000-0000-00000000000a', 'Ada', 'Ada');`);
-  ok("make-admin promotes them (handle case doesn't matter)", (await makeAdmin(conn, "@ada", { ssl: false })).ok && (await db.query<{ role: string }>("select role from profiles")).rows[0].role === "admin");
+  ok("make-admin promotes them (handle case doesn't matter)", (await makeAdmin(conn, "@ada", UNTIL, { ssl: false })).ok && (await db.query<{ role: string }>("select role from profiles")).rows[0].role === "admin");
+  ok("…as an appointment that ends, not a forever role", (await db.query<{ ends_on: string }>("select ends_on::text from appointments")).rows[0]?.ends_on === UNTIL && !(await makeAdmin(conn, "@ada", "next year", { ssl: false })).ok);
   await server.stop();
 
   // email

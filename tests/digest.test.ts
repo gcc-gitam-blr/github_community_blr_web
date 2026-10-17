@@ -26,6 +26,17 @@ ok("the headline adds it up", digestHeadline(d) === "7 sign-ups, 3 messages, 4 r
 const one = buildDigest({ signups: [{ handle: "amy", created_at: "2026-10-01T00:00:00Z" }], messages: [], feedback: [] }, now)!;
 ok("a week with only one sign-up says just that", digestHeadline(one) === "1 sign-up" && one.messages.length === 0 && one.feedback.length === 0);
 
+// access warnings: enough admins and nothing ending = nothing to say; otherwise the email says so even in a quiet week
+const quiet = { signups: [], messages: [], feedback: [] };
+ok("two admins and nobody's access ending adds nothing", buildDigest({ ...quiet, access: { active_admins: 2, ending: [] } }, now) === null);
+const low = buildDigest({ ...quiet, access: { active_admins: 1, ending: [] } }, now)!;
+ok("one active admin is a warning on its own, even in a quiet week", !!low && low.access!.tooFewAdmins && digestHeadline(low) === "too few admins");
+const ending = buildDigest({ ...quiet, access: { active_admins: 2, ending: [{ handle: "cy", role: "core", days_left: 3 }, { handle: "vi", role: "volunteer", days_left: 0 }] } }, now)!;
+ok("access ending soon is listed, soonest as given", ending.access!.ending.length === 2 && !ending.access!.tooFewAdmins && digestHeadline(ending) === "2 accesses ending");
+const accessMail = digestEmail(ending, "https://club.test");
+ok("the email names who and when", accessMail.text.includes("@cy (core) in 3 days") && accessMail.text.includes("@vi (volunteer) ends today"));
+ok("…and says what to do when there are too few admins", digestEmail(low, "https://club.test").text.includes("Appoint another"));
+
 // who gets it
 const admins = [{ email: "Lead@Gitam.in" }, { email: null }, { email: "lead@gitam.in" }, { email: "second@gitam.in" }];
 ok("without ORGANISER_EMAILS, every admin with an email gets it once", digestRecipients(undefined, admins).join() === "lead@gitam.in,second@gitam.in");

@@ -2,7 +2,7 @@
      1. Supabase: checks the keys and creates every table (sign-ups, messages, feedback, Epoch coins)
      2. Gmail:    checks the App Password by sending you a test email
      3. Saves everything to .env.local, and (optional) to your Vercel project
-   npm run connect -- admin <github-handle>   makes someone an organiser (after they've signed in once)
+   npm run connect -- admin <github-handle> <YYYY-MM-DD>   makes someone an admin until that day (after they've signed in once)
    Press Enter to keep a value shown in [brackets]. Nothing is sent anywhere except Supabase, Gmail and Vercel. */
 import fs from "node:fs";
 import { createInterface } from "node:readline/promises";
@@ -24,8 +24,9 @@ const save = (vars: Record<string, string>) => { Object.assign(env, vars); fs.wr
 async function main() {
   if (process.argv[2] === "admin") {
     const handle = process.argv[3] || (await ask("GitHub username to make an organiser"));
+    const until = process.argv[4] || (await ask("Day their access ends (YYYY-MM-DD)"));
     const db = env.SUPABASE_DB_URL || (await ask("Database connection string (Supabase → Connect → Session pooler)", "", true));
-    report(`@${handle} is now an admin`, await makeAdmin(db, handle));
+    report(`@${handle} is now an admin until ${until}`, await makeAdmin(db, handle, until));
     return;
   }
 
@@ -80,7 +81,7 @@ async function main() {
   say("\nLast, for Epoch sign-in only: Supabase → Authentication → Sign In / Providers → GitHub → on.");
   say("  It asks for a GitHub OAuth app: github.com/settings/developers → New OAuth App, callback URL:");
   say(`  ${url}/auth/v1/callback`);
-  say("  Then sign in once at /epoch/register and run:  npm run connect -- admin <your-github-handle>\n");
+  say("  Then sign in once at /epoch/register and run:  npm run connect -- admin <your-github-handle> <the day access ends, YYYY-MM-DD>\n");
 }
 
 main().catch((e) => { console.error(e); process.exitCode = 1; }).finally(() => { finished = true; rl.close(); });
