@@ -20,9 +20,10 @@ export function parseMembersCsv(text: string): { rows: MemberRow[]; problem: str
   return { rows, problem: rows.length ? null : "There are no people under the header line." };
 }
 
-const q = (s: string) => `"${s.replace(/"/g, '""')}"`;
-/** The export file. Cells starting with = + - @ are prefixed so a spreadsheet never runs them as formulas. */
+/** One CSV cell, quoted. A cell starting with = + - @ gets a leading ' so a spreadsheet never runs it as a formula. */
+export const csvCell = (v: unknown) => { const s = String(v ?? ""); return `"${(/^[=+\-@]/.test(s) ? `'${s}` : s).replace(/"/g, '""')}"`; };
+/** The export file. */
 export const membersCsv = (rows: Member[]) => [
   "handle,name,email,team,status,joined_on,left_on",
-  ...rows.map((m) => [m.handle ?? "", m.name, m.email, m.team ?? "", m.status, m.joined_on ?? "", m.left_on ?? ""].map((c) => q(/^[=+\-@]/.test(String(c)) ? `'${c}` : String(c))).join(",")),
+  ...rows.map((m) => [m.handle, m.name, m.email, m.team, m.status, m.joined_on, m.left_on].map(csvCell).join(",")),
 ].join("\n");
