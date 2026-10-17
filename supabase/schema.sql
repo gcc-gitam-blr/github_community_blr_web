@@ -2547,3 +2547,40 @@ grant execute on function can_take_part(), save_interests(text[], text[], text, 
   request_publishing(bigint), decide_publishing(bigint, boolean, text), unpublish_project(bigint) to authenticated;
 revoke execute on function public_projects() from public, anon, authenticated;
 grant execute on function public_projects() to service_role;
+
+-- ============================================================
+-- The contribution board (/board) follows the GitHub usernames on the team and contributors lists, plus any active member
+-- who opts in from My club. Opting in shows their name and GitHub username on the public board; it is off by default.
+-- ============================================================
+alter table members add column if not exists on_board boolean not null default false;
+
+create or replace function my_board_status() returns json language sql security definer stable set search_path = public, pg_temp as $$
+  select coalesce((select json_build_object('member', true, 'on_board', m.on_board, 'handle', coalesce(m.handle, p.handle))
+                     from members m left join profiles p on p.id = m.user_id
+                    where m.user_id = auth.uid() and m.status = 'active' limit 1), json_build_object('member', false, 'on_board', false))
+$$;
+
+create or replace function set_board_opt_in(p_on boolean) returns json language plpgsql security definer set search_path = public, pg_temp as $$
+declare m members;
+begin
+  select * into m from members where user_id = auth.uid() and status = 'active' for update;
+  if not found then return json_build_object('ok', false, 'error', 'The board opt-in is for active members of the club.'); end if;
+  if coalesce(p_on, false) and m.handle is null and not exists (select 1 from profiles where id = auth.uid() and handle is not null) then
+    return json_build_object('ok', false, 'error', 'Add your GitHub username to your member record first (ask a lead).');
+  end if;
+  update members set on_board = coalesce(p_on, false) where id = m.id;
+  perform crm_log('board_opt_in', 'member', m.id::text, jsonb_build_object('on', coalesce(p_on, false)));
+  return json_build_object('ok', true);
+end $$;
+
+-- For the board page (server key only): active members who opted in, with the GitHub username to search for.
+create or replace function board_members() returns json language sql security definer stable set search_path = public, pg_temp as $$
+  select coalesce(json_agg(json_build_object('name', m.name, 'handle', coalesce(m.handle, p.handle)) order by m.name), '[]'::json)
+  from members m left join profiles p on p.id = m.user_id
+  where m.status = 'active' and m.on_board and coalesce(m.handle, p.handle) is not null
+$$;
+
+revoke execute on function my_board_status(), set_board_opt_in(boolean) from public, anon;
+grant execute on function my_board_status(), set_board_opt_in(boolean) to authenticated;
+revoke execute on function board_members() from public, anon, authenticated;
+grant execute on function board_members() to service_role;
