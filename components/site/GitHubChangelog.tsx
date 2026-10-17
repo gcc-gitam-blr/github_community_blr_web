@@ -59,7 +59,7 @@ export async function GitHubChangelog({ variant }: { variant: "home" | "full" })
         <div>
           <p className="font-mono text-[13px] text-ink-2">{"// shipped on github"}</p>
           <h2 id="gh-changelog" className="mt-4 text-[clamp(32px,4.2vw,52px)]">What GitHub<br />shipped lately.</h2>
-          <p className="mt-4 max-w-[44ch] text-[17px] text-ink-2">GitHub changes every week. These are the latest headlines from its official changelog — the same news developers get in their inbox.</p>
+          <p className="mt-4 max-w-[44ch] text-[17px] text-ink-2">GitHub changes every week. These are the latest headlines from its official changelog, the same news developers get in their inbox.</p>
           {links}
         </div>
         {list}

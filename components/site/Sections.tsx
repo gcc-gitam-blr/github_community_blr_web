@@ -29,7 +29,7 @@ export function About() {
       <div className={`${wrap} grid grid-cols-[minmax(0,1fr)] items-center gap-[clamp(36px,6vw,88px)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]`}>
         <div>
           <Head tag="// about the club" title={<>A community that <em className="hl">commits</em> to each other.</>}>
-            We&apos;re the GitHub Community Club at GITAM University Bengaluru — students helping students learn the tools real software teams use. You don&apos;t need any experience: we start from the basics and build up together.
+            We&apos;re the GitHub Community Club at GITAM University Bengaluru: students helping students learn the tools real software teams use. You don&apos;t need any experience: we start from the basics and build up together.
           </Head>
           <Reveal delay={0.1}>
             <p className="mb-4 font-mono text-[13px] text-ink-2">What we do</p>
@@ -92,7 +92,7 @@ export function Events() {
   return (
     <section id="events" className={pad}>
       <div className={wrap}>
-        <Head tag="// events · 2026-27" title={<>The year, as a<br />contribution graph.</>}>Every event is a green square. December is gold — that&apos;s Epoch. Pick a day to see what&apos;s on.</Head>
+        <Head tag="// events · 2026-27" title={<>The year, as a<br />contribution graph.</>}>Every event is a green square. December is gold: that&apos;s Epoch. Pick a day to see what&apos;s on.</Head>
         <EventsYear />
         <LatestUpdates />
         {CLUB.lumaCalendar && <a href={CLUB.lumaCalendar} target="_blank" rel="noopener" className="mt-6 inline-flex items-center gap-2 font-semibold text-link hover:underline">See every event and RSVP on Luma ↗</a>}

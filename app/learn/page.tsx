@@ -25,7 +25,7 @@ export default function Learn() {
           <div className="max-w-[760px]">
             <p className="font-mono text-[13px] text-ink-2">{"// learn"}</p>
             <h1 className="mt-4 text-[clamp(40px,6.4vw,84px)]">Learn Git &amp; GitHub,<br />at your own pace.</h1>
-            <p className="mt-5 max-w-[56ch] text-[19px] text-ink-2">Everything we teach in our sessions, in one place — plus the best free material on the internet. Start at the top; skip what you already know.</p>
+            <p className="mt-5 max-w-[56ch] text-[19px] text-ink-2">Everything we teach in our sessions in one place, plus the best free material on the internet. Start at the top; skip what you already know.</p>
           </div>
           <Sticker name="professor" size={150} tilt={6} className="mb-4 hidden md:block" alt="" />
         </div>

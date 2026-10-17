@@ -9,7 +9,7 @@ import { GitHubChangelog } from "@/components/site/GitHubChangelog";
 
 export const metadata: Metadata = {
   title: "Updates",
-  description: "News from the GitHub Community Club at GITAM Bengaluru — events, Epoch — and the latest from the GitHub Changelog.",
+  description: "News from the GitHub Community Club at GITAM Bengaluru: events, Epoch, and the latest from the GitHub Changelog.",
   alternates: { types: { "application/rss+xml": "/updates/feed.xml" } },
 };
 

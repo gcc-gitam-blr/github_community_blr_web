@@ -47,8 +47,8 @@ const PRArt = () => (
 
 const IDEAS = [
   { k: "Git", t: "Save points for your code", d: "Git records every change you make as a commit. You can look back, undo a mistake, or try an idea on a branch without breaking what already works.", Art: GitArt },
-  { k: "GitHub", t: "Your code, online and shared", d: "GitHub keeps your Git projects — called repositories — online, so they're backed up, easy to share, and open to working on with anyone, from anywhere.", Art: GitHubArt },
-  { k: "Pull requests", t: "How people build together", d: "Someone suggests a change, others review it, and when it's right it's merged in. That's how teams — and the whole open-source world — make software.", Art: PRArt },
+  { k: "GitHub", t: "Your code, online and shared", d: "GitHub keeps your Git projects (called repositories) online, so they're backed up, easy to share, and open to working on with anyone, from anywhere.", Art: GitHubArt },
+  { k: "Pull requests", t: "How people build together", d: "Someone suggests a change, others review it, and when it's right it's merged in. That's how teams, and the whole open-source world, make software.", Art: PRArt },
 ];
 
 export function WhatIsGitHub() {

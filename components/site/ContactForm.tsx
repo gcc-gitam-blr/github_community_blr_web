@@ -46,7 +46,7 @@ export function ContactForm({ initial = "question" }: { initial?: Kind }) {
       const r = await fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
       const j = await r.json();
       if (j.ok) setState("done"); else if (j.fallback && DM_URL) setState("handoff"); else { setErr(j.error ?? "Something went wrong."); setState("idle"); }
-    } catch { setErr("Network error — please try again."); setState("idle"); }
+    } catch { setErr("Network error. Please try again."); setState("idle"); }
   };
 
   const text = `Hi! (${cur.label})\n\n${v.message.trim()}\n\n— ${v.name.trim()}, ${v.email.trim()}${v.handle.trim() ? `, GitHub @${v.handle.trim().replace(/^@/, "")}` : ""}`;
@@ -56,7 +56,7 @@ export function ContactForm({ initial = "question" }: { initial?: Kind }) {
   // the inbox isn't switched on: don't lose the message, hand it to a chat a person reads
   if (state === "handoff") return (
     <div role="status" className="rounded-[18px] border-2 border-ink bg-white p-6 sm:p-8">
-      <h2 className="text-[28px]">One more step — send it to us on {where}</h2>
+      <h2 className="text-[28px]">One more step: send it to us on {where}</h2>
       <p className="mt-2 text-[16px] text-ink-2">Our website inbox isn&apos;t switched on yet, so this hasn&apos;t reached anyone. Copy your message and paste it in the chat that opens. A real person reads every one.</p>
       <pre className="mt-5 max-h-60 overflow-auto whitespace-pre-wrap rounded-lg border border-line bg-[#f6f8fa] p-4 font-mono text-[13.5px] leading-relaxed">{text}</pre>
       <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -69,7 +69,7 @@ export function ContactForm({ initial = "question" }: { initial?: Kind }) {
 
   if (state === "done") return (
     <div role="status" className="rounded-[18px] border-2 border-ink bg-[#dafbe1] p-8">
-      <h2 className="text-[30px]">Message sent — thank you!</h2>
+      <h2 className="text-[30px]">Message sent. Thank you!</h2>
       <p className="mt-2 text-[17px] text-ink-2">A real person will reply, usually within a few days. If you gave your email you&apos;ll also get a confirmation.</p>
     </div>
   );

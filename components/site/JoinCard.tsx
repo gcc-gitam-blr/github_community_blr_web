@@ -9,7 +9,7 @@ import { EMAIL_RE, HANDLE_RE, cleanHandle, type JoinResult } from "@/lib/join";
 /* milliseconds since a stamp, measured on the visitor's own clock (never compared with the server's) */
 const stamp = () => performance.now() || 1;
 const since = (t: number) => (t ? performance.now() - t : undefined);
-const IDLE = "No password needed — we only need to know who to welcome.";
+const IDLE = "No password needed. We only need to know who to welcome.";
 
 export function JoinCard() {
   const [handle, setHandle] = useState(""); const [email, setEmail] = useState(""); const [track, setTrack] = useState("");
@@ -35,7 +35,7 @@ export function JoinCard() {
     timer.current = setTimeout(async () => {
       try {
         const res = await fetch(`https://api.github.com/users/${encodeURIComponent(v)}`);
-        if (res.status === 404) return setHint({ t: "No GitHub user with that name — check the spelling?", k: "bad" });
+        if (res.status === 404) return setHint({ t: "No GitHub user with that name. Check the spelling?", k: "bad" });
         if (!res.ok) throw new Error();
         const u = await res.json();
         setAvatar(`${u.avatar_url}&s=60`); setHandleOk(true); setHint({ t: `Found you, ${u.name || u.login}! ✓`, k: "good" });
@@ -46,7 +46,7 @@ export function JoinCard() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const bad = [["handle", handleOk], ["email", emailOk], ["track", !!track]].filter(([, ok]) => !ok).map(([k]) => k as string);
-    if (bad.length) { setErrs(Object.fromEntries(bad.map((k) => [k, Date.now()]))); setHint({ t: "Almost there — complete all three steps first.", k: "bad" }); return; }
+    if (bad.length) { setErrs(Object.fromEntries(bad.map((k) => [k, Date.now()]))); setHint({ t: "Almost there: complete all three steps first.", k: "bad" }); return; }
     const h = cleanHandle(handle);
     const first = CLUB.events.find((ev) => ev.date === track)?.title;
 
@@ -61,7 +61,7 @@ export function JoinCard() {
 
     if (res.ok) {
       setDone(true);
-      setHint({ t: res.status === "exists" ? `You're already on the list, @${h} — see you at the next event.` : `Merged! Welcome to the club, @${h}. We'll email you before ${first}.`, k: "good" });
+      setHint({ t: res.status === "exists" ? `You're already on the list, @${h}. See you at the next event.` : `Merged! Welcome to the club, @${h}. We'll email you before ${first}.`, k: "good" });
       return;
     }
     if (!res.fallback) { setHint({ t: res.error, k: "bad" }); return; }
@@ -69,13 +69,13 @@ export function JoinCard() {
     // no database connected yet: use the club's form link or email instead
     if (CLUB.joinUrl) {
       window.open(CLUB.joinUrl, "_blank", "noopener");
-      setHint({ t: `Almost done, @${h} — join the club WhatsApp community in the tab that just opened.`, k: "good" });
+      setHint({ t: `Almost done, @${h}: join the club WhatsApp community in the tab that just opened.`, k: "good" });
     } else if (CLUB.email) {
       const body = `Hi! I'd like to join.\n\nGitHub: @${h}\nEmail: ${email}\nI want to try first: ${first}`;
       window.location.assign(`mailto:${CLUB.email}?subject=${encodeURIComponent("Join GitHub Community Club BLR")}&body=${encodeURIComponent(body)}`);
-      setHint({ t: `Thanks, @${h} — send the email that just opened and we'll be in touch.`, k: "good" });
+      setHint({ t: `Thanks, @${h}. Send the email that just opened and we'll be in touch.`, k: "good" });
     } else { // nothing configured: say so rather than pretend it was sent
-      setHint({ t: "Sign-ups aren't connected yet — the club will open them soon. Follow the events below.", k: "bad" });
+      setHint({ t: "Sign-ups aren't connected yet. The club will open them soon; follow the events below.", k: "bad" });
     }
   };
 
@@ -122,7 +122,7 @@ export function JoinCard() {
       <p role="status" aria-live="polite" className={`mb-5 ml-[34px] mt-3.5 min-h-[1.6em] text-[13.5px] ${hint.k === "bad" ? "text-red-600" : hint.k === "good" ? "font-semibold text-green-700" : "text-ink-3"}`}>{hint.t}</p>
       <p className={`mb-4 flex items-center gap-2 rounded-lg border px-3 py-2.5 text-[13.5px] ${steps.every(Boolean) ? "border-[#2ea043]/40 bg-[#dafbe1] text-[#1a7f37]" : "border-line bg-soft text-ink-3"}`}>
         <span aria-hidden>{steps.every(Boolean) ? "✓" : "○"}</span>
-        {steps.every(Boolean) ? "All checks passed — able to merge." : `${steps.filter((s) => !s).length} of 3 checks pending`}
+        {steps.every(Boolean) ? "All checks passed. Ready to merge." : `${steps.filter((s) => !s).length} of 3 checks pending`}
       </p>
       {/* honeypot: hidden from people, irresistible to bots */}
       <input ref={honeypot} name="website" tabIndex={-1} autoComplete="off" aria-hidden className="absolute -left-[9999px] h-0 w-0 opacity-0" />

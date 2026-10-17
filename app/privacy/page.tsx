@@ -48,7 +48,7 @@ export default function Privacy() {
           <li><b>Supabase</b> stores sign-ups and Epoch data in a database.</li>
           <li><b>Vercel</b> hosts this website.</li>
           <li><b>Our email provider</b> (Gmail or Resend) delivers emails.</li>
-          <li><b>GitHub</b> handles sign-in to Epoch. <b>Luma</b> and <b>WhatsApp</b> are separate services with their own privacy policies — if you register for an event on Luma or join our WhatsApp community, they hold that information, not us.</li>
+          <li><b>GitHub</b> handles sign-in to Epoch. <b>Luma</b> and <b>WhatsApp</b> are separate services with their own privacy policies: if you register for an event on Luma or join our WhatsApp community, they hold that information, not us.</li>
         </L>
 
         <H>On your device</H>
