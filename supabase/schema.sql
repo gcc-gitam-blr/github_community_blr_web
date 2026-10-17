@@ -1820,3 +1820,213 @@ grant execute on function create_task(text, text, text, date, bigint, bigint), s
   update_meeting(bigint, text, text, text), set_attendees(bigint, text[]), finalise_minutes(bigint), add_minutes_note(bigint, text), record_decision(bigint, text, text, text, date), supersede_decision(bigint, text, text, text) to authenticated;
 revoke execute on function task_warnings() from public, anon, authenticated;
 grant execute on function task_warnings() to service_role;
+
+-- ============================================================
+-- Digital assets and the handover checklist (admin → Assets & handover).
+-- The registry says where each of the club's accounts and services lives and WHO owns it, with a second person as backup;
+-- the handover checklist is the new-team checklist from docs/ROLLOVER.md, ticked in the app. A club's real risk is a
+-- leaving person who took the only key with them, so the dashboard warns about assets with no owner or backup, owners whose
+-- access has ended or is ending, and reviews that are overdue. NEVER put a password, token or key here: a safety net below
+-- refuses text that looks like one (it is a net, not a guarantee, so don't try it). Nothing is written directly; every
+-- change is a function below and is logged in crm_audit (ids and states only).
+-- ============================================================
+create table if not exists digital_assets (
+  id bigint generated always as identity primary key,
+  name text not null check (length(trim(name)) between 2 and 80),
+  kind text not null check (kind in ('domain','hosting','repository','database','email','social','design','event_platform','other')),
+  location_url text check (location_url is null or (length(location_url) <= 300 and location_url ~* '^https://[^\s@]+$')),
+  owner_id uuid references profiles(id) on delete set null, -- who is answerable for it; empty = nobody yet (flagged)
+  backup_owner_id uuid references profiles(id) on delete set null,
+  notes text check (notes is null or length(notes) <= 1000),
+  review_due_on date,
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now()
+);
+create unique index if not exists digital_assets_name on digital_assets (lower(name));
+create table if not exists handover_checklists (
+  id bigint generated always as identity primary key,
+  term_label text not null check (length(trim(term_label)) between 4 and 30),
+  status text not null default 'open' check (status in ('open','complete')),
+  created_by uuid, completed_by uuid, completed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists handover_one_open on handover_checklists ((status)) where status = 'open';
+create table if not exists handover_items (
+  id bigint generated always as identity primary key,
+  checklist_id bigint not null references handover_checklists on delete cascade,
+  category text not null, label text not null check (length(label) between 3 and 200),
+  state text not null default 'open' check (state in ('open','done','waived')),
+  note text check (note is null or length(note) <= 300),
+  sort int not null default 0, updated_by uuid, updated_at timestamptz not null default now()
+);
+create index if not exists handover_items_list on handover_items (checklist_id, sort);
+alter table digital_assets enable row level security;
+alter table handover_checklists enable row level security;
+alter table handover_items enable row level security;
+revoke insert, update, delete on digital_assets, handover_checklists, handover_items from anon, authenticated;
+drop policy if exists "core and admins read assets" on digital_assets;
+create policy "core and admins read assets" on digital_assets for select using (my_role() in ('core','admin'));
+drop policy if exists "core and admins read handovers" on handover_checklists;
+create policy "core and admins read handovers" on handover_checklists for select using (my_role() in ('core','admin'));
+drop policy if exists "core and admins read handover items" on handover_items;
+create policy "core and admins read handover items" on handover_items for select using (my_role() in ('core','admin'));
+
+-- Does this text look like a secret? Known token prefixes, private keys, JWTs, passwords in a URL or ?key=… query, and (for free
+-- text) any 32+ character run of letters and digits with no spaces. A safety net only.
+create or replace function looks_like_secret(p_text text, p_strict boolean default true) returns boolean
+language sql immutable set search_path = pg_catalog as $$
+  select coalesce(p_text ~* '(ghp_|gho_|ghu_|ghs_|ghr_|github_pat_|sk-[a-z0-9]|sk_live_|sk_test_|sb_secret_|xox[abprs]-|AKIA[0-9A-Z]{8}|AIza[0-9A-Za-z_-]{20}|-----BEGIN|eyJ[A-Za-z0-9_-]{10,}\.)'
+    or p_text ~* '://[^/\s:@]+:[^/\s@]+@'
+    or p_text ~* '[?&;](key|token|secret|password|passwd|pwd|apikey|api_key|access_token|auth)=[^&\s]{6,}'
+    or (p_strict and p_text ~ '(^|[^A-Za-z0-9+/=_-])[A-Za-z0-9+/=_-]{32,}($|[^A-Za-z0-9+/=_-])'), false)
+$$;
+
+-- Everything that goes into the registry or the checklist is checked: a name, a note, a link.
+create or replace function assets_text_ok(p_name text, p_url text, p_notes text) returns boolean
+language sql immutable set search_path = public, pg_temp as $$
+  select not (looks_like_secret(p_name) or looks_like_secret(p_url, false) or looks_like_secret(p_notes))
+$$;
+
+-- The usual places the club keeps things. Names and kinds only: an admin fills in the links and chooses who owns each.
+insert into digital_assets (name, kind) values
+  ('Website domain', 'domain'), ('Vercel project', 'hosting'), ('Supabase project', 'database'), ('GitHub organisation', 'repository'), ('Website repository', 'repository'),
+  ('Club Gmail', 'email'), ('GitHub sign-in app (OAuth)', 'other'), ('Content editor GitHub app (Keystatic)', 'other'), ('Luma calendar', 'event_platform'),
+  ('WhatsApp community', 'social'), ('Instagram', 'social')
+on conflict do nothing;
+
+-- Create or change an asset. Admins only. The owner and the backup must hold a core or admin appointment, and be different people.
+create or replace function save_asset(p_id bigint, p_name text, p_kind text, p_url text, p_owner text, p_backup text, p_notes text, p_review_due date) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare o uuid; b uuid; aid bigint; u text := nullif(trim(coalesce(p_url, '')), ''); n text := nullif(trim(coalesce(p_notes, '')), '');
+begin
+  if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins edit the asset registry.'); end if;
+  if not assets_text_ok(p_name, u, n) then return json_build_object('ok', false, 'error', 'That looks like a password, key or token. Never store those here: say where it is kept instead (for example "in the club password manager").'); end if;
+  if nullif(trim(coalesce(p_owner, '')), '') is not null then
+    select id into o from profiles where lower(handle) = lower(ltrim(trim(p_owner), '@'));
+    if o is null or role_of(o) not in ('core','admin') then return json_build_object('ok', false, 'error', 'The owner must hold a core or admin appointment, and have signed in.'); end if;
+  end if;
+  if nullif(trim(coalesce(p_backup, '')), '') is not null then
+    select id into b from profiles where lower(handle) = lower(ltrim(trim(p_backup), '@'));
+    if b is null or role_of(b) not in ('core','admin') then return json_build_object('ok', false, 'error', 'The backup owner must hold a core or admin appointment, and have signed in.'); end if;
+    if b is not distinct from o then return json_build_object('ok', false, 'error', 'The backup has to be a different person from the owner.'); end if;
+  end if;
+  if p_id is null then
+    insert into digital_assets (name, kind, location_url, owner_id, backup_owner_id, notes, review_due_on) values (trim(p_name), p_kind, u, o, b, n, p_review_due) returning id into aid;
+    perform crm_log('asset_created', 'asset', aid::text, '{}');
+  else
+    update digital_assets set name = trim(p_name), kind = p_kind, location_url = u, notes = n, review_due_on = p_review_due, updated_at = now(),
+           owner_id = o, backup_owner_id = b where id = p_id returning id into aid;
+    if aid is null then return json_build_object('ok', false, 'error', 'Asset not found.'); end if;
+    perform crm_log('asset_updated', 'asset', aid::text, jsonb_build_object('owner', o, 'backup', b));
+  end if;
+  return json_build_object('ok', true, 'id', aid);
+exception
+  when unique_violation then return json_build_object('ok', false, 'error', 'There is already an asset with that name.');
+  when check_violation then return json_build_object('ok', false, 'error', 'Check the name, the kind, and that the link starts with https://.');
+end $$;
+
+-- The owner of an asset may update its notes (where it is kept, how to get in); an admin may too.
+create or replace function set_asset_notes(p_id bigint, p_notes text) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare a digital_assets; n text := nullif(trim(coalesce(p_notes, '')), '');
+begin
+  select * into a from digital_assets where id = p_id for update;
+  if not found or my_role() not in ('core','admin') or not (my_role() = 'admin' or a.owner_id = auth.uid()) then return json_build_object('ok', false, 'error', 'Only an admin or the asset''s owner can change its notes.'); end if;
+  if not assets_text_ok(null, null, n) then return json_build_object('ok', false, 'error', 'That looks like a password, key or token. Never store those here: say where it is kept instead.'); end if;
+  update digital_assets set notes = n, updated_at = now() where id = p_id;
+  perform crm_log('asset_notes', 'asset', p_id::text, '{}');
+  return json_build_object('ok', true);
+exception when check_violation then return json_build_object('ok', false, 'error', 'Keep the notes under 1000 characters.');
+end $$;
+
+-- Problems with the registry: who owns what, and whether they still can. Shared by the dashboard and the Monday digest.
+create or replace function asset_problems() returns json language sql security definer stable set search_path = public, pg_temp as $$
+  select coalesce(json_agg(json_build_object('id', a.id, 'name', a.name, 'problem', x.problem, 'days', x.days) order by a.name, x.problem), '[]'::json)
+  from digital_assets a
+  cross join lateral (
+    select 'no_owner' as problem, null::int as days where a.owner_id is null
+    union all select 'no_backup', null where a.owner_id is not null and a.backup_owner_id is null
+    union all select 'owner_access_ended', null where a.owner_id is not null and role_of(a.owner_id) not in ('core','admin')
+    union all select 'owner_access_ends', (e.ends_on - today_ist()) from (
+        select max(ap.ends_on) as ends_on from appointments ap where ap.user_id = a.owner_id and ap.role in ('core','admin') and ap.revoked_at is null and ap.starts_on <= today_ist() and ap.ends_on >= today_ist()) e
+      where a.owner_id is not null and role_of(a.owner_id) in ('core','admin') and e.ends_on <= today_ist() + 30
+    union all select 'review_overdue', (today_ist() - a.review_due_on) where a.review_due_on is not null and a.review_due_on < today_ist()
+  ) x
+$$;
+create or replace function asset_warnings() returns json language sql security definer stable set search_path = public, pg_temp as $$
+  select case when my_role() in ('core','admin') then asset_problems() else '[]'::json end
+$$;
+revoke execute on function asset_problems() from public, anon, authenticated;
+
+-- ---- the handover checklist (from docs/ROLLOVER.md) ----
+create or replace function default_handover() returns table (category text, label text, sort int) language sql immutable set search_path = pg_catalog as $$
+  values
+  ('1. Keys', 'New leads are maintainers of the GitHub organisation and the website repository', 10),
+  ('1. Keys', 'New leads are members of the Vercel project and the Supabase project', 11),
+  ('1. Keys', 'New leads can use the club Gmail (or Resend), Luma, WhatsApp and Instagram', 12),
+  ('1. Keys', 'New admins are appointed under People & roles, before the old terms end', 13),
+  ('1. Keys', 'At least two people can act as admin, and two people hold the keys to the domain, Vercel, Supabase, GitHub and the club Gmail', 14),
+  ('2. The club year', 'Club year changed in the content editor; join link, club email, Luma calendars and social links still work', 20),
+  ('3. The team', 'People leaving are moved to Mentors (with a "Before" line) or to Contributors', 30),
+  ('3. The team', 'New leads and members added to the Team, only with their agreement', 31),
+  ('4. Events', 'Last year''s events and recaps kept; the new year''s events proposed and added', 40),
+  ('4. Events', 'Home page numbers are real; old announcements removed; a welcome update posted', 41),
+  ('5. Epoch', 'Epoch month, dates, venue, start and end times, ticket price and link, sponsors and schedule updated', 50),
+  ('5. Epoch', 'Last year''s Epoch data cleared (the SQL in docs/ROLLOVER.md)', 51),
+  ('6. Memories', 'The year''s photos prepared and its chapter added to Memories', 60),
+  ('7. Secrets', 'Changed: Gmail app password, CRON_SECRET, RATE_LIMIT_SALT, GitHub client secret, database password, backup passphrase, Supabase service key; then redeployed', 70),
+  ('7. Secrets', 'People who left removed from GitHub, Vercel, Supabase and the club Gmail, and their access ended under People & roles', 71),
+  ('8. Check it', 'Home page, an event page, /epoch and /privacy checked on a phone; GitHub Actions are green', 80),
+  ('8. Check it', 'Every asset in the registry has an owner and a backup who still have access', 81),
+  ('8. Check it', 'A backup was restored into a scratch project this year (docs/RESTORE.md)', 82),
+  ('8. Check it', 'Privacy page date updated if anything about what we collect changed', 83)
+$$;
+
+create or replace function start_handover(p_term text) returns json language plpgsql security definer set search_path = public, pg_temp as $$
+declare cid bigint; t text := trim(coalesce(p_term, ''));
+begin
+  if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins run the handover.'); end if;
+  if length(t) not between 4 and 30 then return json_build_object('ok', false, 'error', 'Name the term the team is handing over to, like 2027-28.'); end if;
+  if exists (select 1 from handover_checklists where status = 'open') then return json_build_object('ok', false, 'error', 'A handover is already in progress. Finish it first.'); end if;
+  insert into handover_checklists (term_label, created_by) values (t, auth.uid()) returning id into cid;
+  insert into handover_items (checklist_id, category, label, sort) select cid, d.category, d.label, d.sort from default_handover() d;
+  perform crm_log('handover_started', 'handover', cid::text, '{}');
+  return json_build_object('ok', true, 'id', cid);
+end $$;
+
+create or replace function set_handover_item(p_item bigint, p_state text, p_note text default '') returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare i handover_items; n text := nullif(trim(coalesce(p_note, '')), '');
+begin
+  if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins run the handover.'); end if;
+  select * into i from handover_items where id = p_item for update;
+  if not found then return json_build_object('ok', false, 'error', 'Item not found.'); end if;
+  if (select status from handover_checklists where id = i.checklist_id) <> 'open' then return json_build_object('ok', false, 'error', 'This handover is complete.'); end if;
+  if p_state is null or p_state not in ('open','done','waived') then return json_build_object('ok', false, 'error', 'Pick open, done or waived.'); end if;
+  if p_state = 'waived' and (n is null or length(n) < 3) then return json_build_object('ok', false, 'error', 'Say why it is waived.'); end if;
+  if not assets_text_ok(null, null, n) then return json_build_object('ok', false, 'error', 'That looks like a password, key or token. Never store those here.'); end if;
+  update handover_items set state = p_state, note = n, updated_by = auth.uid(), updated_at = now() where id = p_item;
+  perform crm_log('handover_item', 'handover', i.checklist_id::text, jsonb_build_object('item', p_item, 'state', p_state));
+  return json_build_object('ok', true);
+exception when check_violation then return json_build_object('ok', false, 'error', 'Keep the note under 300 characters.');
+end $$;
+
+create or replace function complete_handover(p_id bigint) returns json language plpgsql security definer set search_path = public, pg_temp as $$
+declare open_items int;
+begin
+  if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins complete the handover.'); end if;
+  perform 1 from handover_checklists where id = p_id and status = 'open' for update;
+  if not found then return json_build_object('ok', false, 'error', 'That handover isn''t in progress.'); end if;
+  select count(*) into open_items from handover_items where checklist_id = p_id and state = 'open';
+  if open_items > 0 then return json_build_object('ok', false, 'error', open_items || ' ' || case when open_items = 1 then 'item is' else 'items are' end || ' still open. Each must be done, or waived with a reason.'); end if;
+  update handover_checklists set status = 'complete', completed_by = auth.uid(), completed_at = now() where id = p_id;
+  perform crm_log('handover_completed', 'handover', p_id::text, '{}');
+  return json_build_object('ok', true);
+end $$;
+
+-- Digest: the same problems, for the server key.
+create or replace function asset_problems_for_digest() returns json language sql security definer stable set search_path = public, pg_temp as $$ select asset_problems() $$;
+
+revoke execute on function save_asset(bigint, text, text, text, text, text, text, date), set_asset_notes(bigint, text), asset_warnings(), start_handover(text), set_handover_item(bigint, text, text), complete_handover(bigint) from public, anon;
+grant execute on function save_asset(bigint, text, text, text, text, text, text, date), set_asset_notes(bigint, text), asset_warnings(), start_handover(text), set_handover_item(bigint, text, text), complete_handover(bigint) to authenticated;
+revoke execute on function asset_problems_for_digest() from public, anon, authenticated;
+grant execute on function asset_problems_for_digest() to service_role;
