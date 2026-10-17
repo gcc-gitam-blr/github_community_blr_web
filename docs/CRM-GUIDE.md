@@ -41,9 +41,15 @@ Rules that never bend:
 
 ## 3. The tabs
 
-The menu is grouped: **Club** (Overview, Attendance & certificates, Sign-ups & email, Messages, Feedback), **People**
+The menu is grouped: **Club** (Needs you, Attendance & certificates, Sign-ups & email, Messages, Feedback), **People**
 (Members, Recruitment, Projects, People & roles), **Work** (Event proposals, Tasks, Meetings & decisions, Assets & handover, Policies)
 and **Site** (Activity, Site errors, admins only). Volunteers see only the ones they can use.
+
+### Needs you
+The admin opens here: one list of everything waiting for you, gathered from every tab (your overdue tasks and the ones
+due this week, people asking to join your project, applications to review, projects asking to be featured, and for
+admins: proposals to decide, policy drafts waiting for a second admin, access ending soon, accounts without an owner,
+too few admins). Each line links to the place to act. Start every visit here.
 
 ### People & roles
 Give someone access by GitHub username: pick a role, an optional title (President, Events lead…) and **the day it ends**.
@@ -54,6 +60,8 @@ the first time they do. The page warns when fewer than two admins are active, an
 The club's people: name, email, GitHub username, team, dates, and active / alumni / inactive. Admins add, edit, change
 status, and **import a spreadsheet** (a CSV with `name` and `email`, optionally `handle`, `team`, `joined_on`). The import
 is checked first: if any row is wrong, **nothing** is saved and you are told which rows. Downloads are logged.
+
+Open **History** on any member to see their events, their access, their projects and what they're into, in one place.
 
 ### Recruitment
 1. An admin creates a **round** (name, club year, the dates applications are accepted) and adds **reviewers** (people with a
