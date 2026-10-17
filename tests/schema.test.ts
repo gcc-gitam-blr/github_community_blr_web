@@ -270,7 +270,14 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
     catch (e) { return { rows: [] as T[], error: (e as Error).message }; }
     finally { await db.exec("reset role"); }
   };
-  const hit = async (key: string, limit = 3, secs = 600) => (await asAnon<{ r: boolean }>("select rate_hit($1, $2, $3) r", [key, limit, secs])).rows[0]?.r;
+  // the site's server calls the form functions with the server-only key (service_role); the public key can't
+  const asSvc = async <T,>(sql: string, p: unknown[] = []) => {
+    await as(""); await db.exec("set role service_role");
+    try { return { rows: (await db.query<T>(sql, p)).rows, error: null as string | null }; }
+    catch (e) { return { rows: [] as T[], error: (e as Error).message }; }
+    finally { await db.exec("reset role"); }
+  };
+  const hit = async (key: string, limit = 3, secs = 600) => (await asSvc<{ r: boolean }>("select rate_hit($1, $2, $3) r", [key, limit, secs])).rows[0]?.r;
   const hits: (boolean | undefined)[] = []; for (let i = 0; i < 4; i++) hits.push(await hit("join:aaa"));
   ok("rate_hit allows 3 hits in the window, then blocks the 4th", hits.join() === "true,true,true,false");
   ok("…another visitor has their own count", (await hit("join:bbb")) === true);
@@ -283,6 +290,7 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   await hit("join:ccc");
   ok("rows older than a day are deleted as it goes", (await one<{ n: number }>("select count(*)::int n from rate_hits where key = 'join:stale'")).n === 0);
   ok("a missing or oversized key is refused", (await hit("")) === false && (await hit("k".repeat(101))) === false);
+  ok("the public key can't count hits (only the server can)", !!(await asAnon("select rate_hit('join:zzz', 3, 600)")).error);
   ok("visitors can't read the counters", (await asAnon("select * from rate_hits")).rows.length === 0);
   ok("…or reset them", (await asAnon("delete from rate_hits returning key")).rows.length === 0 && (await one<{ n: number }>("select count(*)::int n from rate_hits")).n > 0);
 
@@ -321,16 +329,18 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   ok("attendance is kept, so certificates stay verifiable", (await one<{ n: number }>("select count(*)::int n from attendance")).n === 1);
   await db.exec(fs.readFileSync("supabase/schema.sql", "utf8"));
   ok("schema.sql still re-runs cleanly with the new tables in use", (await one<{ n: number }>("select count(*)::int n from client_errors")).n === 1);
-  const join = async (email: string) => (await asAnon<{ r: string }>("select epoch_interest_join($1) r", [email])).rows[0]?.r;
+  const join = async (email: string) => (await asSvc<{ r: string }>("select epoch_interest_join($1) r", [email])).rows[0]?.r;
   ok("a visitor joins the Epoch interest list through the function", (await join(" Grace@Gitam.in ")) === "created");
   ok("the same address again (any case) is not added twice", (await join("grace@gitam.in")) === "exists" && (await one<{ n: number }>("select count(*)::int n from epoch_interest")).n === 1);
   ok("it's stored trimmed and lowercase", (await one<{ email: string }>("select email from epoch_interest")).email === "grace@gitam.in");
-  ok("a broken address is refused", !!(await asAnon("select epoch_interest_join('not-an-email')")).error);
+  ok("a broken address is refused", !!(await asSvc("select epoch_interest_join('not-an-email')")).error);
+  ok("the public key can't use the list function directly", !!(await asAnon("select epoch_interest_join('flood@gitam.in')")).error);
   ok("visitors can't add to the list directly", !!(await asAnon("insert into epoch_interest (email) values ('x@y.in')")).error);
   ok("visitors can't read the list", (await asAnon("select * from epoch_interest")).rows.length === 0);
   ok("volunteers can't read the list either", (await asApi(ADA, "select * from epoch_interest")).rows.length === 0);
   ok("admins can read the list", (await asApi(ORG, "select * from epoch_interest")).rows.length === 1);
-  await asAnon("select unsubscribe_join('GRACE@gitam.in')");
+  ok("the public key can't unsubscribe anyone", !!(await asAnon("select unsubscribe_join('GRACE@gitam.in')")).error && (await one<{ u: boolean }>("select unsubscribed u from epoch_interest")).u === false);
+  await asSvc("select unsubscribe_join('GRACE@gitam.in')");
   ok("the usual unsubscribe link also takes people off the Epoch list", (await one<{ u: boolean }>("select unsubscribed u from epoch_interest")).u === true);
   ok("someone typing an unsubscribed address in again doesn't re-subscribe it, and is told so", (await join("grace@gitam.in")) === "unsubscribed" && (await one<{ u: boolean }>("select unsubscribed u from epoch_interest")).u === true);
 

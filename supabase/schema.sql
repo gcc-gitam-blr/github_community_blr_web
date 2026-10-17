@@ -363,8 +363,8 @@ on conflict do nothing;
 
 -- ============================================================
 -- Club sign-ups (the "Join the club" form on the home page)
--- Anyone may INSERT one row (the site's /api/join validates first);
--- only volunteers/admins can read them, on the organiser desk.
+-- Nobody inserts directly: the site's /api/join validates, then calls submit_join (end of this file) with the
+-- server-only key. Only volunteers/admins can read them, on the organiser desk.
 -- ============================================================
 create table if not exists join_requests (
   id bigint generated always as identity primary key,
@@ -375,11 +375,10 @@ create table if not exists join_requests (
 );
 create unique index if not exists join_requests_one_per_email on join_requests (lower(email));
 alter table join_requests enable row level security;
-drop policy if exists "anyone can sign up" on join_requests;
-create policy "anyone can sign up" on join_requests for insert to anon, authenticated with check (true);
+drop policy if exists "anyone can sign up" on join_requests; -- earlier versions let anyone insert; only submit_join writes now
 drop policy if exists "staff read sign-ups" on join_requests;
 create policy "staff read sign-ups" on join_requests for select using (my_role() in ('volunteer','admin'));
-grant insert on join_requests to anon, authenticated;
+revoke insert on join_requests from anon, authenticated;
 
 -- ============================================================
 -- Email: welcome + organiser broadcasts (see lib/email, app/api/join, app/api/broadcast)
@@ -404,7 +403,7 @@ create policy "admins log broadcasts" on broadcasts for insert with check (my_ro
 
 -- ============================================================
 -- "Get involved" messages: core-team applications, sponsors, speakers, questions.
--- Anyone may send one (the site validates and rate-limits first); only staff can read them.
+-- Written only by submit_message (end of this file), which the site calls after validating and rate-limiting; only staff can read them.
 -- ============================================================
 create table if not exists messages (
   id bigint generated always as identity primary key,
@@ -417,13 +416,12 @@ create table if not exists messages (
 );
 alter table messages enable row level security;
 drop policy if exists "anyone can send a message" on messages;
-create policy "anyone can send a message" on messages for insert to anon, authenticated with check (true);
 drop policy if exists "staff read messages" on messages;
 create policy "staff read messages" on messages for select using (my_role() in ('volunteer','admin'));
-grant insert on messages to anon, authenticated;
+revoke insert on messages from anon, authenticated;
 
 -- ============================================================
--- Event feedback: anonymous, one row per submission. Anyone may send; only staff can read.
+-- Event feedback: anonymous, one row per submission. Written only by submit_feedback (end of this file); only staff can read.
 -- ============================================================
 create table if not exists event_feedback (
   id bigint generated always as identity primary key,
@@ -435,10 +433,9 @@ create table if not exists event_feedback (
 );
 alter table event_feedback enable row level security;
 drop policy if exists "anyone can send feedback" on event_feedback;
-create policy "anyone can send feedback" on event_feedback for insert to anon, authenticated with check (true);
 drop policy if exists "staff read feedback" on event_feedback;
 create policy "staff read feedback" on event_feedback for select using (my_role() in ('volunteer','admin'));
-grant insert on event_feedback to anon, authenticated;
+revoke insert on event_feedback from anon, authenticated;
 
 -- ============================================================
 -- Attendance and certificates (the /admin dashboard)
@@ -563,8 +560,9 @@ begin
   returning hits into n;
   return n <= p_limit;
 end $$;
-revoke execute on function rate_hit(text, int, int) from public;
-grant execute on function rate_hit(text, int, int) to anon, authenticated;
+-- Server-only: with the public key anyone could write endless counter rows, or fill the table.
+revoke execute on function rate_hit(text, int, int) from public, anon, authenticated;
+grant execute on function rate_hit(text, int, int) to service_role;
 
 -- ============================================================
 -- Errors from visitors' browsers (components/ui/ErrorReporter.tsx → /api/errors), so we hear when
@@ -644,8 +642,9 @@ begin
   if found then return 'created'; end if;
   return case when exists (select 1 from epoch_interest where lower(email) = e and unsubscribed) then 'unsubscribed' else 'exists' end;
 end $$;
-revoke execute on function epoch_interest_join(text) from public;
-grant execute on function epoch_interest_join(text) to anon, authenticated;
+-- Server-only (the site checks the address and the rate limit first); with the public key anyone could stuff the list.
+revoke execute on function epoch_interest_join(text) from public, anon, authenticated;
+grant execute on function epoch_interest_join(text) to service_role;
 
 -- Anyone with a valid signed link can unsubscribe (the site checks the signature before calling this).
 -- One link, every list: club sign-ups and the Epoch interest list.
@@ -653,7 +652,9 @@ create or replace function unsubscribe_join(p_email text) returns void language 
   update join_requests set unsubscribed = true where lower(email) = lower(p_email);
   update epoch_interest set unsubscribed = true where lower(email) = lower(p_email);
 $$;
-grant execute on function unsubscribe_join(text) to anon, authenticated;
+-- Server-only: the signed link is checked by the site, so calling this with the public key must not unsubscribe anyone.
+revoke execute on function unsubscribe_join(text) from public, anon, authenticated;
+grant execute on function unsubscribe_join(text) to service_role;
 
 -- Live quizzes (/quiz/host): each finished quiz's final table and per-question counts, so organisers can look back.
 -- Playing needs nothing here (it runs over Realtime broadcast); only the record of a finished quiz is kept.
@@ -685,3 +686,39 @@ create table if not exists quiz_sets (
 alter table quiz_sets enable row level security;
 drop policy if exists "staff manage quiz sets" on quiz_sets;
 create policy "staff manage quiz sets" on quiz_sets for all using (my_role() in ('volunteer','admin')) with check (my_role() in ('volunteer','admin'));
+
+-- ============================================================
+-- The public forms write through these. The site's server calls them with its server-only key (service_role) after the
+-- honeypot, the minimum fill time and the per-visitor rate limit, so calling the database straight from a browser with
+-- the public key can no longer skip those checks. Each also stops a runaway script with a limit per hour across all visitors.
+-- A fork without SUPABASE_SERVICE_ROLE_KEY can let the public key call them instead (the forms then work, but anyone with
+-- that key can skip the per-visitor checks): grant execute on function submit_join(text, text, text),
+-- submit_message(text, text, text, text, text), submit_feedback(text, int, text, text), epoch_interest_join(text) to anon;
+-- ============================================================
+create or replace function submit_join(p_handle text, p_email text, p_first_event text)
+returns text language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if (select count(*) from join_requests where created_at > now() - interval '1 hour') >= 300 then return 'busy'; end if;
+  insert into join_requests (handle, email, first_event) values (trim(p_handle), lower(trim(p_email)), p_first_event)
+  on conflict ((lower(email))) do nothing;
+  return case when found then 'created' else 'exists' end; -- 'exists': that email already signed up
+end $$;
+
+create or replace function submit_message(p_kind text, p_name text, p_email text, p_handle text, p_message text)
+returns text language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if (select count(*) from messages where created_at > now() - interval '1 hour') >= 200 then return 'busy'; end if;
+  insert into messages (kind, name, email, handle, message) values (p_kind, trim(p_name), lower(trim(p_email)), nullif(trim(coalesce(p_handle, '')), ''), trim(p_message));
+  return 'created';
+end $$;
+
+create or replace function submit_feedback(p_event text, p_rating int, p_liked text, p_improve text)
+returns text language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if (select count(*) from event_feedback where created_at > now() - interval '1 hour') >= 600 then return 'busy'; end if;
+  insert into event_feedback (event, rating, liked, improve) values (p_event, p_rating, nullif(trim(coalesce(p_liked, '')), ''), nullif(trim(coalesce(p_improve, '')), ''));
+  return 'created';
+end $$;
+
+revoke execute on function submit_join(text, text, text), submit_message(text, text, text, text, text), submit_feedback(text, int, text, text) from public, anon, authenticated;
+grant execute on function submit_join(text, text, text), submit_message(text, text, text, text, text), submit_feedback(text, int, text, text) to service_role;
