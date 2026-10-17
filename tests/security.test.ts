@@ -44,6 +44,10 @@ const EXPECTED: Record<string, string[]> = {
   asset_problems: NOBODY, asset_problems_for_digest: SERVER,
   // policies: admin-only, checked inside; the digest's list is for the server key
   create_policy: SIGNED_IN, set_policy_owner: SIGNED_IN, save_policy_draft: SIGNED_IN, discard_policy_draft: SIGNED_IN, publish_policy_version: SIGNED_IN, policy_reviews_due: SERVER,
+  // project hub: members and the core team; each function checks can_take_part() / the owner / the role itself. public_projects is for the site's server.
+  can_take_part: SIGNED_IN, save_interests: SIGNED_IN, delete_interests: SIGNED_IN, survey_summary: SIGNED_IN, find_teammates: SIGNED_IN, post_idea: SIGNED_IN, update_idea: SIGNED_IN,
+  set_idea_status: SIGNED_IN, request_to_join: SIGNED_IN, withdraw_request: SIGNED_IN, decide_request: SIGNED_IN, leave_project: SIGNED_IN, remove_project_member: SIGNED_IN,
+  set_project_owner: SIGNED_IN, set_public_credit: SIGNED_IN, request_publishing: SIGNED_IN, decide_publishing: SIGNED_IN, unpublish_project: SIGNED_IN, public_projects: SERVER,
   sync_profile_roles: SERVER, appointment_warnings: SERVER, admin_emails: SERVER, bootstrap_admin: SERVER, // the weekly digest, and the first admin from the SQL editor
   booth_tx: NOBODY, log_action: NOBODY, bump_leaderboard: NOBODY, // internal: other functions and triggers only
   my_role: ANYONE, // used by row-level-security policies, so every role must be able to run it; it only ever answers about the caller

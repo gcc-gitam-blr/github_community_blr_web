@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 /* On a phone: nothing may scroll sideways, and the phone menu and tab bar work. */
-const PAGES = ["/", "/learn", "/contribute", "/board", "/memories", "/get-involved", "/privacy", "/updates", "/updates/calendar-2026-27", "/events/git-merge-26", "/epoch", "/epoch/booths", "/epoch/shop", "/epoch/leaderboard", "/epoch/register", "/epoch/wallet", "/epoch/scan", "/epoch/admin", "/epoch/guide", "/epoch/guide/organisers", "/epoch/kiosk/vr", "/no-such-page"];
+const PAGES = ["/", "/learn", "/contribute", "/board", "/memories", "/get-involved", "/projects", "/hub", "/privacy", "/updates", "/updates/calendar-2026-27", "/events/git-merge-26", "/epoch", "/epoch/booths", "/epoch/shop", "/epoch/leaderboard", "/epoch/register", "/epoch/wallet", "/epoch/scan", "/epoch/admin", "/epoch/guide", "/epoch/guide/organisers", "/epoch/kiosk/vr", "/no-such-page"];
 
 for (const path of PAGES) {
   test(`${path} fits the screen`, async ({ page }) => {

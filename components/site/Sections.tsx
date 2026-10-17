@@ -137,7 +137,10 @@ export async function Projects() {
             </Reveal>
           ))}
         </ul>
-        <a href={`${CLUB.githubUrl}/${CLUB.githubOrg}`} target="_blank" rel="noopener" className="mt-8 inline-flex items-center gap-2 font-semibold text-link hover:underline">See all our repositories on GitHub →</a>
+        <div className="mt-8 flex flex-wrap gap-x-8 gap-y-3">
+          <a href={`${CLUB.githubUrl}/${CLUB.githubOrg}`} target="_blank" rel="noopener" className="inline-flex items-center gap-2 font-semibold text-link hover:underline">See all our repositories on GitHub →</a>
+          <a href="/projects" className="inline-flex items-center gap-2 font-semibold text-link hover:underline">Projects built by members →</a>
+        </div>
       </div>
     </section>
   );
