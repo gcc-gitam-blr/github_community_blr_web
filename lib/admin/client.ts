@@ -2,6 +2,7 @@ import { supabase } from "@/lib/epoch/supabase-store";
 import type { Attendee } from "@/lib/attendance";
 import type { ErrorRow } from "@/lib/client-errors";
 import type { AccessRole } from "@/lib/admin/appointments";
+import type { AssetProblem } from "@/lib/assets";
 import type { Member, MemberRow } from "@/lib/admin/members";
 
 /* What the /admin dashboard reads and changes. Every call runs as the signed-in organiser, so the
@@ -219,3 +220,26 @@ export const finaliseMinutes = (id: number) => rpcRes("finalise_minutes", { p_id
 export const addMinutesNote = (id: number, note: string) => rpcRes("add_minutes_note", { p_id: id, p_note: note });
 export const recordDecision = (meeting: number | null, title: string, decision: string, rationale: string, on: string) => rpcRes<{ id: number }>("record_decision", { p_meeting: meeting, p_title: title, p_decision: decision, p_rationale: rationale, p_decided_on: on });
 export const supersedeDecision = (old: number, title: string, decision: string, rationale: string) => rpcRes<{ id: number }>("supersede_decision", { p_old: old, p_title: title, p_decision: decision, p_rationale: rationale });
+
+// ---- Digital assets and the handover checklist ----
+export interface Asset { id: number; name: string; kind: "domain" | "hosting" | "repository" | "database" | "email" | "social" | "design" | "event_platform" | "other"; location_url: string | null; owner_id: string | null; backup_owner_id: string | null; notes: string | null; review_due_on: string | null }
+export interface Handover { id: number; term_label: string; status: "open" | "complete"; completed_at: string | null; created_at: string }
+export interface HandoverItem { id: number; checklist_id: number; category: string; label: string; state: "open" | "done" | "waived"; note: string | null; sort: number }
+export interface AssetFields { name: string; kind: Asset["kind"]; url: string; owner: string; backup: string; notes: string; reviewDue: string }
+export async function assets(): Promise<{ list: Asset[]; problems: AssetProblem[]; people: Record<string, { handle: string; name: string }> }> {
+  const [a, w, p] = await Promise.all([supabase().from("digital_assets").select("*").order("name"), supabase().rpc("asset_warnings"), supabase().rpc("list_people")]);
+  const people = Object.fromEntries(((p.data ?? []) as { id: string; handle: string; name: string }[]).map((x) => [x.id, { handle: x.handle, name: x.name }]));
+  return { list: (a.data ?? []) as Asset[], problems: (w.data ?? []) as AssetProblem[], people };
+}
+export const saveAsset = (id: number | null, f: AssetFields) => rpcRes<{ id: number }>("save_asset", { p_id: id, p_name: f.name, p_kind: f.kind, p_url: f.url, p_owner: f.owner, p_backup: f.backup, p_notes: f.notes, p_review_due: f.reviewDue || null });
+export const setAssetNotes = (id: number, notes: string) => rpcRes("set_asset_notes", { p_id: id, p_notes: notes });
+export async function handovers(): Promise<{ lists: Handover[]; items: HandoverItem[] }> {
+  const { data } = await supabase().from("handover_checklists").select("*").order("created_at", { ascending: false }).limit(20);
+  const lists = (data ?? []) as Handover[];
+  if (!lists.length) return { lists, items: [] };
+  const { data: it } = await supabase().from("handover_items").select("*").eq("checklist_id", lists[0].id).order("sort");
+  return { lists, items: (it ?? []) as HandoverItem[] };
+}
+export const startHandover = (term: string) => rpcRes<{ id: number }>("start_handover", { p_term: term });
+export const setHandoverItem = (item: number, state: HandoverItem["state"], note: string) => rpcRes("set_handover_item", { p_item: item, p_state: state, p_note: note });
+export const completeHandover = (id: number) => rpcRes("complete_handover", { p_id: id });
