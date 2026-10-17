@@ -1338,3 +1338,206 @@ grant execute on function create_campaign(text, text, date, date), set_campaign_
   export_members(), export_signups() to authenticated;
 revoke execute on function open_campaign(), submit_application(bigint, text, text, text, text, jsonb) from public, anon, authenticated;
 grant execute on function open_campaign(), submit_application(bigint, text, text, text, text, jsonb) to service_role;
+
+-- ============================================================
+-- Event proposals and the approval step (admin → Event proposals).
+-- A core member proposes an event and works through a short checklist; an admin, who is never the proposer, approves,
+-- returns or rejects it. Approval is refused while a required checklist item is still open. After the event the
+-- proposer records what happened. Public event pages are written in the content editor (a git commit), so the database
+-- can't stop one being published early: this records the approval and shows it, and branch protection backs it up.
+-- Nothing is written directly: every change is one of the functions below, and each is logged in crm_audit (ids and
+-- states only, never the text people wrote).
+-- ============================================================
+create table if not exists event_proposals (
+  id bigint generated always as identity primary key,
+  title text not null check (length(trim(title)) between 3 and 120),
+  kind text not null default 'workshop' check (kind in ('workshop','talk','hackathon','meetup','fest','other')),
+  proposed_by uuid references profiles(id) on delete set null,
+  proposed_date date not null,
+  venue text not null check (length(trim(venue)) between 2 and 120),
+  objective text not null check (length(trim(objective)) between 10 and 1500),
+  expected_attendance int check (expected_attendance is null or expected_attendance between 1 and 5000),
+  budget_inr int check (budget_inr is null or budget_inr between 0 and 10000000), -- optional
+  status text not null default 'draft' check (status in ('draft','submitted','returned','approved','rejected','cancelled','completed')),
+  event_slug text check (event_slug is null or (event_slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$' and length(event_slug) <= 120)), -- the public page, once it exists
+  decided_by uuid, decided_at timestamptz, decision_note text check (decision_note is null or length(decision_note) <= 1000),
+  outcome_note text check (outcome_note is null or length(outcome_note) <= 2000),
+  attendance_event text, -- the date of the event in the attendance table, if attendance was recorded there
+  attendance_note text check (attendance_note is null or length(attendance_note) <= 500),
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now()
+);
+create index if not exists event_proposals_status on event_proposals (status, proposed_date);
+create table if not exists proposal_checklist_items (
+  id bigint generated always as identity primary key,
+  proposal_id bigint not null references event_proposals on delete cascade,
+  label text not null check (length(label) between 3 and 140),
+  required boolean not null default true,
+  state text not null default 'open' check (state in ('open','done','na')),
+  note text check (note is null or length(note) <= 300),
+  sort int not null default 0,
+  updated_by uuid, updated_at timestamptz not null default now()
+);
+create index if not exists proposal_items_proposal on proposal_checklist_items (proposal_id, sort);
+alter table event_proposals enable row level security;
+alter table proposal_checklist_items enable row level security;
+revoke insert, update, delete on event_proposals, proposal_checklist_items from anon, authenticated;
+drop policy if exists "core and admins read proposals" on event_proposals;
+create policy "core and admins read proposals" on event_proposals for select using (my_role() in ('core','admin'));
+drop policy if exists "core and admins read proposal items" on proposal_checklist_items;
+create policy "core and admins read proposal items" on proposal_checklist_items for select using (my_role() in ('core','admin'));
+
+-- The checklist every proposal starts with. Edit this list to change it for new proposals (existing ones keep theirs).
+-- "Required" items must be done, or marked not needed with a reason, before an admin can approve.
+create or replace function default_checklist() returns table (label text, required boolean, sort int)
+language sql immutable set search_path = pg_catalog as $$
+  values ('Venue or room confirmed', true, 1),
+         ('University or faculty permission (mark "not needed", with a reason, if none is required)', true, 2),
+         ('Budget source confirmed (or no budget needed)', true, 3),
+         ('Volunteers assigned', true, 4),
+         ('Attendance plan: how we will record who came', true, 5),
+         ('Registration page ready (Luma or similar)', false, 6),
+         ('Announcement drafted', false, 7),
+         ('Post-event recap assigned to someone', false, 8)
+$$;
+
+-- Does the signed-in person own this proposal, or hold the admin role? Internal.
+create or replace function can_edit_proposal(p_id bigint) returns boolean
+language sql security definer stable set search_path = public, pg_temp as $$
+  select exists (select 1 from event_proposals e where e.id = p_id and (my_role() = 'admin' or (e.proposed_by = auth.uid() and my_role() in ('core','admin'))))
+$$;
+revoke execute on function can_edit_proposal(bigint) from public, anon, authenticated;
+
+create or replace function create_proposal(p_title text, p_kind text, p_date date, p_venue text, p_objective text, p_expected int, p_budget int)
+returns json language plpgsql security definer set search_path = public, pg_temp as $$
+declare pid bigint;
+begin
+  if my_role() not in ('core','admin') then return json_build_object('ok', false, 'error', 'Only the core team can propose events.'); end if;
+  if p_date is null or p_date < today_ist() then return json_build_object('ok', false, 'error', 'Pick a date that is today or later.'); end if;
+  insert into event_proposals (title, kind, proposed_by, proposed_date, venue, objective, expected_attendance, budget_inr)
+  values (trim(p_title), coalesce(p_kind, 'workshop'), auth.uid(), p_date, trim(p_venue), trim(p_objective), p_expected, p_budget) returning id into pid;
+  insert into proposal_checklist_items (proposal_id, label, required, sort) select pid, d.label, d.required, d.sort from default_checklist() d;
+  perform crm_log('proposal_created', 'proposal', pid::text, '{}');
+  return json_build_object('ok', true, 'id', pid);
+exception when check_violation then return json_build_object('ok', false, 'error', 'Check the title (3+ characters), venue, a goal of at least 10 characters, and the numbers.');
+end $$;
+
+create or replace function update_proposal(p_id bigint, p_title text, p_kind text, p_date date, p_venue text, p_objective text, p_expected int, p_budget int)
+returns json language plpgsql security definer set search_path = public, pg_temp as $$
+declare e event_proposals;
+begin
+  select * into e from event_proposals where id = p_id for update;
+  if not found or not can_edit_proposal(p_id) or e.proposed_by is distinct from auth.uid() then return json_build_object('ok', false, 'error', 'Only the person who proposed it can edit it.'); end if;
+  if e.status not in ('draft','returned') then return json_build_object('ok', false, 'error', 'A proposal can be edited while it is a draft or after it was returned.'); end if;
+  if p_date is null or p_date < today_ist() then return json_build_object('ok', false, 'error', 'Pick a date that is today or later.'); end if;
+  update event_proposals set title = trim(p_title), kind = coalesce(p_kind, kind), proposed_date = p_date, venue = trim(p_venue), objective = trim(p_objective),
+         expected_attendance = p_expected, budget_inr = p_budget, updated_at = now() where id = p_id;
+  perform crm_log('proposal_updated', 'proposal', p_id::text, '{}');
+  return json_build_object('ok', true);
+exception when check_violation then return json_build_object('ok', false, 'error', 'Check the title (3+ characters), venue, a goal of at least 10 characters, and the numbers.');
+end $$;
+
+create or replace function submit_proposal(p_id bigint) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare e event_proposals;
+begin
+  select * into e from event_proposals where id = p_id for update;
+  if not found or e.proposed_by is distinct from auth.uid() or my_role() not in ('core','admin') then return json_build_object('ok', false, 'error', 'Only the person who proposed it can submit it.'); end if;
+  if e.status not in ('draft','returned') then return json_build_object('ok', false, 'error', 'A ' || e.status || ' proposal can''t be submitted.'); end if;
+  if e.proposed_date < today_ist() then return json_build_object('ok', false, 'error', 'The date has passed. Edit the proposal first.'); end if;
+  update event_proposals set status = 'submitted', updated_at = now() where id = p_id;
+  perform crm_log('proposal_submitted', 'proposal', p_id::text, jsonb_build_object('from', e.status));
+  return json_build_object('ok', true);
+end $$;
+
+-- Admin only, and never the proposer. submitted → approved | returned | rejected. Returning or rejecting needs a reason;
+-- approving is refused while any required checklist item is still open.
+create or replace function decide_proposal(p_id bigint, p_decision text, p_note text default '') returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare e event_proposals; why text := nullif(trim(coalesce(p_note, '')), ''); open_items int;
+begin
+  if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins approve events.'); end if;
+  select * into e from event_proposals where id = p_id for update;
+  if not found then return json_build_object('ok', false, 'error', 'Proposal not found.'); end if;
+  if e.proposed_by is not distinct from auth.uid() then return json_build_object('ok', false, 'error', 'You can''t decide your own proposal. Ask another admin.'); end if;
+  if e.status <> 'submitted' then return json_build_object('ok', false, 'error', 'Only a submitted proposal can be decided (this one is ' || e.status || ').'); end if;
+  if p_decision is null or p_decision not in ('approved','returned','rejected') then return json_build_object('ok', false, 'error', 'Pick approve, return or reject.'); end if;
+  if p_decision in ('returned','rejected') and (why is null or length(why) < 3) then return json_build_object('ok', false, 'error', 'Say why, so the proposer knows what to do next.'); end if;
+  if why is not null and length(why) > 1000 then return json_build_object('ok', false, 'error', 'Keep the note under 1000 characters.'); end if;
+  if p_decision = 'approved' then
+    select count(*) into open_items from proposal_checklist_items where proposal_id = p_id and required and state = 'open';
+    if open_items > 0 then return json_build_object('ok', false, 'error', open_items || ' required checklist ' || case when open_items = 1 then 'item is' else 'items are' end || ' still open. Each must be done, or marked not needed with a reason.'); end if;
+  end if;
+  update event_proposals set status = p_decision, decided_by = auth.uid(), decided_at = now(), decision_note = why, updated_at = now() where id = p_id;
+  perform crm_log('proposal_' || p_decision, 'proposal', p_id::text, '{}');
+  return json_build_object('ok', true);
+end $$;
+
+-- Withdraw a proposal: the proposer or an admin. draft | submitted | returned | approved → cancelled.
+create or replace function cancel_proposal(p_id bigint, p_reason text default '') returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare e event_proposals;
+begin
+  select * into e from event_proposals where id = p_id for update;
+  if not found or not can_edit_proposal(p_id) then return json_build_object('ok', false, 'error', 'Only the proposer or an admin can cancel it.'); end if;
+  if e.status not in ('draft','submitted','returned','approved') then return json_build_object('ok', false, 'error', 'A ' || e.status || ' proposal can''t be cancelled.'); end if;
+  update event_proposals set status = 'cancelled', decision_note = coalesce(nullif(left(trim(coalesce(p_reason, '')), 1000), ''), decision_note), updated_at = now() where id = p_id;
+  perform crm_log('proposal_cancelled', 'proposal', p_id::text, jsonb_build_object('from', e.status));
+  return json_build_object('ok', true);
+end $$;
+
+-- After the event: what happened, and where attendance was recorded (the date of the event in the attendance table) or why not.
+create or replace function complete_proposal(p_id bigint, p_outcome text, p_attendance_event text default null, p_attendance_note text default '') returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare e event_proposals; out text := trim(coalesce(p_outcome, '')); att text := nullif(trim(coalesce(p_attendance_event, '')), ''); an text := nullif(trim(coalesce(p_attendance_note, '')), '');
+begin
+  select * into e from event_proposals where id = p_id for update;
+  if not found or not can_edit_proposal(p_id) then return json_build_object('ok', false, 'error', 'Only the proposer or an admin can complete it.'); end if;
+  if e.status <> 'approved' then return json_build_object('ok', false, 'error', 'Only an approved event can be completed (this one is ' || e.status || ').'); end if;
+  if length(out) < 20 then return json_build_object('ok', false, 'error', 'Write a short outcome: what happened, in at least a sentence.'); end if;
+  if length(out) > 2000 then return json_build_object('ok', false, 'error', 'Keep the outcome under 2000 characters.'); end if;
+  if att is not null then
+    if not exists (select 1 from attendance where event = att) then return json_build_object('ok', false, 'error', 'No attendance has been recorded for that event yet. Add it under Attendance, or explain why there is none.'); end if;
+  elsif an is null or length(an) < 10 then
+    return json_build_object('ok', false, 'error', 'Link the attendance you recorded, or say in a sentence why there is none.');
+  end if;
+  update event_proposals set status = 'completed', outcome_note = out, attendance_event = att, attendance_note = left(an, 500), updated_at = now() where id = p_id;
+  perform crm_log('proposal_completed', 'proposal', p_id::text, '{}');
+  return json_build_object('ok', true);
+end $$;
+
+-- Tick a checklist item: open | done | na (not needed: needs a reason). The proposer or an admin, until it is closed.
+create or replace function set_checklist_item(p_item bigint, p_state text, p_note text default '') returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare i proposal_checklist_items; e event_proposals; n text := nullif(trim(coalesce(p_note, '')), '');
+begin
+  select * into i from proposal_checklist_items where id = p_item for update;
+  if not found or not can_edit_proposal(i.proposal_id) then return json_build_object('ok', false, 'error', 'Only the proposer or an admin can change the checklist.'); end if;
+  select * into e from event_proposals where id = i.proposal_id;
+  if e.status not in ('draft','submitted','returned','approved') then return json_build_object('ok', false, 'error', 'This proposal is closed.'); end if;
+  if p_state is null or p_state not in ('open','done','na') then return json_build_object('ok', false, 'error', 'Pick open, done or not needed.'); end if;
+  if p_state = 'na' and (n is null or length(n) < 3) then return json_build_object('ok', false, 'error', 'Say why it isn''t needed.'); end if;
+  if n is not null and length(n) > 300 then return json_build_object('ok', false, 'error', 'Keep the note under 300 characters.'); end if;
+  update proposal_checklist_items set state = p_state, note = n, updated_by = auth.uid(), updated_at = now() where id = p_item;
+  update event_proposals set updated_at = now() where id = i.proposal_id;
+  perform crm_log('checklist_changed', 'proposal', i.proposal_id::text, jsonb_build_object('item', p_item, 'state', p_state));
+  return json_build_object('ok', true);
+end $$;
+
+-- Once the public page exists, record its address (the part after /events/) so the proposal and the page point at each other.
+create or replace function link_proposal_event(p_id bigint, p_slug text) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare e event_proposals; s text := nullif(lower(trim(coalesce(p_slug, ''))), '');
+begin
+  select * into e from event_proposals where id = p_id for update;
+  if not found or not can_edit_proposal(p_id) then return json_build_object('ok', false, 'error', 'Only the proposer or an admin can do that.'); end if;
+  if e.status not in ('approved','completed') then return json_build_object('ok', false, 'error', 'Link the page once the proposal is approved.'); end if;
+  if s is not null and (s !~ '^[a-z0-9]+(-[a-z0-9]+)*$' or length(s) > 120) then return json_build_object('ok', false, 'error', 'Use the page address only, like git-merge-26.'); end if;
+  update event_proposals set event_slug = s, updated_at = now() where id = p_id;
+  perform crm_log('proposal_linked', 'proposal', p_id::text, '{}');
+  return json_build_object('ok', true);
+end $$;
+
+revoke execute on function create_proposal(text, text, date, text, text, int, int), update_proposal(bigint, text, text, date, text, text, int, int), submit_proposal(bigint),
+  decide_proposal(bigint, text, text), cancel_proposal(bigint, text), complete_proposal(bigint, text, text, text), set_checklist_item(bigint, text, text), link_proposal_event(bigint, text) from public, anon;
+grant execute on function create_proposal(text, text, date, text, text, int, int), update_proposal(bigint, text, text, date, text, text, int, int), submit_proposal(bigint),
+  decide_proposal(bigint, text, text), cancel_proposal(bigint, text), complete_proposal(bigint, text, text, text), set_checklist_item(bigint, text, text), link_proposal_event(bigint, text) to authenticated;
