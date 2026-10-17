@@ -7,13 +7,11 @@ import {
 } from "@/lib/hub/client";
 import { HOURS, IDEA_STATUS, domainLabel, type IdeaStatus } from "@/lib/projects";
 import { IdeaForm } from "@/components/hub/bits";
+import { State, btn, btnSoft, card, count, head, input, type Tone } from "./kit";
+const IDEA_TONE: Record<IdeaStatus, Tone> = { idea: "new", forming: "waiting", building: "live", shipped: "done", archived: "muted" };
 
 /* Admin → Projects (core team and admins): what the members said they like, club projects built from that, the queue of
    projects asking to be featured on the website, and every project. The database enforces who may do what. */
-const card = "rounded-[12px] border border-line bg-white";
-const btn = "inline-flex items-center justify-center rounded-md bg-ink px-4 py-2.5 text-[14.5px] font-semibold text-white transition hover:bg-ink/85 disabled:opacity-50";
-const btnSoft = "inline-flex items-center justify-center rounded-md border border-line bg-white px-3 py-2 text-[14px] font-semibold transition hover:bg-soft disabled:opacity-50";
-const input = "w-full rounded-md border border-line bg-white px-3 py-2.5 text-[15px]";
 type Note = { k: "ok" | "err"; t: string } | null;
 type Run = (p: Promise<{ ok: boolean; error?: string }>, done: string) => Promise<boolean>;
 type Answer = Interests & { user_id: string; handle: string; name: string };
@@ -52,7 +50,7 @@ export function ProjectsAdmin({ admin, meId }: { admin: boolean; meId: string })
           </>)}
         </section>
         <section className={card} aria-labelledby="who-h">
-          <h2 id="who-h" className="border-b border-line px-5 py-3 text-[18px]">Who likes {domainLabel(area)} <span className="ml-1 rounded-full bg-soft px-2 py-0.5 text-[12px] font-normal text-ink-3">{(answers ?? []).filter((a) => a.domains.includes(area)).length}</span></h2>
+          <div className={head}><h2 id="who-h" className="text-[18px]">Who likes {domainLabel(area)}</h2><span className={count}>{(answers ?? []).filter((a) => a.domains.includes(area)).length}</span></div>
           {answers === null ? <p className="p-5 text-ink-3">Loading…</p> : (() => { const rows = answers.filter((a) => a.domains.includes(area)); return rows.length === 0 ? <p className="p-5 text-ink-3">Nobody has picked this area yet.</p> : (
             <ul className="divide-y divide-line">
               {rows.map((a) => (
@@ -75,7 +73,7 @@ export function ProjectsAdmin({ admin, meId }: { admin: boolean; meId: string })
 
       {view === "review" && (
         <section className={card} aria-labelledby="rv-h">
-          <h2 id="rv-h" className="border-b border-line px-5 py-3 text-[18px]">Asking to be featured on the website</h2>
+          <div className={head}><h2 id="rv-h" className="text-[18px]">Asking to be featured on the website</h2></div>
           <p className="px-5 pt-3 text-[14.5px] text-ink-2">Only the title, summary, areas, repository link and the GitHub names of members who agreed are shown publicly. You can&apos;t review your own project.</p>
           {data === null ? <p className="p-5 text-ink-3">Loading…</p> : queue.length === 0 ? <p className="p-5 text-ink-3">Nothing is waiting.</p> : (
             <ul className="divide-y divide-line">
@@ -96,7 +94,7 @@ function Review({ i, data, meId, busy, run }: { i: Idea; data: Data; meId: strin
   const shown = data.team.filter((t) => t.project_id === i.id && t.shows_publicly).map((t) => data.names[t.user_id]?.handle).filter(Boolean);
   return (
     <li className="space-y-2 px-5 py-4 text-[14.5px]">
-      <p><b>{i.title}</b> <span className="text-ink-3">{IDEA_STATUS[i.status]} · {i.domains.map(domainLabel).join(", ")}</span></p>
+      <p className="flex flex-wrap items-center gap-x-2.5 gap-y-1"><b>{i.title}</b><State tone={IDEA_TONE[i.status]}>{IDEA_STATUS[i.status]}</State><span className="text-ink-3">{i.domains.map(domainLabel).join(", ")}</span></p>
       <p className="whitespace-pre-wrap text-ink-2">{i.summary}</p>
       <p className="text-[13.5px] text-ink-3">Repository: {i.repo_url ? <a href={i.repo_url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{i.repo_url.replace("https://github.com/", "")}</a> : "none"} · names shown: {shown.length ? shown.map((h) => `@${h}`).join(", ") : "none (only the number of people)"}</p>
       {isOwner ? <p className="text-ink-3">This is your own project, so someone else on the core team has to review it.</p> : (
@@ -116,8 +114,8 @@ function AllProjects({ data, admin, busy, run }: { data: Data | null; admin: boo
   const rows = (data?.ideas ?? []).filter((i) => i.status === st);
   return (
     <section className={card} aria-labelledby="all-h">
-      <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-3">
-        <h2 id="all-h" className="mr-2 text-[18px]">All projects</h2>
+      <div className={head}>
+        <h2 id="all-h" className="mr-1 text-[18px]">All projects</h2>
         <div role="tablist" onKeyDown={tabKeys} aria-label="Status" className="flex flex-wrap gap-1">
           {(Object.keys(IDEA_STATUS) as IdeaStatus[]).map((s) => <button key={s} role="tab" aria-selected={st === s} tabIndex={(st === s) ? 0 : -1} onClick={() => setSt(s)} className={`rounded-md px-3 py-1.5 text-[14px] ${st === s ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>{IDEA_STATUS[s]} <span className={st === s ? "text-white/70" : "text-ink-3"}>{counts[s]}</span></button>)}
         </div>
@@ -128,7 +126,7 @@ function AllProjects({ data, admin, busy, run }: { data: Data | null; admin: boo
             const team = data.team.filter((t) => t.project_id === i.id), o = data.names[i.owner_id ?? ""];
             return (
               <li key={i.id} className="space-y-1 px-5 py-3 text-[14.5px]">
-                <p><b>{i.title}</b> <span className="text-ink-3">{i.origin === "club" ? "club project · " : ""}{team.length}{i.team_size ? ` of ${i.team_size}` : ""} on the team · owner {o ? `@${o.handle}` : "none"}{i.publish_state !== "private" ? ` · ${i.publish_state === "published" ? "on the website" : "asked to be featured"}` : ""}</span></p>
+                <p className="flex flex-wrap items-center gap-x-2.5 gap-y-1"><b>{i.title}</b>{i.publish_state === "published" ? <State tone="ok">On the website</State> : i.publish_state === "requested" ? <State tone="waiting">Asked to be featured</State> : null}<span className="text-ink-3">{i.origin === "club" ? "club project · " : ""}{team.length}{i.team_size ? ` of ${i.team_size}` : ""} on the team · owner {o ? `@${o.handle}` : "none"}</span></p>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                   {i.publish_state === "published" && <button disabled={busy} onClick={() => void run(unpublishProject(i.id), "Taken off the website.")} className={btnSoft}>Take off the website</button>}
                   {admin && i.status === "archived" && <button disabled={busy} onClick={() => void run(setIdeaStatus(i.id, "idea"), "Brought back as an idea.")} className={btnSoft}>Bring back</button>}
