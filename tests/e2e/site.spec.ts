@@ -58,10 +58,18 @@ test.describe("club site", () => {
   });
 
   test("Get involved preselects the kind from the link and validates", async ({ page }) => {
-    await page.goto("/get-involved?kind=apply");
-    await expect(page.getByLabel(/Join the core team/)).toBeChecked();
+    await page.goto("/get-involved?kind=sponsor");
+    await expect(page.getByLabel(/Sponsor or partner/)).toBeChecked();
     await page.getByRole("button", { name: "Send message" }).click();
     await expect(page.locator("form [role=alert]")).toContainText(/name/i);
+  });
+
+  test("joining the core team shows the application form only while a round is open", async ({ page }) => {
+    await page.goto("/get-involved?kind=apply");
+    await expect(page.getByLabel(/Join the core team/)).toBeChecked();
+    // with no database in the test build, no round is open: a short note instead of a message box
+    await expect(page.getByRole("heading", { name: /Applications are closed right now/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Send message" })).toHaveCount(0);
   });
 
   test("privacy, unsubscribe and a missing page all render sensibly", async ({ page }) => {
