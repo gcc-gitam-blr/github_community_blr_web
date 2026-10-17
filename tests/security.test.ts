@@ -36,6 +36,9 @@ const EXPECTED: Record<string, string[]> = {
   // event proposals: each checks the proposer or admin itself
   create_proposal: SIGNED_IN, update_proposal: SIGNED_IN, submit_proposal: SIGNED_IN, decide_proposal: SIGNED_IN, cancel_proposal: SIGNED_IN,
   complete_proposal: SIGNED_IN, set_checklist_item: SIGNED_IN, link_proposal_event: SIGNED_IN, can_edit_proposal: NOBODY,
+  // tasks, meetings and decisions: each checks the owner, creator or admin itself
+  create_task: SIGNED_IN, set_task_status: SIGNED_IN, reassign_task: SIGNED_IN, create_meeting: SIGNED_IN, update_meeting: SIGNED_IN, set_attendees: SIGNED_IN,
+  finalise_minutes: SIGNED_IN, add_minutes_note: SIGNED_IN, record_decision: SIGNED_IN, supersede_decision: SIGNED_IN, can_own_tasks: NOBODY, task_warnings: SERVER,
   sync_profile_roles: SERVER, appointment_warnings: SERVER, admin_emails: SERVER, bootstrap_admin: SERVER, // the weekly digest, and the first admin from the SQL editor
   booth_tx: NOBODY, log_action: NOBODY, bump_leaderboard: NOBODY, // internal: other functions and triggers only
   my_role: ANYONE, // used by row-level-security policies, so every role must be able to run it; it only ever answers about the caller
