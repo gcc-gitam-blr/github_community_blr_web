@@ -15,7 +15,9 @@ Before the old team leaves, make sure the new leads have their own access to:
 - **Supabase**: the project, as members.
 - **The club Gmail** (or Resend) that sends the emails, and **Luma**, **WhatsApp**, **Instagram**.
 - **The site's admin pages**: an old admin signs the new leads in once at `/admin`, then gives them the
-  *admin* role under **People & roles**.
+  *admin* role under **People & roles**, with the day their term ends. Every role has an end date and stops by
+  itself on it; the Monday digest warns when someone's access ends within 14 days or fewer than two admins are active.
+  Give the new admins their role **before** the old ones' terms end, so there is never a gap.
 
 ## 2. The club year
 
@@ -67,10 +69,10 @@ In Supabase → SQL Editor, run:
 ```sql
 delete from txs;                                                  -- everyone's coin history
 update profiles set coins = 0, earned = 0, ticket = false;        -- organisers start at zero too
-delete from auth.users where id in (select id from profiles where role = 'attendee'); -- attendees' sign-ins
+delete from auth.users where id in (select id from profiles where role_of(id) = 'attendee'); -- attendees' sign-ins
 ```
 
-Organisers and volunteers keep their accounts and roles. Booths and rewards stay (edit them on `/epoch/admin`).
+Organisers and volunteers keep their accounts and appointments (check their end dates under **People & roles**). Booths and rewards stay (edit them on `/epoch/admin`).
 
 ## 6. Memories
 
@@ -100,8 +102,8 @@ People who leave may still know the passwords. Change these, then **Redeploy** i
 Leave `EMAIL_SECRET` alone unless it leaked: changing it breaks the unsubscribe links in every email already sent.
 Make a random value with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
 
-Last, remove people who left from GitHub, Vercel, Supabase and the club Gmail, and take away their role
-under `/admin` → **People & roles**.
+Last, remove people who left from GitHub, Vercel, Supabase and the club Gmail, and end their access
+under `/admin` → **People & roles** (**End access**), without waiting for the end date.
 
 ## 8. Check it
 

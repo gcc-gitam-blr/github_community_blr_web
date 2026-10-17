@@ -8,27 +8,35 @@ export interface DigestRows {
   signups: { handle: string; created_at: string }[];
   messages: { kind: string }[];
   feedback: { event: string; rating: number }[];
+  /** appointment_warnings() from the database: how many admins are active, and whose access ends within 14 days */
+  access?: { active_admins: number; ending: { handle: string; role: string; days_left: number }[] };
 }
 export interface Digest {
   from: string; to: string; // the week, as YYYY-MM-DD in India
   signups: { count: number; first: string[] }; // the first few handles, oldest first
   messages: { label: string; count: number }[];
   feedback: { event: string; average: number; count: number }[];
+  /** only when something needs doing: fewer than MIN_ADMINS active admins, or access ending soon */
+  access: { activeAdmins: number; tooFewAdmins: boolean; ending: { handle: string; role: string; daysLeft: number }[] } | null;
 }
+
+export const MIN_ADMINS = 2; // at least two people can always manage access (and the last one is never removed)
 
 export const FIRST_HANDLES = 5;
 const istDay = (t: Date) => new Date(t.getTime() + 330 * 60_000).toISOString().slice(0, 10);
 
 /** The summary, or null when nothing happened (then no email goes out). */
 export function buildDigest(rows: DigestRows, now = new Date()): Digest | null {
-  if (!rows.signups.length && !rows.messages.length && !rows.feedback.length) return null;
+  const a = rows.access, tooFewAdmins = !!a && a.active_admins < MIN_ADMINS;
+  const access = a && (tooFewAdmins || a.ending.length) ? { activeAdmins: a.active_admins, tooFewAdmins, ending: a.ending.map((e) => ({ handle: e.handle, role: e.role, daysLeft: e.days_left })) } : null;
+  if (!rows.signups.length && !rows.messages.length && !rows.feedback.length && !access) return null;
   const signups = [...rows.signups].sort((a, b) => a.created_at.localeCompare(b.created_at));
   const messages = KINDS.map((k) => ({ label: k.label, count: rows.messages.filter((m) => m.kind === k.id).length })).filter((m) => m.count);
   const byEvent = new Map<string, number[]>();
   for (const f of rows.feedback) byEvent.set(f.event, [...(byEvent.get(f.event) ?? []), f.rating]);
   const feedback = [...byEvent].map(([event, r]) => ({ event: CLUB.events.find((e) => e.date === event)?.title ?? event, average: Math.round((r.reduce((a, b) => a + b, 0) / r.length) * 10) / 10, count: r.length }))
     .sort((a, b) => b.count - a.count);
-  return { from: istDay(new Date(now.getTime() - 7 * 864e5)), to: istDay(now), signups: { count: signups.length, first: signups.slice(0, FIRST_HANDLES).map((s) => s.handle) }, messages, feedback };
+  return { from: istDay(new Date(now.getTime() - 7 * 864e5)), to: istDay(now), signups: { count: signups.length, first: signups.slice(0, FIRST_HANDLES).map((s) => s.handle) }, messages, feedback, access };
 }
 
 /** Who gets it: ORGANISER_EMAILS when set (comma- or space-separated), otherwise every admin's email from the database. */
@@ -43,4 +51,5 @@ export const digestHeadline = (d: Digest) => [
   d.signups.count && n(d.signups.count, "sign-up"),
   d.messages.length && n(d.messages.reduce((a, m) => a + m.count, 0), "message"),
   d.feedback.length && n(d.feedback.reduce((a, f) => a + f.count, 0), "rating"),
+  d.access && (d.access.tooFewAdmins ? "too few admins" : n(d.access.ending.length, "access ending", "accesses ending")),
 ].filter(Boolean).join(", ");

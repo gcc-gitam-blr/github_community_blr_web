@@ -25,6 +25,15 @@ const EXPECTED: Record<string, string[]> = {
   register_profile: SIGNED_IN, issue_ticket: SIGNED_IN, award_coins: SIGNED_IN, scan_booth: SIGNED_IN, redeem_reward: SIGNED_IN,
   staff_scan: SIGNED_IN, reverse_tx: SIGNED_IN, find_attendees: SIGNED_IN, staff_txs: SIGNED_IN, my_attendance: SIGNED_IN,
   set_role: SIGNED_IN, assign_booth: SIGNED_IN,
+  // appointments: each checks my_role() = 'admin' (or organiser, for list_people) itself
+  grant_appointment: SIGNED_IN, end_appointment: SIGNED_IN, list_people: SIGNED_IN,
+  role_of: NOBODY, crm_log: NOBODY, profile_role_mirror: NOBODY, appointment_changed: NOBODY, // internal: other functions and triggers only
+  // members and recruitment: each checks my_role() and the record's state itself; applying goes through the server
+  create_campaign: SIGNED_IN, set_campaign_dates: SIGNED_IN, set_campaign_status: SIGNED_IN, add_reviewer: SIGNED_IN, remove_reviewer: SIGNED_IN,
+  review_application: SIGNED_IN, move_application: SIGNED_IN, decide_application: SIGNED_IN, onboard_application: SIGNED_IN,
+  create_member: SIGNED_IN, update_member: SIGNED_IN, set_member_status: SIGNED_IN, import_members: SIGNED_IN, export_members: SIGNED_IN, export_signups: SIGNED_IN,
+  is_own_application: NOBODY, can_see_application: NOBODY, open_campaign: SERVER, submit_application: SERVER,
+  sync_profile_roles: SERVER, appointment_warnings: SERVER, admin_emails: SERVER, bootstrap_admin: SERVER, // the weekly digest, and the first admin from the SQL editor
   booth_tx: NOBODY, log_action: NOBODY, bump_leaderboard: NOBODY, // internal: other functions and triggers only
   my_role: ANYONE, // used by row-level-security policies, so every role must be able to run it; it only ever answers about the caller
   // public by design: a certificate is verified by its unguessable id; browser error reports are capped at 2000 a day
@@ -48,8 +57,9 @@ const EXPECTED: Record<string, string[]> = {
 
   // ---- search_path ----
   const defs = SQL.match(/create or replace function[\s\S]*?(?=\ncreate |\n--|$)/g) ?? [];
-  const bad = defs.filter((d) => /security definer/.test(d) && !/security definer\s+set search_path = public, pg_temp/.test(d)).map((d) => d.match(/function (\w+)/)![1]);
-  ok(`every SECURITY DEFINER function in schema.sql pins search_path (${defs.filter((d) => /security definer/.test(d)).length} checked)`, bad.length === 0 && defs.length > 20);
+  const header = (d: string) => d.slice(0, d.indexOf("$")); // everything before the body: name, language, security, search_path
+  const bad = defs.filter((d) => /security definer/.test(header(d)) && !/set search_path = public, pg_temp/.test(header(d))).map((d) => d.match(/function (\w+)/)![1]);
+  ok(`every SECURITY DEFINER function in schema.sql pins search_path (${defs.filter((d) => /security definer/.test(header(d))).length} checked)`, bad.length === 0 && defs.length > 20);
   const unpinned = (await db.query<{ proname: string }>("select proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and prosecdef and not coalesce(proconfig::text, '') like '%search_path=public, pg_temp%'")).rows;
   ok("…and the database agrees (no function runs with the caller's search_path)", unpinned.length === 0);
 

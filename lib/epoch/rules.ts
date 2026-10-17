@@ -15,19 +15,19 @@ export const boothOf = (ref: string) => /^(?:reverse:)?booth:(.+)$/.exec(ref)?.[
 type Staff = Pick<Profile, "role" | "booth">;
 export const isStaff = (p?: Pick<Profile, "role"> | null) => !!p && p.role !== "attendee";
 
-/** Scanning a wallet for a booth: admins at any booth, a volunteer only at their own. Null = allowed. */
+/** Scanning a wallet for a booth: admins at any booth, anyone else only at their own. Null = allowed. */
 export function scanBlock(me: Staff | null | undefined, boothId: string): string | null {
   if (!me || !isStaff(me)) return "Organiser access required.";
   if (me.role === "admin" || me.booth === boothId) return null;
   return me.booth ? "You can only scan for your own booth." : "You're on the desk, so you can check people in. Ask an admin to give you a booth.";
 }
 
-/** Reversing a transaction. Admins: anything but a reversal. A volunteer: a scan at their own booth, within 15 minutes. Null = allowed. */
+/** Reversing a transaction. Admins: anything but a reversal. Everyone else: a scan at their own booth, within 15 minutes. Null = allowed. */
 export function reverseBlock(me: Staff | null | undefined, tx: Tx, now = Date.now()): string | null {
   if (!me || !isStaff(me)) return "Organiser access required.";
   if (tx.ref.startsWith("reverse:")) return "A reversal can't be reversed. Ask an admin to award or deduct instead.";
   if (tx.reversedAt) return "Already reversed.";
-  if (me.role === "volunteer") {
+  if (me.role !== "admin") {
     if (!me.booth || tx.ref !== `booth:${me.booth}`) return "You can only reverse scans at your own booth. Ask an admin.";
     if (now - new Date(tx.at).getTime() > REVERSE_WINDOW_MIN * 60_000) return `That was more than ${REVERSE_WINDOW_MIN} minutes ago. Ask an admin.`;
   }
