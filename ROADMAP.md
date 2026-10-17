@@ -22,6 +22,7 @@ All done except `CRON_SECRET`.
 |---|---|---|---|
 | ✅ | Supabase → SQL editor (or `npm run connect`) | Re-run `supabase/schema.sql` | Error reports, shared form limits, the Epoch dates list, the weekly clean-up, booths for volunteers, reversals and the audit log |
 | 🙋 | Vercel → Settings → Environment Variables | `CRON_SECRET` (any long random text) | The weekly clean-up and the Monday digest |
+| 🙋 | Supabase → SQL editor | **Policies and activity update:** re-run `supabase/schema.sql`. Then write the first policy (the charter) under `/admin` → Policies; a second admin approves it. Nothing is pre-filled. | Versioned policies, and the Activity view of the audit log |
 | 🙋 | Supabase → SQL editor | **Assets & handover update:** re-run `supabase/schema.sql`. Then open `/admin` → Assets & handover and, for each listed asset, add the link, an owner and a different backup (no passwords: say where the login is kept). | The asset registry, its warnings, and the in-app handover checklist |
 | 🙋 | Supabase → SQL editor | **Tasks, meetings and decisions update:** re-run `supabase/schema.sql`. Then try it on a real meeting: create it, write the minutes, add action items, finalise. | Tasks, meetings, final minutes, the decisions register, and overdue tasks in the Monday digest |
 | 🙋 | Supabase → SQL editor | **Event proposals update:** re-run `supabase/schema.sql`. Then propose the next real event under `/admin` → Event proposals and note its number in the content editor. | Event proposals and the approval step |

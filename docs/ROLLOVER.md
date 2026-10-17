@@ -7,7 +7,7 @@ updates itself a minute or two later. Set aside an evening; nothing here needs c
 Do the steps in order. **Tick them off in the app:** an admin opens `/admin` → **Assets & handover** → *Handover checklist*,
 starts a handover for the new term, and ticks each step as it is done (or waives it, with a reason). It has the
 same eight steps as below, one group at a time, and it keeps the record. The handover can only be completed when every
-step is done or waived. This page explains each step.
+step is done or waived. This page explains each step. (How the whole admin system works is in [CRM-GUIDE.md](CRM-GUIDE.md).)
 
 Before you start, open the **Registry** tab in the same place: every account the club depends on (domain, Vercel,
 Supabase, GitHub, the club Gmail, Luma and so on) should have an **owner** and a different **backup**, both with current
