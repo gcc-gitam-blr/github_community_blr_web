@@ -6,6 +6,7 @@ import { EpochCoin } from "@/components/epoch/EpochCoin";
 import { SocialLinks } from "./SocialLinks";
 import { ThemeChoices } from "@/components/ui/ThemeToggle";
 import { NAV_LINKS } from "./nav-links";
+import { MemberMenuLink } from "./MemberButton";
 
 /* The phone menu: a panel that drops from under the header over a dimmed page (dim to focus).
    Opens in 260ms on a drawer curve, closes faster; links cascade in 30ms apart. Esc closes it, focus stays
@@ -83,6 +84,7 @@ export function MobileMenu({ href, current, live }: { href: (h: string) => strin
             </nav>
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line px-3 pt-4"><SocialLinks /><ThemeChoices tone="menu" /></div>
             <a href={href("/#join")} onClick={() => close(false)} className="press lift mt-5 block rounded-md border-2 border-ink bg-ink py-3.5 text-center font-display text-[16px] font-bold text-white">Join the club</a>
+            <MemberMenuLink onClick={() => close(false)} />
           </div>
         </div>,
         host,
