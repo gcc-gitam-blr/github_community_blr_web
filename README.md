@@ -23,7 +23,7 @@ No keys needed: the club site works as is, and Epoch runs in **demo mode** (its 
 - **Setting up:** [Messages, sign-ups and email](#switch-on-messages-sign-ups-and-email-5-minutes) · [Club admin](#club-admin-attendance-and-certificates) · [Settings](#settings-environment-variables) · [Make it yours](#make-it-yours)
 - **Epoch:** [Going live](#epoch-going-live-for-the-fest) · [Design](#epoch-whats-in-the-design)
 - **Running the club:** [Email](#email-welcome-message-and-organiser-broadcasts) · [Keeping it running](#keeping-it-running) · [Security and personal data](#security-and-personal-data) · [Tests](#tests)
-- **Handing over:** [docs/ROLLOVER.md](docs/ROLLOVER.md) · [docs/RESTORE.md](docs/RESTORE.md)
+- **Handing over:** [docs/ROLLOVER.md](docs/ROLLOVER.md) · [docs/RESTORE.md](docs/RESTORE.md) · **Audit:** [docs/SITE-AUDIT.md](docs/SITE-AUDIT.md)
 
 ## Where things live
 
