@@ -42,11 +42,11 @@ export function Certificate({ name, handle, event, eventKey, issued, number, url
         <p className="font-mono text-[clamp(8px,1.15vw,13.5px)] uppercase tracking-[0.22em]" style={{ color: t.deep }}>Certificate of participation</p>
         {event?.type && <p className="mt-[1.4%] w-fit rounded-full border-[1.5px] border-ink px-[1.4%] py-[0.3%] font-mono text-[clamp(7px,0.95vw,11.5px)] font-bold" style={{ background: t.soft }}>{event.type}</p>}
 
-        <div className="mt-auto">
+        <div className="my-auto pt-[2%]">
           <p className="text-[clamp(10px,1.45vw,17px)] text-[#3a3d44]">This certifies that</p>
           <h1 className="mt-[0.6%] max-w-[88%] font-display text-[clamp(26px,5.4vw,62px)] font-black leading-[1.02] tracking-[-0.03em]">{name}</h1>
           <p className="mt-[2%] max-w-[86%] text-[clamp(10px,1.55vw,18px)] leading-relaxed text-[#3a3d44]">
-            took part in <b className="font-display font-black text-[#0b0b0f]">{event?.title ?? eventKey}</b>{event ? <>, {kind.line} held on {eventDate(event)} at {event.where}.</> : "."}
+            took part in <b className="font-display font-black text-[#0b0b0f]">{event?.title ?? eventKey}</b>{event ? <>, {kind.line} held {event.dateLabel ? "in" : "on"} {eventDate(event)} at {event.where}.</> : "."}
           </p>
           {/* the record, as git would print it */}
           <p className="mt-[2.4%] w-fit max-w-full overflow-hidden rounded-md border-[1.5px] border-ink bg-white px-[1.6%] py-[0.8%] font-mono text-[clamp(7px,1vw,12px)] leading-relaxed">
@@ -56,7 +56,7 @@ export function Certificate({ name, handle, event, eventKey, issued, number, url
           </p>
         </div>
 
-        <footer className="mt-auto grid grid-cols-[1fr_auto_auto] items-end gap-[4%] pt-[3%]">
+        <footer className="grid grid-cols-[1fr_auto_auto] items-end gap-[4%] pt-[3%]">
           <div className="text-[clamp(7px,1vw,12px)] leading-relaxed text-[#3a3d44]">
             <p>Issued {issued}</p>
             <p className="font-mono">No. {number}</p>
