@@ -9,7 +9,7 @@ import { People } from "./People";
 import { SiteErrors } from "./SiteErrors";
 import { ClubMark } from "@/components/ui/ClubMark";
 
-/* The club's admin dashboard. Who may see it is decided by the database (profiles.role), not by this page:
+/* The club's admin dashboard. Who may see it is decided by the database (an active appointment), not by this page:
    signed out → "Sign in with GitHub"; signed in but not an organiser → ask an admin; organisers → the dashboard. */
 const SECTIONS = [
   { id: "overview", label: "Overview" },
@@ -94,9 +94,9 @@ export function AdminApp() {
   );
   if (!me || me.role === "attendee") return (
     <Shell who={user.handle} onSignOut={signOut}><section className={`${card} mx-auto max-w-[620px]`}>
-      <h1 className="text-[30px]">You&apos;re signed in, but not an organiser yet</h1>
-      <p className="mt-3 text-ink-2">Ask a club admin to open <b>Admin → People &amp; roles</b> and add <code>@{user.handle || me?.handle}</code>. Then reload this page.</p>
-      <p className="mt-3 text-[14px] text-ink-3">First admin? It has to be set once in the database: in Supabase, open SQL Editor and run <code>update profiles set role = &apos;admin&apos; where handle = &apos;{user.handle || "your-github-username"}&apos;;</code></p>
+      <h1 className="text-[30px]">You&apos;re signed in, but you don&apos;t have organiser access</h1>
+      <p className="mt-3 text-ink-2">Either you haven&apos;t been given access yet, or it has ended. Ask a club admin to open <b>Admin → People &amp; roles</b> and give access to <code>@{user.handle || me?.handle}</code>. Then reload this page.</p>
+      <p className="mt-3 text-[14px] text-ink-3">First admin? It has to be set once in the database: in Supabase, open SQL Editor and run <code>select bootstrap_admin(&apos;{user.handle || "your-github-username"}&apos;, &apos;YYYY-MM-DD&apos;);</code> with the day that access should end.</p>
     </section></Shell>
   );
 
@@ -114,7 +114,7 @@ export function AdminApp() {
         </nav>
         <div className="min-w-0 space-y-4">
           <h1 className="text-[28px]">{SECTIONS.find((s) => s.id === section)!.label}</h1>
-          {!admin && <p className="text-[14px] text-ink-3">You&apos;re a volunteer: you can mark attendance and check people in; sending emails and changing roles is for admins.</p>}
+          {!admin && <p className="text-[14px] text-ink-3">You&apos;re {me.role === "core" ? "on the core team" : "a volunteer"}: you can mark attendance and check people in; sending emails and changing who has access is for admins.</p>}
           {section === "overview" && <ClubStatsPanel />}
           {section === "attendance" && <Attendance admin={admin} />}
           {section === "signups" && <SignUps />}
