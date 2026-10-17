@@ -9,6 +9,8 @@ let fails = 0; const ok = (n: string, c: boolean) => { console.log((c ? "PASS" :
 const as = (uid: string) => db.query(`select set_config('test.uid', $1, false)`, [uid]);
 const one = async <T,>(sql: string, p: unknown[] = []) => (await db.query<T>(sql, p)).rows[0];
 const call = async (fn: string, args: unknown[]) => (await one<{ r: { ok: boolean; error?: string; delta?: number; balance?: number } }>(`select ${fn}(${args.map((_, i) => `$${i + 1}`).join(",")}) as r`, args)).r;
+// access comes from appointments (profiles.role is only a display copy), so tests give it the way an admin would: a row with an end date
+const appoint = (uid: string, role: string, days = 365) => db.query("insert into appointments (user_id, role, ends_on) values ($1, $2, today_ist() + $3::int)", [uid, role, days]);
 const coins = async (id: string) => (await one<{ coins: number }>("select coins from profiles where id = $1", [id])).coins;
 
 const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-0000-00000000000b";
@@ -46,7 +48,7 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   ok("…and nobody got coins from those attempts", (await coins(ADA)) === 0);
   await as(ADA);
 
-  await db.query("update profiles set role = 'admin' where id = $1", [ORG]);
+  await appoint(ORG, "admin");
   await as(ORG);
   ok("organiser verifies the ticket", (await call("issue_ticket", [ADA, 398])).ok);
   ok("check-in credits the 398 starter coins", (await coins(ADA)) === 398);
@@ -158,7 +160,7 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   ok("an admin makes someone a volunteer (any @/case)", (await role(ORG, "@ADA", "volunteer"))?.ok === true && (await one<{ role: string }>("select role from profiles where id = $1", [ADA])).role === "volunteer");
   ok("a volunteer can now read attendance", (await asApi(ADA, "select * from attendance")).rows.length === 1);
   ok("a volunteer still can't hand out roles", !(await role(ADA, "org", "attendee"))?.ok);
-  ok("admins can't change their own role", /own role/.test((await role(ORG, "org", "attendee"))?.error ?? ""));
+  ok("admins can't change their own role", /own access/.test((await role(ORG, "org", "attendee"))?.error ?? ""));
   ok("an unknown handle is remembered until they sign in", (await role(ORG, "nobody-here", "volunteer"))?.ok === true && (await one<{ role: string }>("select role from pending_roles where handle = 'nobody-here'")).role === "volunteer");
   ok("…and a nonsense handle is refused", !(await role(ORG, "not a handle!", "volunteer"))?.ok);
   const NEW = "00000000-0000-0000-0000-0000000000ee";
