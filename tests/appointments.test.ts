@@ -168,5 +168,24 @@ const audit = async (action: string) => (await one<{ n: number }>("select count(
   ok("setting profiles.role by hand gives nothing: the mirror resets it and access is unchanged", (await roleOf(X)) === "attendee" && (await one<{ role: string }>("select role from profiles where id = $1", [X])).role === "attendee"
     && (await api<{ r: Res }>(X, "select grant_appointment('xan', 'admin', null, today_ist() + 5) r")).rows[0]?.r.ok === false);
 
+  // ---- the one-off backfill for people who had a role before appointments existed ----
+  const D = id(8), E = id(9);
+  await db.query("insert into auth.users values ($1, 'dee@gitam.in', '{\"user_name\":\"dee\"}'), ($2, 'eli@gitam.in', '{\"user_name\":\"eli\"}')", [D, E]);
+  await as(D); await db.query("select register_profile('Dee')"); await as(E); await db.query("select register_profile('Eli')"); await as("");
+  await db.exec("alter table profiles disable trigger profile_role_mirror");
+  await db.query("update profiles set role = 'volunteer' where id = $1", [D]); await db.query("update profiles set role = 'admin' where id = $1", [E]); // how they looked before the update
+  await db.exec("alter table profiles enable trigger profile_role_mirror");
+  const backfill = fs.readFileSync("supabase/backfill-appointments.sql", "utf8");
+  ok("the backfill refuses to run with the placeholder date", await db.exec(backfill).then(() => false, (e) => /real end date/.test((e as Error).message)) && (await roleOf(D)) === "attendee");
+  const until = (await one<{ d: string }>("select (today_ist() + 200)::text d")).d;
+  const withDate = backfill.replace("'2099-01-01', false", `'${until}', false`);
+  await db.exec(withDate);
+  ok("with a date, people who had a role get it as an appointment until that date", (await roleOf(D)) === "volunteer" && (await roleOf(E)) === "admin"
+    && (await one<{ n: number }>("select count(*)::int n from appointments where user_id in ($1, $2) and ends_on = $3::date", [D, E, until])).n === 2);
+  ok("…and it is logged, but people who already had appointments are left alone", (await one<{ n: number }>("select count(*)::int n from crm_audit where detail->>'via' = 'backfill'")).n === 2
+    && (await one<{ n: number }>("select count(*)::int n from appointments where user_id = $1", [A])).n === 2);
+  await db.exec(withDate);
+  ok("running it again adds nothing", (await one<{ n: number }>("select count(*)::int n from appointments where user_id in ($1, $2)", [D, E])).n === 2);
+
   console.log(fails ? `\n${fails} FAILED` : "\nall appointment checks passed"); process.exit(fails ? 1 : 0);
 })().catch((e) => { console.error("FAIL  crashed:", e.message); process.exit(1); });
