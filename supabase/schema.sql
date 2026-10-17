@@ -827,7 +827,7 @@ grant execute on function log_client_error(text, text, text, text) to anon, auth
 -- ============================================================
 create or replace function prune_old_data()
 returns json language plpgsql security definer set search_path = public, pg_temp as $$
-declare s int; m int; f int; e int; ap int; mb int; au int;
+declare s int; m int; f int; e int; ap int; mb int; au int; it int;
 begin
   delete from join_requests where created_at < now() - interval '18 months'; get diagnostics s = row_count;
   delete from messages where created_at < now() - interval '12 months'; get diagnostics m = row_count;
@@ -838,11 +838,13 @@ begin
   delete from applications a using recruitment_campaigns c where c.id = a.campaign_id and a.status in ('rejected','withdrawn') and c.closes_on < (now() - interval '6 months')::date; get diagnostics ap = row_count;
   -- members who became inactive: 24 months later. Active members and alumni are kept.
   delete from members where status = 'inactive' and status_since < (now() - interval '24 months')::date; get diagnostics mb = row_count;
+  -- interest-survey answers: kept while the person is a member or on the core team; gone with their member record
+  delete from member_interests i where not exists (select 1 from members m where m.user_id = i.user_id) and role_of(i.user_id) not in ('core','admin'); get diagnostics it = row_count;
   -- the club's audit log: 36 months (the only place a crm_audit row can be deleted)
   perform set_config('club.pruning', 'on', true);
   delete from crm_audit where at < now() - interval '36 months'; get diagnostics au = row_count;
   perform set_config('club.pruning', 'off', true);
-  return json_build_object('signups', s, 'messages', m, 'feedback', f, 'errors', e, 'applications', ap, 'members', mb, 'audit', au);
+  return json_build_object('signups', s, 'messages', m, 'feedback', f, 'errors', e, 'applications', ap, 'members', mb, 'audit', au, 'interests', it);
 end $$;
 revoke execute on function prune_old_data() from public;
 grant execute on function prune_old_data() to service_role; -- only the weekly cron, with the server-only key, may delete

@@ -141,6 +141,13 @@ const members = async (pid: number) => (await db.query<{ user_id: string; role: 
   ok("archiving withdraws pending requests; only an admin brings a project back", await (async () => { const g = Number((await idea(C, "Short-lived", 3))?.id); await fn(M2, "request_to_join($1, 'hello there')", [g]); await fn(C, "set_idea_status($1, 'archived')", [g]);
     const gone = (await one<{ s: string }>("select status s from project_requests where project_id = $1", [g])).s === "withdrawn"; return gone && (await fn(C, "set_idea_status($1, 'idea')", [g]))?.ok === false && (await fn(A, "set_idea_status($1, 'idea')", [g]))?.ok === true; })());
 
+  // ---- retention ----
+  await db.query("insert into member_interests (user_id, domains) values ($1, '{web}'), ($2, '{web}')", [Q, PAT]); // Quin is not a member; Pat is a (former) member with a record
+  const pruned = (await api<{ r: { interests: number } }>("", "select prune_old_data() r", [], "service_role")).rows[0].r;
+  ok("the weekly clean-up deletes answers of people who are no longer members or on the core team, and keeps the rest", pruned.interests === 1
+    && (await one<{ n: number }>("select count(*)::int n from member_interests where user_id = $1", [Q])).n === 0 && (await one<{ n: number }>("select count(*)::int n from member_interests where user_id in ($1, $2, $3, $4)", [M1, M2, C, PAT])).n === 4);
+  ok("anyone can delete their own answers at any time", (await fn(M1, "delete_interests()"))?.ok === true && (await one<{ n: number }>("select count(*)::int n from member_interests where user_id = $1", [M1])).n === 0 && (await one<{ n: number }>("select count(*)::int n from member_interests where user_id = $1", [M2])).n === 1);
+
   // ---- the audit trail ----
   ok("every step was logged", (await audit("interests_saved")) >= 4 && (await audit("idea_posted")) >= 6 && (await audit("idea_updated")) >= 3 && (await audit("idea_status")) >= 4 && (await audit("request_sent")) >= 6 && (await audit("request_decided")) >= 4
     && (await audit("member_left_project")) === 1 && (await audit("project_member_removed")) === 1 && (await audit("project_owner")) >= 2 && (await audit("public_credit")) === 1 && (await audit("publish_requested")) >= 3 && (await audit("publish_decided")) >= 3 && (await audit("project_unpublished")) === 1 && (await audit("request_withdrawn")) === 1);
