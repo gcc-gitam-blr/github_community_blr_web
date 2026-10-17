@@ -1,5 +1,6 @@
 import { CLUB } from "./config";
 import { KINDS } from "./contact";
+import { groupProblems, problemText, type AssetProblem } from "./assets";
 import { EMAIL_RE } from "./join";
 
 /* The Monday email to organisers: what happened on the site in the past 7 days.
@@ -12,6 +13,8 @@ export interface DigestRows {
   access?: { active_admins: number; ending: { handle: string; role: string; days_left: number }[] };
   /** task_warnings() from the database: open tasks past their date, and open tasks whose owner no longer has access */
   tasks?: { overdue: { id: number; title: string; owner: string; days: number }[]; orphaned: { id: number; title: string; owner: string }[] };
+  /** asset_problems() from the database: assets with no owner or backup, owners losing access, reviews overdue */
+  assets?: AssetProblem[];
 }
 export interface Digest {
   from: string; to: string; // the week, as YYYY-MM-DD in India
@@ -22,6 +25,8 @@ export interface Digest {
   access: { activeAdmins: number; tooFewAdmins: boolean; ending: { handle: string; role: string; daysLeft: number }[] } | null;
   /** only when something needs doing */
   tasks: { overdue: { title: string; owner: string; days: number }[]; orphaned: { title: string; owner: string }[] } | null;
+  /** only when an asset needs attention: its name and what is wrong, most serious first */
+  assets: { name: string; what: string }[] | null;
 }
 
 export const MIN_ADMINS = 2; // at least two people can always manage access (and the last one is never removed)
@@ -34,14 +39,15 @@ export function buildDigest(rows: DigestRows, now = new Date()): Digest | null {
   const a = rows.access, tooFewAdmins = !!a && a.active_admins < MIN_ADMINS;
   const access = a && (tooFewAdmins || a.ending.length) ? { activeAdmins: a.active_admins, tooFewAdmins, ending: a.ending.map((e) => ({ handle: e.handle, role: e.role, daysLeft: e.days_left })) } : null;
   const t = rows.tasks, tasks = t && (t.overdue.length || t.orphaned.length) ? { overdue: t.overdue.map(({ title, owner, days }) => ({ title, owner, days })), orphaned: t.orphaned.map(({ title, owner }) => ({ title, owner })) } : null;
-  if (!rows.signups.length && !rows.messages.length && !rows.feedback.length && !access && !tasks) return null;
+  const grouped = groupProblems(rows.assets ?? []), assets = grouped.length ? grouped.map((g) => ({ name: g.name, what: g.problems.map(problemText).join("; ") })) : null;
+  if (!rows.signups.length && !rows.messages.length && !rows.feedback.length && !access && !tasks && !assets) return null;
   const signups = [...rows.signups].sort((a, b) => a.created_at.localeCompare(b.created_at));
   const messages = KINDS.map((k) => ({ label: k.label, count: rows.messages.filter((m) => m.kind === k.id).length })).filter((m) => m.count);
   const byEvent = new Map<string, number[]>();
   for (const f of rows.feedback) byEvent.set(f.event, [...(byEvent.get(f.event) ?? []), f.rating]);
   const feedback = [...byEvent].map(([event, r]) => ({ event: CLUB.events.find((e) => e.date === event)?.title ?? event, average: Math.round((r.reduce((a, b) => a + b, 0) / r.length) * 10) / 10, count: r.length }))
     .sort((a, b) => b.count - a.count);
-  return { from: istDay(new Date(now.getTime() - 7 * 864e5)), to: istDay(now), signups: { count: signups.length, first: signups.slice(0, FIRST_HANDLES).map((s) => s.handle) }, messages, feedback, access, tasks };
+  return { from: istDay(new Date(now.getTime() - 7 * 864e5)), to: istDay(now), signups: { count: signups.length, first: signups.slice(0, FIRST_HANDLES).map((s) => s.handle) }, messages, feedback, access, tasks, assets };
 }
 
 /** Who gets it: ORGANISER_EMAILS when set (comma- or space-separated), otherwise every admin's email from the database. */
@@ -59,4 +65,5 @@ export const digestHeadline = (d: Digest) => [
   d.access && (d.access.tooFewAdmins ? "too few admins" : n(d.access.ending.length, "access ending", "accesses ending")),
   d.tasks?.overdue.length && n(d.tasks.overdue.length, "overdue task"),
   d.tasks?.orphaned.length && n(d.tasks.orphaned.length, "task to reassign", "tasks to reassign"),
+  d.assets && n(d.assets.length, "asset to check", "assets to check"),
 ].filter(Boolean).join(", ");

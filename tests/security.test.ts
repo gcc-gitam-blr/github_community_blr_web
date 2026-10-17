@@ -39,6 +39,9 @@ const EXPECTED: Record<string, string[]> = {
   // tasks, meetings and decisions: each checks the owner, creator or admin itself
   create_task: SIGNED_IN, set_task_status: SIGNED_IN, reassign_task: SIGNED_IN, create_meeting: SIGNED_IN, update_meeting: SIGNED_IN, set_attendees: SIGNED_IN,
   finalise_minutes: SIGNED_IN, add_minutes_note: SIGNED_IN, record_decision: SIGNED_IN, supersede_decision: SIGNED_IN, can_own_tasks: NOBODY, task_warnings: SERVER,
+  // assets and handover: admin-only writes, checked inside; asset_warnings answers only to the core team and admins
+  save_asset: SIGNED_IN, set_asset_notes: SIGNED_IN, asset_warnings: SIGNED_IN, start_handover: SIGNED_IN, set_handover_item: SIGNED_IN, complete_handover: SIGNED_IN,
+  asset_problems: NOBODY, asset_problems_for_digest: SERVER,
   sync_profile_roles: SERVER, appointment_warnings: SERVER, admin_emails: SERVER, bootstrap_admin: SERVER, // the weekly digest, and the first admin from the SQL editor
   booth_tx: NOBODY, log_action: NOBODY, bump_leaderboard: NOBODY, // internal: other functions and triggers only
   my_role: ANYONE, // used by row-level-security policies, so every role must be able to run it; it only ever answers about the caller
