@@ -3,9 +3,15 @@ import http from "node:http";
 import type { AddressInfo } from "node:net";
 
 let fails = 0; const ok = (n: string, c: boolean) => { console.log((c ? "PASS" : "FAIL") + "  " + n); if (!c) fails++; };
-const saved: Record<string, unknown>[] = []; let down = false;
+const saved: Record<string, unknown>[] = []; let down = false, busy = false; const keys: string[] = [], paths: string[] = [];
 const fake = http.createServer((req, res) => { let b = ""; req.on("data", (c) => (b += c)); req.on("end", () => {
-  if (req.url?.startsWith("/rest/v1/event_feedback") && req.method === "POST") { if (down) { res.writeHead(500); return res.end("{}"); } saved.push(JSON.parse(b)); res.writeHead(201); return res.end(); }
+  if (req.url?.startsWith("/rest/v1/rpc/submit_feedback") && req.method === "POST") {
+    keys.push(String(req.headers.apikey)); paths.push(req.url!);
+    if (down) { res.writeHead(500); return res.end("{}"); }
+    if (busy) { res.writeHead(200, { "content-type": "application/json" }); return res.end('"busy"'); }
+    const p = JSON.parse(b); saved.push({ event: p.p_event, rating: p.p_rating, liked: p.p_liked, improve: p.p_improve });
+    res.writeHead(200, { "content-type": "application/json" }); return res.end('"created"');
+  }
   res.writeHead(404); res.end();
 }); });
 const post = (body: unknown, ip: string) => new Request("http://x/api/feedback", { method: "POST", headers: { "content-type": "application/json", "x-forwarded-for": ip }, body: JSON.stringify(body) });
@@ -34,6 +40,12 @@ const post = (body: unknown, ip: string) => new Request("http://x/api/feedback",
   ok("invalid input is a 422", r.status === 422);
   const n = saved.length; r = await POST(post({ ...good, website: "x" }, "1.1.1.4"));
   ok("spam is accepted quietly and not saved", r.status === 200 && saved.length === n);
+  ok("without a server key it uses the public key, and only ever calls the function", keys.every((k) => k === "anon") && paths.every((p) => p.startsWith("/rest/v1/rpc/submit_feedback")));
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "server-only-key"; r = await POST(post(good, "1.1.1.6"));
+  ok("with SUPABASE_SERVICE_ROLE_KEY set, the form is saved with that key", r.status === 201 && keys.at(-1) === "server-only-key");
+  busy = true; r = await POST(post(good, "1.1.1.7")); busy = false;
+  ok("when the database's hourly backstop says busy, the visitor gets a 429", r.status === 429);
+  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
   down = true; r = await POST(post(good, "1.1.1.5")); down = false;
   ok("a database error is a 502", r.status === 502);
   let last = 0; for (let i = 0; i < 14; i++) last = (await POST(post(good, "2.2.2.2"))).status;

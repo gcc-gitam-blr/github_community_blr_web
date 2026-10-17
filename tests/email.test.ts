@@ -25,10 +25,10 @@ const fake = http.createServer((req, res) => {
     if (url.startsWith("/auth/v1/user")) return send(200, { id: "11111111-1111-1111-1111-111111111111", email: "admin@test", aud: "authenticated", role: "authenticated" });
     if (url.startsWith("/rest/v1/rpc/my_role")) return send(200, db.role);
     if (url.startsWith("/rest/v1/rpc/unsubscribe_join")) { db.unsub.push(JSON.parse(body).p_email); return send(200, null); }
-    if (url.startsWith("/rest/v1/join_requests") && req.method === "POST") {
+    if (url.startsWith("/rest/v1/rpc/submit_join") && req.method === "POST") {
       const row = JSON.parse(body);
-      if (db.joins.some((j) => j.email === row.email)) return send(409, { code: "23505", message: "duplicate" });
-      db.joins.push({ email: row.email, unsubscribed: false }); return send(201, null);
+      if (db.joins.some((j) => j.email === row.p_email)) return send(200, "exists");
+      db.joins.push({ email: row.p_email, unsubscribed: false }); return send(200, "created");
     }
     if (url.startsWith("/rest/v1/join_requests")) return send(200, db.joins.filter((j) => !j.unsubscribed).map((j) => ({ email: j.email })));
     if (url.startsWith("/rest/v1/broadcasts")) { db.broadcasts.push(JSON.parse(body)); return send(201, null); }
