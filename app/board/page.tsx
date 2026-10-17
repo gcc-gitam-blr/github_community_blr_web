@@ -8,7 +8,8 @@ import { Face } from "@/components/site/Team";
 import { Sticker } from "@/components/ui/Sticker";
 import { Challenge } from "@/components/site/Challenge";
 import { ago } from "@/lib/issues";
-import { BOARD_SINCE, SHOW_SAMPLE, loadBoard, sampleBoard, type MergedPr, type Row } from "@/lib/board";
+import { BOARD_SINCE, SHOW_SAMPLE, sampleBoard, type MergedPr, type Row } from "@/lib/board";
+import { loadClubBoard } from "@/lib/board-server";
 import { badgesByMember, type Badge } from "@/lib/badges";
 import { BadgeRow } from "@/components/site/Badges";
 import { CHALLENGE, challengeProgress, challengeState, sampleChallenge } from "@/lib/challenge";
@@ -59,7 +60,7 @@ function Recent({ prs }: { prs: MergedPr[] }) {
 }
 
 export default async function Board() {
-  const live = await loadBoard();
+  const live = await loadClubBoard();
   const sample = SHOW_SAMPLE && !live.rows.length;
   const now = new Date();
   const { ok, members, prs, rows, recent } = sample ? { ...live, ...sampleBoard(now) } : live;
@@ -113,7 +114,7 @@ export default async function Board() {
         )}
 
         <p className="mt-16 max-w-[64ch] text-[15px] text-ink-2">
-          The board follows the {members.length} members whose GitHub handle is on the site. Not on it? Ask a lead to add your handle to the team or contributors list.
+          The board follows {members.length} {members.length === 1 ? "person" : "people"}: the team, contributors, and members who switched it on. Not on it? Sign in to <Link href="/me" className="font-semibold text-link hover:underline">My club</Link> and tick <b>Show me on the board</b>.
           Pull requests into your own repositories don&apos;t count; this is about contributing to projects that aren&apos;t yours.
         </p>
       </main>

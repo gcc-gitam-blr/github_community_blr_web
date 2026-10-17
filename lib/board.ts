@@ -87,9 +87,10 @@ export function sampleBoard(now = new Date()) {
   return { members: who, prs, ...summarise(prs, who) };
 }
 
-/** The board, or `ok: false` when GitHub couldn't be reached (the page says so rather than showing an empty board). */
-export async function loadBoard() {
-  const members = boardMembers();
+/** The board, or `ok: false` when GitHub couldn't be reached (the page says so rather than showing an empty board).
+    `extra`: members who opted in from My club (lib/board-server.ts reads them on the server). */
+export async function loadBoard(extra: Member[] = []) {
+  const members = boardMembers([...CLUB.team, ...CLUB.contributors, ...extra]);
   const results = await Promise.all(queries(members.map((m) => m.handle)).map(search));
   const prs = results.flatMap((r) => r ?? []);
   return { ok: results.every((r) => r !== null), members, prs, ...summarise(prs, members) };

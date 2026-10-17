@@ -8,7 +8,8 @@ import { Face } from "@/components/site/Team";
 import { BadgeChip } from "@/components/site/Badges";
 import { ShareButton } from "@/app/events/[slug]/ShareButton";
 import { BADGES, badgesByMember } from "@/lib/badges";
-import { boardMembers, counted, loadBoard } from "@/lib/board";
+import { boardMembers, counted } from "@/lib/board";
+import { loadClubBoard, optedInMembers } from "@/lib/board-server";
 import { CHALLENGE, challengeState } from "@/lib/challenge";
 import { ago } from "@/lib/issues";
 import { SITE_URL } from "@/lib/site";
@@ -16,21 +17,22 @@ import { SITE_URL } from "@/lib/site";
 /* One member's contributions: their badges (and how to earn the rest), and every pull request they got merged
    into someone else's project this club year. Live from GitHub, refreshed hourly like the board. */
 export const revalidate = 3600;
-export const dynamicParams = false;
+// members who opted in from My club get a page too, made on first visit
+export const dynamicParams = true;
 export const generateStaticParams = () => boardMembers().map((m) => ({ handle: m.handle.toLowerCase() }));
 
-const find = (handle: string) => boardMembers().find((m) => m.handle.toLowerCase() === handle.toLowerCase());
+const find = async (handle: string) => [...boardMembers(), ...(await optedInMembers())].find((m) => m.handle.toLowerCase() === handle.toLowerCase());
 const SHOWN = 20;
 
 export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }): Promise<Metadata> {
-  const m = find((await params).handle);
+  const m = await find((await params).handle);
   return m ? { title: `${m.name} on the board`, description: `Pull requests ${m.name} got merged into open-source projects, and the badges they earned.` } : {};
 }
 
 export default async function MemberPage({ params }: { params: Promise<{ handle: string }> }) {
-  const member = find((await params).handle);
+  const member = await find((await params).handle);
   if (!member) notFound();
-  const { prs, members } = await loadBoard();
+  const { prs, members } = await loadClubBoard();
   const mine = counted(prs, [member]);
   const challenge = CHALLENGE && challengeState(CHALLENGE) !== "upcoming" ? CHALLENGE : undefined;
   const earned = badgesByMember(prs, members, challenge).get(member.handle.toLowerCase()) ?? [];
