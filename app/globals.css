@@ -341,9 +341,12 @@ html.lenis, html.lenis body { height: auto; }
 :root[data-theme="dark"]:not(:has([data-light-only])) :is(.commit-node, .mini-dot) { background: #000; }
 :root[data-theme="dark"]:not(:has([data-light-only])) .phone-menu__panel { background: #0a0a0a; }
 /* light islands: pastel badges, the green band and prints keep dark text, whatever the theme */
-:root[data-theme="dark"]:not(:has([data-light-only])) :is(.print, .cert, .bg-brand, .bg-\[\#d8f5dd\], .bg-\[\#fffdf8\], .bg-\[\#ffc933\], .bg-\[\#ffd966\], .bg-\[\#b9e0f7\], .bg-node-blue, .bg-node-purple, .bg-node-mint, .bg-gold, [style*="background"]) {
+:root[data-theme="dark"]:not(:has([data-light-only])) :is(.print, .cert, .bg-brand, .bg-\[\#fd8c73\], .bg-\[\#d8f5dd\], .bg-\[\#fffdf8\], .bg-\[\#ffc933\], .bg-\[\#ffd966\], .bg-\[\#b9e0f7\], .bg-node-blue, .bg-node-purple, .bg-node-mint, .bg-gold, [style*="background"]) {
   --color-ink: #0b0b0f; --color-ink-2: #3a3d44; --color-ink-3: #57606a; --color-line: #e4e8e6; color: #0b0b0f;
 }
+/* a certificate is paper whatever the theme: its white boxes (the git log record, the QR frame) stay white */
+:root[data-theme="dark"]:not(:has([data-light-only])) .cert .bg-white { background-color: #fff; }
+:root[data-theme="dark"]:not(:has([data-light-only])) .cert .border-ink { border-color: #0b0b0f; }
 /* …but a dark card inside a light island (the join form on the green band) keeps light text */
 :root[data-theme="dark"]:not(:has([data-light-only])) :is(.bg-brand, .bg-\[\#ffd966\], .bg-\[\#dafbe1\]) :is(.bg-white, .bg-ink) {
   --color-ink: #f2f2f2; --color-ink-2: #a8a8a8; --color-ink-3: #8c8c8c; --color-line: #262626; color: #f2f2f2;

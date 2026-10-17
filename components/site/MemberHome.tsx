@@ -19,7 +19,7 @@ export function YearStrip({ attended, today }: { attended: Attended[]; today: st
         const was = came.has(e.date), ahead = e.date >= today;
         return (
           <li key={e.date} title={`${e.title}: ${was ? "you came" : ahead ? "coming up" : "missed"}`}>
-            <span className={`grid h-9 w-9 place-items-center rounded-md border-2 ${was ? "border-ink bg-[#3fc84e]" : ahead ? "border-dashed border-ink/40 bg-white" : "border-line bg-[#ebeef0]"}`}>
+            <span className={`grid h-9 w-9 place-items-center rounded-md border-2 ${was ? "border-ink bg-brand" : ahead ? "border-dashed border-ink/40 bg-white" : "border-line bg-[#ebeef0]"}`}>
               {was && <span aria-hidden className="text-[15px] font-black text-ink">✓</span>}
             </span>
             <span className="sr-only">{e.title}, {short(e.date)}: {was ? "you came" : ahead ? "coming up" : "missed"}</span>
