@@ -46,6 +46,15 @@ ok("the email names the task, the owner and how late; and who has to be replaced
 const many = buildDigest({ ...quiet, tasks: { overdue: Array.from({ length: 8 }, (_, i) => ({ id: i, title: `T${i}`, owner: "cy", days: 2 })), orphaned: [] } }, now)!;
 ok("a long list is cut to five with a count", digestEmail(many, "https://club.test").text.includes("and 3 more"));
 
+// assets: nothing wrong says nothing; owner and backup problems are listed, most serious first
+ok("no asset problems adds nothing", buildDigest({ ...quiet, assets: [] }, now) === null);
+const as1 = buildDigest({ ...quiet, assets: [
+  { id: 1, name: "Vercel project", problem: "no_backup", days: null }, { id: 2, name: "Website domain", problem: "no_owner", days: null },
+  { id: 1, name: "Vercel project", problem: "review_overdue", days: 4 }, { id: 3, name: "Club Gmail", problem: "owner_access_ends", days: 9 }] }, now)!;
+ok("assets with problems make a digest even in a quiet week", !!as1 && digestHeadline(as1) === "3 assets to check");
+ok("they are grouped by asset, the most serious first", as1.assets![0].name === "Website domain" && as1.assets![1].name === "Club Gmail" && as1.assets![2].what === "has no backup owner; its review is 4 days overdue");
+ok("the email names the asset and what is wrong", digestEmail(as1, "https://club.test").text.includes("Club Gmail its owner's access ends in 9 days"));
+
 // who gets it
 const admins = [{ email: "Lead@Gitam.in" }, { email: null }, { email: "lead@gitam.in" }, { email: "second@gitam.in" }];
 ok("without ORGANISER_EMAILS, every admin with an email gets it once", digestRecipients(undefined, admins).join() === "lead@gitam.in,second@gitam.in");
