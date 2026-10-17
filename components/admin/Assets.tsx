@@ -7,13 +7,10 @@ import {
 } from "@/lib/admin/client";
 import { groupProblems, problemText, type AssetProblem } from "@/lib/assets";
 import { niceDate } from "@/lib/admin/appointments";
+import { Composer, State, btn, btnSoft, card, count, head, input } from "./kit";
 
 /* Where the club's accounts live and who is answerable for each, and the new-team handover checklist (docs/ROLLOVER.md).
    NEVER put a password, token or key here: say where it is kept. The database refuses text that looks like one. */
-const card = "rounded-[12px] border border-line bg-white";
-const btn = "inline-flex items-center justify-center rounded-md bg-ink px-4 py-2.5 text-[14.5px] font-semibold text-white transition hover:bg-ink/85 disabled:opacity-50";
-const btnSoft = "inline-flex items-center justify-center rounded-md border border-line bg-white px-3 py-2 text-[14px] font-semibold transition hover:bg-soft disabled:opacity-50";
-const input = "w-full rounded-md border border-line bg-white px-3 py-2.5 text-[15px]";
 const KIND: Record<Asset["kind"], string> = { domain: "Domain", hosting: "Hosting", repository: "Code", database: "Database", email: "Email", social: "Social", design: "Design", event_platform: "Events", other: "Other" };
 const blank: AssetFields = { name: "", kind: "other", url: "", owner: "", backup: "", notes: "", reviewDue: "" };
 type Note = { k: "ok" | "err"; t: string } | null;
@@ -47,13 +44,12 @@ function Registry({ data, admin, meId, busy, run }: { data: { list: Asset[]; pro
   const [f, setF] = useState<AssetFields>(blank); const [editing, setEditing] = useState<number | null>(null);
   const problems = useMemo(() => new Map(groupProblems(data?.problems ?? []).map((g) => [g.id, g.problems])), [data]);
   const who = (id: string | null) => (id && data?.people[id] ? `${data.people[id].name} (@${data.people[id].handle})` : null);
-  const edit = (a: Asset) => { setEditing(a.id); setF({ name: a.name, kind: a.kind, url: a.location_url ?? "", owner: data?.people[a.owner_id ?? ""]?.handle ?? "", backup: data?.people[a.backup_owner_id ?? ""]?.handle ?? "", notes: a.notes ?? "", reviewDue: a.review_due_on ?? "" }); document.getElementById("asset-name")?.focus(); };
+  const edit = (a: Asset) => { setEditing(a.id); setF({ name: a.name, kind: a.kind, url: a.location_url ?? "", owner: data?.people[a.owner_id ?? ""]?.handle ?? "", backup: data?.people[a.backup_owner_id ?? ""]?.handle ?? "", notes: a.notes ?? "", reviewDue: a.review_due_on ?? "" }); requestAnimationFrame(() => document.getElementById("asset-name")?.focus()); };
   return (
     <>
       {admin && (
-        <section className={`${card} p-5`} aria-labelledby="asset-h">
-          <h2 id="asset-h" className="text-[18px]">{editing ? "Edit asset" : "Add an asset"}</h2>
-          <form onSubmit={(e) => { e.preventDefault(); void run(saveAsset(editing, f), "Saved.").then((ok) => { if (ok) { setF(blank); setEditing(null); } }); }} className="mt-4 grid gap-3 sm:grid-cols-2">
+        <Composer id="asset-h" title={editing ? "Edit asset" : "Add an asset"} forceOpen={editing !== null}>
+          <form onSubmit={(e) => { e.preventDefault(); void run(saveAsset(editing, f), "Saved.").then((ok) => { if (ok) { setF(blank); setEditing(null); } }); }} className="grid gap-3 sm:grid-cols-2">
             <label className="text-[14px] font-semibold">Name<input id="asset-name" className={`${input} mt-1 font-normal`} value={f.name} maxLength={80} onChange={(e) => setF({ ...f, name: e.target.value })} /></label>
             <label className="text-[14px] font-semibold">Kind<select className={`${input} mt-1 font-normal`} value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value as Asset["kind"] })}>{(Object.keys(KIND) as Asset["kind"][]).map((k) => <option key={k} value={k}>{KIND[k]}</option>)}</select></label>
             <label className="text-[14px] font-semibold sm:col-span-2">Link <span className="font-normal text-ink-3">(https:// only; the page where it is managed)</span><input className={`${input} mt-1 font-normal`} value={f.url} maxLength={300} onChange={(e) => setF({ ...f, url: e.target.value })} /></label>
@@ -66,10 +62,10 @@ function Registry({ data, admin, meId, busy, run }: { data: { list: Asset[]; pro
               {editing && <button type="button" onClick={() => { setEditing(null); setF(blank); }} className={btnSoft}>Cancel</button>}
             </div>
           </form>
-        </section>
+        </Composer>
       )}
       <section className={card} aria-labelledby="reg-h">
-        <h2 id="reg-h" className="border-b border-line px-5 py-3 text-[18px]">Registry <span className="ml-1 rounded-full bg-soft px-2 py-0.5 text-[12px] font-normal text-ink-3">{data?.list.length ?? 0}</span></h2>
+        <div className={head}><h2 id="reg-h" className="text-[18px]">Registry</h2><span className={count}>{data?.list.length ?? 0}</span></div>
         {data === null ? <p className="p-5 text-ink-3">Loading…</p> : data.list.length === 0 ? <p className="p-5 text-ink-3">Nothing listed yet.</p> : (
           <ul className="divide-y divide-line">
             {data.list.map((a) => <AssetRow key={a.id} a={a} owner={who(a.owner_id)} backup={who(a.backup_owner_id)} problems={problems.get(a.id) ?? []} canNotes={admin || a.owner_id === meId} admin={admin} busy={busy} run={run} edit={edit} />)}
@@ -116,20 +112,19 @@ function HandoverView({ ho, admin, busy, run }: { ho: { lists: Handover[]; items
   return (
     <>
       {admin && (!current || current.status === "complete") && (
-        <section className={`${card} p-5`} aria-labelledby="start-h">
-          <h2 id="start-h" className="text-[18px]">Start a handover</h2>
+        <Composer id="start-h" title="Start a handover">
           <p className="mt-1 text-[14.5px] text-ink-2">Once a year, when the new team takes over. It lists every step from <code>docs/ROLLOVER.md</code> so none is forgotten, and keeps a record of what was done.</p>
           <form onSubmit={(e) => { e.preventDefault(); void run(startHandover(term), "Handover started.").then((ok) => ok && setTerm("")); }} className="mt-3 flex flex-wrap items-end gap-2">
             <label className="text-[14px] font-semibold">Handing over to the term<input value={term} maxLength={30} onChange={(e) => setTerm(e.target.value)} placeholder="2027-28" className={`${input} mt-1 font-normal`} /></label>
             <button disabled={busy || term.trim().length < 4} className={btn}>Start</button>
           </form>
-        </section>
+        </Composer>
       )}
       {!current ? <p className="text-ink-3">No handover has been started yet.</p> : (
         <section className={card} aria-labelledby="ho-h">
           <div className="flex flex-wrap items-center gap-3 border-b border-line px-5 py-3">
             <h2 id="ho-h" className="text-[18px]">Handover to {current.term_label}</h2>
-            <span className="rounded-full border border-line px-2.5 py-0.5 text-[13px]">{current.status === "complete" ? `Complete ${current.completed_at ? niceDate(current.completed_at.slice(0, 10)) : ""}` : `${left} left`}</span>
+            <State tone={current.status === "complete" ? "done" : "waiting"}>{current.status === "complete" ? `Complete ${current.completed_at ? niceDate(current.completed_at.slice(0, 10)) : ""}` : `${left} left`}</State>
             {admin && current.status === "open" && <button disabled={busy || left > 0} onClick={() => void run(completeHandover(current.id), "The handover is complete.")} className={`${btn} ml-auto`}>Mark the handover complete</button>}
           </div>
           <div role="tablist" onKeyDown={tabKeys} aria-label="Steps" className="flex flex-wrap gap-1 border-b border-line px-5 py-2">
