@@ -243,3 +243,34 @@ export async function handovers(): Promise<{ lists: Handover[]; items: HandoverI
 export const startHandover = (term: string) => rpcRes<{ id: number }>("start_handover", { p_term: term });
 export const setHandoverItem = (item: number, state: HandoverItem["state"], note: string) => rpcRes("set_handover_item", { p_item: item, p_state: state, p_note: note });
 export const completeHandover = (id: number) => rpcRes("complete_handover", { p_id: id });
+
+// ---- Policies ----
+export interface PolicyRow { id: number; slug: string; title: string; owner_id: string | null }
+export interface PolicyVersion { id: number; policy_id: number; version: number; body_md: string; author_id: string | null; approved_by: string | null; approved_on: string; effective_on: string; review_due_on: string }
+export interface PolicyDraft { policy_id: number; body_md: string; author_id: string | null; updated_at: string }
+export async function policies(): Promise<{ list: PolicyRow[]; versions: PolicyVersion[]; drafts: PolicyDraft[]; names: Record<string, string> }> {
+  const [p, v, d] = await Promise.all([
+    supabase().from("policies").select("*").order("title"),
+    supabase().from("policy_versions").select("*").order("version", { ascending: false }),
+    supabase().from("policy_drafts").select("*"), // admins only; empty for everyone else
+  ]);
+  const versions = (v.data ?? []) as PolicyVersion[], drafts = (d.data ?? []) as PolicyDraft[], list = (p.data ?? []) as PolicyRow[];
+  const ids = [...new Set([...list.map((x) => x.owner_id), ...versions.flatMap((x) => [x.author_id, x.approved_by]), ...drafts.map((x) => x.author_id)].filter(Boolean) as string[])];
+  const names = ids.length ? Object.fromEntries(((await supabase().from("profiles").select("id, name").in("id", ids)).data ?? []).map((x) => [x.id as string, x.name as string])) : {};
+  return { list, versions, drafts, names };
+}
+export const createPolicy = (slug: string, title: string, owner: string) => rpcRes<{ id: number }>("create_policy", { p_slug: slug, p_title: title, p_owner: owner });
+export const setPolicyOwner = (id: number, owner: string) => rpcRes("set_policy_owner", { p_id: id, p_owner: owner });
+export const savePolicyDraft = (id: number, body: string) => rpcRes("save_policy_draft", { p_id: id, p_body: body });
+export const discardPolicyDraft = (id: number) => rpcRes("discard_policy_draft", { p_id: id });
+export const publishPolicyVersion = (id: number, effectiveOn: string, reviewDueOn: string) => rpcRes<{ version: number }>("publish_policy_version", { p_id: id, p_effective_on: effectiveOn || null, p_review_due_on: reviewDueOn || null });
+
+// ---- The audit log (admins) ----
+export interface AuditRow { id: number; at: string; actor: string | null; action: string; entity: string; entity_id: string | null; detail: Record<string, unknown> }
+export async function auditLog(): Promise<{ rows: AuditRow[]; names: Record<string, string> }> {
+  const { data } = await supabase().from("crm_audit").select("*").order("at", { ascending: false }).order("id", { ascending: false }).limit(500);
+  const rows = (data ?? []) as AuditRow[];
+  const ids = [...new Set(rows.map((r) => r.actor).filter(Boolean) as string[])];
+  const names = ids.length ? Object.fromEntries(((await supabase().from("profiles").select("id, name").in("id", ids)).data ?? []).map((x) => [x.id as string, x.name as string])) : {};
+  return { rows, names };
+}
