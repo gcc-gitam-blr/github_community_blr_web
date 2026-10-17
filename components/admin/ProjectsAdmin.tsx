@@ -134,7 +134,7 @@ function AllProjects({ data, admin, busy, run }: { data: Data | null; admin: boo
                   {admin && i.status !== "archived" && <button disabled={busy} onClick={() => void run(setIdeaStatus(i.id, "archived"), "Archived.")} className={btnSoft}>Archive</button>}
                   {admin && team.length > 1 && (
                     <form onSubmit={(e) => { e.preventDefault(); void run(setProjectOwner(i.id, owner[i.id] ?? ""), "New owner set."); }} className="flex items-center gap-2">
-                      <label className="sr-only" htmlFor={`o-${i.id}`}>New owner (a team member's GitHub username)</label>
+                      <label className="sr-only" htmlFor={`o-${i.id}`}>New owner (the GitHub username of someone on the team)</label>
                       <input id={`o-${i.id}`} className={`${input} !w-[190px]`} placeholder="hand over to @…" value={owner[i.id] ?? ""} onChange={(e) => setOwner({ ...owner, [i.id]: e.target.value })} autoComplete="off" />
                       <button disabled={busy || !(owner[i.id] ?? "").trim()} className={btnSoft}>Hand over</button>
                     </form>
