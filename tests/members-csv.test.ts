@@ -3,7 +3,7 @@ import { membersCsv, parseMembersCsv, type Member } from "../lib/admin/members";
 
 let fails = 0; const ok = (n: string, c: boolean) => { console.log((c ? "PASS" : "FAIL") + "  " + n); if (!c) fails++; };
 
-const a = parseMembersCsv("Name,Email,GitHub\nAda Lovelace,ada@gitam.in,x\n");
+const a = parseMembersCsv("Full name,Mail,GitHub\nAda Lovelace,ada@gitam.in,x\n");
 ok("a file without a name or email column is explained", a.problem !== null && a.rows.length === 0);
 const b = parseMembersCsv("﻿handle,name,email,team,joined_on\r\n@ada,\"Lovelace, Ada\",ada@gitam.in,Tech,2025-08-01\r\nhttps://github.com/bea,Bea Bee,bea@gitam.in,,\r\n\r\n");
 ok("columns are found by name (BOM, CRLF, quotes with commas, a blank line)", b.problem === null && b.rows.length === 2 && b.rows[0].name === "Lovelace, Ada" && b.rows[0].team === "Tech" && b.rows[0].joined_on === "2025-08-01");
