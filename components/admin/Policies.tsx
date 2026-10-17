@@ -6,13 +6,10 @@ import {
   type PolicyDraft, type PolicyRow, type PolicyVersion,
 } from "@/lib/admin/client";
 import { addDays, daysLeft, niceDate, todayIST } from "@/lib/admin/appointments";
+import { Composer, State, btn, btnSoft, card, count, head, input } from "./kit";
 
 /* The club's own rules, as versions. A draft is written by one admin and published by a different one; a published
    version is never edited, so the page only ever adds. Nothing is written for you: the club writes its policies. */
-const card = "rounded-[12px] border border-line bg-white";
-const btn = "inline-flex items-center justify-center rounded-md bg-ink px-4 py-2.5 text-[14.5px] font-semibold text-white transition hover:bg-ink/85 disabled:opacity-50";
-const btnSoft = "inline-flex items-center justify-center rounded-md border border-line bg-white px-3 py-2 text-[14px] font-semibold transition hover:bg-soft disabled:opacity-50";
-const input = "w-full rounded-md border border-line bg-white px-3 py-2.5 text-[15px]";
 type Note = { k: "ok" | "err"; t: string } | null;
 type Run = (p: Promise<{ ok: boolean; error?: string }>, done: string) => Promise<boolean>;
 type Data = { list: PolicyRow[]; versions: PolicyVersion[]; drafts: PolicyDraft[]; names: Record<string, string> };
@@ -32,18 +29,17 @@ export function Policies({ admin, meId }: { admin: boolean; meId: string }) {
       {note && <p role={note.k === "err" ? "alert" : "status"} className={`rounded-md px-4 py-3 text-[14.5px] ${note.k === "err" ? "bg-[#ffebe9] text-[#a40e26]" : "bg-[#dafbe1] text-[#116329]"}`}>{note.t}</p>}
       <p className="text-[14.5px] text-ink-2">Policies are written and approved by two different admins, and a published version is never changed: a change is a new version, and the old ones stay. They are internal; to make one public, publish it deliberately on the site. <b className="text-ink">Nothing is pre-filled: the club writes its own.</b></p>
       {admin && (
-        <section className={`${card} p-5`} aria-labelledby="pol-h">
-          <h2 id="pol-h" className="text-[18px]">New policy</h2>
-          <form onSubmit={(e) => { e.preventDefault(); void run(createPolicy(f.slug || slugFrom(f.title), f.title, f.owner), "Created. Write its first draft below.").then((ok) => ok && setF({ slug: "", title: "", owner: "" })); }} className="mt-4 grid gap-3 sm:grid-cols-2">
+        <Composer id="pol-h" title="New policy">
+          <form onSubmit={(e) => { e.preventDefault(); void run(createPolicy(f.slug || slugFrom(f.title), f.title, f.owner), "Created. Write its first draft below.").then((ok) => ok && setF({ slug: "", title: "", owner: "" })); }} className="grid gap-3 sm:grid-cols-2">
             <label className="text-[14px] font-semibold">Title<input className={`${input} mt-1 font-normal`} value={f.title} maxLength={120} placeholder="Code of conduct" onChange={(e) => setF({ ...f, title: e.target.value })} /></label>
             <label className="text-[14px] font-semibold">Owner <span className="font-normal text-ink-3">(GitHub username, optional)</span><input className={`${input} mt-1 font-normal`} value={f.owner} onChange={(e) => setF({ ...f, owner: e.target.value })} autoComplete="off" /></label>
             <label className="text-[14px] font-semibold sm:col-span-2">Short name <span className="font-normal text-ink-3">(lower-case words with dashes; made from the title if left empty)</span><input className={`${input} mt-1 font-normal`} value={f.slug} maxLength={60} placeholder={slugFrom(f.title) || "code-of-conduct"} onChange={(e) => setF({ ...f, slug: e.target.value })} /></label>
             <div className="sm:col-span-2"><button disabled={busy || f.title.trim().length < 3} className={btn}>Create policy</button></div>
           </form>
-        </section>
+        </Composer>
       )}
       <section className={card} aria-labelledby="pols-h">
-        <h2 id="pols-h" className="border-b border-line px-5 py-3 text-[18px]">Policies <span className="ml-1 rounded-full bg-soft px-2 py-0.5 text-[12px] font-normal text-ink-3">{data?.list.length ?? 0}</span></h2>
+        <div className={head}><h2 id="pols-h" className="text-[18px]">Policies</h2><span className={count}>{data?.list.length ?? 0}</span></div>
         {data === null ? <p className="p-5 text-ink-3">Loading…</p> : data.list.length === 0 ? <p className="p-5 text-ink-3">{admin ? "No policies yet. Create the first one above." : "No policies have been published yet."}</p> : (
           <ul className="divide-y divide-line">
             {data.list.map((p) => <PolicyItem key={p.id} p={p} data={data} admin={admin} meId={meId} busy={busy} run={run} />)}
@@ -67,7 +63,7 @@ function PolicyItem({ p, data, admin, meId, busy, run }: { p: PolicyRow; data: D
       <details className="group">
         <summary className="flex cursor-pointer list-none flex-wrap items-center gap-3 px-5 py-3 text-[14.5px] hover:bg-soft/60">
           <b>{p.title}</b>
-          <span className="rounded-full border border-line px-2.5 py-0.5 text-[13px]">{latest ? `Version ${latest.version}` : "No published version"}</span>
+          <State tone={latest ? "live" : "draft"}>{latest ? `Version ${latest.version}` : "No published version"}</State>
           {draft && <span className="text-[13.5px] text-[#9a6700]">{mineDraft ? "Your draft is waiting for another admin" : "A draft is waiting for approval"}</span>}
           {due !== null && due < 0 && <span className="text-[13.5px] font-semibold text-[#a40e26]">Review overdue by {-due} {-due === 1 ? "day" : "days"}</span>}
           <span className="ml-auto text-[13px] text-ink-3 group-open:hidden">Open</span>

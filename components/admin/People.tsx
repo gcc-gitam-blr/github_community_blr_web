@@ -2,14 +2,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { cancelPending, endAppointment, grantAppointment, pendingRoles, people, type Pending, type Person } from "@/lib/admin/client";
 import { addDays, endsLabel, endsSoon, MAX_DAYS, niceDate, ROLE_HELP, ROLE_LABEL, todayIST, type AccessRole } from "@/lib/admin/appointments";
+import { Composer, Role, btn, card, count, head, input } from "./kit";
 
 /* Who has access, and until when. Every role is an appointment with an end date: when it passes, access stops by
    itself. Organisers see who has what; admins also appoint, extend, change and end. The database enforces all of it
    (grant_appointment, end_appointment), including "you can't change your own access". */
-const card = "rounded-[12px] border border-line bg-white";
-const btn = "inline-flex items-center justify-center rounded-md bg-ink px-4 py-2.5 text-[14.5px] font-semibold text-white transition hover:bg-ink/85 disabled:opacity-50";
 const link = "text-ink-2 underline-offset-4 hover:underline disabled:opacity-50";
-const input = "rounded-md border border-line bg-white px-3 py-2.5 text-[15px]";
 const ROLES: AccessRole[] = ["volunteer", "core", "admin"];
 
 export function People({ admin, me }: { admin: boolean; me: string }) {
@@ -48,7 +46,7 @@ export function People({ admin, me }: { admin: boolean; me: string }) {
     if (res.ok) await load();
   };
   // fill the form with someone's current appointment, to change the role or extend the term
-  const change = (p: Person) => { setHandle(p.handle); setRole(p.role === "attendee" ? "volunteer" : p.role); setTitle(p.title ?? ""); setEndsOn(""); document.getElementById("give-h")?.scrollIntoView({ block: "center" }); document.getElementById("who")?.focus(); };
+  const change = (p: Person) => { setHandle(p.handle); setRole(p.role === "attendee" ? "volunteer" : p.role); setTitle(p.title ?? ""); setEndsOn(""); requestAnimationFrame(() => { document.getElementById("give-h")?.scrollIntoView({ block: "center" }); document.getElementById("who")?.focus(); }); };
 
   const team = (list ?? []).filter((p) => p.role !== "attendee").sort((a, b) => (a.ends_on ?? "9").localeCompare(b.ends_on ?? "9"));
   const admins = team.filter((p) => p.role === "admin").length;
@@ -61,8 +59,7 @@ export function People({ admin, me }: { admin: boolean; me: string }) {
         </p>
       )}
       {admin && (
-        <section className={`${card} p-5`} aria-labelledby="give-h">
-          <h2 id="give-h" className="text-[18px]">Give someone access</h2>
+        <Composer id="give-h" title="Give someone access" forceOpen={handle.trim() !== ""}>
           <p className="mt-1 text-[14.5px] text-ink-2">Pick a role and the day it ends. Access stops by itself on that day. Giving someone a new role or date replaces their current one. If they haven&apos;t signed in yet, it starts the first time they sign in at <code>/admin</code>.</p>
           <form onSubmit={(e) => { e.preventDefault(); void give(); }} className="mt-4 grid gap-3 sm:grid-cols-2">
             <label className="block text-[14px] font-semibold">GitHub username
@@ -82,19 +79,24 @@ export function People({ admin, me }: { admin: boolean; me: string }) {
             <p className="text-[13.5px] text-ink-3 sm:col-span-2">{ROLE_HELP[role]}</p>
             <div className="sm:col-span-2"><button disabled={busy || !handle.trim() || !endsOn} className={btn}>Give access</button></div>
           </form>
-        </section>
+        </Composer>
       )}
 
       <section className={card} aria-labelledby="team-h">
-        <h2 id="team-h" className="border-b border-line px-5 py-3 text-[18px]">Organisers <span className="ml-1 rounded-full bg-soft px-2 py-0.5 text-[12px] font-normal text-ink-3">{team.length}</span></h2>
-        {list === null ? <p className="p-5 text-ink-3">Loading…</p> : (
-          <ul className="divide-y divide-line">
-            {team.map((p) => (
+        <div className={head}><h2 id="team-h" className="text-[18px]">Organisers</h2><span className={count}>{team.length}</span></div>
+        {list === null ? <p className="p-5 text-ink-3">Loading…</p> : (["admin", "core", "volunteer"] as const).map((r) => {
+          const group = team.filter((p) => p.role === r);
+          if (!group.length) return null;
+          return (
+          <div key={r}>
+          <h3 className="border-b border-line bg-soft px-5 py-2 font-mono text-[12px] font-semibold uppercase tracking-[.08em] text-ink-3">{({ admin: "Admins", core: "Core team", volunteer: "Volunteers" } as const)[r]} · {group.length}</h3>
+          <ul className="divide-y divide-line border-b border-line last:border-b-0">
+            {group.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center gap-3 px-5 py-3 text-[14.5px]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={`https://github.com/${p.handle}.png?size=64`} alt="" width={32} height={32} className="rounded-full bg-soft" />
                 <span><b>{p.name}</b> <a href={`https://github.com/${p.handle}`} target="_blank" rel="noopener" className="text-ink-3 hover:underline">@{p.handle}</a></span>
-                <span className="rounded-full border border-line px-2.5 py-0.5 text-[13px]">{ROLE_LABEL[p.role]}{p.title ? ` · ${p.title}` : ""}{p.handle === me ? " · you" : ""}</span>
+                <Role role={p.role}>{ROLE_LABEL[p.role]}</Role>{p.title && <span className="text-ink-2">{p.title}</span>}{p.handle === me && <span className="font-mono text-[12px] font-semibold text-[#116329]">you</span>}
                 {p.ends_on && (
                   <span className={`text-[13.5px] ${endsSoon(p.ends_on) ? "font-semibold text-[#9a6700]" : "text-ink-3"}`} title={niceDate(p.ends_on)}>{endsLabel(p.ends_on)} · {niceDate(p.ends_on)}</span>
                 )}
@@ -110,16 +112,18 @@ export function People({ admin, me }: { admin: boolean; me: string }) {
               </li>
             ))}
           </ul>
-        )}
+          </div>
+          );
+        })}
       </section>
       {admin && waiting.length > 0 && (
         <section className={card} aria-labelledby="wait-h">
-          <h2 id="wait-h" className="border-b border-line px-5 py-3 text-[18px]">Waiting for first sign-in <span className="ml-1 rounded-full bg-soft px-2 py-0.5 text-[12px] font-normal text-ink-3">{waiting.length}</span></h2>
+          <div className={head}><h2 id="wait-h" className="text-[18px]">Waiting for first sign-in</h2><span className={count}>{waiting.length}</span></div>
           <ul className="divide-y divide-line">
             {waiting.map((w) => (
               <li key={w.handle} className="flex flex-wrap items-center gap-3 px-5 py-3 text-[14.5px]">
                 <a href={`https://github.com/${w.handle}`} target="_blank" rel="noopener" className="font-semibold hover:underline">@{w.handle}</a>
-                <span className="rounded-full border border-line px-2.5 py-0.5 text-[13px]">{ROLE_LABEL[w.role]}{w.title ? ` · ${w.title}` : ""}</span>
+                <Role role={w.role}>{ROLE_LABEL[w.role]}</Role>{w.title && <span className="text-ink-2">{w.title}</span>}
                 <span className={`text-[13.5px] ${w.ends_on ? "text-ink-3" : "font-semibold text-[#9a6700]"}`}>{w.ends_on ? `until ${niceDate(w.ends_on)}` : "no end date: give access again with one"}</span>
                 <button disabled={busy} onClick={() => void cancel(w)} className={`ml-auto ${link}`}>Cancel</button>
               </li>

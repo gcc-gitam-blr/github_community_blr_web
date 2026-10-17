@@ -6,16 +6,15 @@ import {
   type ChecklistItem, type Proposal, type ProposalFields, type ProposalStatus,
 } from "@/lib/admin/client";
 import { niceDate, todayIST } from "@/lib/admin/appointments";
+import { CheckIcon, DotFillIcon } from "@primer/octicons-react";
+import { Composer, State, btn, btnSoft, card, head, input, type Tone } from "./kit";
 
 /* Event proposals. A core member proposes an event and works through the checklist; an admin who is not the proposer
    approves, returns or rejects it. The database enforces every rule (supabase/schema.sql); this page only shows what
    will work. One group at a time, so the list stays short. */
-const card = "rounded-[12px] border border-line bg-white";
-const btn = "inline-flex items-center justify-center rounded-md bg-ink px-4 py-2.5 text-[14.5px] font-semibold text-white transition hover:bg-ink/85 disabled:opacity-50";
-const btnSoft = "inline-flex items-center justify-center rounded-md border border-line bg-white px-3 py-2 text-[14px] font-semibold transition hover:bg-soft disabled:opacity-50";
-const input = "w-full rounded-md border border-line bg-white px-3 py-2.5 text-[15px]";
 const KINDS: Proposal["kind"][] = ["workshop", "talk", "hackathon", "meetup", "fest", "other"];
 const STATUS: Record<ProposalStatus, string> = { draft: "Draft", submitted: "Waiting for a decision", returned: "Returned", approved: "Approved", rejected: "Rejected", cancelled: "Cancelled", completed: "Completed" };
+const TONE: Record<ProposalStatus, Tone> = { draft: "draft", submitted: "waiting", returned: "changes", approved: "ok", rejected: "no", cancelled: "muted", completed: "done" };
 const blank: ProposalFields = { title: "", kind: "workshop", date: "", venue: "", objective: "", expected: null, budget: null };
 type Group = "decide" | "mine" | "coming" | "past";
 type Note = { k: "ok" | "err"; t: string } | null;
@@ -50,16 +49,15 @@ export function Proposals({ admin, meId }: { admin: boolean; meId: string }) {
     setBusy(true); setNote(null); const r = await p; setBusy(false);
     say(r.ok, r.ok ? done : (r as { error: string }).error); if (r.ok) await load();
   };
-  const edit = (p: Proposal) => { setEditing(p.id); setForm({ title: p.title, kind: p.kind, date: p.proposed_date, venue: p.venue, objective: p.objective, expected: p.expected_attendance, budget: p.budget_inr }); document.getElementById("prop-title")?.focus(); };
+  const edit = (p: Proposal) => { setEditing(p.id); setForm({ title: p.title, kind: p.kind, date: p.proposed_date, venue: p.venue, objective: p.objective, expected: p.expected_attendance, budget: p.budget_inr }); requestAnimationFrame(() => document.getElementById("prop-title")?.focus()); };
 
   return (
     <div className="space-y-4">
       {note && <p role={note.k === "err" ? "alert" : "status"} className={`rounded-md px-4 py-3 text-[14.5px] ${note.k === "err" ? "bg-[#ffebe9] text-[#a40e26]" : "bg-[#dafbe1] text-[#116329]"}`}>{note.t}</p>}
       <p className="text-[14.5px] text-ink-2">Every event starts here: propose it, tick the checklist, and an admin who is not you approves it. <b className="text-ink">This records the approval, but it can&apos;t stop a page from being published</b> in the content editor, so publish an event only after you see it approved here.</p>
 
-      <section className={`${card} p-5`} aria-labelledby="prop-h">
-        <h2 id="prop-h" className="text-[18px]">{editing ? "Edit proposal" : "Propose an event"}</h2>
-        <form onSubmit={(e) => { e.preventDefault(); void save(); }} className="mt-4 grid gap-3 sm:grid-cols-2">
+      <Composer id="prop-h" title={editing ? "Edit proposal" : "Propose an event"} forceOpen={editing !== null}>
+        <form onSubmit={(e) => { e.preventDefault(); void save(); }} className="grid gap-3 sm:grid-cols-2">
           <label className="text-[14px] font-semibold sm:col-span-2">Title<input id="prop-title" className={`${input} mt-1 font-normal`} value={form.title} maxLength={120} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
           <label className="text-[14px] font-semibold">Kind<select className={`${input} mt-1 font-normal`} value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as Proposal["kind"] })}>{KINDS.map((k) => <option key={k} value={k}>{k[0].toUpperCase() + k.slice(1)}</option>)}</select></label>
           <label className="text-[14px] font-semibold">Date<input type="date" min={today} className={`${input} mt-1 font-normal`} value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} /></label>
@@ -72,11 +70,11 @@ export function Proposals({ admin, meId }: { admin: boolean; meId: string }) {
             {editing && <button type="button" onClick={() => { setEditing(null); setForm(blank); }} className={btnSoft}>Cancel</button>}
           </div>
         </form>
-      </section>
+      </Composer>
 
       <section className={card} aria-labelledby="list-h">
-        <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-3">
-          <h2 id="list-h" className="mr-2 text-[18px]">Proposals</h2>
+        <div className={head}>
+          <h2 id="list-h" className="mr-1 text-[18px]">Proposals</h2>
           <div role="tablist" onKeyDown={tabKeys} aria-label="Which proposals" className="flex flex-wrap gap-1">
             {([["decide", "Waiting for a decision"], ["mine", "Mine"], ["coming", "Approved"], ["past", "Closed"]] as [Group, string][]).filter(([g]) => admin || g !== "decide").map(([g, label]) => (
               <button key={g} role="tab" aria-selected={group === g} tabIndex={(group === g) ? 0 : -1} onClick={() => setPicked(g)} className={`rounded-md px-3 py-1.5 text-[14px] ${group === g ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>{label} <span className={group === g ? "text-white/70" : "text-ink-3"}>{counts[g]}</span></button>
@@ -103,8 +101,13 @@ function Row({ p, items, by, admin, mine, busy, run, edit }: { p: Proposal; item
       <details className="group">
         <summary className="flex cursor-pointer list-none flex-wrap items-center gap-3 px-5 py-3 text-[14.5px] hover:bg-soft/60">
           <b>{p.title}</b><span className="text-ink-3">{niceDate(p.proposed_date)}</span>
-          <span className="rounded-full border border-line px-2.5 py-0.5 text-[13px]">{STATUS[p.status]}</span>
-          {open > 0 && ["draft", "returned", "submitted"].includes(p.status) && <span className="text-[13.5px] text-[#9a6700]">{open} required {open === 1 ? "item" : "items"} open</span>}
+          <State tone={TONE[p.status]}>{STATUS[p.status]}</State>
+          {items.length > 0 && ["draft", "returned", "submitted", "approved"].includes(p.status) && (
+            // the checklist, read like a pull request's checks: green once every required item is done
+            <span className={`inline-flex items-center gap-1 font-mono text-[12.5px] ${open ? "text-[#7d4e00]" : "text-[#116329]"}`}>
+              {open ? <DotFillIcon size={12} aria-hidden /> : <CheckIcon size={12} aria-hidden />}{items.filter((i) => i.state !== "open").length}/{items.length} checks{open ? ` · ${open} required left` : ""}
+            </span>
+          )}
           <span className="ml-auto text-[13px] text-ink-3 group-open:hidden">Open</span>
         </summary>
         <div className="space-y-4 px-5 pb-5 text-[14.5px]">

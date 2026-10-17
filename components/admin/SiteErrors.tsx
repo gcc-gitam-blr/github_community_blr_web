@@ -5,10 +5,10 @@ import { clientErrors } from "@/lib/admin/client";
 import { groupErrors, perDay, type ErrorRow } from "@/lib/client-errors";
 import { RETENTION } from "@/lib/retention";
 import { Sticker } from "@/components/ui/Sticker";
+import { card } from "./kit";
 
 /* What broke in visitors' browsers in the last 30 days, the same error from many phones folded into one line.
    Reports come from components/ui/ErrorReporter.tsx; only admins can read them (supabase/schema.sql). */
-const card = "rounded-[12px] border border-line bg-white";
 const SHOWN = 6; // the rest stay behind "Show more": no long lists
 const ago = (iso: string) => {
   const m = Math.max(1, Math.round((Date.now() - Date.parse(iso)) / 60_000));
