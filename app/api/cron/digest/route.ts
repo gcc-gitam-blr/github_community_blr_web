@@ -41,7 +41,9 @@ export async function GET(req: Request) {
   if (tw.error) console.error("digest: task_warnings failed (is supabase/schema.sql up to date?):", tw.error.message);
   const aw = await db.rpc("asset_problems_for_digest");
   if (aw.error) console.error("digest: asset_problems_for_digest failed (is supabase/schema.sql up to date?):", aw.error.message);
-  const digest = buildDigest({ signups: s.data ?? [], messages: m.data ?? [], feedback: f.data ?? [], access: w.error ? undefined : w.data, tasks: tw.error ? undefined : tw.data, assets: aw.error ? undefined : aw.data }, now);
+  const pw = await db.rpc("policy_reviews_due");
+  if (pw.error) console.error("digest: policy_reviews_due failed (is supabase/schema.sql up to date?):", pw.error.message);
+  const digest = buildDigest({ signups: s.data ?? [], messages: m.data ?? [], feedback: f.data ?? [], access: w.error ? undefined : w.data, tasks: tw.error ? undefined : tw.data, assets: aw.error ? undefined : aw.data, policies: pw.error ? undefined : pw.data }, now);
   if (!digest) return json({ ok: true, sent: 0, skipped: "Nothing happened this week." });
 
   // admins are whoever holds an active admin appointment today (appointment_admin_emails), not the profile's role copy

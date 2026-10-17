@@ -42,6 +42,8 @@ const EXPECTED: Record<string, string[]> = {
   // assets and handover: admin-only writes, checked inside; asset_warnings answers only to the core team and admins
   save_asset: SIGNED_IN, set_asset_notes: SIGNED_IN, asset_warnings: SIGNED_IN, start_handover: SIGNED_IN, set_handover_item: SIGNED_IN, complete_handover: SIGNED_IN,
   asset_problems: NOBODY, asset_problems_for_digest: SERVER,
+  // policies: admin-only, checked inside; the digest's list is for the server key
+  create_policy: SIGNED_IN, set_policy_owner: SIGNED_IN, save_policy_draft: SIGNED_IN, discard_policy_draft: SIGNED_IN, publish_policy_version: SIGNED_IN, policy_reviews_due: SERVER,
   sync_profile_roles: SERVER, appointment_warnings: SERVER, admin_emails: SERVER, bootstrap_admin: SERVER, // the weekly digest, and the first admin from the SQL editor
   booth_tx: NOBODY, log_action: NOBODY, bump_leaderboard: NOBODY, // internal: other functions and triggers only
   my_role: ANYONE, // used by row-level-security policies, so every role must be able to run it; it only ever answers about the caller

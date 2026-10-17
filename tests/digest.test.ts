@@ -55,6 +55,11 @@ ok("assets with problems make a digest even in a quiet week", !!as1 && digestHea
 ok("they are grouped by asset, the most serious first", as1.assets![0].name === "Website domain" && as1.assets![1].name === "Club Gmail" && as1.assets![2].what === "has no backup owner; its review is 4 days overdue");
 ok("the email names the asset and what is wrong", digestEmail(as1, "https://club.test").text.includes("Club Gmail its owner's access ends in 9 days"));
 
+// policies: a review date that has passed is a reminder, even in a quiet week
+ok("no reviews due adds nothing", buildDigest({ ...quiet, policies: [] }, now) === null);
+const pol = buildDigest({ ...quiet, policies: [{ id: 1, title: "Code of conduct", days: 6 }] }, now)!;
+ok("a policy past its review date makes a digest, and the email names it", !!pol && digestHeadline(pol) === "1 policy review due" && digestEmail(pol, "https://club.test").text.includes("Code of conduct (6 days past its review date)"));
+
 // who gets it
 const admins = [{ email: "Lead@Gitam.in" }, { email: null }, { email: "lead@gitam.in" }, { email: "second@gitam.in" }];
 ok("without ORGANISER_EMAILS, every admin with an email gets it once", digestRecipients(undefined, admins).join() === "lead@gitam.in,second@gitam.in");
