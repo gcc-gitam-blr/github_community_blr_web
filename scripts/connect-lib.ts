@@ -32,14 +32,16 @@ export async function applySchema(connectionString: string, sql: string, opts: {
   finally { await db.end().catch(() => {}); }
 }
 
-/** Makes a GitHub user an admin. They must have signed in to Epoch once so their profile exists. */
-export async function makeAdmin(connectionString: string, handle: string, opts: { ssl?: boolean } = {}): Promise<Check> {
+/** Makes a GitHub user an admin until `until` (YYYY-MM-DD), as an appointment. They must have signed in once so their profile exists. */
+export async function makeAdmin(connectionString: string, handle: string, until: string, opts: { ssl?: boolean } = {}): Promise<Check> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(until)) return { ok: false, error: "Give the day their access ends as YYYY-MM-DD, e.g. 2027-06-30." };
   const { default: pg } = await import("pg");
   const db = new pg.Client({ connectionString, ssl: opts.ssl === false ? false : { rejectUnauthorized: false } });
   try {
     await db.connect();
-    const r = await db.query("update profiles set role = 'admin' where lower(handle) = lower($1)", [handle.replace(/^@/, "")]);
-    return r.rowCount ? { ok: true } : { ok: false, error: `No profile for @${handle} yet — sign in once at /epoch/register with GitHub, then run this again.` };
+    const r = await db.query<{ r: { ok: boolean; error?: string } }>("select bootstrap_admin($1, $2::date) as r", [handle.replace(/^@/, ""), until]);
+    const res = r.rows[0].r;
+    return res.ok ? { ok: true } : { ok: false, error: /signed in/.test(res.error ?? "") ? `No profile for @${handle} yet — sign in once at /admin with GitHub, then run this again.` : res.error ?? "Couldn't make that person an admin." };
   } catch (e) { return { ok: false, error: (e as Error).message }; }
   finally { await db.end().catch(() => {}); }
 }
