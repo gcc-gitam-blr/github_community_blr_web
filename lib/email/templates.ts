@@ -125,6 +125,7 @@ export function digestEmail(d: Digest, site: string): Mail {
   const some = <T,>(xs: T[], f: (x: T) => string) => xs.slice(0, 5).map(f).join(" · ") + (xs.length > 5 ? ` · and ${xs.length - 5} more` : "");
   if (d.tasks?.overdue.length) lines.push([`Overdue tasks: ${d.tasks.overdue.length}`, some(d.tasks.overdue, (t) => `${t.title} (@${t.owner}, ${t.days} ${t.days === 1 ? "day" : "days"} late)`)]);
   if (d.tasks?.orphaned.length) lines.push([`Tasks to reassign: ${d.tasks.orphaned.length}`, "Their owner no longer has access. " + some(d.tasks.orphaned, (t) => `${t.title} (@${t.owner})`)]);
+  if (d.policies) lines.push([`Policy reviews due: ${d.policies.length}`, some(d.policies, (p) => `${p.title} (${p.days} ${p.days === 1 ? "day" : "days"} past its review date)`)]);
   if (d.assets) lines.push([`Assets to check: ${d.assets.length}`, some(d.assets, (a) => `${a.name} ${a.what}`)]);
   if (d.access?.ending.length) lines.push(["Access ending within 14 days", d.access.ending.map((e) => `@${e.handle} (${e.role}) ${e.daysLeft === 0 ? "ends today" : `in ${e.daysLeft} ${e.daysLeft === 1 ? "day" : "days"}`}`).join(" · ")]);
   const rows = lines.map(([k, v]) => `<tr><td style="padding:10px 0;border-top:1px solid #d0d7de"><b>${esc(k)}</b><br><span style="color:#59636e">${esc(v)}</span></td></tr>`).join("");
