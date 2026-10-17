@@ -13,7 +13,7 @@ import { CertWall, NextUp, YearStrip } from "./MemberHome";
 type Attended = { id: string; event: string; name: string };
 type State =
   | { s: "loading" } | { s: "off" } | { s: "out" }
-  | { s: "in"; name: string; handle: string; email: string; attended: Attended[]; coins: number | null; hub: boolean };
+  | { s: "in"; name: string; handle: string; email: string; attended: Attended[]; coins: number | null; hub: boolean; board: { member: boolean; on_board: boolean } };
 
 export function MyClub() {
   const [st, setSt] = useState<State>(hasSupabase ? { s: "loading" } : { s: "off" });
@@ -27,11 +27,12 @@ export function MyClub() {
       const { data: { user } } = await sb.auth.getUser();
       if (!live) return;
       if (!user) { setSt({ s: "out" }); return; }
-      const [att, prof, hub] = await Promise.all([sb.rpc("my_attendance"), sb.from("profiles").select("coins").eq("id", user.id).maybeSingle(), sb.rpc("can_take_part")]);
+      const [att, prof, hub, board] = await Promise.all([sb.rpc("my_attendance"), sb.from("profiles").select("coins").eq("id", user.id).maybeSingle(), sb.rpc("can_take_part"), sb.rpc("my_board_status")]);
       if (!live) return;
       const meta = user.user_metadata as { user_name?: string; full_name?: string; name?: string };
       setSt({ s: "in", handle: meta.user_name ?? "", name: meta.full_name || meta.name || meta.user_name || "You", email: user.email ?? "",
-        attended: (att.data as Attended[] | null) ?? [], coins: (prof.data as { coins: number } | null)?.coins ?? null, hub: hub.data === true });
+        attended: (att.data as Attended[] | null) ?? [], coins: (prof.data as { coins: number } | null)?.coins ?? null, hub: hub.data === true,
+        board: (board.data as { member: boolean; on_board: boolean } | null) ?? { member: false, on_board: false } });
     })();
     return () => { live = false; };
   }, []);
@@ -58,7 +59,12 @@ export function MyClub() {
   );
 
   const today = todayInIndia();
-  const onBoard = boardMembers().some((m) => m.handle.toLowerCase() === st.handle.toLowerCase());
+  const listed = boardMembers().some((m) => m.handle.toLowerCase() === st.handle.toLowerCase()), onBoard = listed || st.board.on_board;
+  const setBoard = async (on: boolean) => {
+    const { supabase } = await import("@/lib/epoch/supabase-store");
+    const { data } = await supabase().rpc("set_board_opt_in", { p_on: on });
+    if (data?.ok) setSt({ ...st, board: { ...st.board, on_board: on } });
+  };
   const past = EVENTS.filter((e) => e.date < today).length, came = st.attended.length;
   const signOut = async () => { await (await import("@/lib/epoch/supabase-store")).supabase().auth.signOut(); setSt({ s: "out" }); };
   return (
@@ -104,7 +110,13 @@ export function MyClub() {
         <div className="rounded-[14px] border border-line bg-white p-5">
           <h2 className="flex items-center gap-2 text-[19px]"><GitMergeIcon size={18} className="text-[#8250df]" />Merges and badges</h2>
           {onBoard ? <p className="mt-2 text-[15px] text-ink-2">Your pull requests merged into other people&apos;s projects. <Link href={`/board/${st.handle.toLowerCase()}`} className="font-semibold text-link hover:underline">Your board page →</Link></p>
-            : <p className="mt-2 text-[15px] text-ink-2">The board follows the GitHub usernames on the team and contributors lists. Ask a lead to add <b className="font-mono">@{st.handle}</b>, then <Link href="/contribute" className="font-semibold text-link hover:underline">find a first issue</Link>.</p>}
+            : st.board.member ? <p className="mt-2 text-[15px] text-ink-2">Show the pull requests you get merged on the club&apos;s public board, with your name and GitHub username.</p>
+            : <p className="mt-2 text-[15px] text-ink-2">The board follows the team, contributors and members who opt in. Once you&apos;re on the members list you can switch it on here; meanwhile, <Link href="/contribute" className="font-semibold text-link hover:underline">find a first issue</Link>.</p>}
+          {st.board.member && !listed && (
+            <label className="mt-3 flex cursor-pointer items-center gap-2.5 text-[15px] font-semibold">
+              <input type="checkbox" className="h-4 w-4" checked={st.board.on_board} onChange={(e) => void setBoard(e.target.checked)} />Show me on the board
+            </label>
+          )}
         </div>
         <div className="rounded-[14px] border border-line bg-white p-5">
           <h2 className="text-[19px]">Epoch wallet</h2>
