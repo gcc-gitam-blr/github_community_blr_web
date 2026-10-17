@@ -33,6 +33,9 @@ const EXPECTED: Record<string, string[]> = {
   review_application: SIGNED_IN, move_application: SIGNED_IN, decide_application: SIGNED_IN, onboard_application: SIGNED_IN,
   create_member: SIGNED_IN, update_member: SIGNED_IN, set_member_status: SIGNED_IN, import_members: SIGNED_IN, export_members: SIGNED_IN, export_signups: SIGNED_IN,
   is_own_application: NOBODY, can_see_application: NOBODY, open_campaign: SERVER, submit_application: SERVER,
+  // event proposals: each checks the proposer or admin itself
+  create_proposal: SIGNED_IN, update_proposal: SIGNED_IN, submit_proposal: SIGNED_IN, decide_proposal: SIGNED_IN, cancel_proposal: SIGNED_IN,
+  complete_proposal: SIGNED_IN, set_checklist_item: SIGNED_IN, link_proposal_event: SIGNED_IN, can_edit_proposal: NOBODY,
   sync_profile_roles: SERVER, appointment_warnings: SERVER, admin_emails: SERVER, bootstrap_admin: SERVER, // the weekly digest, and the first admin from the SQL editor
   booth_tx: NOBODY, log_action: NOBODY, bump_leaderboard: NOBODY, // internal: other functions and triggers only
   my_role: ANYONE, // used by row-level-security policies, so every role must be able to run it; it only ever answers about the caller

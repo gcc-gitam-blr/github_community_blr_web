@@ -152,3 +152,32 @@ export const reviewApplication = (app: number, score: number, notes: string) => 
 export const moveApplication = (app: number, to: ApplicationStatus) => rpcRes("move_application", { p_app: app, p_to: to });
 export const decideApplication = (app: number, decision: Decision["decision"], reason: string) => rpcRes("decide_application", { p_app: app, p_decision: decision, p_reason: reason });
 export const onboardApplication = (app: number) => rpcRes("onboard_application", { p_app: app });
+
+// ---- Event proposals ----
+export type ProposalStatus = "draft" | "submitted" | "returned" | "approved" | "rejected" | "cancelled" | "completed";
+export interface Proposal {
+  id: number; title: string; kind: "workshop" | "talk" | "hackathon" | "meetup" | "fest" | "other"; proposed_by: string | null; proposed_date: string; venue: string; objective: string;
+  expected_attendance: number | null; budget_inr: number | null; status: ProposalStatus; event_slug: string | null; decided_by: string | null; decision_note: string | null;
+  outcome_note: string | null; attendance_event: string | null; attendance_note: string | null; created_at: string; updated_at: string;
+}
+export interface ChecklistItem { id: number; proposal_id: number; label: string; required: boolean; state: "open" | "done" | "na"; note: string | null; sort: number }
+export interface ProposalFields { title: string; kind: Proposal["kind"]; date: string; venue: string; objective: string; expected: number | null; budget: number | null }
+export async function proposals(): Promise<{ list: Proposal[]; items: ChecklistItem[]; names: Record<string, string> }> {
+  const { data } = await supabase().from("event_proposals").select("*").order("proposed_date", { ascending: true }).limit(500);
+  const list = (data ?? []) as Proposal[];
+  if (!list.length) return { list, items: [], names: {} };
+  const [i, p] = await Promise.all([
+    supabase().from("proposal_checklist_items").select("*").in("proposal_id", list.map((x) => x.id)).order("sort"),
+    supabase().from("profiles").select("id, name").in("id", [...new Set(list.flatMap((x) => [x.proposed_by, x.decided_by]).filter(Boolean) as string[])]),
+  ]);
+  return { list, items: (i.data ?? []) as ChecklistItem[], names: Object.fromEntries((p.data ?? []).map((x) => [x.id as string, x.name as string])) };
+}
+const pf = (f: ProposalFields) => ({ p_title: f.title, p_kind: f.kind, p_date: f.date, p_venue: f.venue, p_objective: f.objective, p_expected: f.expected, p_budget: f.budget });
+export const createProposal = (f: ProposalFields) => rpcRes<{ id: number }>("create_proposal", pf(f));
+export const updateProposal = (id: number, f: ProposalFields) => rpcRes("update_proposal", { p_id: id, ...pf(f) });
+export const submitProposal = (id: number) => rpcRes("submit_proposal", { p_id: id });
+export const decideProposal = (id: number, decision: "approved" | "returned" | "rejected", note: string) => rpcRes("decide_proposal", { p_id: id, p_decision: decision, p_note: note });
+export const cancelProposal = (id: number, reason: string) => rpcRes("cancel_proposal", { p_id: id, p_reason: reason });
+export const completeProposal = (id: number, outcome: string, attendanceEvent: string | null, attendanceNote: string) => rpcRes("complete_proposal", { p_id: id, p_outcome: outcome, p_attendance_event: attendanceEvent, p_attendance_note: attendanceNote });
+export const setChecklistItem = (item: number, state: ChecklistItem["state"], note: string) => rpcRes("set_checklist_item", { p_item: item, p_state: state, p_note: note });
+export const linkProposalEvent = (id: number, slug: string) => rpcRes("link_proposal_event", { p_id: id, p_slug: slug });

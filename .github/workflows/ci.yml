@@ -31,6 +31,9 @@ jobs:
         run: npm run lint
       - name: Tests (coin rules, ask engine, sign-ups, Supabase SQL in PGlite)
         run: npm test
+      - name: Upcoming events without an approved proposal (a reminder; never fails the run)
+        run: npm run check:events
+        continue-on-error: true
       - name: Build
         id: build
         run: npm run build
