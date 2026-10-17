@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Nav } from "@/components/site/Nav";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { JourneyRail, NextBand } from "@/components/site/Journey";
 import { Sticker } from "@/components/ui/Sticker";
 import { CLUB } from "@/lib/config";
 import { IDEA_STATUS, domainLabel, type IdeaStatus } from "@/lib/projects";
@@ -41,6 +42,7 @@ export default async function Projects() {
           </div>
           <Sticker name="coder" size={150} tilt={-4} className="mb-2 hidden md:block" alt="" />
         </div>
+        <JourneyRail at="projects" />
 
         {list.length === 0 ? (
           <div className="mt-12 max-w-[640px] rounded-[18px] border border-line bg-white p-6 sm:p-8">
@@ -72,6 +74,7 @@ export default async function Projects() {
           </>
         )}
       </main>
+      <NextBand cmd="git checkout -b your-idea" title={<>Your idea<br />could be next.</>} text="Members post ideas, find teammates by skill, and the core team features the best of them here." href="/hub" cta="Open the project hub" second={{ href: "/#join", label: "Not a member yet? Join the club" }} tone="ink" />
       <SiteFooter />
     </>
   );

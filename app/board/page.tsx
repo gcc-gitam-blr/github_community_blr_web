@@ -3,6 +3,7 @@ import Link from "next/link";
 import { GitMergeIcon, RepoIcon } from "@primer/octicons-react";
 import { Nav } from "@/components/site/Nav";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { JourneyRail, NextBand } from "@/components/site/Journey";
 import { Face } from "@/components/site/Team";
 import { Sticker } from "@/components/ui/Sticker";
 import { Challenge } from "@/components/site/Challenge";
@@ -78,6 +79,7 @@ export default async function Board() {
           </div>
           <Sticker name="maker" size={150} tilt={6} className="mb-4 hidden md:block" alt="" />
         </div>
+        <JourneyRail at="board" />
 
         {sample && <p className="mt-10 rounded-lg border border-[#d4a72c66] bg-[#fff8c5] px-4 py-3 text-[15px] text-[#7d4e00]">Sample board and challenge, with GitHub&apos;s mascot accounts: shown on preview deployments only while no member has a merge, never on the live site.</p>}
         {!ok && <p role="status" className="mt-10 rounded-lg border border-[#d4a72c66] bg-[#fff8c5] px-4 py-3 text-[15px] text-[#7d4e00]">GitHub didn&apos;t answer every request just now, so the board may be missing a few people. It refreshes within the hour.</p>}
@@ -115,6 +117,7 @@ export default async function Board() {
           Pull requests into your own repositories don&apos;t count; this is about contributing to projects that aren&apos;t yours.
         </p>
       </main>
+      <NextBand cmd="git push" title={<>Then build something<br />with the club.</>} text="Members team up on projects of their own: share an idea, find people with the skills you're missing, and ship it together." href="/hub" cta="Open the project hub" second={{ href: "/projects", label: "See what's been built" }} />
       <SiteFooter />
     </>
   );

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowUpRightIcon } from "@primer/octicons-react";
 import { Nav } from "@/components/site/Nav";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { JourneyRail, NextBand } from "@/components/site/Journey";
 import { CheatSheet } from "@/components/site/CheatSheet";
 import { SessionArchive } from "@/components/site/SessionArchive";
 import { todayInIndia } from "@/lib/events";
@@ -28,6 +29,7 @@ export default function Learn() {
           </div>
           <Sticker name="professor" size={150} tilt={6} className="mb-4 hidden md:block" alt="" />
         </div>
+        <JourneyRail at="learn" />
 
         <SessionArchive today={todayInIndia()} />
 
@@ -71,6 +73,7 @@ export default function Learn() {
           <Link href="/#join" className="press mt-4 inline-flex rounded-md bg-ink px-5 py-3 font-display font-bold text-white sm:mt-0">Join the club</Link>
         </div>
       </main>
+      <NextBand cmd="gh pr create" title={<>Next commit:<br />your first pull request.</>} text="Reading is step one. The real thing is a small change to a project you didn't write, reviewed by someone who did. Fixing a typo counts." href="/contribute" cta="Make your first contribution" second={{ href: "/#events", label: "Or learn it at a session" }} />
       <SiteFooter />
     </>
   );

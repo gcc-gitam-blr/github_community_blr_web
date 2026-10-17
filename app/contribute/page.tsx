@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CommentIcon, IssueOpenedIcon } from "@primer/octicons-react";
 import { Nav } from "@/components/site/Nav";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { JourneyRail, NextBand } from "@/components/site/Journey";
 import { Sticker } from "@/components/ui/Sticker";
 import { CLUB } from "@/lib/config";
 import { ago, clubIssues, worldIssues, type Issue } from "@/lib/issues";
@@ -54,6 +55,7 @@ export default async function Contribute() {
           </div>
           <Sticker name="jetpack" size={150} tilt={-6} className="mb-4 hidden md:block" alt="" />
         </div>
+        <JourneyRail at="contribute" />
 
         <section className="mt-16" aria-labelledby="steps">
           <h2 id="steps" className="text-[clamp(30px,4vw,48px)]">Six steps</h2>
@@ -87,6 +89,7 @@ export default async function Contribute() {
           <Link href="/#join" className="press mt-4 inline-flex rounded-md bg-ink px-5 py-3 font-display font-bold text-white sm:mt-0">Join the club</Link>
         </div>
       </main>
+      <NextBand cmd="git merge" title={<>Got merged?<br />You&apos;re on the board.</>} text="Every pull request a member gets merged into someone else's project shows up on the club board, with a badge for your first one." href="/board" cta="See the board" second={{ href: "/#join", label: "Not a member yet? Join the club" }} tone="ink" />
       <SiteFooter />
     </>
   );
