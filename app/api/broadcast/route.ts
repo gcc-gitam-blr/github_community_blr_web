@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { sendEmail, emailConfigured } from "@/lib/email/send";
+import { batchMailer, emailConfigured } from "@/lib/email/send";
 import { broadcastEmail } from "@/lib/email/templates";
 import { unsubscribeApiUrl, unsubscribeUrl } from "@/lib/email/token";
 import { SITE_URL } from "@/lib/site";
@@ -39,15 +39,23 @@ export async function POST(req: Request) {
   if (!rows?.length) return json({ ok: false, error: "Nobody to email yet." }, 422);
   if (rows.length > MAX_PER_SEND) return json({ ok: false, error: `That's more than ${MAX_PER_SEND} people — send in batches or ask a developer to raise the limit.` }, 422);
 
-  let sent = 0, failed = 0;
-  const queue = [...rows];
-  await Promise.all(Array.from({ length: 5 }, async () => {
-    for (let r = queue.shift(); r; r = queue.shift()) {
-      const mail = broadcastEmail({ subject, message, site: SITE_URL, unsubscribe: unsubscribeUrl(SITE_URL, r.email) });
-      const res = await sendEmail(r.email, mail, { unsubscribe: unsubscribeApiUrl(SITE_URL, r.email) });
-      if (res.sent) sent++; else failed++;
-    }
-  }));
-  await db.from("broadcasts").insert({ sent_by: user.user.id, subject, recipients: sent });
-  return json({ ok: true, sent, failed, total: rows.length });
+  // one login for the whole batch, tried before anything is sent: a wrong password stops here, with what to do
+  const mailer = await batchMailer();
+  try {
+    const problem = await mailer.check();
+    if (problem) return json({ ok: false, error: `Nothing was sent. ${problem}` }, 502);
+    let sent = 0, failed = 0, why: string | undefined;
+    const queue = [...rows];
+    await Promise.all(Array.from({ length: 3 }, async () => {
+      for (let r = queue.shift(); r; r = queue.shift()) {
+        const mail = broadcastEmail({ subject, message, site: SITE_URL, unsubscribe: unsubscribeUrl(SITE_URL, r.email) });
+        const res = await mailer.send(r.email, mail, { unsubscribe: unsubscribeApiUrl(SITE_URL, r.email) });
+        if (res.sent) sent++;
+        else { failed++; why ??= res.why; console.error("broadcast email failed:", res.error); }
+      }
+    }));
+    if (sent) await db.from("broadcasts").insert({ sent_by: user.user.id, subject, recipients: sent });
+    if (!sent && failed) return json({ ok: false, error: `Nothing was sent. ${why ?? ""}`.trim() }, 502);
+    return json({ ok: true, sent, failed, total: rows.length, ...(why ? { problem: why } : {}) });
+  } finally { mailer.close(); }
 }
