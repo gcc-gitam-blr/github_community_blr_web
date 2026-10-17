@@ -20,7 +20,7 @@ const EDGES: [string, string][] = [["a", "b"], ["a", "c"], ["b", "d"], ["c", "e"
 export function Hero() {
   return (
     <>
-      <section id="top" className="relative overflow-hidden bg-[radial-gradient(60%_50%_at_82%_40%,rgba(180,139,230,.10),transparent_70%),radial-gradient(50%_50%_at_8%_90%,rgba(63,200,78,.08),transparent_70%)] pt-[clamp(112px,12vw,150px)]">
+      <section id="top" className="relative overflow-hidden bg-[radial-gradient(60%_50%_at_82%_40%,rgba(180,139,230,.10),transparent_70%),radial-gradient(50%_50%_at_8%_90%,rgba(63,200,78,.08),transparent_70%)] pt-[clamp(136px,12vw,150px)]">
         <div className="mx-auto grid w-full max-w-[1240px] items-center gap-10 px-5 pb-[clamp(56px,7vw,96px)] md:px-[clamp(20px,5vw,72px)] lg:grid-cols-[1.25fr_.75fr]">
           <div className="min-w-0">
             <p className="hero-fade mb-6 font-mono text-[13px] text-ink-2">GITAM University Bengaluru · GitHub Community Club</p>
