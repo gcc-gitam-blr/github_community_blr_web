@@ -225,7 +225,7 @@ A new club year? Follow [docs/ROLLOVER.md](docs/ROLLOVER.md): year label, team, 
 
 **Backups.** Supabase's free plan has no backups, so `.github/workflows/backup.yml` saves one every Sunday: all the club's data (the `public` tables) as a gzipped SQL file, kept 30 days under Actions → *Backup* → the run → Artifacts. Add the repository secret `SUPABASE_DB_URL` (Supabase → Connect → Session pooler, with the password filled in) under Settings → Secrets and variables → Actions; without it the run skips. The file holds names and emails and anyone who can read the repo can download it, so you can add a `BACKUP_PASSPHRASE` secret to have it encrypted. Run it now from Actions → *Backup* → Run workflow.
 
-To restore (you need `psql`, which comes with PostgreSQL):
+The full, step-by-step version (with a rehearsal into a scratch project) is in [docs/RESTORE.md](docs/RESTORE.md). In short, to restore (you need `psql`, which comes with PostgreSQL):
 1. Download the artifact and unzip it. If it ends in `.gpg`: `gpg --decrypt club-data-….sql.gz.gpg > club-data.sql.gz`.
 2. Into a **new or emptied** database: run `supabase/schema.sql` first (SQL Editor or `npm run connect`), then `gunzip -c club-data-….sql.gz | psql "<connection string>"`.
 3. Into the **same** project after a bad delete, restore only the damaged table, here `join_requests`: empty it (`truncate join_requests;` in the SQL Editor), then `gunzip -c club-data-….sql.gz | sed -n '/^COPY public.join_requests /,/^\\\.$/p' | psql "<connection string>"`. Restoring the whole file over a working database would wind the id counters back, so don't.
