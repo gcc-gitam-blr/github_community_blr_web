@@ -42,7 +42,7 @@ Rules that never bend:
 ## 3. The tabs
 
 The menu is grouped: **Club** (Overview, Attendance & certificates, Sign-ups & email, Messages, Feedback), **People**
-(Members, Recruitment, People & roles), **Work** (Event proposals, Tasks, Meetings & decisions, Assets & handover, Policies)
+(Members, Recruitment, Projects, People & roles), **Work** (Event proposals, Tasks, Meetings & decisions, Assets & handover, Policies)
 and **Site** (Activity, Site errors, admins only). Volunteers see only the ones they can use.
 
 ### People & roles
@@ -100,6 +100,16 @@ completed when every step is done or waived with a reason.
 The club's own rules, as versions. One admin writes a draft; a **different** admin approves and publishes it. A published
 version is **never edited**: a change is a new version, and the old ones stay. Nothing is pre-filled: the club writes them.
 
+### Projects (and the member project hub)
+Members open **`/hub`** (signed in with GitHub; active members and the core team only) to: say which areas they like and what
+they'd build (**What I'm into**), browse and share **Project ideas** and ask to join a team, **Find people** by area or skill,
+and manage **My teams** (answer requests, move a project from idea to shipped, choose whether their GitHub name shows publicly).
+Survey answers are private: the core team sees them in **Admin → Projects → What members like** to choose a **club project**
+everyone can join; other members see only counts (hidden where fewer than 3 people share one) and the people who ticked
+"let teammates find me". A team that wants to be on the website asks; a core or admin member who is **not** its owner reviews
+it in **Admin → Projects → To feature**. Only then does it appear on `/projects`, with GitHub names only for members who
+agreed. Editing a featured project sends it back for review.
+
 ### Activity
 The log of everything above, newest first, searchable. Use it to answer "who changed this, and when?".
 
@@ -120,7 +130,8 @@ A quiet week sends nothing.
 | Members who became inactive | 24 months (active members and alumni are kept) |
 | The activity log | 36 months |
 | Browser error reports | 30 days |
-| Meetings, minutes, decisions, policies, tasks, assets | kept |
+| Project hub answers | while the person is a member or on the core team; they can delete them any time |
+| Meetings, minutes, decisions, policies, tasks, assets, project ideas | kept |
 
 A weekly job deletes old data. The numbers live in `lib/retention.ts` and `/privacy` quotes the same ones.
 
