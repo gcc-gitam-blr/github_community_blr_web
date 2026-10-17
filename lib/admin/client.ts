@@ -1,11 +1,14 @@
 import { supabase } from "@/lib/epoch/supabase-store";
 import type { Attendee } from "@/lib/attendance";
 import type { ErrorRow } from "@/lib/client-errors";
+import type { AccessRole } from "@/lib/admin/appointments";
 
 /* What the /admin dashboard reads and changes. Every call runs as the signed-in organiser, so the
    database's own rules (supabase/schema.sql) decide what's allowed — the UI only hides what won't work. */
 export interface AttendanceRow { id: string; event: string; name: string; email: string; handle: string | null; emailed_at: string | null; created_at: string }
-export interface Person { id: string; handle: string; name: string; role: "attendee" | "volunteer" | "admin"; created_at: string }
+/** `role` is the live role. Admins also get the appointment behind it: its title, end date and id (null for everyone else). */
+export interface Person { id: string; handle: string; name: string; role: "attendee" | AccessRole; title: string | null; ends_on: string | null; appointment_id: number | null; created_at: string }
+export interface Pending { handle: string; role: AccessRole; title: string | null; ends_on: string | null }
 type Res<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
 export async function signedInUser() {
@@ -38,20 +41,34 @@ export async function removeAttendee(id: string): Promise<Res> {
 }
 
 export async function people(): Promise<Person[]> {
-  const { data } = await supabase().from("profiles").select("id, handle, name, role, created_at").order("created_at", { ascending: false }).limit(1000);
+  const { data } = await supabase().rpc("list_people");
   return (data ?? []) as Person[];
 }
 
-export async function setRole(handle: string, role: Person["role"]): Promise<Res<{ pending?: boolean }>> {
-  const { data, error } = await supabase().rpc("set_role", { p_handle: handle, p_role: role });
+/** Appoints someone (or changes their role, or extends the term) until `endsOn`. Works before their first sign-in too. */
+export async function grantAppointment(handle: string, role: AccessRole, title: string, endsOn: string): Promise<Res<{ pending?: boolean }>> {
+  const { data, error } = await supabase().rpc("grant_appointment", { p_handle: handle, p_role: role, p_title: title.trim() || null, p_ends_on: endsOn || null });
   if (error) return { ok: false, error: error.message };
-  return data?.ok ? { ok: true, pending: !!data.pending } : { ok: false, error: data?.error ?? "Couldn't change the role." };
+  return data?.ok ? { ok: true, pending: !!data.pending } : { ok: false, error: data?.error ?? "Couldn't change who has access." };
+}
+
+export async function endAppointment(id: number, reason: string): Promise<Res> {
+  const { data, error } = await supabase().rpc("end_appointment", { p_id: id, p_reason: reason.trim() });
+  if (error) return { ok: false, error: error.message };
+  return data?.ok ? { ok: true } : { ok: false, error: data?.error ?? "Couldn't end that access." };
+}
+
+/** Takes back access that was promised to a username that hasn't signed in yet. */
+export async function cancelPending(handle: string): Promise<Res> {
+  const { data, error } = await supabase().rpc("set_role", { p_handle: handle, p_role: "attendee" });
+  if (error) return { ok: false, error: error.message };
+  return data?.ok ? { ok: true } : { ok: false, error: data?.error ?? "Couldn't cancel that." };
 }
 
 /** Access granted to usernames that haven't signed in yet (admins only). */
-export async function pendingRoles(): Promise<{ handle: string; role: Person["role"] }[]> {
-  const { data } = await supabase().from("pending_roles").select("handle, role").order("created_at", { ascending: false });
-  return (data ?? []) as { handle: string; role: Person["role"] }[];
+export async function pendingRoles(): Promise<Pending[]> {
+  const { data } = await supabase().from("pending_roles").select("handle, role, title, ends_on").order("created_at", { ascending: false });
+  return (data ?? []) as Pending[];
 }
 
 export async function sendCertificates(event: string, ids?: string[]): Promise<Res<{ sent: number; failed: number; total: number }>> {

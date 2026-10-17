@@ -46,7 +46,10 @@ export const supabaseStore: EpochStore = {
     const { data: { user } } = await sb().auth.getUser();
     if (!user) return null;
     const { data } = await sb().from("profiles").select("*").eq("id", user.id).maybeSingle();
-    return data ? toProfile(data as Row) : null;
+    if (!data) return null;
+    // the role is read from the database every time (an appointment that ended overnight stops here), not from the profile's stored copy
+    const { data: live } = await sb().rpc("my_role");
+    return toProfile({ ...(data as Row), role: typeof live === "string" && live !== "none" ? (live as Row["role"]) : (data as Row).role });
   },
 
   /* Attendees sign in with GitHub. First call redirects to GitHub; once they're
@@ -125,7 +128,13 @@ export const supabaseStore: EpochStore = {
 
   async search(q) { const { data } = await sb().rpc("find_attendees", { p_q: q }); return ((data ?? []) as Row[]).map(toProfile); },
 
-  async staff() { const { data } = await sb().from("profiles").select("*").in("role", ["volunteer", "admin"]).order("name").limit(500); return ((data ?? []) as Row[]).map(toProfile); },
+  async staff() {
+    const { data: people } = await sb().rpc("list_people");
+    const live = new Map(((people ?? []) as { id: string; role: Row["role"] }[]).filter((p) => p.role !== "attendee").map((p) => [p.id, p.role]));
+    if (!live.size) return [];
+    const { data } = await sb().from("profiles").select("*").in("id", [...live.keys()]).order("name").limit(500);
+    return ((data ?? []) as Row[]).map((r) => toProfile({ ...r, role: live.get(r.id) ?? r.role }));
+  },
 
   setRole: (handle, role) => call("set_role", { p_handle: handle, p_role: role }),
   assignBooth: (handle, booth) => call("assign_booth", { p_handle: handle, p_booth: booth ?? "" }),
