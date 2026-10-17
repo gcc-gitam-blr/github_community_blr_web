@@ -1,5 +1,5 @@
 import { createHmac } from "node:crypto";
-import { createClient } from "@supabase/supabase-js";
+import { serverDb } from "./supabase-server";
 
 /* A small per-server-instance limiter: `limit` hits per `windowMs` for each key (an IP address).
    Good enough to stop a script hammering a form; the database's own constraints are the real backstop. */
@@ -21,14 +21,14 @@ export function visitorKey(scope: string, ip: string, salt = process.env.RATE_LI
 }
 
 /* Every public form uses this. With Supabase connected the count lives in the database (rate_hit in
-   supabase/schema.sql), so it holds across all of Vercel's server instances and restarts. If the database
-   isn't connected, is missing the function or doesn't answer within 1.5 s, the per-instance limiter takes over:
-   a slow database must never block a sign-up. */
+   supabase/schema.sql, which only the server key may call), so it holds across all of Vercel's server instances
+   and restarts. If the database isn't connected, refuses the call, is missing the function or doesn't answer within
+   1.5 s, the per-instance limiter takes over: a slow database must never block a sign-up. */
 export async function rateLimited(req: Request, scope: string, limit = 5, windowMs = 600_000): Promise<boolean> {
-  const ip = clientIp(req), url = process.env.NEXT_PUBLIC_SUPABASE_URL, anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (url && anon) {
+  const ip = clientIp(req), db = serverDb();
+  if (db) {
     try {
-      const { data, error } = await createClient(url, anon, { auth: { persistSession: false } })
+      const { data, error } = await db
         .rpc("rate_hit", { p_key: visitorKey(scope, ip), p_limit: limit, p_window_seconds: Math.round(windowMs / 1000) })
         .abortSignal(AbortSignal.timeout(1500));
       if (!error && typeof data === "boolean") return !data;
