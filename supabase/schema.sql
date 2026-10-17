@@ -2030,3 +2030,139 @@ revoke execute on function save_asset(bigint, text, text, text, text, text, text
 grant execute on function save_asset(bigint, text, text, text, text, text, text, date), set_asset_notes(bigint, text), asset_warnings(), start_handover(text), set_handover_item(bigint, text, text), complete_handover(bigint) to authenticated;
 revoke execute on function asset_problems_for_digest() from public, anon, authenticated;
 grant execute on function asset_problems_for_digest() to service_role;
+
+-- ============================================================
+-- Policies: the club's own rules (charter, code of conduct, how decisions are made...) as a small registry, not an engine.
+-- A policy is a name with an owner; its words live in versions. A version is written as a draft, and only published when
+-- a SECOND admin (never the person who wrote the draft) approves it. A published version is never edited or deleted:
+-- a change is a new version, and the old ones stay. Policies are internal and live only here; to make one public, publish it
+-- deliberately as site content. Nothing is written directly; every change is a function below, logged in crm_audit.
+-- The club writes the policies; nothing is seeded.
+-- ============================================================
+create table if not exists policies (
+  id bigint generated always as identity primary key,
+  slug text not null unique check (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$' and length(slug) <= 60),
+  title text not null check (length(trim(title)) between 3 and 120),
+  owner_id uuid references profiles(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create table if not exists policy_versions (
+  id bigint generated always as identity primary key,
+  policy_id bigint not null references policies,
+  version int not null check (version >= 1),
+  body_md text not null check (length(trim(body_md)) between 10 and 50000),
+  author_id uuid references profiles(id) on delete set null,
+  approved_by uuid references profiles(id) on delete set null,
+  approved_on date not null default today_ist(),
+  effective_on date not null,
+  review_due_on date not null,
+  unique (policy_id, version),
+  check (review_due_on > effective_on)
+);
+create table if not exists policy_drafts ( -- the words being written; one per policy, replaced by each save
+  policy_id bigint primary key references policies on delete cascade,
+  body_md text not null check (length(trim(body_md)) between 10 and 50000),
+  author_id uuid references profiles(id) on delete set null,
+  updated_at timestamptz not null default now()
+);
+alter table policies enable row level security;
+alter table policy_versions enable row level security;
+alter table policy_drafts enable row level security;
+revoke insert, update, delete on policies, policy_versions, policy_drafts from anon, authenticated;
+drop policy if exists "core and admins read policies" on policies;
+create policy "core and admins read policies" on policies for select using (my_role() in ('core','admin'));
+drop policy if exists "core and admins read policy versions" on policy_versions;
+create policy "core and admins read policy versions" on policy_versions for select using (my_role() in ('core','admin'));
+drop policy if exists "admins read policy drafts" on policy_drafts;
+create policy "admins read policy drafts" on policy_drafts for select using (my_role() = 'admin');
+
+-- A published version is never changed or removed, even by the database owner.
+create or replace function policy_versions_guard() returns trigger language plpgsql set search_path = public, pg_temp as $$
+begin raise exception 'a published policy version is never changed or deleted; publish a new version'; end $$;
+drop trigger if exists policy_versions_guard on policy_versions;
+create trigger policy_versions_guard before update or delete on policy_versions for each row execute function policy_versions_guard();
+
+create or replace function create_policy(p_slug text, p_title text, p_owner text default null) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare o uuid; pid bigint;
+begin
+  if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins manage policies.'); end if;
+  if nullif(trim(coalesce(p_owner, '')), '') is not null then
+    select id into o from profiles where lower(handle) = lower(ltrim(trim(p_owner), '@'));
+    if o is null or role_of(o) not in ('core','admin') then return json_build_object('ok', false, 'error', 'The owner must hold a core or admin appointment, and have signed in.'); end if;
+  end if;
+  insert into policies (slug, title, owner_id) values (lower(trim(p_slug)), trim(p_title), o) returning id into pid;
+  perform crm_log('policy_created', 'policy', pid::text, '{}');
+  return json_build_object('ok', true, 'id', pid);
+exception
+  when unique_violation then return json_build_object('ok', false, 'error', 'There is already a policy with that short name.');
+  when check_violation then return json_build_object('ok', false, 'error', 'Use a short name of lower-case letters, numbers and dashes (like code-of-conduct) and a title of 3 to 120 characters.');
+end $$;
+
+create or replace function set_policy_owner(p_id bigint, p_owner text) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare o uuid;
+begin
+  if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins manage policies.'); end if;
+  select id into o from profiles where lower(handle) = lower(ltrim(trim(coalesce(p_owner, '')), '@'));
+  if o is null or role_of(o) not in ('core','admin') then return json_build_object('ok', false, 'error', 'The owner must hold a core or admin appointment, and have signed in.'); end if;
+  update policies set owner_id = o where id = p_id;
+  if not found then return json_build_object('ok', false, 'error', 'Policy not found.'); end if;
+  perform crm_log('policy_owner', 'policy', p_id::text, jsonb_build_object('owner', o));
+  return json_build_object('ok', true);
+end $$;
+
+-- Write or replace the draft of the next version. Any admin; the draft remembers who wrote it last.
+create or replace function save_policy_draft(p_id bigint, p_body text) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins write policies.'); end if;
+  if not exists (select 1 from policies where id = p_id) then return json_build_object('ok', false, 'error', 'Policy not found.'); end if;
+  insert into policy_drafts (policy_id, body_md, author_id) values (p_id, trim(p_body), auth.uid())
+  on conflict (policy_id) do update set body_md = excluded.body_md, author_id = excluded.author_id, updated_at = now();
+  perform crm_log('policy_draft', 'policy', p_id::text, '{}');
+  return json_build_object('ok', true);
+exception when check_violation then return json_build_object('ok', false, 'error', 'A policy needs at least a sentence, and at most 50000 characters.');
+end $$;
+
+create or replace function discard_policy_draft(p_id bigint) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins write policies.'); end if;
+  delete from policy_drafts where policy_id = p_id;
+  perform crm_log('policy_draft_discarded', 'policy', p_id::text, '{}');
+  return json_build_object('ok', true);
+end $$;
+
+-- Publish the draft as the next version. The approver (the person pressing the button) must be a different admin from the
+-- person who last edited the draft. Then it is final.
+create or replace function publish_policy_version(p_id bigint, p_effective_on date, p_review_due_on date) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare d policy_drafts; v int;
+begin
+  if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins publish policies.'); end if;
+  perform 1 from policies where id = p_id for update;
+  if not found then return json_build_object('ok', false, 'error', 'Policy not found.'); end if;
+  select * into d from policy_drafts where policy_id = p_id for update;
+  if not found then return json_build_object('ok', false, 'error', 'There is no draft to publish.'); end if;
+  if d.author_id is not distinct from auth.uid() then return json_build_object('ok', false, 'error', 'You wrote this draft, so another admin has to approve and publish it.'); end if;
+  if p_effective_on is null or p_effective_on < today_ist() then return json_build_object('ok', false, 'error', 'The policy takes effect today or later.'); end if;
+  if p_review_due_on is null or p_review_due_on <= p_effective_on or p_review_due_on > p_effective_on + 1100 then return json_build_object('ok', false, 'error', 'Set a review date after it takes effect, within 3 years.'); end if;
+  select coalesce(max(version), 0) + 1 into v from policy_versions where policy_id = p_id;
+  insert into policy_versions (policy_id, version, body_md, author_id, approved_by, effective_on, review_due_on) values (p_id, v, d.body_md, d.author_id, auth.uid(), p_effective_on, p_review_due_on);
+  delete from policy_drafts where policy_id = p_id;
+  perform crm_log('policy_published', 'policy', p_id::text, jsonb_build_object('version', v));
+  return json_build_object('ok', true, 'version', v);
+end $$;
+
+-- For the Monday digest (server key only): policies whose latest version is past its review date.
+create or replace function policy_reviews_due() returns json language sql security definer stable set search_path = public, pg_temp as $$
+  select coalesce(json_agg(json_build_object('id', p.id, 'title', p.title, 'days', today_ist() - v.review_due_on) order by v.review_due_on), '[]'::json)
+  from policies p join lateral (select review_due_on from policy_versions where policy_id = p.id order by version desc limit 1) v on true
+  where v.review_due_on < today_ist()
+$$;
+
+revoke execute on function create_policy(text, text, text), set_policy_owner(bigint, text), save_policy_draft(bigint, text), discard_policy_draft(bigint), publish_policy_version(bigint, date, date) from public, anon;
+grant execute on function create_policy(text, text, text), set_policy_owner(bigint, text), save_policy_draft(bigint, text), discard_policy_draft(bigint), publish_policy_version(bigint, date, date) to authenticated;
+revoke execute on function policy_reviews_due() from public, anon, authenticated;
+grant execute on function policy_reviews_due() to service_role;
