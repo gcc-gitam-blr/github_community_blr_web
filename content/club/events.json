@@ -2,6 +2,7 @@
   "events": [
     {
       "title": "GitHub 101: Learn GitHub & Make Your First Contribution",
+      "slug": "learn-github-and-make-your-first-contribution",
       "date": "2026-10-12",
       "type": "Workshop",
       "text": "Introduction to GitHub, repositories, commits, issues and pull requests, then your first contribution.",
@@ -25,6 +26,7 @@
     },
     {
       "title": "GIT Merge 26",
+      "slug": "git-merge-26",
       "date": "2026-10-28",
       "type": "Open Source",
       "text": "A GitHub and open-source event: learn Git, explore open source, make beginner-friendly contributions.",
@@ -39,6 +41,7 @@
     },
     {
       "title": "EPOCH - GitHub Technical Month",
+      "slug": "epoch-github-technical-month",
       "date": "2026-12-21",
       "dateLabel": "December 2026",
       "type": "Flagship",
@@ -55,6 +58,7 @@
     },
     {
       "title": "Build & Deploy with GitHub",
+      "slug": "build-and-deploy-with-github",
       "date": "2027-01-04",
       "type": "Workshop",
       "text": "Build a website, app or student project and publish it using GitHub and related tools.",
@@ -69,6 +73,7 @@
     },
     {
       "title": "GitHub Profile Makeover",
+      "slug": "github-profile-makeover",
       "date": "2027-02-08",
       "type": "Workshop",
       "text": "Level up your profile, READMEs, repositories and project presentation for academic and professional use.",
@@ -83,6 +88,7 @@
     },
     {
       "title": "GitHub for Careers & Technical Challenge",
+      "slug": "github-for-careers-and-technical-challenge",
       "date": "2027-03-15",
       "type": "Career",
       "text": "How GitHub helps with internships, placements and portfolios, followed by a technical challenge.",
