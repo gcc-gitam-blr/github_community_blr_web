@@ -25,35 +25,37 @@ ${esc(CLUB.name)} · ${esc(CLUB.university)}<br>
 const button = (href: string, label: string) =>
   `<p style="margin:24px 0"><a href="${href}" style="background:${GREEN};color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:8px;display:inline-block">${esc(label)}</a></p>`;
 
-export interface WelcomeInput { handle: string; firstEventTitle?: string; nextEvent?: { title: string; date: string; url?: string }; site: string; unsubscribe: string }
+/** `finish`: the signed link where they add their GitHub username and first event (optional, any time). */
+export interface WelcomeInput { name: string; handle?: string; firstEventTitle?: string; nextEvent?: { title: string; date: string; url?: string }; finish?: string; site: string; unsubscribe: string }
 
 export function welcomeEmail(i: WelcomeInput): Mail {
-  const wa = CLUB.joinUrl;
-  const next = i.nextEvent ? `<p><b>Next up:</b> ${esc(i.nextEvent.title)} — ${esc(i.nextEvent.date)}${i.nextEvent.url ? ` · <a href="${i.nextEvent.url}" style="color:#0969da">RSVP</a>` : ""}</p>` : "";
-  const html = frame(`Welcome to the club, @${i.handle}`, `
-<h1 style="font-size:24px;line-height:1.25;margin:0 0 12px">Welcome to the club, @${esc(i.handle)} 👋</h1>
-<p>Your pull request into <code>club:main</code> is merged. You're in — no experience needed, just curiosity.</p>
-${i.firstEventTitle ? `<p>You said you want to try <b>${esc(i.firstEventTitle)}</b> first. We'll remind you before it.</p>` : ""}
+  const wa = CLUB.joinUrl, first = i.name.trim().split(/\s+/)[0] || "there";
+  const next = i.nextEvent ? `<p><b>Next up:</b> ${esc(i.nextEvent.title)}, ${esc(i.nextEvent.date)}${i.nextEvent.url ? ` · <a href="${i.nextEvent.url}" style="color:#0969da">RSVP</a>` : ""}</p>` : "";
+  const steps = [
+    wa && `Join the WhatsApp community: dates, workshops and RSVP links land there first.`,
+    `Make a free GitHub account if you don't have one. Every session uses it.`,
+    i.finish && !i.handle && `<a href="${i.finish}" style="color:#0969da">Add your GitHub username</a> so we can follow your first contributions (one minute, whenever you like).`,
+  ].filter(Boolean) as string[];
+  const html = frame(`You're in, ${first}`, `
+<h1 style="font-size:24px;line-height:1.25;margin:0 0 12px">You're in, ${esc(first)} 👋</h1>
+<p>Welcome to the GitHub Community Club. No experience needed: every session starts from zero, and you'll open your first pull request with people who've done it before.</p>
+${i.firstEventTitle ? `<p>You'd like to try <b>${esc(i.firstEventTitle)}</b> first. We'll remind you before it.</p>` : ""}
 ${next}
-<p><b>Do this next:</b></p>
-<ol style="padding-left:20px;margin:0 0 8px">
-${wa ? `<li>Join our WhatsApp community — it's where we share dates, workshops and RSVP links.</li>` : ""}
-<li>Make sure you have a GitHub account (free) — it's what we'll use in every session.</li>
-<li>Bring a laptop and a charger to the first session.</li>
-</ol>
+<p><b>Three small things:</b></p>
+<ol style="padding-left:20px;margin:0 0 8px">${steps.map((x) => `<li>${x}</li>`).join("")}</ol>
 ${wa ? button(wa, "Join the WhatsApp community") : ""}
-<p>Questions? Just reply, or find us on Instagram and LinkedIn. See you soon!</p>
-<p style="margin-bottom:0">— The GitHub Community Club team</p>`, i.site, i.unsubscribe);
+<p>Questions? Reply to this email. A real person on the team reads it.</p>
+<p style="margin-bottom:0">The GitHub Community Club team</p>`, i.site, i.unsubscribe);
   const text = [
-    `Welcome to the club, @${i.handle}!`, "",
-    "Your pull request into club:main is merged. You're in — no experience needed, just curiosity.",
-    i.firstEventTitle ? `You said you want to try "${i.firstEventTitle}" first. We'll remind you before it.` : "",
-    i.nextEvent ? `Next up: ${i.nextEvent.title} — ${i.nextEvent.date}${i.nextEvent.url ? ` (${i.nextEvent.url})` : ""}` : "", "",
-    "Do this next:",
-    wa ? `1. Join our WhatsApp community (dates, workshops, RSVP links): ${wa}` : "",
-    "2. Make sure you have a free GitHub account.",
-    "3. Bring a laptop and a charger to the first session.", "",
-    "— The GitHub Community Club team", "", `${CLUB.name} · ${i.site}`, `Unsubscribe: ${i.unsubscribe}`,
+    `You're in, ${first}!`, "",
+    "Welcome to the GitHub Community Club. No experience needed: every session starts from zero.",
+    i.firstEventTitle ? `You'd like to try "${i.firstEventTitle}" first. We'll remind you before it.` : "",
+    i.nextEvent ? `Next up: ${i.nextEvent.title}, ${i.nextEvent.date}${i.nextEvent.url ? ` (${i.nextEvent.url})` : ""}` : "", "",
+    "Three small things:",
+    wa ? `- Join the WhatsApp community: ${wa}` : "",
+    "- Make a free GitHub account if you don't have one.",
+    i.finish && !i.handle ? `- Add your GitHub username (one minute): ${i.finish}` : "", "",
+    "Questions? Reply to this email.", "", "The GitHub Community Club team", "", `${CLUB.name} · ${i.site}`, `Unsubscribe: ${i.unsubscribe}`,
   ].filter((l) => l !== "").join("\n");
   return { subject: "Welcome to the GitHub Community Club 🎉", html, text };
 }
@@ -74,7 +76,7 @@ ${i.message}` };
 
 /** To the sender: a short "we got it". */
 export function contactAck(i: { name: string; kindLabel: string; site: string }): Mail {
-  const first = i.name.trim().split(/s+/)[0];
+  const first = i.name.trim().split(/\s+/)[0];
   const html = frame("We got your message", `<h1 style="font-size:22px;margin:0 0 12px">Thanks, ${esc(first)} — we got it.</h1>
 <p>Your message (<i>${esc(i.kindLabel)}</i>) reached the GitHub Community Club team. A real person will reply, usually within a few days.</p>
 <p>Meanwhile, our WhatsApp community is the quickest way to see what's happening.</p>
