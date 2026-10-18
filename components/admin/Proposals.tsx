@@ -2,8 +2,8 @@
 import { tabKeys } from "@/components/ui/tabKeys";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  cancelProposal, completeProposal, createProposal, decideProposal, linkProposalEvent, proposals as loadProposals, setChecklistItem, submitProposal, updateProposal,
-  type ChecklistItem, type Proposal, type ProposalFields, type ProposalStatus,
+  cancelProposal, completeProposal, createProposal, decideProposal, linkProposalEvent, proposals as loadProposals, setChecklistItem, setProposalDetails, submitProposal, updateProposal,
+  type ChecklistItem, type Proposal, type ProposalDetails, type ProposalFields, type ProposalStatus,
 } from "@/lib/admin/client";
 import { niceDate, todayIST } from "@/lib/admin/appointments";
 import { CheckIcon, DotFillIcon } from "@primer/octicons-react";
@@ -42,7 +42,7 @@ export function Proposals({ admin, meId }: { admin: boolean; meId: string }) {
   const save = async () => {
     setBusy(true); setNote(null);
     const r = editing ? await updateProposal(editing, form) : await createProposal(form); setBusy(false);
-    say(r.ok, r.ok ? (editing ? "Saved." : "Saved as a draft. Work through the checklist, then submit it.") : r.error);
+    say(r.ok, r.ok ? (editing ? "Saved." : "Saved as a draft. Open it to fill in the document and tick the checklist, then submit it.") : r.error);
     if (r.ok) { setForm(blank); setEditing(null); setPicked("mine"); await load(); }
   };
   const run = async (p: Promise<{ ok: boolean; error?: string }>, done: string) => {
@@ -122,6 +122,8 @@ function Row({ p, items, by, admin, mine, busy, run, edit }: { p: Proposal; item
             </ul>
           </div>
 
+          <ProposalDoc p={p} editable={(mine || admin) && ["draft", "submitted", "returned", "approved"].includes(p.status)} busy={busy} run={run} />
+
           <div className="flex flex-wrap items-center gap-2">
             {mine && ["draft", "returned"].includes(p.status) && <button disabled={busy} onClick={() => edit(p)} className={btnSoft}>Edit</button>}
             {mine && ["draft", "returned"].includes(p.status) && <button disabled={busy} onClick={() => void run(submitProposal(p.id), "Submitted. An admin who is not you will decide.")} className={btn}>Submit for approval</button>}
@@ -166,6 +168,49 @@ function Row({ p, items, by, admin, mine, busy, run, edit }: { p: Proposal; item
         </div>
       </details>
     </li>
+  );
+}
+
+/** The proposal in the university's format: what it still needs, its details, and the PDF to send. */
+const DOC_PARTS: [keyof ProposalDetails, string][] = [["audience", "target audience"], ["description", "description"], ["outcomes", "learning outcomes"], ["requirements", "requirements"]];
+function ProposalDoc({ p, editable, busy, run }: { p: Proposal; editable: boolean; busy: boolean; run: (p: Promise<{ ok: boolean; error?: string }>, done: string) => Promise<void> }) {
+  const saved = p.details ?? {};
+  const [d, setD] = useState<ProposalDetails>(saved); const [editing, setEditing] = useState(false);
+  const missing = DOC_PARTS.filter(([k]) => !saved[k]).map(([, l]) => l);
+  const set = (k: keyof ProposalDetails, v: string | number | boolean | undefined) => setD({ ...d, [k]: v });
+  const text = (k: keyof ProposalDetails, label: string, hint: string, rows = 0, max = 300) => (
+    <label className="block text-[13.5px] font-semibold sm:col-span-3">{label} <span className="font-normal text-ink-3">{hint}</span>
+      {rows ? <textarea rows={rows} maxLength={max} value={String(d[k] ?? "")} onChange={(e) => set(k, e.target.value)} className={`${input} mt-1 font-normal`} />
+        : <input maxLength={max} value={String(d[k] ?? "")} onChange={(e) => set(k, e.target.value)} className={`${input} mt-1 font-normal`} />}
+    </label>
+  );
+  return (
+    <div className="rounded-lg border border-line p-4">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h4 className="text-[15px]">Proposal document</h4>
+        <span className={`text-[13.5px] ${missing.length ? "text-[#7d4e00]" : "text-[#116329]"}`}>{missing.length ? `Still to add: ${missing.join(", ")}` : "Everything the university's format asks for is filled in"}</span>
+        <span className="ml-auto flex flex-wrap gap-2">
+          {editable && !editing && <button disabled={busy} onClick={() => { setD(saved); setEditing(true); }} className={btnSoft}>Edit details</button>}
+          <a href={`/admin/doc?proposal=${p.id}`} target="_blank" rel="noopener" className={btnSoft}>Download PDF <span aria-hidden>↗</span></a>
+        </span>
+      </div>
+      {editing && (
+        <form onSubmit={(e) => { e.preventDefault(); void run(setProposalDetails(p.id, d), "Saved the document's details.").then(() => setEditing(false)); }} className="mt-4 grid gap-3 sm:grid-cols-3">
+          <label className="block text-[13.5px] font-semibold">Number of days<input type="number" min={1} max={30} value={d.days ?? 1} onChange={(e) => set("days", e.target.value ? Number(e.target.value) : undefined)} className={`${input} mt-1 font-normal`} /></label>
+          <label className="block text-[13.5px] font-semibold">Time<input maxLength={60} value={d.time ?? ""} onChange={(e) => set("time", e.target.value)} placeholder="10 AM to 1 PM" className={`${input} mt-1 font-normal`} /></label>
+          <label className="block text-[13.5px] font-semibold">Mode<select value={d.mode ?? "offline"} onChange={(e) => set("mode", e.target.value)} className={`${input} mt-1 font-normal`}><option value="offline">Offline</option><option value="online">Online</option><option value="hybrid">Hybrid</option></select></label>
+          <label className="flex items-center gap-2 text-[13.5px] sm:col-span-3"><input type="checkbox" checked={!!d.date_tbd} onChange={(e) => set("date_tbd", e.target.checked)} /> The date isn&apos;t fixed yet: the document says &ldquo;Yet to be decided&rdquo;</label>
+          {text("audience", "Target audience", "(who it's for)", 0, 300)}
+          {text("description", "Event description", "(lines starting with - become bullets)", 4, 3000)}
+          {text("outcomes", "Learning outcomes", "(one per line; \"Basics: what they learn\" makes the first part bold)", 4, 2000)}
+          {text("requirements", "Requirements", "(one per line: projector, posters, refreshments…)", 3, 1500)}
+          <div className="flex gap-2 sm:col-span-3">
+            <button disabled={busy} className={btn}>Save details</button>
+            <button type="button" onClick={() => setEditing(false)} className={btnSoft}>Cancel</button>
+          </div>
+        </form>
+      )}
+    </div>
   );
 }
 
