@@ -6,7 +6,7 @@ import { EMAIL_RE } from "./join";
 /* The Monday email to organisers: what happened on the site in the past 7 days.
    Built from plain rows so it can be tested without a database; app/api/cron/digest fetches the rows and sends it. */
 export interface DigestRows {
-  signups: { handle: string; created_at: string }[];
+  signups: { name?: string | null; handle: string | null; created_at: string }[];
   messages: { kind: string }[];
   feedback: { event: string; rating: number }[];
   /** appointment_warnings() from the database: how many admins are active, and whose access ends within 14 days */
@@ -20,7 +20,7 @@ export interface DigestRows {
 }
 export interface Digest {
   from: string; to: string; // the week, as YYYY-MM-DD in India
-  signups: { count: number; first: string[] }; // the first few handles, oldest first
+  signups: { count: number; first: string[] }; // the first few, oldest first: @username, or their name until they add one
   messages: { label: string; count: number }[];
   feedback: { event: string; average: number; count: number }[];
   /** only when something needs doing: fewer than MIN_ADMINS active admins, or access ending soon */
@@ -52,7 +52,7 @@ export function buildDigest(rows: DigestRows, now = new Date()): Digest | null {
   for (const f of rows.feedback) byEvent.set(f.event, [...(byEvent.get(f.event) ?? []), f.rating]);
   const feedback = [...byEvent].map(([event, r]) => ({ event: CLUB.events.find((e) => e.date === event)?.title ?? event, average: Math.round((r.reduce((a, b) => a + b, 0) / r.length) * 10) / 10, count: r.length }))
     .sort((a, b) => b.count - a.count);
-  return { from: istDay(new Date(now.getTime() - 7 * 864e5)), to: istDay(now), signups: { count: signups.length, first: signups.slice(0, FIRST_HANDLES).map((s) => s.handle) }, messages, feedback, access, tasks, assets, policies };
+  return { from: istDay(new Date(now.getTime() - 7 * 864e5)), to: istDay(now), signups: { count: signups.length, first: signups.slice(0, FIRST_HANDLES).map((s) => (s.handle ? `@${s.handle}` : s.name || "someone")) }, messages, feedback, access, tasks, assets, policies };
 }
 
 /** Who gets it: ORGANISER_EMAILS when set (comma- or space-separated), otherwise every admin's email from the database. */

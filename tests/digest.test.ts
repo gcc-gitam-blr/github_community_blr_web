@@ -17,7 +17,7 @@ const d = buildDigest({
   feedback: [{ event: ev.date, rating: 5 }, { event: ev.date, rating: 4 }, { event: ev.date, rating: 4 }, { event: "1999-01-01", rating: 2 }],
 }, now)!;
 ok("sign-ups are counted", d.signups.count === 7);
-ok(`only the first ${FIRST_HANDLES} handles are listed, oldest first`, d.signups.first.length === FIRST_HANDLES && d.signups.first[0] === "amy");
+ok(`only the first ${FIRST_HANDLES} handles are listed, oldest first`, d.signups.first.length === FIRST_HANDLES && d.signups.first[0] === "@amy");
 ok("messages are grouped by kind with readable names, unknown kinds left out", d.messages.length === 2 && d.messages[0].label === "Join the core team" && d.messages[0].count === 2 && d.messages[1].count === 1);
 ok("feedback is averaged per event, to one decimal", d.feedback[0].event === ev.title && d.feedback[0].average === 4.3 && d.feedback[0].count === 3);
 ok("feedback for an event not on the calendar keeps its date", d.feedback[1].event === "1999-01-01" && d.feedback[1].average === 2);

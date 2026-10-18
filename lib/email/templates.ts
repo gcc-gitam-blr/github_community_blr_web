@@ -132,7 +132,7 @@ export function digestEmail(d: Digest, site: string): Mail {
   const day = (s: string) => new Date(`${s}T12:00:00+05:30`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" });
   const week = `${day(d.from)} – ${day(d.to)}`, admin = `${site}/admin`;
   const more = d.signups.count - d.signups.first.length;
-  const handles = d.signups.first.map((h) => `@${h}`).join(", ") + (more > 0 ? ` and ${more} more` : "");
+  const handles = d.signups.first.join(", ") + (more > 0 ? ` and ${more} more` : "");
   const lines: [string, string][] = [];
   if (d.signups.count) lines.push([`New sign-ups: ${d.signups.count}`, handles]);
   if (d.messages.length) lines.push(["Get involved messages", d.messages.map((m) => `${m.label}: ${m.count}`).join(" · ")]);
