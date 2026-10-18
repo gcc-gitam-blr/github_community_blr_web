@@ -7,6 +7,7 @@ import { SocialLinks } from "./SocialLinks";
 import { ThemeChoices } from "@/components/ui/ThemeToggle";
 import { NAV_LINKS } from "./nav-links";
 import { MemberMenuLink } from "./MemberButton";
+import { useJoined } from "./QuickJoin";
 
 /* The phone menu: a panel that drops from under the header over a dimmed page (dim to focus).
    Opens in 260ms on a drawer curve, closes faster; links cascade in 30ms apart. Esc closes it, focus stays
@@ -14,6 +15,7 @@ import { MemberMenuLink } from "./MemberButton";
    It's rendered at the end of <body> so the header's translucent layer can't trap it. */
 export function MobileMenu({ href, current, live }: { href: (h: string) => string; current: string; live: boolean }) {
   const [open, setOpen] = useState(false);
+  const [joined] = useJoined();
   const [top, setTop] = useState(64);
   const button = useRef<HTMLButtonElement>(null), panel = useRef<HTMLDivElement>(null);
   const [host, setHost] = useState<HTMLElement | null>(null);
@@ -83,7 +85,7 @@ export function MobileMenu({ href, current, live }: { href: (h: string) => strin
               </ul>
             </nav>
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line px-3 pt-4"><SocialLinks /><ThemeChoices tone="menu" /></div>
-            <a href="/join" onClick={() => close(false)} className="press lift mt-5 block rounded-md border-2 border-ink bg-ink py-3.5 text-center font-display text-[16px] font-bold text-white">Join the club</a>
+            {!joined && <a href="/join" onClick={() => close(false)} className="press lift mt-5 block rounded-md border-2 border-ink bg-ink py-3.5 text-center font-display text-[16px] font-bold text-white">Join the club</a>}
             <MemberMenuLink onClick={() => close(false)} />
           </div>
         </div>,
