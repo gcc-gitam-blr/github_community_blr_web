@@ -52,7 +52,7 @@ export function FindPeople({ me, staff, onEdit }: { me: { id: string; handle: st
         </section>
       )}
       <form onSubmit={search} className="flex flex-wrap items-end gap-3 rounded-[18px] border border-line bg-white p-5">
-        <label className="text-[14px] font-medium">Area<select className={`${field} mt-1.5 !w-auto min-w-[200px]`} value={area} onChange={(e) => setArea(e.target.value)}><option value="">Any area</option>{DOMAINS.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}</select></label>
+        <label className="text-[14px] font-medium">Area<select className={`${field} mt-1.5 block !w-auto min-w-[200px]`} value={area} onChange={(e) => setArea(e.target.value)}><option value="">Any area</option>{DOMAINS.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}</select></label>
         <label className="min-w-[200px] flex-1 text-[14px] font-medium">A skill<input className={`${field} mt-1.5`} value={skill} onChange={(e) => setSkill(e.target.value)} placeholder="react, figma, python…" /></label>
         <button disabled={busy} className={btn}>{busy ? "Looking…" : "Find people"}</button>
       </form>
