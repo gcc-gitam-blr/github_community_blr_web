@@ -83,7 +83,7 @@ export function Nav() {
           <SiteSearch />
           <ThemeToggle className="hidden lg:inline-flex" />
           <MemberButton />
-          <a href={href("/#join")} className="press hidden h-9 flex-none items-center whitespace-nowrap rounded-full bg-ink px-4 font-display text-[14px] font-bold text-white transition-colors duration-150 hover:bg-ink/85 lg:inline-flex">
+          <a href="/join" className="press hidden h-9 flex-none items-center whitespace-nowrap rounded-full bg-ink px-4 font-display text-[14px] font-bold text-white transition-colors duration-150 hover:bg-ink/85 lg:inline-flex">
             <span className="head-join-long">Join the club</span><span className="head-join-short">Join</span>
           </a>
           <MobileMenu href={href} current={current} live={live} />

@@ -83,7 +83,7 @@ export function MobileMenu({ href, current, live }: { href: (h: string) => strin
               </ul>
             </nav>
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line px-3 pt-4"><SocialLinks /><ThemeChoices tone="menu" /></div>
-            <a href={href("/#join")} onClick={() => close(false)} className="press lift mt-5 block rounded-md border-2 border-ink bg-ink py-3.5 text-center font-display text-[16px] font-bold text-white">Join the club</a>
+            <a href="/join" onClick={() => close(false)} className="press lift mt-5 block rounded-md border-2 border-ink bg-ink py-3.5 text-center font-display text-[16px] font-bold text-white">Join the club</a>
             <MemberMenuLink onClick={() => close(false)} />
           </div>
         </div>,
