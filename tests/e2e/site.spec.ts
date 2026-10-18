@@ -241,7 +241,8 @@ test("the team: mentors, the five leads, everyone else, and their crew roles", a
     await expect(team.getByRole("heading", { name })).toBeVisible();
     await expect(team.getByText(role, { exact: true })).toBeVisible();
   }
-  for (const name of ["Geethika", "Aravind K", "Bhavana", "Niharika", "Apsara", "Lokesh", "Manogna"]) await expect(team.getByRole("heading", { name })).toBeVisible();
+  // everyone else: compact rows, names as text (not a heading each)
+  for (const name of ["Geethika", "Aravind K", "Bhavana", "Niharika", "Apsara", "Lokesh", "Manogna"]) await expect(team.getByText(name, { exact: true })).toBeVisible();
   // the crew roles, as assigned
   for (const [label, n] of [["Git Custodian I", 2], ["Code Gatekeeper I", 2], ["Pipeline Architect I", 1], ["Secrets & Security Officer I", 1], ["Issue Alchemist I", 2], ["Stack Explorer I", 1], ["Tech Scout I", 2], ["Onboarding Forge I", 1]] as const) await expect(team.getByText(label, { exact: true })).toHaveCount(n);
   await team.getByText("How our tech roles work").click();
@@ -377,4 +378,15 @@ test("organisers' one-key jumps: nothing for visitors, A opens the admin on an o
   await page.evaluate(() => localStorage.setItem("gcc-shortcuts-off", "1")); // turned off on this device
   await page.goto("/learn"); await page.keyboard.press("e"); await page.waitForTimeout(400);
   expect(new URL(page.url()).pathname).toBe("/learn");
+});
+
+test("someone who joined on this browser sees \"you're in\", not the join forms again", async ({ page }) => {
+  await page.goto("/events/git-merge-26");
+  await expect(page.getByRole("region", { name: "Join the club" }).getByPlaceholder("Your name")).toBeVisible(); // a visitor gets the form at the end
+  await page.evaluate(() => localStorage.setItem("gcc-joined", JSON.stringify({ name: "Ada Lovelace", email: "ada@gitam.in", extras: "later" })));
+  await page.reload();
+  await expect(page.getByRole("region", { name: "Join the club" })).toHaveCount(0);
+  await page.goto("/");
+  await expect(page.locator("#top").getByText("You're in, Ada.")).toBeVisible();
+  await expect(page.locator("header").getByRole("link", { name: /^Join/ })).toHaveCount(0);
 });
