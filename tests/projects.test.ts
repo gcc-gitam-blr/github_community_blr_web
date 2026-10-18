@@ -77,6 +77,9 @@ const members = async (pid: number) => (await db.query<{ user_id: string; role: 
   const find = async (u: string, dom: string | null, skill: string | null) => (await api<{ handle: string; skills: string[] }>(u, "select * from find_teammates($1, $2)", [dom, skill])).rows;
   ok("members find only people who ticked 'let teammates find me': Mia, Noa and Cy, but not Ola", (await find(M2, "web", null)).map((r) => r.handle).sort().join() === "mia" && (await find(M1, null, null)).map((r) => r.handle).sort().join() === "cy,noa");
   ok("…by skill, by the start of a skill, and never themselves", (await find(M2, null, "react")).map((r) => r.handle).join() === "mia" && (await find(M3, null, "rea")).map((r) => r.handle).sort().join() === "mia,noa" && !(await find(M1, null, null)).some((r) => r.handle === "mia"));
+  const staffSees = (await api<{ handle: string; listed: boolean }>(C, "select * from find_teammates(null, null)")).rows;
+  ok("the core team and admins find everyone who answered, marked when members can't find them", staffSees.map((r) => r.handle).sort().join() === "mia,noa,ola" && staffSees.find((r) => r.handle === "ola")?.listed === false && staffSees.find((r) => r.handle === "mia")?.listed === true
+    && (await api<{ handle: string }>(A, "select * from find_teammates(null, null)")).rows.some((r) => r.handle === "ola") && !(await find(M1, null, null)).some((r) => r.handle === "ola"));
   ok("the core team shows up too when they opt in, an inactive member never does", (await find(M1, "ai-ml", null)).some((r) => r.handle === "cy"));
   await db.query("update members set status = 'inactive' where handle = 'noa'");
   ok("a member who leaves the club stops being findable at once", !(await find(M1, null, null)).some((r) => r.handle === "noa"));

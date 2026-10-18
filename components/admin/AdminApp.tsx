@@ -4,6 +4,7 @@ import { Fragment, useCallback, useEffect, useState } from "react";
 import { useEpoch } from "@/components/epoch/EpochProvider";
 import { ensureProfile, signedInUser } from "@/lib/admin/client";
 import { OFF_KEY, ORGANISER_KEY } from "@/lib/shortcuts";
+import { AccessTable, MemberPreview, PreviewBanner, PreviewPicker, type Preview } from "./Access";
 import { Activity } from "./Activity";
 import { Assets } from "./Assets";
 import { Attendance } from "./Attendance";
@@ -101,10 +102,11 @@ export function AdminApp({ quizzes = [] }: { quizzes?: QuizFile[] }) {
   const [user, setUser] = useState<Awaited<ReturnType<typeof signedInUser>> | undefined>(undefined);
   const [section, setSection] = useState<Section>("overview");
   const [err, setErr] = useState("");
+  const [preview, setPreview] = useState<Preview | null>(null); // see the dashboard as a lower role (this screen only)
   const live = store?.mode === "supabase";
   // what waits for this person, for the home and the menu's counts (core and admins; read again on each section change)
-  const staff = me?.role === "admin" || me?.role === "core";
-  const needs = useNeeds(staff ? me!.id : "", me?.role === "admin", section);
+  const staff = (me?.role === "admin" || me?.role === "core") && (!preview || preview === "core");
+  const needs = useNeeds(staff ? me!.id : "", me?.role === "admin" && !preview, section);
 
   // which section, from the address (#attendance), so links and the back button work
   useEffect(() => {
@@ -154,7 +156,9 @@ export function AdminApp({ quizzes = [] }: { quizzes?: QuizFile[] }) {
     </section></Shell>
   );
 
-  const admin = me.role === "admin", core = admin || me.role === "core";
+  // previewing changes only what this screen shows; the database still answers as you
+  const role = preview && preview !== "member" ? preview : me.role;
+  const admin = role === "admin", core = admin || role === "core";
   const allowed = SECTIONS.filter((s) => (admin || !("admin" in s)) && (core || !("core" in s)));
   const current = (allowed.some((s) => s.id === section) ? section : allowed[0].id) as Section;
   const here = SECTIONS.find((s) => s.id === current)!;
@@ -180,16 +184,21 @@ export function AdminApp({ quizzes = [] }: { quizzes?: QuizFile[] }) {
             ))}
           </ul>
           <Link href="/epoch/admin" className="adm-out">Epoch desk <span aria-hidden>↗</span></Link>
+          {(me.role === "admin" || me.role === "core") && <PreviewPicker real={me.role} value={preview} onChange={setPreview} />}
           <KeysNote />
         </nav>
         <div className="min-w-0 space-y-4">
+          {preview && <PreviewBanner as={preview} onStop={() => setPreview(null)} />}
+          {preview === "member" ? <><h1 className="sr-only">Member preview</h1><MemberPreview /></> : <>
           {current === "overview" ? <h1 className="sr-only">Needs you</h1> : (
             <div className="pb-1">
               <p className="flex items-center gap-2 font-mono text-[12.5px] text-ink-3"><Node group={here.group} size={16} />{here.group.toLowerCase()} / {here.label.toLowerCase()}</p>
               <h1 className="mt-1.5 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.03em] sm:text-[38px]">{here.label}</h1>
             </div>
           )}
-          {!admin && <p className="text-[14px] text-ink-3">You&apos;re {me.role === "core" ? "on the core team" : "a volunteer"}: you can mark attendance, check people in and run the timer and quizzes; sending emails and changing who has access is for admins.</p>}
+          {!admin && (role === "core"
+            ? <p className="text-[14px] text-ink-3">You&apos;re on the core team: you see the club&apos;s day-to-day work here. Sending emails, approving and changing who has access are for admins.</p>
+            : <p className="rounded-md bg-soft px-4 py-3 text-[14px] text-ink-2">You have <b className="text-ink">volunteer</b> access: attendance, check-in, and the timer and quizzes, for event days. <b className="text-ink">On the core team?</b> Ask an admin to open People &amp; roles and press <b className="text-ink">Move to core team</b> next to your name; the rest of the admin appears when you reload.</p>)}
           {current === "overview" && <><NeedsYou items={needs} name={me.name || me.handle} groupOf={(id) => sectionOf(id)?.group ?? "People"} labelOf={(id) => sectionOf(id)?.label ?? "Project hub"} /><ClubPulse /></>}
           {current === "attendance" && <Attendance admin={admin} />}
           {current === "live" && <LiveTools quizzes={quizzes} />}
@@ -205,8 +214,9 @@ export function AdminApp({ quizzes = [] }: { quizzes?: QuizFile[] }) {
           {current === "policies" && <Policies admin={admin} meId={me.id} />}
           {current === "activity" && <Activity />}
           {current === "projects" && <ProjectsAdmin admin={admin} meId={me.id} />}
-          {current === "people" && <People admin={admin} me={me.handle} />}
+          {current === "people" && <><People admin={admin} me={me.handle} /><AccessTable sections={SECTIONS} /></>}
           {current === "errors" && (admin ? <SiteErrors /> : <p className="text-ink-2">Error reports are for admins.</p>)}
+          </>}
         </div>
       </div>
     </Shell>

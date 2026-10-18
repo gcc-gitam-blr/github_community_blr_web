@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createMember, exportMembers, importMembers, memberHistory, members as loadMembers, setMemberStatus, updateMember, type ImportReport, type MemberHistory } from "@/lib/admin/client";
 import { RETENTION } from "@/lib/retention";
-import { MEMBER_COLUMNS, membersCsv, parseMembersCsv, type Member, type MemberRow } from "@/lib/admin/members";
+import { membersCsv, parseMembersCsv, parseMembersTable, type Member, type MemberRow, type Parsed } from "@/lib/admin/members";
 import { CLUB } from "@/lib/config";
 import { Composer, Role, State, btn, btnSoft, card, count, head, input, pillSelect, toneCls, type Tone } from "./kit";
 
@@ -25,7 +25,7 @@ export function Members({ admin }: { admin: boolean }) {
   const [q, setQ] = useState(""); const [show, setShow] = useState<"all" | Member["status"]>("active");
   const [form, setForm] = useState<MemberRow>(blank); const [editing, setEditing] = useState<string | null>(null);
   const [note, setNote] = useState<{ k: "ok" | "err"; t: string } | null>(null); const [busy, setBusy] = useState(false);
-  const [file, setFile] = useState<{ rows: MemberRow[]; problem: string | null } | null>(null); const [report, setReport] = useState<ImportReport | null>(null);
+  const [file, setFile] = useState<(Parsed & { name: string }) | null>(null); const [report, setReport] = useState<ImportReport | null>(null);
   const load = useCallback(async () => setList(await loadMembers()), []);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch, then set state after the await
   useEffect(() => { void load(); }, [load]);
@@ -48,13 +48,20 @@ export function Members({ admin }: { admin: boolean }) {
 
   const pick = async (f: File | undefined) => {
     setReport(null); setNote(null); if (!f) return setFile(null);
-    const parsed = parseMembersCsv(await f.text()); setFile(parsed);
+    // Excel (.xlsx) is read here in the browser; .xls (Excel 97) and Numbers files have to be saved as .xlsx or CSV first
+    let parsed: Parsed;
+    if (/\.xlsx$/i.test(f.name)) {
+      try { parsed = parseMembersTable(await (await import("@/lib/admin/xlsx")).readXlsx(await f.arrayBuffer())); }
+      catch { parsed = { rows: [], columns: [], notes: [], problem: "That file couldn't be read as Excel. In Excel or Google Sheets, save it again as .xlsx or as CSV, and choose it again." }; }
+    } else if (/\.(xls|numbers|ods)$/i.test(f.name)) parsed = { rows: [], columns: [], notes: [], problem: "That's an older or non-Excel spreadsheet format. Open it and save it as .xlsx (Excel) or CSV, then choose it again." };
+    else parsed = parseMembersCsv(await f.text());
+    setFile({ ...parsed, name: f.name });
     if (!parsed.problem) { setBusy(true); const r = await importMembers(parsed.rows, true); setBusy(false); if ("total" in r) setReport(r); else say(false, r.error); } // checking changes nothing
   };
   const doImport = async () => {
     if (!file || file.problem) return;
     setBusy(true); const r = await importMembers(file.rows, false); setBusy(false);
-    if ("total" in r && r.ok) { say(true, `Imported ${r.valid} people.`); setFile(null); setReport(null); await load(); }
+    if ("total" in r && r.ok) { say(true, [r.added ? `Added ${r.added} ${r.added === 1 ? "person" : "people"}` : "", r.updated ? `filled in details for ${r.updated}` : "", r.unchanged ? `${r.unchanged} already up to date` : ""].filter(Boolean).join(", ").replace(/^./, (x) => x.toUpperCase()) + "."); setFile(null); setReport(null); await load(); }
     else if ("total" in r) { setReport(r); say(false, "Nothing was imported: fix the rows below and choose the file again."); }
     else say(false, r.error);
   };
@@ -83,14 +90,24 @@ export function Members({ admin }: { admin: boolean }) {
           </form>
 
           <h3 className="mt-6 text-[16px]">Import from a spreadsheet</h3>
-          <p className="mt-1 text-[14px] text-ink-2">A CSV file whose first line names the columns: <code>{MEMBER_COLUMNS.join(", ")}</code> (only name and email are needed, up to 500 people). It is checked first and nothing is saved until you press Import.</p>
-          <input type="file" accept=".csv,text/csv" aria-label="Members CSV file" onChange={(e) => void pick(e.target.files?.[0])} className="mt-3 text-[14px]" />
+          <p className="mt-1 text-[14px] text-ink-2">An Excel (.xlsx) or CSV file, straight from Google Sheets or Excel: the first row names the columns. Only a <b>name</b> and an <b>email</b> are needed; a <b>GitHub username</b> is what lets someone into the hub when the email in the sheet isn&apos;t the one on their GitHub. Team and joined date are optional, and other columns are ignored. Up to 500 people.</p>
+          <p className="mt-1 text-[14px] text-ink-2">People already on the list are kept as they are: the file only fills in what their record is missing, so you can import the same sheet again after updating it. It&apos;s checked first; nothing is saved until you press Import.</p>
+          <input type="file" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" aria-label="Members spreadsheet (Excel or CSV)" onChange={(e) => void pick(e.target.files?.[0])} className="mt-3 text-[14px]" />
+          {file && file.columns.length > 0 && (
+            <p className="mt-3 text-[13.5px] text-ink-2">From <b>{file.name}</b>, reading {file.columns.map((c, i) => <span key={c.field}>{i > 0 && ", "}<b>{c.from}</b> as {({ handle: "GitHub username", name: "name", email: "email", team: "team", joined_on: "joined date" } as const)[c.field]}</span>)}.
+              {!file.columns.some((c) => c.field === "handle") && <span className="text-[#9a6700]"> No GitHub username column: people will be linked by email only.</span>}</p>
+          )}
+          {file?.notes.map((n) => <p key={n} className="mt-1 text-[13.5px] text-[#9a6700]">{n}</p>)}
           {file?.problem && <p role="alert" className="mt-3 text-[14.5px] text-[#a40e26]">{file.problem}</p>}
           {report && (
             <div className="mt-3 text-[14.5px]" role="status">
-              <p><b>{report.valid}</b> of {report.total} rows are fine{report.errors.length ? <>, <b className="text-[#a40e26]">{report.errors.length} need fixing</b></> : "."}</p>
+              <p><b>{report.valid}</b> of {report.total} rows are fine{report.errors.length ? <>, <b className="text-[#a40e26]">{report.errors.length} need fixing</b></> : "."}
+                {report.added !== undefined && <span className="text-ink-2"> {report.added} new, {report.updated} with details to fill in, {report.unchanged} already up to date.</span>}</p>
               {report.errors.length > 0 && <ul className="mt-2 list-disc pl-6 text-[#a40e26]">{report.errors.slice(0, 20).map((e) => <li key={e.row}>Row {e.row} (line {e.row + 1} of the file): {e.error}</li>)}{report.errors.length > 20 && <li>…and {report.errors.length - 20} more</li>}</ul>}
-              {report.errors.length === 0 && <button disabled={busy} onClick={() => void doImport()} className={`${btn} mt-3`}>Import {report.valid} people</button>}
+              {(report.notes?.length ?? 0) > 0 && <ul className="mt-2 list-disc pl-6 text-[#9a6700]">{report.notes!.slice(0, 10).map((n) => <li key={n.row}>Row {n.row}: {n.note}</li>)}</ul>}
+              {report.errors.length === 0 && ((report.added ?? report.valid) + (report.updated ?? 0) > 0
+                ? <button disabled={busy} onClick={() => void doImport()} className={`${btn} mt-3`}>Import{report.added ? ` ${report.added} new` : ""}{report.updated ? `${report.added ? " and" : ""} update ${report.updated}` : ""}</button>
+                : <p className="mt-2 text-ink-2">Everyone in this file is already on the list with these details. Nothing to import.</p>)}
             </div>
           )}
         </Composer>
@@ -115,7 +132,9 @@ export function Members({ admin }: { admin: boolean }) {
             {shown.map((m) => (
               <li key={m.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3 text-[14.5px]">
                 <Face m={m} />
-                <span className="min-w-0 flex-1 basis-[200px]"><b>{m.name}</b>{m.handle && <> <a href={`https://github.com/${m.handle}`} target="_blank" rel="noopener" className="text-ink-3 hover:underline">@{m.handle}</a></>}<span className="block truncate text-[13.5px] text-ink-3">{m.email}{m.team ? ` · ${m.team}` : ""}{m.joined_on ? ` · joined ${m.joined_on}` : ""}</span></span>
+                <span className="min-w-0 flex-1 basis-[200px]"><b>{m.name}</b>{m.handle && <> <a href={`https://github.com/${m.handle}`} target="_blank" rel="noopener" className="text-ink-3 hover:underline">@{m.handle}</a></>}<span className="block truncate text-[13.5px] text-ink-3">{m.email}{m.team ? ` · ${m.team}` : ""}{m.joined_on ? ` · joined ${m.joined_on}` : ""}</span>
+                  {/* linked = their sign-in is attached to this record, which is what opens the hub and My club to them */}
+                  {m.status === "active" && <span className={`mt-0.5 block text-[12.5px] ${m.user_id ? "text-[#116329]" : "text-[#9a6700]"}`}>{m.user_id ? "Signed in: the hub is open to them" : m.handle ? "Hasn't signed in with GitHub yet" : "Hasn't signed in yet. Add their GitHub username so it links even if their GitHub email differs"}</span>}</span>
                 {admin ? (
                   <span className="flex items-center gap-3">
                     <select aria-label={`Status of ${m.name}`} value={m.status} disabled={busy} onChange={(e) => void status(m, e.target.value as Member["status"])} className={`${pillSelect} ${toneCls(TONE[m.status])}`}>

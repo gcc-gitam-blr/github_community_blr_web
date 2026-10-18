@@ -3,7 +3,7 @@ import { tabKeys } from "@/components/ui/tabKeys";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { hasSupabase } from "@/lib/epoch/store";
-import { canTakePart, ideas as loadIdeas, whoAmI, type Idea, type JoinRequest, type TeamMember } from "@/lib/hub/client";
+import { canTakePart, ideas as loadIdeas, myRole, whoAmI, type Idea, type JoinRequest, type TeamMember } from "@/lib/hub/client";
 import { FindPeople } from "./FindPeople";
 import { Ideas } from "./Ideas";
 import { Interests } from "./Interests";
@@ -12,7 +12,7 @@ import { MyTeams } from "./MyTeams";
 /* The project hub (/hub): sign in with GitHub, say what you like, find a project or people. Only active members and the
    core team get in; the database decides (can_take_part), this page only explains. */
 type Who = { id: string; handle: string; name: string };
-type State = { s: "loading" } | { s: "off" } | { s: "out" } | { s: "closed"; who: Who } | { s: "in"; who: Who };
+type State = { s: "loading" } | { s: "off" } | { s: "out" } | { s: "closed"; who: Who; email: string } | { s: "in"; who: Who; staff: boolean; preview: boolean };
 type Data = { ideas: Idea[]; team: TeamMember[]; requests: JoinRequest[]; names: Record<string, { handle: string; name: string }> };
 const TABS = [["into", "What I'm into"], ["ideas", "Project ideas"], ["people", "Find people"], ["teams", "My teams"]] as const;
 type Tab = (typeof TABS)[number][0];
@@ -29,8 +29,10 @@ export function ProjectHub() {
       const who = await whoAmI();
       if (!live) return;
       if (!who) return setSt({ s: "out" });
-      const ok = await canTakePart();
-      if (live) setSt(ok ? { s: "in", who } : { s: "closed", who });
+      const [ok, role, email] = await Promise.all([canTakePart(), myRole(), (async () => (await (await import("@/lib/epoch/supabase-store")).supabase().auth.getUser()).data.user?.email ?? "")()]);
+      // ?as=member: the admin's "open as a member" preview, for the core team and admins only
+      const staff = role === "core" || role === "admin", preview = staff && new URLSearchParams(window.location.search).get("as") === "member";
+      if (live) setSt(ok ? { s: "in", who, staff: staff && !preview, preview } : { s: "closed", who, email });
     })();
     return () => { live = false; };
   }, []);
@@ -52,7 +54,12 @@ export function ProjectHub() {
   if (st.s === "closed") return (
     <div className={box}>
       <h2 className="text-[26px]">This space is for club members</h2>
-      <p className="mt-3 text-[17px] text-ink-2">You&apos;re signed in as <b>@{st.who.handle}</b>, but we don&apos;t have you down as an active member yet. If you&apos;re already in the club, ask a lead to add you to the members list. If you&apos;d like to join, see <Link href="/get-involved" className="underline underline-offset-2">Get involved</Link>.</p>
+      <p className="mt-3 text-[17px] text-ink-2">You&apos;re signed in as <b>@{st.who.handle}</b>, but we can&apos;t find you on the club&apos;s members list yet.</p>
+      <div className="mt-4 rounded-lg bg-soft px-4 py-3 text-[15px] text-ink-2">
+        <p><b className="text-ink">Already in the club?</b> Ask a lead to check your row in the members list has one of these, then reload this page:</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5"><li>your GitHub username, <b className="font-mono text-ink">{st.who.handle}</b></li>{st.email && <li>or the email on your GitHub account, <b className="text-ink">{st.email}</b></li>}</ul>
+      </div>
+      <p className="mt-4 text-[15px] text-ink-2">Not in the club yet? <Link href="/join" className="font-semibold text-link underline-offset-2 hover:underline">Join in ten seconds</Link>; the hub opens to members.</p>
       <p className="mt-3 text-[15px] text-ink-3">You can still look at the <Link href="/projects" className="underline underline-offset-2">projects we&apos;ve built</Link>.</p>
     </div>
   );
@@ -60,6 +67,7 @@ export function ProjectHub() {
   const pendingForMe = data ? data.requests.filter((r) => r.status === "pending" && data.ideas.some((i) => i.id === r.project_id && i.owner_id === st.who.id)).length : 0;
   return (
     <div className="mt-10">
+      {st.preview && <p role="status" className="mb-6 rounded-md border border-[#d4a72c] bg-[#fff8c5] px-4 py-3 text-[14.5px] text-[#4d2d00]">Previewing the hub as a member sees it: Find people shows only people who opted in. <a href="/hub" className="font-semibold underline">Back to your own view</a></p>}
       <div className="flex flex-wrap items-center gap-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         {st.who.handle && <img src={`https://github.com/${st.who.handle}.png?size=120`} alt="" width={48} height={48} className="h-12 w-12 rounded-full border border-line" />}
@@ -76,7 +84,7 @@ export function ProjectHub() {
       <div id="hub-panel" role="tabpanel" aria-labelledby={`tab-${tab}`} className="mt-8">
         {tab === "into" && <Interests uid={st.who.id} />}
         {tab === "ideas" && (data ? <Ideas uid={st.who.id} data={data} names={data.names} reload={reload} /> : <div className="h-48" aria-busy="true" />)}
-        {tab === "people" && <FindPeople />}
+        {tab === "people" && <FindPeople me={st.who} staff={st.staff} onEdit={() => setTab("into")} />}
         {tab === "teams" && (data ? <MyTeams uid={st.who.id} data={data} names={data.names} reload={reload} /> : <div className="h-48" aria-busy="true" />)}
       </div>
     </div>

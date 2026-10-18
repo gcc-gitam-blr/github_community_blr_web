@@ -8,7 +8,7 @@ let fails = 0; const ok = (n: string, c: boolean) => { console.log((c ? "PASS" :
 const SQL = fs.readFileSync("supabase/schema.sql", "utf8");
 const as = (uid: string) => db.query(`select set_config('test.uid', $1, false)`, [uid]);
 const one = async <T,>(sql: string, p: unknown[] = []) => (await db.query<T>(sql, p)).rows[0];
-type Res = { ok: boolean; error?: string; id?: number | string; member?: string; valid?: number; total?: number; dry_run?: boolean; errors?: { row: number; error: string }[] };
+type Res = { ok: boolean; error?: string; id?: number | string; member?: string; valid?: number; total?: number; dry_run?: boolean; added?: number; updated?: number; unchanged?: number; notes?: unknown[]; errors?: { row: number; error: string }[] };
 const api = async <T,>(uid: string, sql: string, p: unknown[] = [], role: "authenticated" | "anon" | "service_role" = "authenticated") => {
   await as(uid); await db.exec(`set role ${role}`);
   try { return { rows: (await db.query<T>(sql, p)).rows, error: null as string | null }; }
@@ -211,13 +211,24 @@ const audit = async (action: string) => (await one<{ n: number }>("select count(
   ok("only an admin imports", (await imp(C, good, false))?.ok === false && (await imp(V, good))?.ok === false);
   const bad = rows({ handle: "ok1", name: "Good One", email: "g1@x.in" }, { name: "X", email: "nope", handle: "-b-" }, { name: "Dup Of Pia", email: "PIA@x.in" }, { name: "Twice", email: "t@x.in" }, { name: "Twice Again", email: "t@x.in" }, { name: "Bad Date", email: "bd@x.in", joined_on: "31/12/2025" });
   const report = await imp(A, bad);
-  ok("problems are reported by row: bad values, an existing member, a repeat in the file, a bad date", report?.ok === false && report.errors!.map((e) => e.row).join() === "2,3,5,6" && report.valid === 2 && report.total === 6);
+  ok("problems are reported by row: bad values, a repeat in the file, a bad date (someone already on the list isn't one)", report?.ok === false && report.errors!.map((e) => e.row).join() === "2,5,6" && report.valid === 3 && report.total === 6 && report.unchanged === 1);
   ok("a real run with any problem writes nothing at all", (await imp(A, bad, false))?.ok === false && (await one<{ n: number }>("select count(*)::int n from members")).n === before);
   ok("a clean file is imported for real, trimmed and lower-cased, and logged", (await imp(A, good, false))?.ok === true && (await one<{ n: number }>("select count(*)::int n from members")).n === before + 2
     && (await one<{ team: string }>("select team from members where handle = 'ivy'")).team === "Events" && (await audit("members_imported")) === 1);
-  ok("importing the same file again is refused as duplicates", (await imp(A, good, false))?.ok === false);
+  const again = await imp(A, good, false);
+  ok("importing the same file again is fine and changes nothing: everyone is already there", again?.ok === true && again.added === 0 && again.unchanged === 2 && (await one<{ n: number }>("select count(*)::int n from members")).n === before + 2);
+  const later = await imp(A, rows({ name: "Jon Roe", email: "JON@x.in", handle: "jonroe", team: "Tech", joined_on: "2025-09-01" }, { name: "Ivy Kim", email: "ivy@x.in", handle: "ivy-k" }, { name: "New Person", email: "np@x.in" }), false);
+  ok("an updated sheet adds new people and fills what a record is missing, without overwriting what is there", later?.ok === true && later.added === 1 && later.updated === 1 && later.unchanged === 1
+    && (await one<{ ok: boolean }>("select (handle = 'jonroe' and team = 'Tech' and joined_on = '2025-09-01') ok from members where email = 'jon@x.in'")).ok
+    && (await one<{ handle: string }>("select handle from members where email = 'ivy@x.in'")).handle === "ivy" && (later.notes as { row: number }[]).map((n) => n.row).join() === "2");
+  ok("an email of one member with the GitHub username of another is refused", (await imp(A, rows({ name: "Mixed Up", email: "ivy@x.in", handle: "jonroe" })))?.errors?.[0]?.error.includes("two different members") === true);
+  ok("a member imported by GitHub username is linked to the person who already signed in with it, whatever email the sheet has", (await imp(A, rows({ name: "Xan Q", email: "xan.q@college.in", handle: "XAN" }), false))?.ok === true
+    && (await one<{ user_id: string }>("select user_id from members where email = 'xan.q@college.in'")).user_id === X);
+  await db.exec("alter table members disable trigger members_link_account"); await db.query("update members set user_id = null where email = 'xan.q@college.in'"); await db.exec("alter table members enable trigger members_link_account");
+  await as(X); await db.query("select register_profile('Xan')");
+  ok("…and signing in again links a record that was left unlinked", (await one<{ user_id: string }>("select user_id from members where email = 'xan.q@college.in'")).user_id === X);
   ok("too many rows are refused", (await imp(A, JSON.stringify(Array.from({ length: 501 }, (_, i) => ({ name: `Person ${i}`, email: `p${i}@x.in` })))))?.ok === false);
-  ok("exporting members is logged; a volunteer gets nothing", (await api(C, "select * from export_members()")).rows.length === before + 2 && (await api(V, "select * from export_members()")).rows.length === 0 && (await one<{ n: number }>("select count(*)::int n from crm_audit where action = 'export' and entity = 'members'")).n === 1);
+  ok("exporting members is logged; a volunteer gets nothing", (await api(C, "select * from export_members()")).rows.length === before + 4 && (await api(V, "select * from export_members()")).rows.length === 0 && (await one<{ n: number }>("select count(*)::int n from crm_audit where action = 'export' and entity = 'members'")).n === 1);
 
   // ---- retention (D5): applications 6 months after the campaign closes, members 24 months after going inactive, audit 36 months ----
   const { RETENTION } = await import("../lib/retention");
