@@ -56,8 +56,8 @@ function Quizzes({ files }: { files: QuizFile[] }) {
         <div className="min-w-0 border-line md:border-r">
           <h3 className="border-b border-line bg-soft px-5 py-2 font-mono text-[12px] font-semibold uppercase tracking-[.08em] text-ink-3">Ready to host</h3>
           <ul className="divide-y divide-line">
-            {files.map((q) => <li key={q.slug} className={row}><b className="min-w-0 flex-1">{q.title}</b><span className={count}>{q.questions} questions</span><a href={`/quiz/host?quiz=${encodeURIComponent(q.slug)}`} target="_blank" rel="noopener" className={btnSoft}><PlayIcon size={14} aria-hidden />Host</a></li>)}
-            {saved.map((q) => <li key={q.id} className={row}><b className="min-w-0 flex-1">{q.title}</b><span className="text-[13px] text-ink-3">saved {when(q.at)}</span><span className={count}>{q.questions} questions</span><a href={`/quiz/host?set=${encodeURIComponent(q.id)}`} target="_blank" rel="noopener" className={btnSoft}><PlayIcon size={14} aria-hidden />Host</a></li>)}
+            {files.map((q) => <li key={q.slug} className={row}><b className="min-w-0 flex-1">{q.title}</b><span className={count}>{q.questions} {q.questions === 1 ? "question" : "questions"}</span><a href={`/quiz/host?quiz=${encodeURIComponent(q.slug)}`} target="_blank" rel="noopener" className={btnSoft}><PlayIcon size={14} aria-hidden />Host</a></li>)}
+            {saved.map((q) => <li key={q.id} className={row}><b className="min-w-0 flex-1">{q.title}</b><span className="text-[13px] text-ink-3">saved {when(q.at)}</span><span className={count}>{q.questions} {q.questions === 1 ? "question" : "questions"}</span><a href={`/quiz/host?set=${encodeURIComponent(q.id)}`} target="_blank" rel="noopener" className={btnSoft}><PlayIcon size={14} aria-hidden />Host</a></li>)}
             {sets === null && <li className="h-12" aria-busy="true" />}
           </ul>
         </div>

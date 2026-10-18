@@ -139,7 +139,7 @@ export function SignUps() {
       <section className={card} aria-labelledby="signups-h">
         <div className={head}>
           <h2 id="signups-h" className="text-[18px]">Club sign-ups</h2>{rows && <span className={count}>{rows.length}</span>}
-          <span className="text-[13.5px] text-ink-3">From &ldquo;Join the club&rdquo; on the home page</span>
+          <span className="text-[13.5px] text-ink-3">From every Join the club form: the home page, /join, and event and update pages</span>
           {rows && rows.length > 0 && <button onClick={csv} className={`${btnSoft} ml-auto`}>Download CSV</button>}
         </div>
         {!store?.joinRequests ? <p className="p-5 text-ink-3">Connect the database to collect sign-ups here.</p>
