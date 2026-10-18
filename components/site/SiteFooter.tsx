@@ -8,7 +8,6 @@ import { Sticker } from "@/components/ui/Sticker";
 import { scrollToTarget } from "@/components/ui/SmoothScroll";
 import { useClientValue } from "@/lib/useClientValue";
 import { SocialLinks } from "./SocialLinks";
-import gallery from "@/lib/gallery.json";
 import { MEMORIES_LINKED } from "@/lib/memories";
 
 /* One footer for the whole site (club pages and Epoch). Links are only shown when they lead somewhere real. */
@@ -16,16 +15,16 @@ const COMMIT = process.env.NEXT_PUBLIC_COMMIT_SHA ?? ""; // set at build time fr
 const ORG = CLUB.githubOrg ? `${CLUB.githubUrl}/${CLUB.githubOrg}` : "";
 
 type L = { label: string; href: string; ext?: boolean };
+// four short columns: about the club, ways to take part, Epoch, and the club elsewhere (GitHub's own guides are on /learn)
 const COLUMNS: { title: string; links: L[] }[] = [
-  { title: "Club", links: [{ label: "About", href: "/#about" }, { label: "What you'll learn", href: "/#learn" }, { label: "Learn hub", href: "/learn" }, { label: "Contribute", href: "/contribute" }, { label: "Board", href: "/board" }, { label: "My club", href: "/me" }, { label: "Get involved", href: "/get-involved" }, { label: "Updates", href: "/updates" }, { label: "Events 2026-27", href: "/#events" }, { label: "Team", href: "/#team" }, ...(MEMORIES_LINKED ? [{ label: "Memories", href: "/memories" }] : []), ...(gallery.length ? [{ label: "Gallery", href: "/#gallery" }] : []), { label: "FAQ", href: "/#faq" }, { label: "Join the club", href: "/#join" }] },
-  { title: "Epoch", links: [{ label: "Overview", href: "/epoch" }, { label: "How coins work", href: "/epoch#ticket" }, { label: "Booths", href: "/epoch/booths" }, { label: "The plan", href: "/epoch#plan" }, { label: "Merch shop", href: "/epoch/shop" }, { label: "Leaderboard", href: "/epoch/leaderboard" }, { label: "Guide for the day", href: "/epoch/guide" }] },
-  { title: "Learn on GitHub", links: [{ label: "GitHub Skills", href: "https://skills.github.com", ext: true }, { label: "GitHub Docs", href: "https://docs.github.com", ext: true }, { label: "Student Developer Pack", href: "https://education.github.com/pack", ext: true }, { label: "GitHub Community", href: "https://github.com/community", ext: true }] },
-  { title: "Get involved", links: [
-    { label: "My Epoch wallet", href: "/epoch/wallet" },
-    { label: "Club admin", href: "/admin" },
-    ...(ORG ? [{ label: "Contribute to this site", href: ORG, ext: true }] : []),
-    ...(CLUB.email ? [{ label: "Email the club", href: `mailto:${CLUB.email}`, ext: true }] : []),
+  { title: "Club", links: [{ label: "About", href: "/#about" }, { label: "Events 2026-27", href: "/#events" }, { label: "Team", href: "/#team" }, { label: "Updates", href: "/updates" }, ...(MEMORIES_LINKED ? [{ label: "Memories", href: "/memories" }] : []), { label: "FAQ", href: "/#faq" }] },
+  { title: "Take part", links: [{ label: "Join the club", href: "/join" }, { label: "Learn hub", href: "/learn" }, { label: "Contribute", href: "/contribute" }, { label: "Board", href: "/board" }, { label: "My club", href: "/me" }, { label: "Write to us", href: "/get-involved" }] },
+  { title: "Epoch", links: [{ label: "Overview", href: "/epoch" }, { label: "My wallet", href: "/epoch/wallet" }, { label: "Booths", href: "/epoch/booths" }, { label: "Merch shop", href: "/epoch/shop" }, { label: "Leaderboard", href: "/epoch/leaderboard" }, { label: "Guide for the day", href: "/epoch/guide" }] },
+  { title: "Elsewhere", links: [
+    ...(ORG ? [{ label: "This site's code", href: ORG, ext: true }] : []),
     ...CLUB.socials.filter((s) => s.href && s.href !== "#").map((s) => ({ label: s.label, href: s.href, ext: true })),
+    ...(CLUB.email ? [{ label: "Email the club", href: `mailto:${CLUB.email}`, ext: true }] : []),
+    { label: "Club admin", href: "/admin" },
   ] },
 ];
 
