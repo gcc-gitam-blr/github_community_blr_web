@@ -75,6 +75,15 @@ Give someone access by GitHub username: pick a role, an optional title (Presiden
 The same form changes a role or extends a term; **End access** removes it early. Someone who hasn't signed in yet gets it
 the first time they do. The page warns when fewer than two admins are active, and shows who is ending soon in amber.
 
+**Pick the role on purpose:** the form has no default. **Volunteer** is event-day help only (attendance, the Epoch desk,
+the timer and quizzes), so a core team member given Volunteer sees just three tabs. **Core team** is the core team.
+**Admin** is president and vice-president. If someone is on the wrong one, **Move to core team** on a volunteer's row fixes
+it in one press (same title, same end date); they see the rest when they reload.
+
+**Organisers and members are two different lists.** People & roles is who can open the admin. **Members** is who is in the
+club (they never need admin access; they get My club and the hub). A core team member belongs on both: a role here, and a
+row in Members.
+
 ### Members
 The club's people: name, email, GitHub username, team, dates, and active / alumni / inactive. Admins add, edit, change
 status, and **import a spreadsheet**: an Excel file (.xlsx) or a CSV, straight from Excel or Google Sheets. The first row
