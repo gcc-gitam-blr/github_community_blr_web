@@ -359,3 +359,18 @@ test("adding photos asks for the editor login first, and the upload API refuses 
   expect((await request.post("/api/photos/blob", { data: { sm: "x", md: "x", lg: "x" } })).status()).toBe(401);
   expect((await request.post("/api/photos/commit", { data: { folder: "a", photos: [] } })).status()).toBe(401);
 });
+
+test("organisers' one-key jumps: nothing for visitors, A opens the admin on an organiser's device, never while typing", async ({ page }) => {
+  await page.goto("/learn");
+  await page.keyboard.press("a"); await page.waitForTimeout(400);
+  expect(new URL(page.url()).pathname).toBe("/learn"); // a visitor's device: the key does nothing
+  await page.evaluate(() => localStorage.setItem("gcc-organiser", "1"));
+  await page.goto("/get-involved");
+  await page.getByRole("textbox").first().click(); await page.keyboard.type("a"); await page.waitForTimeout(400);
+  expect(new URL(page.url()).pathname).toBe("/get-involved"); // typing an "a" in a field stays put
+  await page.locator("h1").click(); await page.keyboard.press("a");
+  await page.waitForURL("**/admin");
+  await page.evaluate(() => localStorage.setItem("gcc-shortcuts-off", "1")); // turned off on this device
+  await page.goto("/learn"); await page.keyboard.press("e"); await page.waitForTimeout(400);
+  expect(new URL(page.url()).pathname).toBe("/learn");
+});

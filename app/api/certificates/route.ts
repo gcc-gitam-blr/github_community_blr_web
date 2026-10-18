@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   const event = eventByDate(body.event ?? "");
   if (!event) return json({ ok: false, error: "Pick an event." }, 422);
   if (body.ids && (!Array.isArray(body.ids) || body.ids.some((x) => typeof x !== "string"))) return json({ ok: false, error: "Bad request." }, 400);
-  if (!emailConfigured()) return json({ ok: false, error: "Email isn't set up yet — add the email settings in Vercel (see README)." }, 503);
+  if (!emailConfigured()) return json({ ok: false, error: "Email isn't set up yet: add the email settings in Vercel (see the README)." }, 503);
 
   const db = createClient(URL, KEY, { global: { headers: { Authorization: `Bearer ${token}` } }, auth: { persistSession: false } });
   const { data: user } = await db.auth.getUser(token);
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
   const { data: rows, error } = await q.limit(MAX_PER_SEND + 1);
   if (error) return json({ ok: false, error: "Couldn't load the attendance list." }, 502);
   if (!rows?.length) return json({ ok: false, error: body.ids?.length ? "Nobody selected." : "Everyone here already has their certificate." }, 422);
-  if (rows.length > MAX_PER_SEND) return json({ ok: false, error: `That's more than ${MAX_PER_SEND} people — send in batches.` }, 422);
+  if (rows.length > MAX_PER_SEND) return json({ ok: false, error: `That's more than ${MAX_PER_SEND} people: send in batches.` }, 422);
 
   // one login for the whole batch, tried before anything is sent: a wrong password stops here, with what to do
   const mailer = await batchMailer();

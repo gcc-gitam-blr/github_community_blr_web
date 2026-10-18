@@ -96,6 +96,20 @@ export function broadcastEmail(i: BroadcastInput): Mail {
   return { subject: i.subject, html, text };
 }
 
+export interface ApplicantInput { name: string; round: string; subject: string; message: string; site: string }
+
+/** To one applicant of a recruitment round, from Admin → Recruitment: a personal greeting, then the organisers' message.
+    No unsubscribe link: it's about their own application, not a mailing list. Replies go to the club's address. */
+export function applicantEmail(i: ApplicantInput): Mail {
+  const first = i.name.trim().split(/\s+/)[0] || "there";
+  const linkify = (s: string) => esc(s).replace(/(https?:\/\/[^\s<]+)/g, (u) => `<a href="${u}" style="color:#0969da">${u}</a>`);
+  const paras = i.message.trim().split(/\n{2,}/).map((p) => `<p>${linkify(p).replace(/\n/g, "<br>")}</p>`).join("");
+  const about = `About your application to ${i.round}. Reply to this email if you have a question.`;
+  const html = frame(i.subject, `<p>Hi ${esc(first)},</p>${paras}<p>The GitHub Community Club team</p><p style="color:#59636e;font-size:14px;margin-bottom:0">${esc(about)}</p>`, i.site);
+  const text = `Hi ${first},\n\n${i.message.trim()}\n\nThe GitHub Community Club team\n\n${about}\n${CLUB.name} · ${i.site}`;
+  return { subject: i.subject, html, text };
+}
+
 export interface CertificateInput { name: string; eventTitle: string; url: string; linkedin: string; site: string }
 
 /** Sent by an admin after an event, only to people marked as attended. */

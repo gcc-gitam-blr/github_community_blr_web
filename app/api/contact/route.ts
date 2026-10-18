@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   const problem = validateContact(input);
   if (problem === "spam") return reply({ ok: true }); // don't tell bots they were caught
   if (problem) return reply({ ok: false, error: problem }, 422);
-  if (await rateLimited(req, "contact")) return reply({ ok: false, error: "Too many messages from here — please try again in a few minutes." }, 429);
+  if (await rateLimited(req, "contact")) return reply({ ok: false, error: "Too many messages from here. Please try again in a few minutes." }, 429);
 
   const db = serverDb();
   const inbox = CLUB.email || process.env.SMTP_USER || "";
@@ -31,8 +31,8 @@ export async function POST(req: Request) {
 
   if (db) {
     const { data, error } = await db.rpc("submit_message", { p_kind: input.kind, p_name: name, p_email: email, p_handle: handle ?? null, p_message: message });
-    if (error) return reply({ ok: false, error: "Couldn't save that — please try again." }, 502);
-    if (data === "busy") return reply({ ok: false, error: "Lots of messages right now — please try again in a little while." }, 429);
+    if (error) return reply({ ok: false, error: "Couldn't save that. Please try again." }, 502);
+    if (data === "busy") return reply({ ok: false, error: "Lots of messages right now. Please try again in a little while." }, 429);
   }
   if (canEmail) {
     const note = await sendEmail(inbox, contactNotification({ kindLabel, name, email, handle, message, site: SITE_URL }), { replyTo: email });

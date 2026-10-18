@@ -12,11 +12,11 @@ export async function POST(req: Request) {
   const problem = validateInterest(input);
   if (problem === "spam") return reply({ ok: true, status: "created" }); // don't tell bots they were caught
   if (problem) return reply({ ok: false, error: problem }, 422);
-  if (limited(`interest:${clientIp(req)}`)) return reply({ ok: false, error: "Too many tries from here — please try again in a few minutes." }, 429);
+  if (limited(`interest:${clientIp(req)}`)) return reply({ ok: false, error: "Too many tries from here. Please try again in a few minutes." }, 429);
 
   const db = serverDb();
   if (!db) return reply({ ok: false, error: "This list isn't switched on yet, so nothing was saved. The dates will be on this page and in our WhatsApp community.", off: true }, 503);
   const { data, error } = await db.rpc("epoch_interest_join", { p_email: input.email.trim().toLowerCase() });
-  if (error) return reply({ ok: false, error: "Couldn't save that — please try again." }, 502);
+  if (error) return reply({ ok: false, error: "Couldn't save that. Please try again." }, 502);
   return data === "exists" || data === "unsubscribed" ? reply({ ok: true, status: data }) : reply({ ok: true, status: "created" }, 201);
 }

@@ -15,7 +15,7 @@ export async function GET(req: Request) {
 
   if (url.searchParams.get("error")) return fail("Sign-in was cancelled.");
   if (!ownLoginActive(env, url.origin)) return fail("GitHub sign-in isn't set up on this address.");
-  if (await rateLimited(req, "login", 60)) return fail("Too many sign-in attempts — please wait a few minutes."); // generous: a whole campus can share one IP
+  if (await rateLimited(req, "login", 60)) return fail("Too many sign-in attempts. Please wait a few minutes."); // generous: a whole campus can share one IP
   const code = url.searchParams.get("code");
   if (!code || !state || url.searchParams.get("state") !== state) return fail("That sign-in link expired. Please try again.");
 

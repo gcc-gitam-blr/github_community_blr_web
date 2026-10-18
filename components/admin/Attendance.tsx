@@ -85,7 +85,7 @@ export function Attendance({ admin }: { admin: boolean }) {
         <label className="min-w-[260px] flex-1">
           <span className="mb-1.5 block text-[13px] text-ink-2">Event</span>
           <select value={event} onChange={(e) => { setEvent(e.target.value); setNote(null); setPreview(null); }} className="w-full rounded-md border border-line bg-white px-3 py-2.5 text-[15px]">
-            {events.map((e) => <option key={e.date} value={e.date}>{new Date(e.date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })} — {e.title}{e.date > today() ? " (upcoming)" : ""}</option>)}
+            {events.map((e) => <option key={e.date} value={e.date}>{new Date(e.date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })} · {e.title}{e.date > today() ? " (upcoming)" : ""}</option>)}
           </select>
         </label>
         <p className="pb-2.5 text-[14.5px] text-ink-2"><b className="text-ink">{rows?.length ?? "…"}</b> attended · <b className="text-ink">{rows ? rows.length - unsent : "…"}</b> {rows && rows.length - unsent === 1 ? "certificate" : "certificates"} sent</p>

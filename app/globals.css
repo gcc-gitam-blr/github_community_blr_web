@@ -412,6 +412,43 @@ html.lenis, html.lenis body { height: auto; }
   }
 }
 
+/* ---------- official documents (app/admin/doc): an A4 sheet in the university's format, saved as a PDF from the print window ---------- */
+.doc-wrap { min-height: 100vh; background: #e9ecef; padding: 0 12px 40px; color: #000; }
+.doc-toolbar { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; max-width: 210mm; margin: 0 auto; padding: 14px 0; font: 14px/1.4 var(--font-sans); }
+.doc-back { color: #0b0b0f; text-decoration: underline; text-underline-offset: 3px; }
+.doc-tip { margin-left: auto; color: #3a3d44; }
+.doc-print { border-radius: 8px; background: #0b0b0f; color: #fff; padding: 9px 16px; font-weight: 700; transition: scale 120ms var(--ease-out); }
+.doc-msg { max-width: 210mm; margin: 40px auto; font: 16px/1.5 var(--font-sans); }
+.doc-page { box-sizing: border-box; width: min(210mm, 100%); min-height: 297mm; margin: 0 auto; padding: 14mm 18mm 18mm; background: #fff; color: #000;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .1), 0 18px 40px -18px rgba(0, 0, 0, .35); }
+.doc-sans { font: 11pt/1.45 Calibri, Carlito, "Segoe UI", Arial, sans-serif; }
+.doc-serif { font: 12pt/1.45 "Times New Roman", Times, "Liberation Serif", serif; }
+.doc-head { display: flex; align-items: center; justify-content: space-between; min-height: 18mm; margin-bottom: 8mm; }
+.doc-logo { display: block; height: 16mm; width: auto; max-width: 70mm; object-fit: contain; }
+.doc-title { margin: 0 0 7mm; text-align: center; font-weight: 700; letter-spacing: 0; line-height: 1.35; font-family: inherit; }
+.doc-sans .doc-title { font-size: 14pt; }
+.doc-serif .doc-title { font-size: 17pt; }
+.doc-table { width: 100%; border-collapse: collapse; }
+.doc-table th, .doc-table td { border: 1.5px solid #000; padding: 6px 9px; vertical-align: top; text-align: left; }
+.doc-table th { width: 28%; font-weight: 700; }
+.doc-table tr { break-inside: avoid; page-break-inside: avoid; } /* a row never splits across two pages */
+.doc-page p:has(> b:only-child) { break-after: avoid; page-break-after: avoid; } /* "Agenda:", "Attendees:"… stay with what follows */
+.doc-page p { margin: 0 0 7pt; }
+.doc-page ul { margin: 0 0 8pt; padding-left: 22pt; list-style: disc; }
+.doc-page li { margin: 0 0 3pt; }
+.doc-table td > :last-child { margin-bottom: 0; }
+.doc-meta { display: flex; justify-content: space-between; gap: 12pt; }
+.doc-chair { margin: 10pt 0 !important; font-weight: 700; font-style: italic; }
+.doc-person { margin-bottom: 4pt !important; }
+.doc-todo { color: #8a6d00; font-style: italic; }
+@page { size: A4; margin: 14mm 16mm 16mm; }
+@media print {
+  .doc-toolbar { display: none !important; }
+  html, body, .doc-wrap { background: #fff !important; padding: 0 !important; min-height: 0; }
+  .doc-page { width: auto; min-height: 0; padding: 0; box-shadow: none; }
+  .doc-todo { color: #000; }
+}
+
 /* ---------- our own confirm dialog (components/ui/Confirm.tsx) ---------- */
 @keyframes confirm-in { from { opacity: 0; transform: translateY(8px) scale(.97); } }
 @keyframes confirm-scrim { from { opacity: 0; } }

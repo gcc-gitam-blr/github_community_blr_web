@@ -5,13 +5,18 @@ import {
   reviewApplication, reviewers as loadReviewers, setCampaignDates, setCampaignStatus,
   type Application, type ApplicationStatus, type Campaign, type Decision, type Review,
 } from "@/lib/admin/client";
-import { QUESTIONS } from "@/lib/apply";
+import { DownloadIcon } from "@primer/octicons-react";
+import { tabKeys } from "@/components/ui/tabKeys";
+import { DEFAULT_QUESTIONS, DEFAULT_TEAMS, answerText, type Question } from "@/lib/apply";
 import { todayIST, niceDate } from "@/lib/admin/appointments";
 import { RETENTION } from "@/lib/retention";
 import { Composer, State, btn, btnSoft, card, count, head, input, type Tone } from "./kit";
+import { RecruitForm } from "./RecruitForm";
+import { EmailApplicants, ResponseTable, Summary, downloadResponses } from "./RecruitResponses";
 
-/* Recruitment rounds. Admins open and close rounds, choose the reviewers and record decisions; an assigned reviewer
-   reads that round's applications and adds a score and notes. The database enforces who may do what and which status
+/* Recruitment rounds, each with its own form (like a Google Form). Admins build the form, open and close rounds, choose
+   the reviewers, record decisions and email applicants; an assigned reviewer reads that round's applications and adds a
+   score and notes. Responses read three ways: Review (the pipeline), Summary (per question) and Table (side by side). The database enforces who may do what and which status
    can follow which (supabase/schema.sql), including that nobody reviews or decides their own application. */
 const STATUS: Record<ApplicationStatus, string> = { submitted: "New", screening: "Screening", interview: "Interview", selected: "Selected", waitlisted: "Waitlisted", rejected: "Not selected", withdrawn: "Withdrawn", onboarded: "Member" };
 const TONE: Record<ApplicationStatus, Tone> = { submitted: "new", screening: "waiting", interview: "waiting", selected: "ok", waitlisted: "waiting", rejected: "no", withdrawn: "muted", onboarded: "done" };
@@ -81,6 +86,9 @@ function Round({ round, admin, meId, busy, setBusy, say, reload }: { round: Camp
   const [team, setTeam] = useState<{ user_id: string; handle: string }[]>([]); const [reviewer, setReviewer] = useState("");
   const [dates, setDates] = useState({ opens: round.opens_on, closes: round.closes_on });
   const [show, setShow] = useState<"all" | ApplicationStatus>("all");
+  const [tab, setTab] = useState<"responses" | "form" | "settings">("responses");
+  const [view, setView] = useState<"review" | "summary" | "table" | "email">("review");
+  const questions: Question[] = round.questions?.length ? round.questions : DEFAULT_QUESTIONS, teams = round.teams ?? DEFAULT_TEAMS;
   const load = useCallback(async () => { setData(await loadApplications(round.id)); setTeam(await loadReviewers(round.id)); }, [round.id]);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch, then set state after the await
   useEffect(() => { void load(); }, [load]);
@@ -99,7 +107,7 @@ function Round({ round, admin, meId, busy, setBusy, say, reload }: { round: Camp
         <State tone={CAMPAIGN_TONE[round.status]}>{CAMPAIGN_STATUS[round.status]}</State>
         {admin && (
           <span className="ml-auto flex flex-wrap items-center gap-2">
-            {canOpen && <button disabled={busy} className={btn} onClick={() => void run(setCampaignStatus(round.id, "open"), "Applications are open on the Get involved page.", reload)}>Open applications</button>}
+            {canOpen && <button disabled={busy} className={btn} onClick={() => void run(setCampaignStatus(round.id, "open"), "Applications are open at /apply.", reload)}>Open applications</button>}
             {round.status === "open" && <button disabled={busy} className={btnSoft} onClick={() => void run(setCampaignStatus(round.id, "closed"), "Applications are closed.", reload)}>Close applications</button>}
             {(round.status === "draft" || round.status === "closed") && <button disabled={busy} className={btnSoft} onClick={() => void run(setCampaignStatus(round.id, "archived"), "Archived.", reload)}>Archive</button>}
           </span>
@@ -107,7 +115,17 @@ function Round({ round, admin, meId, busy, setBusy, say, reload }: { round: Camp
       </div>
 
       {admin && (
-        <div className="grid gap-4 border-b border-line px-5 py-4 md:grid-cols-2">
+        <div role="tablist" onKeyDown={tabKeys} aria-label="This round" className="flex flex-wrap gap-1 border-b border-line px-5 py-2">
+          {([["responses", `Responses ${data?.apps.length ?? ""}`], ["form", `Form · ${questions.length} ${questions.length === 1 ? "question" : "questions"}`], ["settings", "Reviewers & dates"]] as const).map(([t, l]) => (
+            <button key={t} role="tab" aria-selected={tab === t} tabIndex={tab === t ? 0 : -1} onClick={() => setTab(t)} className={`rounded-md px-3 py-1.5 text-[14px] ${tab === t ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>{l}</button>
+          ))}
+        </div>
+      )}
+
+      {admin && tab === "form" && <RecruitForm key={round.id} round={round} applied={data?.apps.length ?? 0} busy={busy} run={run} reload={reload} />}
+
+      {admin && tab === "settings" && (
+        <div className="grid gap-4 px-5 py-4 md:grid-cols-2">
           <div>
             <h3 className="text-[15px]">Dates</h3>
             <form onSubmit={(e) => { e.preventDefault(); void run(setCampaignDates(round.id, dates.opens, dates.closes), "Dates saved.", reload); }} className="mt-2 flex flex-wrap items-end gap-2">
@@ -132,15 +150,31 @@ function Round({ round, admin, meId, busy, setBusy, say, reload }: { round: Camp
         </div>
       )}
 
-      <div className="space-y-3 px-5 py-4">
-        <h3 className="flex items-center gap-2 text-[16px]">Applications <span className={count}>{data?.apps.length ?? 0}</span></h3>
-        <Pipeline apps={data?.apps ?? []} show={show} setShow={setShow} />
-      </div>
-      {data === null ? <p className="px-5 pb-5 text-ink-3">Loading…</p> : apps.length === 0 ? <p className="px-5 pb-5 text-ink-3">{data.apps.length === 0 ? (admin ? "No applications yet." : "No applications to show. You may not be assigned to this round.") : "None with that status."}</p> : (
-        <ul className="divide-y divide-line border-t border-line">
-          {apps.map((a) => <AppRow key={a.id} a={a} avg={avg(a.id)} mine={data.reviews.find((r) => r.application_id === a.id && r.reviewer_id === meId)} all={data.reviews.filter((r) => r.application_id === a.id)} decision={data.decisions.find((d) => d.application_id === a.id)} admin={admin} busy={busy} run={run} />)}
-        </ul>
-      )}
+      {(!admin || tab === "responses") && (<>
+        <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-3">
+          <div role="group" aria-label="Show the responses as" className="flex flex-wrap gap-1">
+            {([["review", "Review"], ["summary", "Summary"], ["table", "Table"], ...(admin ? [["email", "Email applicants"]] : [])] as [typeof view, string][]).map(([v, l]) => (
+              <button key={v} aria-pressed={view === v} onClick={() => setView(v)} className={`rounded-full px-3 py-1 text-[13.5px] transition-colors duration-150 ${view === v ? "bg-ink font-semibold text-white" : "text-ink-2 hover:bg-soft"}`}>{l}</button>
+            ))}
+          </div>
+          {admin && (data?.apps.length ?? 0) > 0 && <button disabled={busy} onClick={async () => { const err = await downloadResponses(round, questions, data!.reviews, data!.decisions, STATUS); if (err) say(false, err); }} className={`${btnSoft} ml-auto`}><DownloadIcon size={14} aria-hidden />Download CSV</button>}
+        </div>
+        {data === null ? <p className="p-5 text-ink-3">Loading…</p>
+          : view === "summary" ? <Summary questions={questions} teams={teams} apps={data.apps} showTable={() => setView("table")} />
+          : view === "table" ? <ResponseTable questions={questions} apps={data.apps} score={avg} status={STATUS} />
+          : view === "email" && admin ? <EmailApplicants round={round} apps={data.apps} />
+          : (<>
+            <div className="space-y-3 px-5 py-4">
+              <h3 className="flex items-center gap-2 text-[16px]">Applications <span className={count}>{data.apps.length}</span></h3>
+              <Pipeline apps={data.apps} show={show} setShow={setShow} />
+            </div>
+            {apps.length === 0 ? <p className="px-5 pb-5 text-ink-3">{data.apps.length === 0 ? (admin ? "No applications yet. Share /apply once the round is open." : "No applications to show. You may not be assigned to this round.") : "None at that stage."}</p> : (
+              <ul className="divide-y divide-line border-t border-line">
+                {apps.map((a) => <AppRow key={a.id} a={a} questions={questions} avg={avg(a.id)} mine={data.reviews.find((r) => r.application_id === a.id && r.reviewer_id === meId)} all={data.reviews.filter((r) => r.application_id === a.id)} decision={data.decisions.find((d) => d.application_id === a.id)} admin={admin} busy={busy} run={run} />)}
+              </ul>
+            )}
+          </>)}
+      </>)}
     </section>
   );
 }
@@ -166,7 +200,7 @@ function Pipeline({ apps, show, setShow }: { apps: Application[]; show: "all" | 
   );
 }
 
-function AppRow({ a, avg, mine, all, decision, admin, busy, run }: { a: Application; avg: number | null; mine?: Review; all: Review[]; decision?: Decision; admin: boolean; busy: boolean; run: (p: Promise<{ ok: boolean; error?: string }>, done: string) => Promise<void> }) {
+function AppRow({ a, questions, avg, mine, all, decision, admin, busy, run }: { a: Application; questions: Question[]; avg: number | null; mine?: Review; all: Review[]; decision?: Decision; admin: boolean; busy: boolean; run: (p: Promise<{ ok: boolean; error?: string }>, done: string) => Promise<void> }) {
   const [score, setScore] = useState(String(mine?.score ?? "")); const [notes, setNotes] = useState(mine?.notes ?? ""); const [why, setWhy] = useState(decision?.reason ?? "");
   const open = ["submitted", "screening", "interview"].includes(a.status);
   const next: { to: ApplicationStatus; label: string } | null = a.status === "submitted" ? { to: "screening", label: "Start screening" } : a.status === "screening" ? { to: "interview", label: "Move to interview" } : null;
@@ -181,7 +215,8 @@ function AppRow({ a, avg, mine, all, decision, admin, busy, run }: { a: Applicat
         </summary>
         <div className="space-y-4 px-5 pb-5 text-[14.5px]">
           <p className="text-ink-3">{a.email} · applied {niceDate(a.created_at.slice(0, 10))}</p>
-          {QUESTIONS.map((q) => a.answers[q.id] ? <div key={q.id}><p className="font-semibold">{q.label}</p><p className="mt-1 whitespace-pre-wrap text-ink-2">{a.answers[q.id]}</p></div> : null)}
+          {questions.map((q) => { const t = answerText(a.answers?.[q.id]); return t ? <div key={q.id}><p className="font-semibold">{q.label}</p><p className="mt-1 whitespace-pre-wrap text-ink-2">{q.type === "link" && /^https?:\/\//.test(t) ? <a href={t} target="_blank" rel="noopener noreferrer" className="text-link underline-offset-2 hover:underline">{t}</a> : t}</p></div> : null; })}
+          {Object.keys(a.answers ?? {}).filter((k) => !questions.some((q) => q.id === k)).map((k) => <div key={k}><p className="font-semibold text-ink-3">A question since removed from the form</p><p className="mt-1 whitespace-pre-wrap text-ink-2">{answerText(a.answers[k])}</p></div>)}
 
           {open && (
             <form onSubmit={(e) => { e.preventDefault(); void run(reviewApplication(a.id, Number(score), notes), "Review saved."); }} className="rounded-lg border border-line p-4">
