@@ -74,7 +74,7 @@ const audit = async (action: string) => (await one<{ n: number }>("select count(
       && !!(await api(role === "anon" ? "" : A, "select submit_application($1, 'Bot', 'b@x.in', 'bot', null, '{}')", [c1], role)).error);
   }
   ok("a bad handle, a bad email or a name of one letter is refused by the table", !!(await apply(c1, "Q R", "q@x.in", "-bad-")).error && !!(await apply(c1, "Q R", "nope", "qr")).error && !!(await apply(c1, "Q", "q@x.in", "qr")).error);
-  ok("answers must be short text: a 1001-character answer or seven answers are refused", !!(await apply(c1, "Q R", "q1@x.in", "qr", null, { why: "x".repeat(1001) })).error
+  ok("answers fit their questions: a 2001-character answer, answers to questions the round doesn't ask, or a number instead of text are refused", !!(await apply(c1, "Q R", "q1@x.in", "qr", null, { why: "x".repeat(2001) })).error
     && !!(await apply(c1, "Q R", "q2@x.in", "qr", null, { a: "1", b: "2", c: "3", d: "4", e: "5", f: "6", g: "7" })).error && !!(await apply(c1, "Q R", "q3@x.in", "qr", null, { why: 5 })).error);
   ok("application_submitted is logged with ids only (no names or emails)", (await audit("application_submitted")) === 1
     && (await one<{ n: number }>("select count(*)::int n from crm_audit where action = 'application_submitted' and detail::text ~* '(pia|@)'")).n === 0);
@@ -148,6 +148,45 @@ const audit = async (action: string) => (await one<{ n: number }>("select count(
   ok("the new member has the applicant's details and today's date", (await one<{ ok: boolean }>("select (name = 'Pia Nair' and email = 'pia@x.in' and handle = 'pia-n' and team = 'Design' and joined_on = today_ist() and status = 'active') ok from members")).ok);
   ok("withdrawing is for admins and works from an open state", (await fn(C, "move_application($1, 'withdrawn')", [sam]))?.ok === false && (await fn(A, "move_application($1, 'withdrawn')", [sam]))?.ok === true && (await status(sam)) === "withdrawn");
   ok("every step above was logged", (await audit("application_reviewed")) >= 2 && (await audit("application_moved")) >= 3 && (await audit("application_decided")) === 2 && (await audit("application_onboarded")) === 1 && (await audit("reviewer_added")) >= 1 && (await audit("campaign_created")) >= 2);
+
+  // ---- a round's own form, like a Google Form ----
+  type Q = { id: string; type: string; label: string; required: boolean; options?: string[]; help?: string; extra?: string };
+  const form: Q[] = [
+    { id: "why", type: "long", label: "Why do you want to join?", required: true },
+    { id: "role", type: "choice", label: "Which role?", required: true, options: ["Design", "Code"] },
+    { id: "tools", type: "checkboxes", label: "Tools you use", required: false, options: ["Figma", "Git", "Canva"] },
+    { id: "sure", type: "scale", label: "How sure are you?", required: false },
+    { id: "repo", type: "link", label: "A link to your work", required: false },
+  ];
+  const setForm = (u: string, qs: Q[], teams: string[] = ["Design", "Tech"], intro = "Tell us about you.") => fn(u, "set_campaign_form($1, $2, $3::jsonb, $4::jsonb)", [c1, intro, JSON.stringify(qs), JSON.stringify(teams)]);
+  const started = await one<{ q: unknown[]; t: string[] }>("select questions q, teams t from recruitment_campaigns where id = $1", [c1]);
+  ok("a round starts with the first form's two questions and five teams", started.q.length === 2 && started.t.length === 5);
+  ok("only an admin changes a round's form", (await setForm(C, form))?.ok === false && (await setForm(A, form))?.ok === true);
+  const pub = (await api<{ r: { questions: Q[]; intro: string; teams: string[] } }>("", "select open_campaign() r", [], "service_role")).rows[0]?.r;
+  ok("the public form gets the round's questions, introduction and teams", pub?.questions.length === 5 && pub.intro === "Tell us about you." && pub.teams.join() === "Design,Tech");
+  ok("a form needs 1 to 20 questions, a real type, a real question, and 2+ options for a choice", (await setForm(A, []))?.ok === false
+    && (await setForm(A, Array.from({ length: 21 }, (_, i) => ({ id: `q${i}`, type: "short", label: "Question?", required: false }))))?.ok === false
+    && (await setForm(A, [{ id: "x", type: "essay", label: "What?", required: false }]))?.ok === false && (await setForm(A, [{ id: "x", type: "short", label: "Hi", required: false }]))?.ok === false
+    && (await setForm(A, [{ id: "x", type: "choice", label: "Pick one", required: false, options: ["Only"] }]))?.ok === false);
+  ok("question ids are simple and unique, and unknown fields are refused", (await setForm(A, [{ ...form[0] }, { ...form[0] }]))?.ok === false
+    && (await setForm(A, [{ ...form[0], id: "Bad Id" }]))?.ok === false && (await setForm(A, [{ ...form[0], extra: "x" }]))?.ok === false);
+  ok("up to 12 teams of 1 to 40 characters", (await setForm(A, form, Array.from({ length: 13 }, (_, i) => `Team ${i}`)))?.ok === false && (await setForm(A, form, [""]))?.ok === false);
+  ok("each saved form is logged", (await audit("campaign_form")) === 1);
+  const fine = { why: "I want to help run events.", role: "Design", tools: ["Git", "Figma"], sure: "4", repo: "https://github.com/fan" };
+  ok("an application that answers the round's questions is saved", (await apply(c1, "Form Fan", "fan@x.in", "fan", "Tech", fine)).rows[0]?.r === "created");
+  ok("ticked boxes are kept as a list", JSON.stringify((await one<{ a: unknown }>("select answers -> 'tools' a from applications where email = 'fan@x.in'")).a) === JSON.stringify(["Git", "Figma"]));
+  ok("a required question left out is 'incomplete', and nothing is saved", (await apply(c1, "No Role", "norole@x.in", "nr", null, { why: "A long enough answer." })).rows[0]?.r === "incomplete"
+    && (await one<{ n: number }>("select count(*)::int n from applications where email = 'norole@x.in'")).n === 0);
+  ok("a choice that isn't offered, a box that isn't offered, or a 6 on the scale are refused", !!(await apply(c1, "Bad Pick", "bp1@x.in", "bp", null, { ...fine, role: "Hacking" })).error
+    && !!(await apply(c1, "Bad Pick", "bp2@x.in", "bp", null, { ...fine, tools: ["Vim"] })).error && !!(await apply(c1, "Bad Pick", "bp3@x.in", "bp", null, { ...fine, sure: "6" })).error);
+  ok("answers to questions the round doesn't ask, or a team it doesn't offer, are refused", !!(await apply(c1, "Old Form", "of@x.in", "of", null, { ...fine, built: "a thing" })).error
+    && !!(await apply(c1, "Wrong Team", "wt@x.in", "wt", "Events", fine)).error);
+
+  // ---- the responses as a spreadsheet, and emailing applicants ----
+  ok("only an admin downloads a round's applications, and the download is logged", (await api(C, "select * from export_applications($1)", [c1])).rows.length === 0
+    && (await api(A, "select * from export_applications($1)", [c1])).rows.length === 4 && (await one<{ n: number }>("select count(*)::int n from crm_audit where action = 'export' and entity = 'applications'")).n === 1);
+  ok("emailing a round's applicants is logged, by admins only", (await fn(C, "log_recruitment_email($1, 'selected', 3)", [c1]))?.ok === false
+    && (await fn(A, "log_recruitment_email($1, 'selected', 3)", [c1]))?.ok === true && (await audit("recruitment_email")) === 1);
 
   // ---- members ----
   ok("core and admins read members; a volunteer and an attendee don't", (await reads(C, "members")) === 1 && (await reads(A, "members")) === 1 && (await reads(V, "members")) === 0 && (await reads(X, "members")) === 0);
