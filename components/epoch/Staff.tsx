@@ -57,7 +57,7 @@ export function AttendeeSearch({ onPick, id = "find" }: { onPick: (p: Profile) =
               ))}
             </ul>
           )}
-          {rows.length > shown.length && <p className="mt-2 text-[13px] text-mute">{rows.length - shown.length} more — type a little more to narrow it down.</p>}
+          {rows.length > shown.length && <p className="mt-2 text-[13px] text-mute">{rows.length - shown.length} more. Type a little more to narrow it down.</p>}
         </div>
       )}
     </div>

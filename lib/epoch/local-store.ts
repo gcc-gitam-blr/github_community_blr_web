@@ -36,7 +36,7 @@ function boothTx(all: Record<string, Profile>, u: Profile | undefined, boothId: 
   const booth = BOOTHS.find((b) => b.id === boothId);
   if (!booth || booth.kind === "free") return { ok: false, error: "That QR code isn't a coin booth." };
   if (!u) return { ok: false, error: staff ? "Unknown attendee QR." : "Register first." };
-  if (!u.ticket) return { ok: false, error: staff ? `${u.name}'s ticket hasn't been verified yet — send them to the registration desk.` : "Your ticket hasn't been verified yet — visit the registration desk." };
+  if (!u.ticket) return { ok: false, error: staff ? `${u.name}'s ticket hasn't been verified yet. Send them to the registration desk.` : "Your ticket hasn't been verified yet. Visit the registration desk." };
   const mine = txs().filter((t) => t.userId === u.id && t.ref === `booth:${booth.id}`);
 
   let delta: number;
@@ -44,8 +44,8 @@ function boothTx(all: Record<string, Profile>, u: Profile | undefined, boothId: 
     if (mine.length) return { ok: false, error: staff ? `${u.name} has already used ${booth.name}. One attempt per recharge point.` : `You've already used ${booth.name}. One attempt per recharge point.` };
     delta = booth.coins;
   } else {
-    if (mine[0] && Date.now() - new Date(mine[0].at).getTime() < SPEND_COOLDOWN_S * 1000) return { ok: false, error: "Just scanned — wait a few seconds before paying again." };
-    if (u.coins < booth.coins) return { ok: false, error: staff ? `Not enough coins — ${u.name} has ${u.coins}.` : `Not enough coins — ${booth.name} costs ${booth.coins}, you have ${u.coins}. Try a recharge point!` };
+    if (mine[0] && Date.now() - new Date(mine[0].at).getTime() < SPEND_COOLDOWN_S * 1000) return { ok: false, error: "Just scanned. Wait a few seconds before paying again." };
+    if (u.coins < booth.coins) return { ok: false, error: staff ? `Not enough coins: ${u.name} has ${u.coins}.` : `Not enough coins: ${booth.name} costs ${booth.coins}, you have ${u.coins}. Try a recharge point!` };
     delta = -booth.coins;
   }
   credit(u, delta, booth.name, `booth:${booth.id}`);
@@ -147,7 +147,7 @@ export const localStore: EpochStore = {
     if (r.unticket) t.ticket = false;
     if (r.restock) { const stock = read<Record<string, number>>(K.stock, {}); stock[r.restock] = (stock[r.restock] ?? REWARDS.find((x) => x.id === r.restock)?.stock ?? 0) + 1; write(K.stock, stock); }
     all[t.id] = t; write(K.users, all);
-    log("reverse", t, o.ref.startsWith("booth:") ? o.ref.slice(6) : null, r.delta, o.reason + (reason.trim() ? ` — ${reason.trim()}` : ""));
+    log("reverse", t, o.ref.startsWith("booth:") ? o.ref.slice(6) : null, r.delta, o.reason + (reason.trim() ? `: ${reason.trim()}` : ""));
     return { ok: true, delta: r.delta, balance: t.coins };
   },
 
@@ -170,7 +170,7 @@ export const localStore: EpochStore = {
     const all = users(); const me = all[meId() ?? ""];
     if (me?.role !== "admin") return { ok: false, error: "Only admins can change roles." };
     const t = byHandle(all, handle);
-    if (t?.id === me.id) return { ok: false, error: "You can't change your own role — ask another admin." };
+    if (t?.id === me.id) return { ok: false, error: "You can't change your own role. Ask another admin." };
     if (!t) return { ok: false, error: "Nobody with that GitHub username has registered yet." };
     t.role = role; if (role === "attendee") t.booth = null; // losing organiser access also takes them off their booth
     write(K.users, all); log("role", t, null, null, role);
