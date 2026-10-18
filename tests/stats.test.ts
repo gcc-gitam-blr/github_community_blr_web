@@ -6,7 +6,7 @@ let fails = 0; const ok = (n: string, c: boolean) => { console.log((c ? "PASS" :
 
 const now = new Date(2026, 9, 2, 15, 0); // Friday 2 Oct 2026, 3 pm local
 const at = (y: number, m: number, d: number, h = 12) => new Date(y, m - 1, d, h).toISOString();
-const join = (createdAt: string, firstEvent = "2026-10-07"): JoinRequest => ({ id: createdAt + firstEvent, handle: "a", email: "a@b.in", firstEvent, createdAt });
+const join = (createdAt: string, firstEvent = "2026-10-07"): JoinRequest => ({ id: createdAt + firstEvent, name: "A", handle: "a", email: "a@b.in", firstEvent, createdAt });
 const msg = (kind: string, createdAt: string): ClubMessage => ({ id: kind + createdAt, kind, name: "A", email: "a@b.in", handle: "", message: "hello there", createdAt });
 const fb = (rating: number): EventFeedback => ({ id: String(rating) + Math.random(), event: "2026-10-07", rating, liked: "", improve: "", createdAt: at(2026, 10, 1) });
 

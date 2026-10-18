@@ -128,7 +128,7 @@ export function SignUps() {
   const csv = async () => {
     const list = await exportSignups(); // goes through a database function, so every download is recorded in the audit log
     if (!list) return setResult({ k: "err", t: "Couldn't export. Please try again." });
-    const body = ["handle,email,first_event,signed_up", ...list.map((r) => [r.handle, r.email, eventName(r.first_event), r.created_at].map(csvCell).join(","))].join("\n");
+    const body = ["name,github,email,first_event,signed_up", ...list.map((r) => [r.name ?? "", r.handle ?? "", r.email, r.first_event ? eventName(r.first_event) : "", r.created_at].map(csvCell).join(","))].join("\n");
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([body], { type: "text/csv" })); a.download = "club-sign-ups.csv"; a.click(); URL.revokeObjectURL(a.href);
   };
   const shown = all ? rows ?? [] : (rows ?? []).slice(0, SHOWN * 2);
@@ -148,12 +148,13 @@ export function SignUps() {
           : (<>
             <div className="relative overflow-x-auto">
               <table className="w-full min-w-[560px] text-left text-[14.5px]">
-                <thead className="bg-soft text-[13px] text-ink-2"><tr><th className="px-5 py-2 font-normal">GitHub</th><th className="font-normal">Email</th><th className="font-normal">Wants to try</th><th className="px-5 text-right font-normal">Joined</th></tr></thead>
+                <thead className="bg-soft text-[13px] text-ink-2"><tr><th className="px-5 py-2 font-normal">Name</th><th className="font-normal">GitHub</th><th className="font-normal">Email</th><th className="font-normal">Wants to try</th><th className="px-5 text-right font-normal">Joined</th></tr></thead>
                 <tbody>
                   {shown.map((r) => (
                     <tr key={r.id} className="border-t border-line">
-                      <td className="px-5 py-2.5"><a className="font-semibold underline-offset-4 hover:underline" href={`https://github.com/${r.handle}`} target="_blank" rel="noopener">@{r.handle}</a></td>
-                      <td className="text-ink-2">{r.email}</td><td>{eventName(r.firstEvent)}</td>
+                      <td className="px-5 py-2.5 font-semibold">{r.name ?? <span className="font-normal text-ink-3">no name</span>}</td>
+                      <td>{r.handle ? <a className="underline-offset-4 hover:underline" href={`https://github.com/${r.handle}`} target="_blank" rel="noopener">@{r.handle}</a> : <span className="text-ink-3">not added yet</span>}</td>
+                      <td className="text-ink-2">{r.email}</td><td>{r.firstEvent ? eventName(r.firstEvent) : <span className="text-ink-3">not picked</span>}</td>
                       <td className="whitespace-nowrap px-5 text-right text-ink-3">{short(r.createdAt)}</td>
                     </tr>
                   ))}
