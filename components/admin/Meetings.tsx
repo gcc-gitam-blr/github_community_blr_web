@@ -63,9 +63,10 @@ export function Meetings({ admin, meId }: { admin: boolean; meId: string }) {
 const clock = (t?: string) => { if (!t) return ""; const [h, mm] = t.split(":").map(Number); return `${h % 12 || 12}${mm ? `:${String(mm).padStart(2, "0")}` : ""} ${h < 12 ? "AM" : "PM"}`; };
 function MinutesDoc({ m, people, canEdit, busy, run }: { m: Meeting; people: { id: string; name: string }[]; canEdit: boolean; busy: boolean; run: Run }) {
   const saved = m.details ?? {};
-  const [d, setD] = useState<MeetingDetails>(saved); const [editing, setEditing] = useState(false);
   const name = (id?: string) => people.find((p) => p.id === id)?.name;
   const missing = [!saved.starts && "start time", !saved.ends && "end time", !saved.chair && "who chaired", !saved.recorder && "who took the minutes"].filter(Boolean) as string[];
+  // open from the start while something is missing, so the boxes sit right under "still to add"
+  const [d, setD] = useState<MeetingDetails>(saved); const [editing, setEditing] = useState(canEdit && missing.length > 0);
   const facts = [saved.starts && `${clock(saved.starts)}${saved.ends ? ` to ${clock(saved.ends)}` : ""}`, saved.mode && saved.mode[0].toUpperCase() + saved.mode.slice(1), saved.venue, name(saved.chair) && `chaired by ${name(saved.chair)}`, name(saved.recorder) && `minutes by ${name(saved.recorder)}`].filter(Boolean);
   const pick = (k: "chair" | "recorder", label: string) => (
     <label className="block text-[13.5px] font-semibold">{label}
@@ -79,7 +80,7 @@ function MinutesDoc({ m, people, canEdit, busy, run }: { m: Meeting; people: { i
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <h4 className="text-[15px]">Minutes document</h4>
         <span className="text-[13.5px] text-ink-2">{facts.join(" · ")}</span>
-        {missing.length > 0 && <span className="text-[13.5px] text-[#7d4e00]">Still to add: {missing.join(", ")}</span>}
+        {missing.length > 0 && <span className="text-[13.5px] text-[#7d4e00]">Still to add: {missing.join(", ")}.{canEdit ? (editing ? " Fill them in below." : "") : m.minutes_finalised_at ? " The minutes are final, so these can no longer change." : " Only the meeting's creator or an admin can add them."}</span>}
         <span className="ml-auto flex flex-wrap gap-2">
           {canEdit && !editing && <button disabled={busy} onClick={() => { setD(saved); setEditing(true); }} className={btnSoft}>Edit details</button>}
           <a href={`/admin/doc?minutes=${m.id}`} target="_blank" rel="noopener" className={btnSoft}>Download PDF <span aria-hidden>↗</span></a>
