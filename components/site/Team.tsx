@@ -57,10 +57,10 @@ function Card({ m, i, big = true }: { m: Member; i: number; big?: boolean }) {
 /** Everyone else: a small face, the name, and their labels, four to a row on a wide screen. */
 function Row({ m, i }: { m: Member; i: number }) {
   return (
-    <li className="flex min-w-0 items-start gap-3 py-3">
-      <span className="h-14 w-14 flex-none overflow-hidden rounded-[12px] border-2 border-ink bg-soft"><Face p={m} px={56} i={i} text="text-[20px]" /></span>
+    <li className="flex min-w-0 items-start gap-2.5 py-2.5 sm:gap-3 sm:py-3">
+      <span className="h-11 w-11 flex-none overflow-hidden rounded-[10px] border-2 border-ink bg-soft sm:h-14 sm:w-14 sm:rounded-[12px]"><Face p={m} px={56} i={i} text="text-[20px]" /></span>
       <span className="min-w-0">
-        <span className="block font-display text-[16.5px] font-bold leading-tight">{m.name}</span>
+        <span className="block font-display text-[15px] font-bold leading-tight sm:text-[16.5px]">{m.name}</span>
         {m.handle && <a href={`https://github.com/${m.handle}`} target="_blank" rel="noopener" className="block truncate font-mono text-[12.5px] text-link hover:underline">@{m.handle}</a>}
         {(m.tags?.length || m.crew?.length) ? <span className="mt-1.5 flex flex-wrap gap-1">{m.tags?.map((t) => <Tag key={t} t={t} />)}{m.crew?.map((r) => <CrewLabel key={r.role} r={r} />)}</span> : null}
       </span>
@@ -106,7 +106,7 @@ export function Team() {
         {members.length > 0 && (
           <Reveal className="mt-12 border-t border-line pt-8">
             <p className="mb-2 flex flex-wrap items-baseline gap-x-3"><span className="font-display text-[18px] font-bold">Members</span><span className="font-mono text-[13px] text-ink-3">{members.length} people running sessions, projects and Epoch</span></p>
-            <Shuffled className="grid grid-cols-1 gap-x-6 sm:grid-cols-2 lg:grid-cols-4">
+            <Shuffled className="grid grid-cols-2 gap-x-4 sm:gap-x-6 lg:grid-cols-4">
               {members.map((m, i) => <Row key={m.name} m={m} i={i + leads.length} />)}
             </Shuffled>
           </Reveal>
