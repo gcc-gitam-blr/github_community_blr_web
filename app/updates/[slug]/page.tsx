@@ -43,7 +43,7 @@ export default async function UpdatePage({ params }: { params: Promise<{ slug: s
           {older ? <Link href={`/updates/${older.slug}`} className="rounded-[12px] border border-line p-4 transition hover:border-ink"><span className="text-[13px] text-ink-3">← Earlier</span><span className="mt-1 block font-semibold">{older.title}</span></Link> : <span />}
           {newer && <Link href={`/updates/${newer.slug}`} className="rounded-[12px] border border-line p-4 text-right transition hover:border-ink"><span className="text-[13px] text-ink-3">Newer →</span><span className="mt-1 block font-semibold">{newer.title}</span></Link>}
         </nav>
-        <p className="mt-10 text-center"><Link href="/#join" className="font-semibold text-link">Not a member yet? Join the club →</Link></p>
+        <p className="mt-10 text-center"><Link href="/join" className="font-semibold text-link">Not a member yet? Join the club →</Link></p>
       </main>
       <SiteFooter />
     </>

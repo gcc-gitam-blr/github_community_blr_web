@@ -27,7 +27,7 @@ const SECTIONS: Entry[] = [
   { kind: "Section", title: "Events calendar", hint: "The 2026-27 year at a glance", href: "/#events", keywords: "calendar schedule dates luma rsvp" },
   { kind: "Section", title: "Team", hint: "The people running the club", href: "/#team", keywords: "core team lead organisers" },
   { kind: "Section", title: "FAQ", hint: "Common questions", href: "/#faq", keywords: "questions help" },
-  { kind: "Section", title: "Join the club", hint: "Sign up with your GitHub username", href: "/#join", keywords: "register sign up member whatsapp" },
+  { kind: "Section", title: "Join the club", hint: "Sign up with your name and email", href: "/join", keywords: "register sign up member whatsapp" },
 ];
 
 export function baseIndex(): Entry[] {

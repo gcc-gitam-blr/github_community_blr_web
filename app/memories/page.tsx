@@ -122,7 +122,7 @@ export default function MemoriesPage() {
                 <h2 id="next-h" className="mx-auto mt-4 max-w-[14ch] text-[clamp(40px,6.4vw,84px)]">{WORDS.nextTitle}</h2>
                 <p className="mx-auto mt-6 max-w-[48ch] text-[19px] leading-relaxed text-ink-2">{WORDS.nextText}</p>
                 <div className="mt-9 flex flex-wrap justify-center gap-3">
-                  <Link href="/#join" className="press inline-flex rounded-md bg-ink px-6 py-3.5 font-display font-bold text-white transition-colors duration-150 hover:bg-ink/85">Join the club</Link>
+                  <Link href="/join" className="press inline-flex rounded-md bg-ink px-6 py-3.5 font-display font-bold text-white transition-colors duration-150 hover:bg-ink/85">Join the club</Link>
                   <Link href="/#events" className="press inline-flex rounded-md border-2 border-ink px-6 py-3 font-display font-bold transition-colors duration-150 hover:bg-soft">See what&apos;s coming up</Link>
                 </div>
               </Reveal>

@@ -44,7 +44,7 @@ export default function UpdatesPage() {
 
         <GitHubChangelog variant="full" />
       </main>
-      <NextBand cmd="git pull" title={<>Don&apos;t miss<br />the next one.</>} text="Join the club in one step: you get a welcome email, the WhatsApp community, and every session as it's announced." href="/#join" cta="Join the club" second={{ href: "/calendar.ics", label: "Add the whole year to your calendar" }} />
+      <NextBand cmd="git pull" title={<>Don&apos;t miss<br />the next one.</>} text="Join the club in one step: you get a welcome email, the WhatsApp community, and every session as it's announced." href="/join" cta="Join the club" second={{ href: "/calendar.ics", label: "Add the whole year to your calendar" }} />
       <SiteFooter />
     </>
   );
