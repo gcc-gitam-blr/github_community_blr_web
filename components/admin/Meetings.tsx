@@ -2,8 +2,8 @@
 import { tabKeys } from "@/components/ui/tabKeys";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  addMinutesNote, createMeeting, createTask, finaliseMinutes, meetings as loadMeetings, owners as loadOwners, recordDecision, setAttendees, supersedeDecision, tasks as loadTasks, updateMeeting,
-  type DecisionRow, type Meeting, type MeetingNote, type Task,
+  addMinutesNote, createMeeting, createTask, finaliseMinutes, meetings as loadMeetings, owners as loadOwners, recordDecision, setAttendees, setMeetingDetails, supersedeDecision, tasks as loadTasks, updateMeeting,
+  type DecisionRow, type Meeting, type MeetingDetails, type MeetingNote, type Task,
 } from "@/lib/admin/client";
 import { niceDate, todayIST } from "@/lib/admin/appointments";
 import { Composer, State, btn, btnSoft, card, count, head, input } from "./kit";
@@ -55,6 +55,50 @@ export function Meetings({ admin, meId }: { admin: boolean; meId: string }) {
           )}
         </section>
       </>) : <Register data={data} admin={admin} busy={busy} run={run} />}
+    </div>
+  );
+}
+
+/** The minutes in the university's format: when it started and ended, where, who chaired and who took the minutes, and the PDF. */
+const clock = (t?: string) => { if (!t) return ""; const [h, mm] = t.split(":").map(Number); return `${h % 12 || 12}${mm ? `:${String(mm).padStart(2, "0")}` : ""} ${h < 12 ? "AM" : "PM"}`; };
+function MinutesDoc({ m, people, canEdit, busy, run }: { m: Meeting; people: { id: string; name: string }[]; canEdit: boolean; busy: boolean; run: Run }) {
+  const saved = m.details ?? {};
+  const [d, setD] = useState<MeetingDetails>(saved); const [editing, setEditing] = useState(false);
+  const name = (id?: string) => people.find((p) => p.id === id)?.name;
+  const missing = [!saved.starts && "start time", !saved.ends && "end time", !saved.chair && "who chaired", !saved.recorder && "who took the minutes"].filter(Boolean) as string[];
+  const facts = [saved.starts && `${clock(saved.starts)}${saved.ends ? ` to ${clock(saved.ends)}` : ""}`, saved.mode && saved.mode[0].toUpperCase() + saved.mode.slice(1), saved.venue, name(saved.chair) && `chaired by ${name(saved.chair)}`, name(saved.recorder) && `minutes by ${name(saved.recorder)}`].filter(Boolean);
+  const pick = (k: "chair" | "recorder", label: string) => (
+    <label className="block text-[13.5px] font-semibold">{label}
+      <select value={d[k] ?? ""} onChange={(e) => setD({ ...d, [k]: e.target.value || undefined })} className={`${input} mt-1 font-normal`}>
+        <option value="">{people.length ? "Choose…" : "Record who was there first"}</option>{people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+      </select>
+    </label>
+  );
+  return (
+    <div className="rounded-lg border border-line p-4">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h4 className="text-[15px]">Minutes document</h4>
+        <span className="text-[13.5px] text-ink-2">{facts.join(" · ")}</span>
+        {missing.length > 0 && <span className="text-[13.5px] text-[#7d4e00]">Still to add: {missing.join(", ")}</span>}
+        <span className="ml-auto flex flex-wrap gap-2">
+          {canEdit && !editing && <button disabled={busy} onClick={() => { setD(saved); setEditing(true); }} className={btnSoft}>Edit details</button>}
+          <a href={`/admin/doc?minutes=${m.id}`} target="_blank" rel="noopener" className={btnSoft}>Download PDF <span aria-hidden>↗</span></a>
+        </span>
+      </div>
+      {editing && (
+        <form onSubmit={(e) => { e.preventDefault(); void run(setMeetingDetails(m.id, d), "Saved the minutes' details.").then((ok) => ok && setEditing(false)); }} className="mt-4 grid gap-3 sm:grid-cols-3">
+          <label className="block text-[13.5px] font-semibold">Started at<input type="time" value={d.starts ?? ""} onChange={(e) => setD({ ...d, starts: e.target.value })} className={`${input} mt-1 font-normal`} /></label>
+          <label className="block text-[13.5px] font-semibold">Ended at<input type="time" value={d.ends ?? ""} onChange={(e) => setD({ ...d, ends: e.target.value })} className={`${input} mt-1 font-normal`} /></label>
+          <label className="block text-[13.5px] font-semibold">Mode<select value={d.mode ?? "offline"} onChange={(e) => setD({ ...d, mode: e.target.value as MeetingDetails["mode"] })} className={`${input} mt-1 font-normal`}><option value="offline">Offline</option><option value="online">Online</option><option value="hybrid">Hybrid</option></select></label>
+          <label className="block text-[13.5px] font-semibold">Venue <span className="font-normal text-ink-3">(optional)</span><input maxLength={120} value={d.venue ?? ""} onChange={(e) => setD({ ...d, venue: e.target.value })} placeholder="SB301" className={`${input} mt-1 font-normal`} /></label>
+          {pick("chair", "Chaired by")}
+          {pick("recorder", "Minutes taken by")}
+          <div className="flex gap-2 sm:col-span-3">
+            <button disabled={busy} className={btn}>Save details</button>
+            <button type="button" onClick={() => setEditing(false)} className={btnSoft}>Cancel</button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }
@@ -112,6 +156,8 @@ function MeetingRow({ m, data, tasks, team, mine, admin, busy, run }: { m: Meeti
               </form>
             ) : <p className="mt-1 text-ink-2">{here.length ? here.join(", ") : "Not recorded."}</p>}
           </div>
+
+          <MinutesDoc m={m} people={data.attendees.filter((a) => a.meeting_id === m.id).map((a) => ({ id: a.user_id, name: data.names[a.user_id] ?? "Someone" }))} canEdit={canEdit} busy={busy} run={run} />
 
           <div>
             <h4 className="text-[15px]">Action items</h4>
