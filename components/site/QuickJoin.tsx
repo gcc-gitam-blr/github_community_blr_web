@@ -165,6 +165,14 @@ export function JoinExtras({ joined, compact = false }: { joined: Joined; compac
 /** "You're in": the welcome, the one next thing to do (WhatsApp), and the extras until they're done or put off. */
 export function JoinedPanel({ joined, compact = false }: { joined: Joined; compact?: boolean }) {
   const [, setJoined] = useJoined();
+  // a "you're in" this browser remembers without a key was never confirmed by the server (an older version could show it
+  // when nothing was saved): send it once more, quietly. The same email twice is safe; the key it returns is kept.
+  const healing = useRef(false);
+  useEffect(() => {
+    if (joined.token || healing.current) return;
+    healing.current = true;
+    void join(joined.name, joined.email).then((r) => { if (r.ok && r.token) setJoined({ ...joined, token: r.token }); });
+  }, [joined, setJoined]);
   return (
     <div role="status" className="space-y-4">
       <p className="flex items-center gap-3 text-[18px]">
