@@ -11,7 +11,7 @@ import { btn, btnSoft, card, count, head, input } from "./kit";
 /* The room tools, from the admin: the exam timer and the live quiz. Both run on the projector in their own tab
    (/timer, /quiz/host); this is where you set them up, pick a quiz, find old results and the players' link. */
 export type QuizFile = { slug: string; title: string; questions: number };
-const PRESETS = [10, 15, 30, 45, 60, 90];
+const PRESETS = [10, 15, 20, 30, 45, 60, 90, 120]; // the same as the timer page
 const when = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" });
 
 function Timer() {
@@ -27,7 +27,7 @@ function Timer() {
         <fieldset>
           <legend className="mb-2 text-[14px] font-semibold">How long</legend>
           <div className="flex flex-wrap items-center gap-2">
-            {PRESETS.map((p) => <button key={p} type="button" aria-pressed={min === p} onClick={() => setMin(p)} className={`rounded-full px-3.5 py-1.5 text-[14px] transition-colors duration-150 ${min === p ? "bg-ink font-semibold text-white" : "border border-line hover:border-ink/40"}`}>{p < 60 ? `${p} min` : `${p / 60} h${p % 60 ? ` ${p % 60}` : ""}`}</button>)}
+            {PRESETS.map((p) => <button key={p} type="button" aria-pressed={min === p} onClick={() => setMin(p)} className={`rounded-full px-3.5 py-1.5 text-[14px] transition-colors duration-150 ${min === p ? "bg-ink font-semibold text-white" : "border border-line hover:border-ink/40"}`}>{p < 60 ? `${p} min` : `${Math.floor(p / 60)} h${p % 60 ? ` ${p % 60}` : ""}`}</button>)}
             <label className="flex items-center gap-2 text-[14px] text-ink-2">or <input type="number" min={1} max={600} value={min} onChange={(e) => setMin(Math.max(1, Math.min(600, Number(e.target.value) || 1)))} className={`${input} !w-24 !py-1.5`} aria-label="Minutes" /> minutes</label>
           </div>
         </fieldset>
