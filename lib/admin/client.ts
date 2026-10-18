@@ -4,6 +4,7 @@ import type { ErrorRow } from "@/lib/client-errors";
 import type { AccessRole } from "@/lib/admin/appointments";
 import type { AssetProblem } from "@/lib/assets";
 import type { Member, MemberRow } from "@/lib/admin/members";
+import type { Answer, Question, RoundForm } from "@/lib/apply";
 
 /* What the /admin dashboard reads and changes. Every call runs as the signed-in organiser, so the
    database's own rules (supabase/schema.sql) decide what's allowed — the UI only hides what won't work. */
@@ -119,8 +120,9 @@ export async function exportSignups(): Promise<{ handle: string; email: string; 
 }
 
 // ---- Recruitment ----
-export interface Campaign { id: number; name: string; year: string; status: "draft" | "open" | "closed" | "archived"; opens_on: string; closes_on: string }
-export interface Application { id: number; campaign_id: number; name: string; email: string; handle: string; team_pref: string | null; answers: Record<string, string>; status: ApplicationStatus; created_at: string }
+/** `intro`, `questions` and `teams` are the round's own form (missing until the schema is re-run: use DEFAULT_QUESTIONS). */
+export interface Campaign { id: number; name: string; year: string; status: "draft" | "open" | "closed" | "archived"; opens_on: string; closes_on: string; intro?: string | null; questions?: Question[]; teams?: string[] }
+export interface Application { id: number; campaign_id: number; name: string; email: string; handle: string; team_pref: string | null; answers: Record<string, Answer>; status: ApplicationStatus; created_at: string }
 export type ApplicationStatus = "submitted" | "screening" | "interview" | "selected" | "waitlisted" | "rejected" | "withdrawn" | "onboarded";
 export interface Review { id: number; application_id: number; reviewer_id: string; score: number; notes: string | null }
 export interface Decision { application_id: number; decision: "selected" | "waitlisted" | "rejected"; reason: string | null }
@@ -154,6 +156,23 @@ export const reviewApplication = (app: number, score: number, notes: string) => 
 export const moveApplication = (app: number, to: ApplicationStatus) => rpcRes("move_application", { p_app: app, p_to: to });
 export const decideApplication = (app: number, decision: Decision["decision"], reason: string) => rpcRes("decide_application", { p_app: app, p_decision: decision, p_reason: reason });
 export const onboardApplication = (app: number) => rpcRes("onboard_application", { p_app: app });
+/** A round's form: its introduction, questions and teams. Admins only. */
+export const setCampaignForm = (id: number, f: RoundForm) => rpcRes("set_campaign_form", { p_id: id, p_intro: f.intro ?? "", p_questions: f.questions, p_teams: f.teams });
+/** A round's applications for a spreadsheet; the download is logged. Admins only (null if it failed). */
+export async function exportApplications(campaign: number): Promise<Application[] | null> {
+  const { data, error } = await supabase().rpc("export_applications", { p_campaign: campaign });
+  return error ? null : (data ?? []) as Application[];
+}
+/** Who an applicants' email goes to: one stage of the round, or everyone who applied (except those who withdrew). */
+export type ApplicantGroup = "interview" | "selected" | "waitlisted" | "rejected" | "all";
+export async function emailApplicants(campaign: number, group: ApplicantGroup, subject: string, message: string): Promise<Res<{ sent: number; failed: number; total: number; problem?: string }>> {
+  const { data: { session } } = await supabase().auth.getSession();
+  if (!session) return { ok: false, error: "Sign in again." };
+  try {
+    const r = await fetch("/api/recruitment/email", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ campaign, group, subject, message }) });
+    return await r.json();
+  } catch { return { ok: false, error: "Network error. Nothing was sent." }; }
+}
 
 // ---- Event proposals ----
 export type ProposalStatus = "draft" | "submitted" | "returned" | "approved" | "rejected" | "cancelled" | "completed";
