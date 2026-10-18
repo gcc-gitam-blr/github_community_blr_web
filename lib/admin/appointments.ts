@@ -3,9 +3,9 @@
 export type AccessRole = "volunteer" | "core" | "admin";
 export const ROLE_LABEL: Record<"attendee" | AccessRole, string> = { attendee: "No access", volunteer: "Volunteer", core: "Core team", admin: "Admin" };
 export const ROLE_HELP: Record<AccessRole, string> = {
-  volunteer: "Event-day staff: the Epoch desk and booths.",
-  core: "The core team: sees sign-ups, messages and feedback.",
-  admin: "President / vice-president level: changes who has access, sends email, awards coins.",
+  volunteer: "Event-day help only: attendance and certificates, the Epoch desk and booths, the timer and quizzes. Not for the core team.",
+  core: "The core team: everything a volunteer has, plus sign-ups, messages, feedback, members, recruitment, projects, event proposals, tasks, meetings, assets and policies.",
+  admin: "President and vice-president: everything, plus giving and ending access, sending emails, approving events and publishing policies.",
 };
 export const SOON_DAYS = 14; // the Monday digest and this page warn when access ends within this many days
 export const MAX_DAYS = 1100; // the database refuses a longer term (about 3 years)

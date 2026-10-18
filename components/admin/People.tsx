@@ -13,7 +13,7 @@ const ROLES: AccessRole[] = ["volunteer", "core", "admin"];
 export function People({ admin, me }: { admin: boolean; me: string }) {
   const [list, setList] = useState<Person[] | null>(null);
   const [waiting, setWaiting] = useState<Pending[]>([]);
-  const [handle, setHandle] = useState(""); const [role, setRole] = useState<AccessRole>("volunteer");
+  const [handle, setHandle] = useState(""); const [role, setRole] = useState<AccessRole | null>(null); // no default: picking the wrong one by accident is how core members became volunteers
   const [title, setTitle] = useState(""); const [endsOn, setEndsOn] = useState("");
   const [note, setNote] = useState<{ k: "ok" | "err"; t: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -27,10 +27,19 @@ export function People({ admin, me }: { admin: boolean; me: string }) {
 
   const give = async () => {
     setBusy(true); setNote(null);
+    if (!role) return;
     const h = handle.trim().replace(/^@/, ""), res = await grantAppointment(h, role, title, endsOn); setBusy(false);
     if (!res.ok) return done(false, res.error);
     done(true, res.pending ? `@${h} will be ${ROLE_LABEL[role]} from their first sign-in at /admin until ${niceDate(endsOn)}.` : `@${h} is now ${ROLE_LABEL[role]} until ${niceDate(endsOn)}.`);
-    setHandle(""); setTitle(""); await load();
+    setHandle(""); setTitle(""); setRole(null); await load();
+  };
+  // a volunteer who is really on the core team: the same title and end date, the core role
+  const promote = async (p: Person) => {
+    if (!p.ends_on) return;
+    setBusy(true); setNote(null);
+    const res = await grantAppointment(p.handle, "core", p.title ?? "", p.ends_on); setBusy(false);
+    done(res.ok, res.ok ? `@${p.handle} is now on the core team until ${niceDate(p.ends_on)}. They see the new sections next time they open the admin.` : res.error);
+    if (res.ok) await load();
   };
   const end = async (p: Person) => {
     if (p.appointment_id === null) return;
@@ -60,24 +69,29 @@ export function People({ admin, me }: { admin: boolean; me: string }) {
       )}
       {admin && (
         <Composer id="give-h" title="Give someone access" forceOpen={handle.trim() !== ""}>
-          <p className="mt-1 text-[14.5px] text-ink-2">Pick a role and the day it ends. Access stops by itself on that day. Giving someone a new role or date replaces their current one. If they haven&apos;t signed in yet, it starts the first time they sign in at <code>/admin</code>.</p>
+          <p className="mt-1 text-[14.5px] text-ink-2">This is for organisers only. Club members don&apos;t need access: they go under <a href="#members" className="font-semibold text-link hover:underline">Members</a>. Pick a role and the day it ends. Access stops by itself on that day. Giving someone a new role or date replaces their current one. If they haven&apos;t signed in yet, it starts the first time they sign in at <code>/admin</code>.</p>
           <form onSubmit={(e) => { e.preventDefault(); void give(); }} className="mt-4 grid gap-3 sm:grid-cols-2">
             <label className="block text-[14px] font-semibold">GitHub username
               <input id="who" value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="github-username" autoComplete="off" className={`${input} mt-1 w-full font-normal`} />
             </label>
-            <label className="block text-[14px] font-semibold">Role
-              <select value={role} onChange={(e) => setRole(e.target.value as AccessRole)} className={`${input} mt-1 w-full font-normal`}>
-                {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
-              </select>
-            </label>
+            <fieldset className="sm:col-span-2">
+              <legend className="text-[14px] font-semibold">Role</legend>
+              <div className="mt-1 grid gap-2 sm:grid-cols-3">
+                {ROLES.map((r) => (
+                  <label key={r} className={`flex cursor-pointer flex-col gap-1 rounded-md border p-3 transition-colors duration-150 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-link ${role === r ? "border-ink bg-soft" : "border-line hover:border-ink/40"}`}>
+                    <span className="flex items-center gap-2"><input type="radio" name="role" value={r} checked={role === r} onChange={() => setRole(r)} className="accent-current" /><Role role={r}>{ROLE_LABEL[r]}</Role></span>
+                    <span className="text-[13px] font-normal leading-snug text-ink-2">{ROLE_HELP[r]}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             <label className="block text-[14px] font-semibold">Title <span className="font-normal text-ink-3">(optional, e.g. President)</span>
               <input value={title} maxLength={60} onChange={(e) => setTitle(e.target.value)} className={`${input} mt-1 w-full font-normal`} />
             </label>
             <label className="block text-[14px] font-semibold">Access ends on
               <input type="date" required value={endsOn} min={today} max={latest} onChange={(e) => setEndsOn(e.target.value)} className={`${input} mt-1 w-full font-normal`} />
             </label>
-            <p className="text-[13.5px] text-ink-3 sm:col-span-2">{ROLE_HELP[role]}</p>
-            <div className="sm:col-span-2"><button disabled={busy || !handle.trim() || !endsOn} className={btn}>Give access</button></div>
+            <div className="sm:col-span-2"><button disabled={busy || !handle.trim() || !endsOn || !role} className={btn}>{role ? `Give ${ROLE_LABEL[role].toLowerCase()} access` : "Pick a role first"}</button></div>
           </form>
         </Composer>
       )}
@@ -102,6 +116,7 @@ export function People({ admin, me }: { admin: boolean; me: string }) {
                 )}
                 {admin && p.handle !== me && p.appointment_id !== null && (
                   <span className="ml-auto flex items-center gap-4">
+                    {p.role === "volunteer" && p.ends_on && <button disabled={busy} onClick={() => void promote(p)} className="font-semibold text-link underline-offset-4 hover:underline disabled:opacity-50" aria-label={`Move @${p.handle} to the core team`}>Move to core team</button>}
                     <button disabled={busy} onClick={() => change(p)} className={link} aria-label={`Change role or extend for @${p.handle}`}>Change or extend</button>
                     {ending === p.appointment_id ? (<>
                       <button disabled={busy} onClick={() => void end(p)} className="font-semibold text-[#a40e26] underline-offset-4 hover:underline disabled:opacity-50">Yes, end it now</button>
