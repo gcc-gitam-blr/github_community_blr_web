@@ -8,7 +8,7 @@ const posts = getUpdates();
 ok("every post in content/updates parses", posts.length >= 4);
 ok("slugs drop the date and are unique", posts.every((p) => !/^\d/.test(p.slug)) && new Set(posts.map((p) => p.slug)).size === posts.length);
 ok("newest first, then by order", posts.every((p, i) => !i || posts[i - 1].date > p.date || (posts[i - 1].date === p.date && posts[i - 1].order >= p.order)));
-ok("the 7 October session is pinned first", posts[0].slug === "first-session-7-october");
+ok("the first session's post is pinned first", posts[0].slug === "first-session-7-october");
 ok("Markdown becomes HTML (tables, links, lists)", posts.some((p) => p.html.includes("<table>")) && posts.every((p) => p.html.includes("<a href=")));
 
 const good = "---\ntitle: Hi\ndate: 2026-10-02\nsummary: S\n---\nBody **bold**";

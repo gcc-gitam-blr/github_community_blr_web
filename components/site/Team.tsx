@@ -62,7 +62,7 @@ export function Team() {
   return (
     <section id="team" className={pad}>
       <div className={wrap}>
-        <Head tag={`// core team · ${CLUB.year}`} title="The maintainers.">Students like you, who decided to stop waiting and start organising. <Link href="/get-involved?kind=apply" className="font-semibold text-link hover:underline">Want to join them?</Link></Head>
+        <Head tag={`// core team · ${CLUB.year}`} title="The maintainers.">Students like you, who decided to stop waiting and start organising. <Link href="/apply" className="font-semibold text-link hover:underline">Want to join them? Apply here</Link></Head>
 
         {mentors.length > 0 && (
           <Reveal className="mb-14">

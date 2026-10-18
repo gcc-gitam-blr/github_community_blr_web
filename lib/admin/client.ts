@@ -91,9 +91,12 @@ export async function clientErrors(): Promise<ErrorRow[] | null> {
 }
 
 /** Calls one of the database's functions that answer { ok, error?, … }; the database decides whether the caller may. */
+/** A function the site calls that the database doesn't have yet: the schema hasn't been re-run since the site was updated. */
+export const notUpdated = (msg: string) => /could not find the function|does not exist|schema cache/i.test(msg)
+  ? "The database needs the latest update first: in Supabase, open SQL Editor and run supabase/schema.sql once (it only adds what's missing). Then try again." : msg;
 export async function rpcRes<T extends object = object>(fn: string, args: Record<string, unknown>, failed = "That didn't work. Please try again."): Promise<Res<T>> {
   const { data, error } = await supabase().rpc(fn, args);
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: notUpdated(error.message) };
   return data?.ok ? { ok: true, ...(data as T) } : { ok: false, error: data?.error ?? failed };
 }
 

@@ -48,6 +48,7 @@ export function Proposals({ admin, meId }: { admin: boolean; meId: string }) {
   const run = async (p: Promise<{ ok: boolean; error?: string }>, done: string) => {
     setBusy(true); setNote(null); const r = await p; setBusy(false);
     say(r.ok, r.ok ? done : (r as { error: string }).error); if (r.ok) await load();
+    return r.ok;
   };
   const edit = (p: Proposal) => { setEditing(p.id); setForm({ title: p.title, kind: p.kind, date: p.proposed_date, venue: p.venue, objective: p.objective, expected: p.expected_attendance, budget: p.budget_inr }); requestAnimationFrame(() => document.getElementById("prop-title")?.focus()); };
 
@@ -91,7 +92,7 @@ export function Proposals({ admin, meId }: { admin: boolean; meId: string }) {
   );
 }
 
-function Row({ p, items, by, admin, mine, busy, run, edit }: { p: Proposal; items: ChecklistItem[]; by: string; admin: boolean; mine: boolean; busy: boolean; run: (p: Promise<{ ok: boolean; error?: string }>, done: string) => Promise<void>; edit: (p: Proposal) => void }) {
+function Row({ p, items, by, admin, mine, busy, run, edit }: { p: Proposal; items: ChecklistItem[]; by: string; admin: boolean; mine: boolean; busy: boolean; run: (p: Promise<{ ok: boolean; error?: string }>, done: string) => Promise<boolean>; edit: (p: Proposal) => void }) {
   const [why, setWhy] = useState(""); const [outcome, setOutcome] = useState(""); const [att, setAtt] = useState(p.proposed_date); const [noAtt, setNoAtt] = useState(false); const [attNote, setAttNote] = useState("");
   const [slug, setSlug] = useState(p.event_slug ?? "");
   const open = items.filter((i) => i.required && i.state === "open").length;
@@ -173,10 +174,11 @@ function Row({ p, items, by, admin, mine, busy, run, edit }: { p: Proposal; item
 
 /** The proposal in the university's format: what it still needs, its details, and the PDF to send. */
 const DOC_PARTS: [keyof ProposalDetails, string][] = [["audience", "target audience"], ["description", "description"], ["outcomes", "learning outcomes"], ["requirements", "requirements"]];
-function ProposalDoc({ p, editable, busy, run }: { p: Proposal; editable: boolean; busy: boolean; run: (p: Promise<{ ok: boolean; error?: string }>, done: string) => Promise<void> }) {
+function ProposalDoc({ p, editable, busy, run }: { p: Proposal; editable: boolean; busy: boolean; run: (p: Promise<{ ok: boolean; error?: string }>, done: string) => Promise<boolean> }) {
   const saved = p.details ?? {};
-  const [d, setD] = useState<ProposalDetails>(saved); const [editing, setEditing] = useState(false);
   const missing = DOC_PARTS.filter(([k]) => !saved[k]).map(([, l]) => l);
+  // the fields are open from the start while something is missing, so "still to add" points at boxes right below it
+  const [d, setD] = useState<ProposalDetails>(saved); const [editing, setEditing] = useState(editable && missing.length > 0);
   const set = (k: keyof ProposalDetails, v: string | number | boolean | undefined) => setD({ ...d, [k]: v });
   const text = (k: keyof ProposalDetails, label: string, hint: string, rows = 0, max = 300) => (
     <label className="block text-[13.5px] font-semibold sm:col-span-3">{label} <span className="font-normal text-ink-3">{hint}</span>
@@ -188,14 +190,14 @@ function ProposalDoc({ p, editable, busy, run }: { p: Proposal; editable: boolea
     <div className="rounded-lg border border-line p-4">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <h4 className="text-[15px]">Proposal document</h4>
-        <span className={`text-[13.5px] ${missing.length ? "text-[#7d4e00]" : "text-[#116329]"}`}>{missing.length ? `Still to add: ${missing.join(", ")}` : "Everything the university's format asks for is filled in"}</span>
+        <span className={`text-[13.5px] ${missing.length ? "text-[#7d4e00]" : "text-[#116329]"}`}>{missing.length ? `Still to add: ${missing.join(", ")}.${editable ? (editing ? " Fill them in below." : "") : " Only the proposer or an admin can add them, while the proposal is open."}` : "Everything the university's format asks for is filled in."}</span>
         <span className="ml-auto flex flex-wrap gap-2">
           {editable && !editing && <button disabled={busy} onClick={() => { setD(saved); setEditing(true); }} className={btnSoft}>Edit details</button>}
           <a href={`/admin/doc?proposal=${p.id}`} target="_blank" rel="noopener" className={btnSoft}>Download PDF <span aria-hidden>↗</span></a>
         </span>
       </div>
       {editing && (
-        <form onSubmit={(e) => { e.preventDefault(); void run(setProposalDetails(p.id, d), "Saved the document's details.").then(() => setEditing(false)); }} className="mt-4 grid gap-3 sm:grid-cols-3">
+        <form onSubmit={(e) => { e.preventDefault(); void run(setProposalDetails(p.id, d), "Saved the document's details.").then((ok) => ok && setEditing(false)); }} className="mt-4 grid gap-3 sm:grid-cols-3">
           <label className="block text-[13.5px] font-semibold">Number of days<input type="number" min={1} max={30} value={d.days ?? 1} onChange={(e) => set("days", e.target.value ? Number(e.target.value) : undefined)} className={`${input} mt-1 font-normal`} /></label>
           <label className="block text-[13.5px] font-semibold">Time<input maxLength={60} value={d.time ?? ""} onChange={(e) => set("time", e.target.value)} placeholder="10 AM to 1 PM" className={`${input} mt-1 font-normal`} /></label>
           <label className="block text-[13.5px] font-semibold">Mode<select value={d.mode ?? "offline"} onChange={(e) => set("mode", e.target.value)} className={`${input} mt-1 font-normal`}><option value="offline">Offline</option><option value="online">Online</option><option value="hybrid">Hybrid</option></select></label>
@@ -214,7 +216,7 @@ function ProposalDoc({ p, editable, busy, run }: { p: Proposal; editable: boolea
   );
 }
 
-function Item({ i, canTick, busy, run }: { i: ChecklistItem; canTick: boolean; busy: boolean; run: (p: Promise<{ ok: boolean; error?: string }>, done: string) => Promise<void> }) {
+function Item({ i, canTick, busy, run }: { i: ChecklistItem; canTick: boolean; busy: boolean; run: (p: Promise<{ ok: boolean; error?: string }>, done: string) => Promise<boolean> }) {
   const [reason, setReason] = useState(i.note ?? ""); const [asking, setAsking] = useState(false);
   return (
     <li className="px-4 py-2.5">
