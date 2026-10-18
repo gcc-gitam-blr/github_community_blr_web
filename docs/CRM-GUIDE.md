@@ -45,6 +45,10 @@ The menu is grouped: **Club** (Needs you, Attendance & certificates, Sign-ups & 
 (Members, Recruitment, Projects, People & roles), **Work** (Event proposals, Tasks, Meetings & decisions, Assets & handover, Policies)
 and **Site** (Activity, Site errors, admins only). Volunteers see only the ones they can use.
 
+**Shortcuts:** once you've opened the admin as an organiser on a device, press **A** on any page of the site to come back
+to the admin, and **E** for the Epoch desk. They never fire while you're typing, and the switch under the menu turns them
+off on that device. Signing out turns them off too.
+
 ### Needs you
 The admin opens here: one list of everything waiting for you, gathered from every tab (your overdue tasks and the ones
 due this week, people asking to join your project, applications to review, projects asking to be featured, and for
@@ -64,15 +68,28 @@ is checked first: if any row is wrong, **nothing** is saved and you are told whi
 Open **History** on any member to see their events, their access, their projects and what they're into, in one place.
 
 ### Recruitment
-1. An admin creates a **round** (name, club year, the dates applications are accepted) and adds **reviewers** (people with a
-   core or admin appointment). Only then, **opens** it.
-2. While a round is open, **Get involved → Join the core team** shows the application form (name, email, GitHub, preferred
-   team, two short answers). When no round is open it says applications are closed.
-3. Only the round's reviewers and admins can read applications. A reviewer sees only their own scores. **Nobody can review,
+Each round has its **own form**, built like a Google Form, and its responses in one place.
+1. An admin creates a **round** (name, club year, the dates applications are accepted). In its **Form** tab, write a short
+   introduction and the questions: short answer, paragraph, multiple choice, checkboxes, dropdown, a 1-to-5 scale or a
+   link, each optionally required, plus the teams people can pick. Name, email and GitHub username are always asked. A new
+   round starts with two questions you can change.
+2. In **Reviewers & dates**, add the **reviewers** (people with a core or admin appointment). Then **open** the round.
+3. Share **/apply** (the Form tab has a *Copy the link* button). It shows the open round's form, or says applications are
+   closed. *Get involved → Join the core team* shows the same form.
+4. **Responses**, three ways: **Review** (the pipeline New → Screening → Interview → Selected → Member, where reviewers score
+   and admins decide), **Summary** (each question as a chart, like Google Forms) and **Table** (everyone's answers side by
+   side). Admins can **Download CSV** for Google Sheets or Excel; every download is logged.
+5. Only the round's reviewers and admins can read applications. A reviewer sees only their own scores. **Nobody can review,
    decide or onboard their own application.**
-4. An application goes **New → Screening → Interview**; then an admin **selects, waitlists or declines** it, with a reason.
-   A selected applicant is **onboarded**, which creates a member (and nothing else: access is a separate, deliberate step).
-5. Declined and withdrawn applications are deleted 6 months after the round closes.
+6. An admin **selects, waitlists or declines** after the interview, with a reason. A selected applicant is **onboarded**,
+   which creates a member (and nothing else: access is a separate, deliberate step).
+7. **Email applicants** (admins) sends one email to a group: invited to interview, selected, waiting list, not selected, or
+   everyone. Each starts from ready wording you can edit, greets each person by first name, and replies come to the club's
+   address. Each send is logged.
+8. Declined and withdrawn applications are deleted 6 months after the round closes.
+
+Changing a question's wording keeps the answers already given; removing a question hides its answers in the admin (they
+stay in the CSV).
 
 ### Event proposals
 Every event starts as a proposal: title, kind, date, venue, goal, expected attendance, an optional budget, and a checklist
@@ -81,6 +98,12 @@ and recap owner are optional). The proposer submits it; an admin who is **not** 
 (a reason is required to return or reject). Approval is **refused while a required item is open**: each must be done, or
 marked "not needed" with a reason. After the event, the proposer records the outcome and links the attendance (or says why
 there is none).
+
+**The proposal document for the university.** Open a proposal and fill in its *Proposal document*: days, time, mode, target
+audience, description, learning outcomes and requirements (it says what's still missing). **Download PDF** opens it in the
+university's format (the two-column table), ready to save as a PDF and send. The proposer or an admin can change these
+details until the proposal is closed, so a time decided after approval can still be added. Tick *The date isn't fixed yet*
+to print "Yet to be decided".
 > **Limit:** event pages are published by a save in the content editor, which the database can't hold back. So publish an
 > event only after you see it approved here. Each event in the editor has a *Proposal number*, and `npm run check:events`
 > (also shown in CI as a warning) lists upcoming events without one.
@@ -95,6 +118,15 @@ A meeting has an agenda, who was there and minutes. The creator (or an admin) ed
 them; after that they **never change**: a correction is a note beside them. Action items are tasks that point at the
 meeting. **Decisions are only ever added.** To change one, an admin records a new decision that **supersedes** it, and both
 stay in the register.
+
+**The minutes of meeting (MoM) document.** In a meeting's *Minutes document*, add when it started and ended, the mode, the
+venue, who chaired it and who took the minutes. **Download PDF** prints the minutes in the university's format: date, time,
+mode, agenda, who chaired, attendees and absentees with their titles (the absent are organisers on the team that day who
+weren't marked as present), the recorded minutes, decisions, action items, the adjournment and who recorded them. Titles
+come from People & roles, so give everyone theirs (President, Secretary…).
+
+**Logos on both documents:** upload the GITAM and GITAM Student Life logos once in the content editor, under *Club
+settings → Official documents*. Until then the documents print without them.
 
 ### Assets & handover
 The **registry** lists where each of the club's accounts lives (domain, Vercel, Supabase, GitHub, Gmail, Luma, WhatsApp,
