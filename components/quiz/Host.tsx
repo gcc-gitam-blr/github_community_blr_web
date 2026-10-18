@@ -55,6 +55,18 @@ function Setup({ quizzes, resume, onStart, onResume, onView }: { quizzes: Source
   useEffect(() => { let on = true; void loadSets().then((r) => { if (on) setSets(r); }); return () => { on = false; }; }, []);
   const mine = useMemo(() => (sets ?? []).map((s) => ({ ...s, quiz: { ...parseQuiz(s.text), title: s.title } })), [sets]);
   const clear = () => { setText(""); setTitle(null); setFileName(""); setEditing(null); };
+  // opened from Admin → Timer & quizzes with ?quiz=<file> or ?set=<saved id>: straight to that quiz's lobby
+  const asked = useRef(false);
+  useEffect(() => {
+    if (asked.current) return;
+    const q = new URLSearchParams(window.location.search), slug = q.get("quiz"), id = q.get("set");
+    if (!slug && !id) { asked.current = true; return; }
+    if (id && sets === null) return; // the saved quizzes are still loading
+    asked.current = true;
+    const pick = slug ? ready.find((x) => x.slug === slug)?.quiz : mine.find((x) => x.id === id)?.quiz;
+    window.history.replaceState(null, "", window.location.pathname);
+    if (pick?.questions.length) onStart(pick);
+  }, [ready, mine, sets, onStart]);
   const keep = async () => {
     if (!pasted?.questions.length) return;
     const s = await saveSet({ id: editing ?? undefined, title: finalTitle, text });
