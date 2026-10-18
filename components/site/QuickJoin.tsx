@@ -4,6 +4,7 @@ import { CheckIcon } from "@primer/octicons-react";
 import { CLUB } from "@/lib/config";
 import { EVENTS, todayInIndia } from "@/lib/events";
 import { EMAIL_RE, HANDLE_RE, cleanHandle, type JoinResult } from "@/lib/join";
+import { useMember } from "./MemberButton";
 
 /* Joining in two steps, the same in the hero and at the bottom of the page.
    1. A name and an email. That's a sign-up: we can welcome them and tell them what's next.
@@ -22,26 +23,35 @@ export function useJoined(): [Joined | null, (j: Joined | null) => void] {
 }
 const firstName = (n: string) => n.trim().split(/\s+/)[0] || "there";
 
-/** Step 1: two fields and a button. `tone` is the hero (inline, on white) or the card at the bottom. */
+/** Joins (or re-joins: the same email is fine) and returns the signed key for the extras, or an error to show. */
+async function join(name: string, email: string, website?: string): Promise<JoinResult> {
+  try {
+    const r = await fetch("/api/join", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, email, website }) });
+    return await r.json();
+  } catch { return { ok: false, error: "Network error. Please try again.", fallback: false }; }
+}
+
+/** Step 1: two fields and a button. `tone` is the hero (inline, on white) or the card at the bottom. Someone signed in
+    with GitHub finds both filled in from their sign-in. */
 export function JoinForm({ tone = "hero", onJoined }: { tone?: "hero" | "card"; onJoined?: (j: Joined) => void }) {
   const [, setJoined] = useJoined();
-  const [name, setName] = useState(""), [email, setEmail] = useState("");
+  const who = useMember();
+  // null = not typed in yet, so the signed-in name and email show until the person changes them
+  const [nameIn, setName] = useState<string | null>(null), [emailIn, setEmail] = useState<string | null>(null);
+  const name = nameIn ?? (who?.name || ""), email = emailIn ?? (who?.email || "");
   const [busy, setBusy] = useState(false), [err, setErr] = useState("");
-  const started = useRef(0), honey = useRef<HTMLInputElement>(null);
-  const begin = () => { if (!started.current) started.current = performance.now() || 1; };
+  const honey = useRef<HTMLInputElement>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setErr("");
     if (name.trim().length < 2) return setErr("What should we call you?");
     if (!EMAIL_RE.test(email.trim())) return setErr("That email doesn't look right.");
     setBusy(true);
-    let res: JoinResult;
-    try {
-      const r = await fetch("/api/join", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, email, website: honey.current?.value, elapsedMs: started.current ? performance.now() - started.current : undefined }) });
-      res = await r.json();
-    } catch { res = { ok: false, error: "Network error. Please try again.", fallback: false }; }
+    const res = await join(name, email, honey.current?.value);
     setBusy(false);
-    if (res.ok) { const j = { name: name.trim(), email: email.trim().toLowerCase(), token: res.token }; setJoined(j); onJoined?.(j); return; }
+    // "you're in" only when the server saved it and gave the key back; anything else is said plainly
+    if (res.ok && res.token) { const j = { name: name.trim(), email: email.trim().toLowerCase(), token: res.token }; setJoined(j); onJoined?.(j); return; }
+    if (res.ok) return setErr("That didn't go through. Please try again.");
     if (!res.fallback) return setErr(res.error);
     // no database connected yet: the club's WhatsApp link (or email) instead, and say so honestly
     if (CLUB.joinUrl) { window.open(CLUB.joinUrl, "_blank", "noopener"); setErr("Almost there: join the WhatsApp community in the tab that just opened."); }
@@ -54,22 +64,29 @@ export function JoinForm({ tone = "hero", onJoined }: { tone?: "hero" | "card"; 
     ? "h-[54px] min-w-0 flex-1 basis-[180px] rounded-md border-2 border-ink/15 bg-white px-4 text-[16px] outline-none transition-colors placeholder:text-ink-3 focus:border-ink"
     : "h-[54px] w-full min-w-0 rounded-md border-2 border-ink/15 bg-white px-4 text-[16px] outline-none transition-colors placeholder:text-ink-3 focus:border-ink";
   return (
-    <form onSubmit={submit} onFocus={begin} noValidate className="relative">
+    <form onSubmit={submit} noValidate className="relative">
       <div className={hero ? "flex flex-wrap gap-2.5" : "grid gap-2.5"}>
         <label className="contents"><span className="sr-only">Your name</span><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" autoComplete="name" maxLength={80} className={field} /></label>
         <label className="contents"><span className="sr-only">Email</span><input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="you@gitam.in" autoComplete="email" className={field} /></label>
         <button disabled={busy} className={`lift h-[54px] flex-none rounded-md border-2 border-ink bg-ink px-6 font-display text-[16px] font-bold text-white disabled:opacity-70 ${hero ? "" : "w-full bg-[#1a7f37]"}`}>{busy ? "Joining…" : hero ? "Join the club" : "Merge pull request"}</button>
       </div>
-      <input ref={honey} name="website" tabIndex={-1} autoComplete="off" aria-hidden className="absolute -left-[9999px] h-0 w-0 opacity-0" />
-      <p role="status" aria-live="polite" className={`mt-2.5 min-h-[1.4em] text-[13.5px] ${err ? "text-[#a40e26]" : "text-ink-3"}`}>{err || "Free, no experience needed. We'll email you what's next and the WhatsApp link."}</p>
+      {/* the honeypot: hidden from people and screen readers, and named so browsers don't autofill it */}
+      <input ref={honey} name="gcc-hp-x" tabIndex={-1} autoComplete="off" aria-hidden className="absolute -left-[9999px] h-0 w-0 opacity-0" />
+      <p role="status" aria-live="polite" className={`mt-2.5 min-h-[1.4em] text-[13.5px] ${err ? "text-[#a40e26]" : "text-ink-3"}`}>{err || (who?.email && nameIn === null && emailIn === null ? `Filled in from your GitHub sign-in (@${who.handle}). Free; we'll email you what's next and the WhatsApp link.` : "Free, no experience needed. We'll email you what's next and the WhatsApp link.")}</p>
     </form>
   );
 }
 
-/** Step 2, optional: GitHub username (with a live look-up) and what they'd like to try first. */
+/** Step 2, optional: GitHub username (with a live look-up) and what they'd like to try first. Someone signed in with
+    GitHub isn't asked for their username: it comes from their sign-in. */
 export function JoinExtras({ joined, compact = false }: { joined: Joined; compact?: boolean }) {
   const [, setJoined] = useJoined();
-  const [handle, setHandle] = useState(""), [found, setFound] = useState<{ name: string; avatar: string } | null>(null), [look, setLook] = useState("");
+  const who = useMember();
+  const [typed, setHandle] = useState<string | null>(null); // null = not typed: the signed-in username stands
+  const handle = typed ?? (who?.handle || "");
+  const [lookup, setFound] = useState<{ name: string; avatar: string } | null>(null), [look, setLook] = useState("");
+  const fromSignIn = typed === null && !!who?.handle;
+  const found = fromSignIn ? { name: who!.name || who!.handle, avatar: `https://github.com/${who!.handle}.png?size=64` } : lookup;
   const [event, setEvent] = useState(""), [busy, setBusy] = useState(false), [err, setErr] = useState("");
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const today = todayInIndia(), upcoming = EVENTS.filter((e) => e.date >= today).slice(0, 4);
@@ -90,27 +107,42 @@ export function JoinExtras({ joined, compact = false }: { joined: Joined; compac
     }, 450);
   };
   const save = async () => {
-    setErr(""); if (!joined.token) return setErr("Join again with the same email to add these.");
-    setBusy(true);
+    setErr(""); setBusy(true);
+    // no key on this browser (a sign-up from before, or one that didn't go through): join again with the same email,
+    // which is safe (it keeps the sign-up that's there) and gives a fresh key, then save
+    let token = joined.token;
+    if (!token) {
+      const res = await join(joined.name, joined.email);
+      if (!res.ok || !res.token) { setBusy(false); return setErr(res.ok ? "That didn't go through. Please try again." : res.error); }
+      token = res.token; setJoined({ ...joined, token });
+    }
     try {
-      const r = await fetch("/api/join/more", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: joined.email, token: joined.token, handle: cleanHandle(handle), firstEvent: event }) });
+      const r = await fetch("/api/join/more", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: joined.email, token, handle: cleanHandle(handle), firstEvent: event }) });
       const j = await r.json();
-      if (j.ok) setJoined({ ...joined, extras: "done" }); else setErr(j.error ?? "Couldn't save that.");
+      if (j.ok) setJoined({ ...joined, token, extras: "done" }); else setErr(j.error ?? "Couldn't save that.");
     } catch { setErr("Network error. Please try again."); }
     setBusy(false);
   };
   return (
     <div className={compact ? "" : "rounded-xl border border-line bg-white p-5"}>
-      <p className="text-[15px] font-semibold">Two optional extras, so we can cheer your first pull request</p>
-      <label className="mt-3 flex items-center gap-2 rounded-md border-2 border-ink/15 bg-white px-3 focus-within:border-ink">
-        <span className="text-ink-3">@</span><span className="sr-only">Your GitHub username</span>
-        <input value={handle} onChange={(e) => onHandle(e.target.value)} placeholder="your-github-username" autoComplete="off" spellCheck={false} className="h-[48px] min-w-0 flex-1 bg-transparent text-[16px] outline-none" />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        {found && <img src={found.avatar} alt="" className="h-8 w-8 rounded-full border-2 border-ink" />}
-      </label>
-      <p className="mt-1.5 min-h-[1.3em] text-[13px] text-ink-3">{found ? <span className="font-semibold text-[#116329]">Found you, {found.name}.</span> : look || <>No GitHub account yet? <a href="https://github.com/signup" target="_blank" rel="noopener" className="font-semibold text-link underline-offset-2 hover:underline">Make one in a minute ↗</a></>}</p>
+      <p className="text-[15px] font-semibold">{fromSignIn ? "One optional extra, so we can plan your first session" : "Two optional extras, so we can cheer your first pull request"}</p>
+      {fromSignIn ? (
+        <p className="mt-3 flex items-center gap-2.5 text-[14.5px] text-ink-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={found!.avatar} alt="" className="h-8 w-8 rounded-full border-2 border-ink" />
+          <span>Your GitHub username is <b className="font-mono text-ink">@{who!.handle}</b>, from your sign-in. <button onClick={() => onHandle(who!.handle)} className="text-link underline-offset-2 hover:underline">Use another</button></span>
+        </p>
+      ) : (<>
+        <label className="mt-3 flex items-center gap-2 rounded-md border-2 border-ink/15 bg-white px-3 focus-within:border-ink">
+          <span className="text-ink-3">@</span><span className="sr-only">Your GitHub username</span>
+          <input value={handle} onChange={(e) => onHandle(e.target.value)} placeholder="your-github-username" autoComplete="off" spellCheck={false} className="h-[48px] min-w-0 flex-1 bg-transparent text-[16px] outline-none" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {found && <img src={found.avatar} alt="" className="h-8 w-8 rounded-full border-2 border-ink" />}
+        </label>
+        <p className="mt-1.5 min-h-[1.3em] text-[13px] text-ink-3">{found ? <span className="font-semibold text-[#116329]">Found you, {found.name}.</span> : look || <>No GitHub account yet? <a href="https://github.com/signup" target="_blank" rel="noopener" className="font-semibold text-link underline-offset-2 hover:underline">Make one in a minute ↗</a></>}</p>
+      </>)}
       {upcoming.length > 0 && (
-        <fieldset className="mt-2">
+        <fieldset className="mt-3">
           <legend className="mb-2 text-[14px] font-semibold">What would you like to try first?</legend>
           <div className="flex flex-wrap gap-2">
             {upcoming.map((e) => (

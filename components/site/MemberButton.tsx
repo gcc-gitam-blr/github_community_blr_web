@@ -5,15 +5,15 @@ import { hasSupabase } from "@/lib/epoch/store";
 /* The way back in for members: "Sign in" in the header, or their GitHub avatar once they are signed in, both opening
    My club. The sign-in check reads the saved session after the page has settled, so it never slows the first paint. */
 export function useMember() {
-  const [who, setWho] = useState<{ handle: string } | null | undefined>(undefined); // undefined = not checked yet
+  const [who, setWho] = useState<{ handle: string; name: string; email: string } | null | undefined>(undefined); // undefined = not checked yet
   useEffect(() => {
     if (!hasSupabase) return;
     let live = true;
     const run = async () => {
       const { supabase } = await import("@/lib/epoch/supabase-store");
       const { data } = await supabase().auth.getSession();
-      const handle = (data.session?.user.user_metadata as { user_name?: string } | undefined)?.user_name;
-      if (live) setWho(data.session ? { handle: handle ?? "" } : null);
+      const u = data.session?.user, m = (u?.user_metadata ?? {}) as { user_name?: string; full_name?: string; name?: string };
+      if (live) setWho(u ? { handle: m.user_name ?? "", name: m.full_name || m.name || "", email: u.email ?? "" } : null);
     };
     const idle = (window as Window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
     if (idle) idle(() => void run()); else setTimeout(() => void run(), 400);
