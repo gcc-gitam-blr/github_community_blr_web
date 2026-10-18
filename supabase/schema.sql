@@ -2584,3 +2584,113 @@ revoke execute on function my_board_status(), set_board_opt_in(boolean) from pub
 grant execute on function my_board_status(), set_board_opt_in(boolean) to authenticated;
 revoke execute on function board_members() from public, anon, authenticated;
 grant execute on function board_members() to service_role;
+
+-- ============================================================
+-- Official documents (Admin → Event proposals and Meetings & decisions → "Download PDF"): the few details the
+-- university's own formats ask for, kept beside the record in one `details` field each. The proposer or an admin fills
+-- a proposal's while it is open; the meeting's creator or an admin fills a meeting's until its minutes are final.
+-- ============================================================
+alter table event_proposals add column if not exists details jsonb not null default '{}'::jsonb;
+alter table meetings add column if not exists details jsonb not null default '{}'::jsonb;
+do $$ begin
+  alter table event_proposals add constraint event_proposals_details_check check (jsonb_typeof(details) = 'object' and length(details::text) <= 9000);
+exception when duplicate_object then null; end $$;
+do $$ begin
+  alter table meetings add constraint meetings_details_check check (jsonb_typeof(details) = 'object' and length(details::text) <= 2000);
+exception when duplicate_object then null; end $$;
+
+-- A proposal's document details: days (1-30), date_tbd (the date isn't fixed yet), time, mode, audience, description,
+-- outcomes and requirements (one per line). Empty text is dropped; anything else is refused.
+create or replace function set_proposal_details(p_id bigint, p_details jsonb) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare e event_proposals; d jsonb := coalesce(p_details, '{}'::jsonb); k text; v jsonb; t text; out jsonb := '{}'::jsonb;
+  lim constant jsonb := '{"time": 60, "mode": 10, "audience": 300, "description": 3000, "outcomes": 2000, "requirements": 1500}';
+  names constant jsonb := '{"time": "Time", "mode": "Mode", "audience": "Target audience", "description": "Event description", "outcomes": "Learning outcomes", "requirements": "Requirements"}';
+begin
+  select * into e from event_proposals where id = p_id for update;
+  if not found or not can_edit_proposal(p_id) then return json_build_object('ok', false, 'error', 'Only the proposer or an admin can do that.'); end if;
+  if e.status not in ('draft','returned','submitted','approved') then return json_build_object('ok', false, 'error', 'This proposal is closed, so its document can''t change.'); end if;
+  if jsonb_typeof(d) <> 'object' then return json_build_object('ok', false, 'error', 'Bad request.'); end if;
+  for k, v in select * from jsonb_each(d) loop
+    if k = 'days' then
+      if jsonb_typeof(v) <> 'number' or (v #>> '{}')::numeric not between 1 and 30 or (v #>> '{}')::numeric <> trunc((v #>> '{}')::numeric) then
+        return json_build_object('ok', false, 'error', 'Number of days is a whole number from 1 to 30.');
+      end if;
+      out := out || jsonb_build_object(k, v);
+    elsif k = 'date_tbd' then
+      if jsonb_typeof(v) <> 'boolean' then return json_build_object('ok', false, 'error', 'Bad request.'); end if;
+      if v = 'true'::jsonb then out := out || jsonb_build_object(k, true); end if;
+    elsif lim ? k then
+      if jsonb_typeof(v) <> 'string' then return json_build_object('ok', false, 'error', 'Bad request.'); end if;
+      t := trim(v #>> '{}');
+      if length(t) > (lim ->> k)::int then return json_build_object('ok', false, 'error', (names ->> k) || ' takes up to ' || (lim ->> k) || ' characters.'); end if;
+      if k = 'mode' and t not in ('', 'offline', 'online', 'hybrid') then return json_build_object('ok', false, 'error', 'Mode is offline, online or hybrid.'); end if;
+      if t <> '' then out := out || jsonb_build_object(k, t); end if;
+    else
+      return json_build_object('ok', false, 'error', 'Bad request.');
+    end if;
+  end loop;
+  update event_proposals set details = out, updated_at = now() where id = p_id;
+  perform crm_log('proposal_details', 'proposal', p_id::text, '{}');
+  return json_build_object('ok', true);
+end $$;
+
+-- A meeting's document details: starts and ends (HH:MM, 24-hour), mode, venue, and who chaired it and who recorded
+-- the minutes (profile ids). Same rule as editing the minutes: the creator or an admin, until they are final.
+create or replace function set_meeting_details(p_id bigint, p_details jsonb) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare m meetings; d jsonb := coalesce(p_details, '{}'::jsonb); k text; v jsonb; t text; out jsonb := '{}'::jsonb;
+begin
+  select * into m from meetings where id = p_id for update;
+  if not found or my_role() not in ('core','admin') or not (m.created_by = auth.uid() or my_role() = 'admin') then return json_build_object('ok', false, 'error', 'Only the person who created the meeting or an admin can edit it.'); end if;
+  if m.minutes_finalised_at is not null then return json_build_object('ok', false, 'error', 'The minutes are final. Add a note instead.'); end if;
+  if jsonb_typeof(d) <> 'object' then return json_build_object('ok', false, 'error', 'Bad request.'); end if;
+  for k, v in select * from jsonb_each(d) loop
+    if jsonb_typeof(v) <> 'string' then return json_build_object('ok', false, 'error', 'Bad request.'); end if;
+    t := trim(v #>> '{}');
+    if t = '' then continue; end if;
+    if k in ('starts','ends') then
+      if t !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' then return json_build_object('ok', false, 'error', 'Times look like 16:00.'); end if;
+    elsif k = 'mode' then
+      if t not in ('offline','online','hybrid') then return json_build_object('ok', false, 'error', 'Mode is offline, online or hybrid.'); end if;
+    elsif k = 'venue' then
+      if length(t) > 120 then return json_build_object('ok', false, 'error', 'The venue takes up to 120 characters.'); end if;
+    elsif k in ('chair','recorder') then
+      if t !~ '^[0-9a-f-]{36}$' or not exists (select 1 from profiles where id = t::uuid) then return json_build_object('ok', false, 'error', 'Pick someone from the list.'); end if;
+    else
+      return json_build_object('ok', false, 'error', 'Bad request.');
+    end if;
+    out := out || jsonb_build_object(k, t);
+  end loop;
+  if out ? 'starts' and out ? 'ends' and (out ->> 'ends') < (out ->> 'starts') then return json_build_object('ok', false, 'error', 'It can''t end before it starts.'); end if;
+  update meetings set details = out where id = p_id;
+  perform crm_log('meeting_details', 'meeting', p_id::text, '{}');
+  return json_build_object('ok', true);
+end $$;
+
+-- Who was at a meeting and who wasn't, each with their title on the meeting's day, for the minutes' document. The absent
+-- are the organisers (core and admins) whose appointment covered that day but who aren't marked as attending.
+create or replace function meeting_roster(p_id bigint) returns json
+language plpgsql security definer stable set search_path = public, pg_temp as $$
+declare m meetings;
+begin
+  if my_role() not in ('core','admin') then return null; end if;
+  select * into m from meetings where id = p_id;
+  if not found then return null; end if;
+  return json_build_object(
+    'present', coalesce((select json_agg(json_build_object('id', p.id, 'name', p.name, 'handle', p.handle, 'title', a.title) order by coalesce(a.rank, 3), p.name)
+                           from meeting_attendees ma join profiles p on p.id = ma.user_id
+                           left join lateral (select x.title, case x.role when 'admin' then 0 when 'core' then 1 else 2 end as rank from appointments x
+                                               where x.user_id = p.id and x.starts_on <= m.held_on and x.ends_on >= m.held_on and (x.revoked_at is null or x.revoked_at::date > m.held_on)
+                                               order by x.starts_on desc limit 1) a on true
+                          where ma.meeting_id = p_id), '[]'::json),
+    'absent', coalesce((select json_agg(json_build_object('id', p.id, 'name', p.name, 'handle', p.handle, 'title', a.title) order by a.rank, p.name)
+                          from profiles p
+                          cross join lateral (select x.title, case x.role when 'admin' then 0 else 1 end as rank from appointments x
+                                               where x.user_id = p.id and x.role in ('core','admin') and x.starts_on <= m.held_on and x.ends_on >= m.held_on and (x.revoked_at is null or x.revoked_at::date > m.held_on)
+                                               order by x.starts_on desc limit 1) a
+                         where not exists (select 1 from meeting_attendees ma where ma.meeting_id = p_id and ma.user_id = p.id)), '[]'::json));
+end $$;
+
+revoke execute on function set_proposal_details(bigint, jsonb), set_meeting_details(bigint, jsonb), meeting_roster(bigint) from public, anon;
+grant execute on function set_proposal_details(bigint, jsonb), set_meeting_details(bigint, jsonb), meeting_roster(bigint) to authenticated;
