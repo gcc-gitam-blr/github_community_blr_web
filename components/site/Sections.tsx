@@ -134,7 +134,7 @@ export async function Projects() {
   return (
     <section id="projects" className={`${pad} bg-soft`}>
       <div className={wrap}>
-        <Head tag="// projects" title={<>Things we&apos;ve<br />actually shipped.</>}>{featured.length ? "What members built together, and our repositories on GitHub. Star one, fork one, open a pull request." : "Live from our GitHub organisation, the most recently updated. Star one, fork one, open a pull request."}</Head>
+        <Head tag="// projects" title={<>Built in<br />the open.</>}>{featured.length ? "What members built together, and our repositories on GitHub. Star one, fork one, open a pull request." : "Live from our GitHub organisation, most recently updated first. Every one takes pull requests, including from beginners."}</Head>
         <ul className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {featured.slice(0, 3).map((p, i) => (
             <Reveal as="li" key={`p${p.id}`} delay={(i % 3) * 0.08}>
@@ -187,8 +187,8 @@ export function Join() {
     <section id="join" className="overflow-hidden border-t-2 border-ink bg-brand py-[clamp(64px,9vw,120px)]">
       <div className={`${wrap} grid grid-cols-[minmax(0,1fr)] items-center gap-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,.9fr)]`}>
         <Reveal>
-          <h2 className="text-[clamp(44px,6.6vw,96px)] leading-[.95]">Your first commit is one click away<span className="animate-blink">&gt;_</span></h2>
-          <p className="mt-6 max-w-[40ch] text-[19px] text-ink/80">Open a pull request into the club: who you are, and what you want to try first. We&apos;ll review it with a welcome.</p>
+          <h2 className="text-[clamp(44px,6.6vw,96px)] leading-[.95]">Your first commit takes ten seconds<span className="animate-blink">&gt;_</span></h2>
+          <p className="mt-6 max-w-[40ch] text-[19px] text-ink/80">Your name and your email. That&apos;s all it takes to join. We&apos;ll send a welcome with the next session and the WhatsApp link; your GitHub username can come later.</p>
           {CLUB.joinUrl && <a href={CLUB.joinUrl} target="_blank" rel="noopener" className="press lift mt-8 inline-flex items-center gap-2 rounded-md border-2 border-ink bg-white px-5 py-3 font-display font-bold">Join the WhatsApp community →</a>}
           <div className="mt-8"><p className="mb-3 font-mono text-[13px] text-ink">Follow us for event updates:</p><SocialLinks /></div>
           <Sticker name="welcome" size={170} tilt={-5} className="mt-8 hidden lg:block" alt="" />
