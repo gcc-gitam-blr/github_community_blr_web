@@ -196,7 +196,9 @@ export function AdminApp({ quizzes = [] }: { quizzes?: QuizFile[] }) {
               <h1 className="mt-1.5 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.03em] sm:text-[38px]">{here.label}</h1>
             </div>
           )}
-          {!admin && <p className="text-[14px] text-ink-3">You&apos;re {role === "core" ? "on the core team" : "a volunteer"}: you can mark attendance, check people in and run the timer and quizzes; sending emails and changing who has access is for admins.</p>}
+          {!admin && (role === "core"
+            ? <p className="text-[14px] text-ink-3">You&apos;re on the core team: you see the club&apos;s day-to-day work here. Sending emails, approving and changing who has access are for admins.</p>
+            : <p className="rounded-md bg-soft px-4 py-3 text-[14px] text-ink-2">You have <b className="text-ink">volunteer</b> access: attendance, check-in, and the timer and quizzes, for event days. <b className="text-ink">On the core team?</b> Ask an admin to open People &amp; roles and press <b className="text-ink">Move to core team</b> next to your name; the rest of the admin appears when you reload.</p>)}
           {current === "overview" && <><NeedsYou items={needs} name={me.name || me.handle} groupOf={(id) => sectionOf(id)?.group ?? "People"} labelOf={(id) => sectionOf(id)?.label ?? "Project hub"} /><ClubPulse /></>}
           {current === "attendance" && <Attendance admin={admin} />}
           {current === "live" && <LiveTools quizzes={quizzes} />}
