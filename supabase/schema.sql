@@ -251,7 +251,11 @@ returns profiles language plpgsql security definer set search_path = public, pg_
 declare me profiles; u auth.users; pr record; aid bigint;
 begin
   select * into me from profiles where id = auth.uid();
-  if found then return me; end if;
+  if found then
+    -- every sign-in, not just the first: a member added (or given a username) after someone first signed in is linked now
+    update members set user_id = me.id where user_id is null and (lower(email) = lower(coalesce(me.email, '')) or lower(handle) = lower(me.handle));
+    return me;
+  end if;
   select * into u from auth.users where id = auth.uid();
   insert into profiles (id, handle, name, email)
   values (u.id, coalesce(u.raw_user_meta_data->>'user_name', split_part(u.email,'@',1)), p_name, u.email)
@@ -1007,6 +1011,25 @@ create unique index if not exists members_one_per_email on members (lower(email)
 create unique index if not exists members_one_per_handle on members (lower(handle)) where handle is not null;
 create unique index if not exists members_one_per_application on members (source_application_id) where source_application_id is not null;
 alter table members enable row level security;
+
+-- A member record points at the person's sign-in (user_id), which is what lets them into the hub. Whenever a record is
+-- added, imported or edited without one, it is linked to an existing sign-in with the same email or GitHub username
+-- (the username wins: a college email in the sheet often isn't the email on their GitHub account). Signing in links too
+-- (register_profile), so the order doesn't matter.
+create or replace function members_link_account() returns trigger language plpgsql set search_path = public, pg_temp as $$
+begin
+  if new.user_id is null then
+    select p.id into new.user_id from profiles p
+     where (new.handle is not null and lower(p.handle) = lower(new.handle)) or lower(p.email) = lower(new.email)
+     order by (new.handle is not null and lower(p.handle) = lower(new.handle)) desc limit 1;
+  end if;
+  return new;
+end $$;
+drop trigger if exists members_link_account on members;
+create trigger members_link_account before insert or update of email, handle on members for each row execute function members_link_account();
+-- and once, for everyone already on the list who signed in before their record could be linked
+update members m set user_id = p.id from profiles p
+ where m.user_id is null and ((m.handle is not null and lower(p.handle) = lower(m.handle)) or lower(p.email) = lower(m.email));
 revoke insert, update, delete on members from anon, authenticated;
 drop policy if exists "core and admins read members" on members;
 create policy "core and admins read members" on members for select using (my_role() in ('core','admin'));
@@ -1376,33 +1399,60 @@ end $$;
 
 -- Rows come as a JSON array of { handle, name, email, team, joined_on }. Checked all together: with any problem nothing is
 -- written, and the answer lists each problem by row number. p_dry_run (the default) only checks.
+-- Someone already on the list (same email, or same GitHub username) isn't a problem: their record is kept, and only what
+-- it is missing (GitHub username, team, joined date) is filled in from the file. So the same sheet, updated, can be
+-- imported again: new people are added, gaps are filled, nothing that is already there is overwritten.
 create or replace function import_members(p_rows jsonb, p_dry_run boolean default true)
 returns json language plpgsql security definer set search_path = public, pg_temp as $$
-declare r jsonb; i int := 0; errs jsonb := '[]'; ok_rows int := 0; h text; em text; nm text; jd date; seen_e text[] := '{}'; seen_h text[] := '{}';
+declare r jsonb; i int := 0; errs jsonb := '[]'; notes jsonb := '[]'; acts jsonb := '[]'; a jsonb;
+        h text; em text; nm text; tm text; jd date; seen_e text[] := '{}'; seen_h text[] := '{}';
+        by_e members; by_h members; ex members; added int := 0; filled int := 0; same int := 0; fills boolean;
 begin
   if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins edit members.'); end if;
   if p_rows is null or jsonb_typeof(p_rows) <> 'array' then return json_build_object('ok', false, 'error', 'Expected a list of rows.'); end if;
   if jsonb_array_length(p_rows) > 500 then return json_build_object('ok', false, 'error', 'Import at most 500 rows at a time.'); end if;
   for r in select * from jsonb_array_elements(p_rows) loop
     i := i + 1; nm := trim(coalesce(r->>'name', '')); em := lower(trim(coalesce(r->>'email', ''))); h := nullif(lower(ltrim(trim(coalesce(r->>'handle', '')), '@')), '');
+    tm := nullif(trim(coalesce(r->>'team', '')), '');
     begin jd := nullif(trim(coalesce(r->>'joined_on', '')), '')::date; exception when others then jd := null; errs := errs || jsonb_build_array(jsonb_build_object('row', i, 'error', 'joined_on must be YYYY-MM-DD')); continue; end;
-    if length(nm) not between 2 and 80 then errs := errs || jsonb_build_array(jsonb_build_object('row', i, 'error', 'name must be 2 to 80 characters'));
-    elsif em !~ '^[^\s@]+@[^\s@]+\.[^\s@]+$' or length(em) > 254 then errs := errs || jsonb_build_array(jsonb_build_object('row', i, 'error', 'email doesn''t look right'));
-    elsif h is not null and h !~ '^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9])){0,38}$' then errs := errs || jsonb_build_array(jsonb_build_object('row', i, 'error', 'GitHub username doesn''t look right'));
-    elsif length(coalesce(r->>'team', '')) > 40 then errs := errs || jsonb_build_array(jsonb_build_object('row', i, 'error', 'team is too long'));
-    elsif em = any(seen_e) or (h is not null and h = any(seen_h)) then errs := errs || jsonb_build_array(jsonb_build_object('row', i, 'error', 'appears twice in this file'));
-    elsif exists (select 1 from members where lower(email) = em or (h is not null and lower(handle) = h)) then errs := errs || jsonb_build_array(jsonb_build_object('row', i, 'error', 'is already a member'));
-    else seen_e := seen_e || em; if h is not null then seen_h := seen_h || h; end if; ok_rows := ok_rows + 1; end if;
+    if length(nm) not between 2 and 80 then errs := errs || jsonb_build_array(jsonb_build_object('row', i, 'error', 'name must be 2 to 80 characters')); continue; end if;
+    if em !~ '^[^\s@]+@[^\s@]+\.[^\s@]+$' or length(em) > 254 then errs := errs || jsonb_build_array(jsonb_build_object('row', i, 'error', 'email doesn''t look right')); continue; end if;
+    if h is not null and h !~ '^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9])){0,38}$' then errs := errs || jsonb_build_array(jsonb_build_object('row', i, 'error', 'GitHub username doesn''t look right')); continue; end if;
+    if length(coalesce(tm, '')) > 40 then errs := errs || jsonb_build_array(jsonb_build_object('row', i, 'error', 'team is too long')); continue; end if;
+    if em = any(seen_e) or (h is not null and h = any(seen_h)) then errs := errs || jsonb_build_array(jsonb_build_object('row', i, 'error', 'appears twice in this file')); continue; end if;
+    seen_e := seen_e || em; if h is not null then seen_h := seen_h || h; end if;
+    select * into by_e from members where lower(email) = em;
+    by_h := null; if h is not null then select * into by_h from members where lower(handle) = h; end if;
+    if by_e.id is not null and by_h.id is not null and by_e.id <> by_h.id then
+      errs := errs || jsonb_build_array(jsonb_build_object('row', i, 'error', 'the email and the GitHub username belong to two different members')); continue;
+    end if;
+    if by_e.id is not null then ex := by_e; elsif by_h.id is not null then ex := by_h; else ex := null; end if;
+    if ex.id is null then
+      added := added + 1; acts := acts || jsonb_build_array(jsonb_build_object('k', 'add', 'h', h, 'nm', nm, 'em', em, 'tm', tm, 'jd', jd));
+    else
+      if h is not null and ex.handle is not null and ex.handle <> h then
+        notes := notes || jsonb_build_array(jsonb_build_object('row', i, 'note', 'already a member as @' || ex.handle || '; the file says @' || h || ', so it was left as it is (edit the member to change it)'));
+      end if;
+      fills := (ex.handle is null and h is not null) or (ex.team is null and tm is not null) or (ex.joined_on is null and jd is not null);
+      if fills then filled := filled + 1; acts := acts || jsonb_build_array(jsonb_build_object('k', 'fill', 'id', ex.id, 'h', h, 'tm', tm, 'jd', jd)); else same := same + 1; end if;
+    end if;
   end loop;
   if jsonb_array_length(errs) > 0 or p_dry_run then
-    return json_build_object('ok', jsonb_array_length(errs) = 0, 'dry_run', p_dry_run, 'total', i, 'valid', ok_rows, 'errors', errs);
+    return json_build_object('ok', jsonb_array_length(errs) = 0, 'dry_run', p_dry_run, 'total', i, 'valid', added + filled + same,
+      'added', added, 'updated', filled, 'unchanged', same, 'errors', errs, 'notes', notes);
   end if;
-  insert into members (handle, name, email, team, joined_on, user_id)
-  select nullif(lower(ltrim(trim(coalesce(x->>'handle', '')), '@')), ''), trim(x->>'name'), lower(trim(x->>'email')), nullif(trim(coalesce(x->>'team', '')), ''), nullif(trim(coalesce(x->>'joined_on', '')), '')::date,
-         (select id from profiles where lower(email) = lower(trim(x->>'email')) limit 1)
-    from jsonb_array_elements(p_rows) x;
-  perform crm_log('members_imported', 'member', null, jsonb_build_object('count', i));
-  return json_build_object('ok', true, 'dry_run', false, 'total', i, 'valid', ok_rows, 'errors', '[]'::jsonb);
+  for a in select * from jsonb_array_elements(acts) loop
+    if a->>'k' = 'add' then
+      insert into members (handle, name, email, team, joined_on) values (a->>'h', a->>'nm', a->>'em', a->>'tm', (a->>'jd')::date);
+    else
+      update members set handle = coalesce(handle, a->>'h'), team = coalesce(team, a->>'tm'), joined_on = coalesce(joined_on, (a->>'jd')::date)
+       where id = (a->>'id')::uuid;
+    end if;
+  end loop;
+  perform crm_log('members_imported', 'member', null, jsonb_build_object('count', i, 'added', added, 'updated', filled));
+  return json_build_object('ok', true, 'dry_run', false, 'total', i, 'valid', added + filled + same, 'added', added, 'updated', filled, 'unchanged', same, 'errors', '[]'::jsonb, 'notes', notes);
+exception
+  when unique_violation then return json_build_object('ok', false, 'error', 'Two people ended up with the same email or GitHub username. Nothing was imported: check the file against the members list.');
 end $$;
 
 -- Exports are functions so each one is logged (the download itself is built in the browser from what this returns).
@@ -2426,17 +2476,19 @@ begin
   return res;
 end $$;
 
--- Members who ticked "let teammates find me", filtered by area and/or skill. Never anyone who didn't opt in.
+-- Filtered by area and/or skill. Members find only people who ticked "let teammates find me"; the core team and admins,
+-- who may read every answer anyway, find everyone who answered, and `listed` says whether members can find them too.
+drop function if exists find_teammates(text, text); -- the columns changed (listed); a replace can't change them
 create or replace function find_teammates(p_domain text default null, p_skill text default null)
-returns table (handle text, name text, domains text[], skills text[], wants text, hours text)
+returns table (handle text, name text, domains text[], skills text[], wants text, hours text, listed boolean)
 language plpgsql security definer stable set search_path = public, pg_temp as $$
-declare sk text := nullif(lower(btrim(coalesce(p_skill, ''))), '');
+declare sk text := nullif(lower(btrim(coalesce(p_skill, ''))), ''); staff boolean := my_role() in ('core','admin');
 begin
   if not can_take_part() then return; end if;
   return query
-    select p.handle, p.name, i.domains, i.skills, i.wants, i.hours
+    select p.handle, p.name, i.domains, i.skills, i.wants, i.hours, i.discoverable
       from member_interests i join profiles p on p.id = i.user_id
-     where i.discoverable and i.user_id <> auth.uid()
+     where (i.discoverable or staff) and i.user_id <> auth.uid()
        and (role_of(i.user_id) in ('core','admin') or exists (select 1 from members m where m.user_id = i.user_id and m.status = 'active'))
        and (p_domain is null or p_domain = any(i.domains))
        and (sk is null or exists (select 1 from unnest(i.skills) s where s = sk or s like sk || '%'))
