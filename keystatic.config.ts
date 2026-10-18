@@ -76,7 +76,8 @@ export default config({
       label: "Events", path: "content/club/events", format: { data: "json" },
       schema: {
         events: fields.array(fields.object({
-          title: fields.text({ label: "Title", description: "Also makes the page address, so avoid renaming after sharing.", ...req }),
+          title: fields.text({ label: "Title", description: "Rename freely: the page address below stays the same.", ...req }),
+          slug: fields.text({ label: "Page address", description: "The end of the event's link (/events/…). Keep it once the link has been shared; empty makes one from the title. Lower-case letters, numbers and dashes." }),
           date: fields.date({ label: "Date", ...req }),
           dateLabel: fields.text({ label: "Date label", description: "Instead of the exact date while it isn't announced, like December 2026." }),
           type: fields.text({ label: "Type", description: "Workshop, Open Source, Career…", ...req }),
