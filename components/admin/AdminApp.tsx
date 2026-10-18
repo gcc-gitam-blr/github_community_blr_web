@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { useEpoch } from "@/components/epoch/EpochProvider";
 import { ensureProfile, signedInUser } from "@/lib/admin/client";
+import { OFF_KEY, ORGANISER_KEY } from "@/lib/shortcuts";
 import { Activity } from "./Activity";
 import { Assets } from "./Assets";
 import { Attendance } from "./Attendance";
@@ -77,6 +78,22 @@ function Shell({ children, who, role, onSignOut }: { children: React.ReactNode; 
   );
 }
 
+/** Under the menu: the one-key jumps, and a switch to turn them off on this device. */
+function KeysNote() {
+  const [off, setOff] = useState<boolean | null>(null);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- reads this device's choice once, after the first paint
+  useEffect(() => { try { setOff(localStorage.getItem(OFF_KEY) === "1"); } catch { setOff(null); } }, []);
+  if (off === null) return null;
+  const flip = () => { try { if (off) localStorage.removeItem(OFF_KEY); else localStorage.setItem(OFF_KEY, "1"); setOff(!off); } catch { /* storage blocked */ } };
+  const k = "rounded border border-line bg-white px-1.5 py-px font-mono text-[11.5px] font-semibold text-ink";
+  return (
+    <p className="mt-3 hidden text-[13px] leading-relaxed text-ink-3 md:block md:pl-8">
+      {off ? "One-key shortcuts are off." : <>From any page: <kbd className={k}>A</kbd> admin, <kbd className={k}>E</kbd> Epoch desk.</>}{" "}
+      <button onClick={flip} className="font-semibold text-ink-2 underline underline-offset-2 hover:text-ink">{off ? "Turn on" : "Turn off"}</button>
+    </p>
+  );
+}
+
 export function AdminApp() {
   const { store, me, ready, refresh } = useEpoch();
   const [user, setUser] = useState<Awaited<ReturnType<typeof signedInUser>> | undefined>(undefined);
@@ -102,7 +119,10 @@ export function AdminApp() {
   // eslint-disable-next-line react-hooks/set-state-in-effect -- loads the session, then sets state after awaits
   useEffect(() => { if (ready) void check(); }, [ready, check]);
 
-  const signOut = async () => { await store?.signOut(); await refresh(); setUser(null); };
+  // an organiser on this device: the one-key jumps (A, E) work from any page of the site (lib/shortcuts.ts)
+  const organiser = !!user && !!me && me.role !== "attendee";
+  useEffect(() => { if (organiser) try { localStorage.setItem(ORGANISER_KEY, "1"); } catch { /* storage blocked */ } }, [organiser]);
+  const signOut = async () => { try { localStorage.removeItem(ORGANISER_KEY); } catch { /* storage blocked */ } await store?.signOut(); await refresh(); setUser(null); };
   const login = () => { window.location.href = new URL("/api/auth/github?next=/admin", window.location.origin).href; };
 
   if (!ready || (live && user === undefined)) return <Shell><div className="h-64" aria-busy="true" /></Shell>;
@@ -158,6 +178,7 @@ export function AdminApp() {
             ))}
           </ul>
           <Link href="/epoch/admin" className="adm-out">Epoch desk <span aria-hidden>↗</span></Link>
+          <KeysNote />
         </nav>
         <div className="min-w-0 space-y-4">
           {current === "overview" ? <h1 className="sr-only">Needs you</h1> : (
