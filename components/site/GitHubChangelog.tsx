@@ -25,7 +25,7 @@ function Row({ e }: { e: ChangelogEntry }) {
 }
 
 export async function GitHubChangelog({ variant }: { variant: "home" | "full" }) {
-  const entries = await getChangelog(variant === "home" ? 4 : 12);
+  const entries = await getChangelog(variant === "home" ? 4 : 6);
   if (!entries.length) return null;
 
   const list = (
@@ -48,7 +48,7 @@ export async function GitHubChangelog({ variant }: { variant: "home" | "full" })
     <section aria-labelledby="gh-changelog" className="mt-16">
       <p className="font-mono text-[13px] text-ink-3">{"// shipped on github"}</p>
       <h2 id="gh-changelog" className="mt-2 text-[clamp(28px,3.4vw,40px)] leading-tight">What GitHub shipped lately</h2>
-      <p className="mb-6 mt-2 max-w-[62ch] text-[16.5px] text-ink-2">Straight from GitHub&apos;s own changelog. Knowing what&apos;s new is half of knowing GitHub.</p>
+      <p className="mb-6 mt-2 max-w-[62ch] text-[16.5px] text-ink-2">The latest six from GitHub&apos;s own changelog. Worth a look before an interview, or when something in your repository suddenly looks different.</p>
       {list}{links}
     </section>
   );
