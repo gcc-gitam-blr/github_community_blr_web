@@ -146,6 +146,25 @@ export function JoinedPanel({ joined, compact = false }: { joined: Joined; compa
   );
 }
 
+/** The end of an event or update page, where people arrive from WhatsApp or Instagram: the two fields, under a line that
+    fits the page. Hidden for someone who already joined on this browser; someone who joins here sees "you're in". */
+export function JoinStrip({ title, text }: { title: string; text: string }) {
+  const [joined] = useJoined();
+  const [here, setHere] = useState(false);
+  if (joined && !here) return null;
+  return (
+    <section aria-label="Join the club" className="mt-10 rounded-[18px] border-2 border-ink bg-white p-6 sm:p-8">
+      {joined ? <JoinedPanel joined={joined} compact /> : (
+        <>
+          <h2 className="text-[clamp(24px,3vw,32px)] leading-tight">{title}</h2>
+          <p className="mb-5 mt-2 max-w-[60ch] text-[16px] text-ink-2">{text}</p>
+          <JoinForm tone="hero" onJoined={() => setHere(true)} />
+        </>
+      )}
+    </section>
+  );
+}
+
 /** The hero's version: the form, or "you're in" for someone who already joined on this browser. */
 export function HeroJoin() {
   const [joined] = useJoined();

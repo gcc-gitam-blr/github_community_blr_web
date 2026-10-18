@@ -13,6 +13,7 @@ import { ShareButton } from "./ShareButton";
 import { LatestBadge } from "./LatestBadge";
 import { FeedbackForm } from "./FeedbackForm";
 import { Upcoming } from "@/components/site/Upcoming";
+import { JoinStrip } from "@/components/site/QuickJoin";
 import { Recap } from "@/components/site/Recap";
 
 /* Each event is a "release" of the club: a tag, release notes, and assets (calendar file, link). */
@@ -99,7 +100,7 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
           {prev ? <Link href={`/events/${eventSlug(prev)}`} className="rounded-[12px] border border-line p-4 transition hover:border-ink"><span className="text-[13px] text-ink-3">← Earlier · {eventTag(prev)}</span><span className="mt-1 block font-semibold">{prev.title}</span></Link> : <span />}
           {next && <Link href={`/events/${eventSlug(next)}`} className="rounded-[12px] border border-line p-4 text-right transition hover:border-ink"><span className="text-[13px] text-ink-3">Later · {eventTag(next)} →</span><span className="mt-1 block font-semibold">{next.title}</span></Link>}
         </nav>
-        <p className="mt-10 text-center"><Link href="/join" className="font-semibold text-link">Not a member yet? Join the club →</Link></p>
+        <JoinStrip title="Not a member yet?" text="Join the club and you'll hear about every session first, with the WhatsApp link. Free, and every session starts from zero." />
       </main>
       <SiteFooter />
     </>
