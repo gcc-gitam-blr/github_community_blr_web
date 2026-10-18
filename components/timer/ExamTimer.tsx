@@ -54,6 +54,16 @@ function Setup({ onStart }: { onStart: (r: Run) => void }) {
   const [preset, setPreset] = useState<number | null>(60);
   const [h, setH] = useState(""), [m, setM] = useState("");
   const [sound, setSound] = useState(true);
+  // opened from Admin → Timer & quizzes: /timer?title=…&min=…&note=… arrives filled in, one press from starting
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search), min = Math.round(Number(q.get("min")));
+    if (![...q.keys()].length) return;
+    /* eslint-disable react-hooks/set-state-in-effect -- reads the address once, after the first paint */
+    if (q.get("title")) setTitle(q.get("title")!.slice(0, 80));
+    if (q.get("note")) setNote(q.get("note")!.slice(0, 160));
+    if (min > 0 && min <= 600) { if (PRESETS.includes(min)) setPreset(min); else { setPreset(null); setH(String(Math.floor(min / 60) || "")); setM(String(min % 60)); } }
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
   const custom = (Number(h) || 0) * 60 + (Number(m) || 0);
   const total = (preset ?? custom) * MIN;
 
