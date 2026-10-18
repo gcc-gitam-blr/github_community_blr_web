@@ -10,15 +10,19 @@ test.describe("club site", () => {
     await expect(page.getByRole("link", { name: /Join the club/ }).first()).toBeVisible();
   });
 
-  test("the join form guides people and refuses an incomplete sign-up", async ({ page }) => {
+  test("joining asks only for a name and an email, right in the hero, and says what's missing", async ({ page }) => {
     await page.goto("/");
-    const form = page.locator("#join form");
-    await form.scrollIntoViewIfNeeded();
-    await form.getByRole("button", { name: /Merge pull request/ }).click();
-    await expect(form.getByText(/complete all three steps/)).toBeVisible();
-    await form.getByPlaceholder("your-github-handle").fill("-bad-");
-    await expect(form.getByText(/doesn't look like a GitHub username/)).toBeVisible();
-    await expect(form.getByText(/3 of 3 checks pending/)).toBeVisible();
+    const hero = page.locator("#top form");
+    await expect(hero.getByPlaceholder("Your name")).toBeVisible(); // no scrolling needed
+    await expect(hero.getByPlaceholder("your-github-handle")).toHaveCount(0); // no GitHub username up front
+    await hero.getByRole("button", { name: "Join the club" }).click();
+    await expect(hero.getByText("What should we call you?")).toBeVisible();
+    await hero.getByPlaceholder("Your name").fill("Ada");
+    await hero.getByRole("button", { name: "Join the club" }).click();
+    await expect(hero.getByText(/email doesn't look right/)).toBeVisible();
+    const card = page.locator("#join form"); // the pull-request card at the bottom: the same two fields
+    await card.scrollIntoViewIfNeeded();
+    await expect(card.getByPlaceholder("Your name")).toBeVisible();
   });
 
   test("every footer link on the home page leads somewhere that exists", async ({ page, request }) => {
@@ -97,7 +101,7 @@ test.describe("club site", () => {
     for (const p of ["/", "/learn", "/contribute", "/board", "/memories", "/get-involved", "/privacy", "/events/git-merge-26", "/epoch", "/epoch/booths", "/epoch/register", "/epoch/leaderboard", "/epoch/guide", "/epoch/guide/organisers", "/epoch/screen", "/epoch/kiosk/vr"]) {
       await page.goto(p); await page.waitForTimeout(700);
     }
-    await page.goto("/"); await page.locator("#join").getByPlaceholder("your-github-handle").fill("octocat"); await page.waitForTimeout(2000); // GitHub lookup + avatar
+    await page.goto("/join?e=ada%40gitam.in&t=abc"); await page.getByPlaceholder("your-github-username").fill("octocat"); await page.waitForTimeout(2000); // the welcome email's link: GitHub lookup + avatar
     expect(bad).toEqual([]);
   });
 
