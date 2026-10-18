@@ -77,7 +77,8 @@ export default config({
       schema: {
         events: fields.array(fields.object({
           title: fields.text({ label: "Title", description: "Rename freely: the page address below stays the same.", ...req }),
-          slug: fields.text({ label: "Page address", description: "The end of the event's link (/events/…). Keep it once the link has been shared; empty makes one from the title. Lower-case letters, numbers and dashes." }),
+          slug: fields.text({ label: "Page address", description: "The end of the event's link, like git-merge-27 for /events/git-merge-27. Keep it once the link has been shared: the title can change, this can't.",
+            validation: { isRequired: true, pattern: { regex: /^[a-z0-9]+(-[a-z0-9]+)*$/, message: "Lower-case letters, numbers and single dashes, like git-merge-27." } } }),
           date: fields.date({ label: "Date", ...req }),
           dateLabel: fields.text({ label: "Date label", description: "Instead of the exact date while it isn't announced, like December 2026." }),
           type: fields.text({ label: "Type", description: "Workshop, Open Source, Career…", ...req }),
