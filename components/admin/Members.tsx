@@ -14,7 +14,7 @@ const TONE: Record<Member["status"], Tone> = { active: "live", alumni: "done", i
 function Face({ m }: { m: Member }) {
   // eslint-disable-next-line @next/next/no-img-element
   if (m.handle) return <img src={`https://github.com/${m.handle}.png?size=72`} alt="" width={36} height={36} loading="lazy" className="h-9 w-9 flex-none rounded-full border border-line bg-soft" />;
-  return <span aria-hidden className="grid h-9 w-9 flex-none place-items-center rounded-full bg-soft font-mono text-[13px] font-bold text-ink-2">{m.name.split(/s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()}</span>;
+  return <span aria-hidden className="grid h-9 w-9 flex-none place-items-center rounded-full bg-soft font-mono text-[13px] font-bold text-ink-2">{m.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()}</span>;
 }
 const blank: MemberRow = { handle: "", name: "", email: "", team: "", joined_on: "" };
 

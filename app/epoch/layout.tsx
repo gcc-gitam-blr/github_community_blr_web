@@ -14,7 +14,7 @@ import { NotOnKiosk } from "@/components/epoch/NotOnKiosk";
 export const viewport: Viewport = { themeColor: "#f4f1ea", viewportFit: "cover" };
 
 export const metadata: Metadata = {
-  title: "epoch — GITAM Bengaluru's GitHub tech fest",
+  title: "epoch: GITAM Bengaluru's GitHub tech fest",
   description: "Two days of workshops, competitions and 20+ booths on one currency: Epoch Coins.",
   icons: { icon: "/epoch-coin.svg", apple: "/icons/apple-touch-icon.png" },
   appleWebApp: { capable: true, title: "Epoch", statusBarStyle: "default" },

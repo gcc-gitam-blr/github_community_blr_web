@@ -58,7 +58,7 @@ const EXPECTED: Record<string, string[]> = {
   // public by design: a certificate is verified by its unguessable id; browser error reports are capped at 2000 a day
   certificate: ANYONE, log_client_error: ANYONE,
   // server only: the site checks the honeypot, fill time and rate limit first
-  submit_join: SERVER, submit_message: SERVER, submit_feedback: SERVER, epoch_interest_join: SERVER, unsubscribe_join: SERVER, rate_hit: SERVER, prune_old_data: SERVER,
+  submit_join: SERVER, join_club: SERVER, finish_join: SERVER, submit_message: SERVER, submit_feedback: SERVER, epoch_interest_join: SERVER, unsubscribe_join: SERVER, rate_hit: SERVER, prune_old_data: SERVER,
 };
 
 (async () => {

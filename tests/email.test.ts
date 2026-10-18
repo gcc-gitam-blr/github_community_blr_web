@@ -27,7 +27,8 @@ const fake = http.createServer((req, res) => {
     if (url.startsWith("/auth/v1/user")) return send(200, { id: "11111111-1111-1111-1111-111111111111", email: "admin@test", aud: "authenticated", role: "authenticated" });
     if (url.startsWith("/rest/v1/rpc/my_role")) return send(200, db.role);
     if (url.startsWith("/rest/v1/rpc/unsubscribe_join")) { db.unsub.push(JSON.parse(body).p_email); return send(200, null); }
-    if (url.startsWith("/rest/v1/rpc/submit_join") && req.method === "POST") {
+    if (url.startsWith("/rest/v1/rpc/finish_join")) { const row = JSON.parse(body); const j = db.joins.find((x) => x.email === row.p_email) as { handle?: string } | undefined; if (!j) return send(200, "missing"); j.handle = row.p_handle; return send(200, "ok"); }
+    if (url.startsWith("/rest/v1/rpc/join_club") && req.method === "POST") {
       const row = JSON.parse(body);
       if (db.joins.some((j) => j.email === row.p_email)) return send(200, "exists");
       db.joins.push({ email: row.p_email, unsubscribed: false }); return send(200, "created");
@@ -60,7 +61,7 @@ const settle = () => new Promise((r) => setTimeout(r, 300));
   const { sendEmail, emailConfigured, explain } = await import("../lib/email/send");
 
   // --- templates ---
-  const w = welcomeEmail({ handle: "<script>alert(1)</script>", site: "https://club.test", unsubscribe: "https://club.test/unsubscribe?x" });
+  const w = welcomeEmail({ name: "<script>alert(1)</script>", site: "https://club.test", unsubscribe: "https://club.test/unsubscribe?x" });
   ok("welcome email escapes anything a person typed", !w.html.includes("<script>") && w.html.includes("&lt;script&gt;"));
   ok("welcome email carries the WhatsApp link and an unsubscribe link", w.html.includes("chat.whatsapp.com") && w.text.includes("Unsubscribe: https://club.test/unsubscribe"));
   const b = broadcastEmail({ subject: "Hi <b>", message: "First line\nsecond line\n\nSee https://example.com/x now", site: "https://club.test", unsubscribe: "u" });
@@ -122,22 +123,29 @@ const settle = () => new Promise((r) => setTimeout(r, 300));
   const human = { elapsedMs: 20_000 };
 
   inbox.length = 0;
-  let r = await join(postJson("http://x/api/join", { handle: "ada", email: "Ada@Gitam.in", firstEvent: "2026-10-12", ...human }, { "x-forwarded-for": "9.9.9.1" }));
+  let r = await join(postJson("http://x/api/join", { name: "Ada Lovelace", email: "Ada@Gitam.in", ...human }, { "x-forwarded-for": "9.9.9.1" }));
   await settle();
   ok("join: a new sign-up is stored and answered 201", r.status === 201 && db.joins.length === 1 && db.joins[0].email === "ada@gitam.in");
   ok("join: exactly one welcome email arrives, addressed to them", inbox.length === 1 && toOf(inbox[0]) === "ada@gitam.in");
-  ok("join: the welcome mentions their handle and chosen first event", inbox[0]?.text?.includes("@ada") === true && inbox[0].text.includes("Learn GitHub & Make Your First Contribution"));
+  ok("join: the welcome greets them by first name", inbox[0]?.text?.startsWith("You're in, Ada!") === true);
+  const finish = inbox[0]?.text?.match(/Add your GitHub username \(one minute\): (\S+)/)?.[1] ?? "";
+  ok("join: …and carries a signed link to add their GitHub username later", verifyToken("ada@gitam.in", new URL(finish || "http://x").searchParams.get("t") ?? ""));
+  const { POST: more } = await import("../app/api/join/more/route");
+  const fin = new URL(finish || "http://x");
+  r = await more(postJson("http://x/api/join/more", { email: fin.searchParams.get("e"), token: fin.searchParams.get("t"), handle: "@ada-l" }, { "x-forwarded-for": "9.9.9.4" }));
+  ok("join: that link's key saves their GitHub username", r.status === 200 && (db.joins[0] as { handle?: string }).handle === "ada-l");
   const link = inbox[0]?.text?.match(/Unsubscribe: (\S+)/)?.[1] ?? "";
   ok("join: the unsubscribe link in the email is signed and valid", verifyToken("ada@gitam.in", new URL(link).searchParams.get("t") ?? ""));
 
   inbox.length = 0;
-  r = await join(postJson("http://x/api/join", { handle: "ada", email: "ada@gitam.in", firstEvent: "2026-10-12", ...human }, { "x-forwarded-for": "9.9.9.2" }));
+  r = await join(postJson("http://x/api/join", { name: "Ada", email: "ada@gitam.in", ...human }, { "x-forwarded-for": "9.9.9.2" }));
   await settle();
-  ok("join: signing up twice says 'already on the list' and sends no second email", r.status === 200 && (await r.json()).status === "exists" && inbox.length === 0);
+  const again = await r.json();
+  ok("join: joining twice says 'already in', sends no second email, and still gives the key for the extras", r.status === 200 && again.status === "exists" && !!again.token && inbox.length === 0);
 
   // a failing mail server must not break joining
   process.env.SMTP_PASS = "wrong";
-  r = await join(postJson("http://x/api/join", { handle: "bob", email: "bob@gitam.in", firstEvent: "2026-10-12", ...human }, { "x-forwarded-for": "9.9.9.3" }));
+  r = await join(postJson("http://x/api/join", { name: "Bob", email: "bob@gitam.in", ...human }, { "x-forwarded-for": "9.9.9.3" }));
   ok("join: if the email server fails, the sign-up still succeeds", r.status === 201 && db.joins.length === 2);
   process.env.SMTP_PASS = "app-password";
   db.joins.push({ email: "cleo@gitam.in", unsubscribed: false });

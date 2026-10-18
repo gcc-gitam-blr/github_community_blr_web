@@ -36,7 +36,7 @@ export function clubStats(joins: JoinRequest[], messages: ClubMessage[], feedbac
     signUps: joins.length,
     thisWeek: joins.filter((j) => new Date(j.createdAt).getTime() >= weekAgo).length,
     weeks: weeks.map(({ start, count }) => ({ start, count })),
-    firstEvents: tally(joins.map((j) => j.firstEvent)).map(({ k, count }) => ({ event: k, count })),
+    firstEvents: tally(joins.flatMap((j) => (j.firstEvent ? [j.firstEvent] : []))).map(({ k, count }) => ({ event: k, count })),
     messages: tally(messages.map((m) => m.kind)).map(({ k, count }) => ({ kind: k, count })),
     newMessages: messages.filter((m) => new Date(m.createdAt).getTime() >= weekAgo).length,
     feedback: { count: ratings.length, average: ratings.length ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10 : null },

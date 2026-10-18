@@ -297,7 +297,7 @@ begin
   if not found or b.kind = 'free' then return json_build_object('ok', false, 'error', 'That QR code isn''t a coin booth.'); end if;
   select * into me from profiles where id = p_user for update;
   if not found then return json_build_object('ok', false, 'error', case when p_staff then 'Unknown attendee QR.' else 'Register first.' end); end if;
-  if not me.ticket then return json_build_object('ok', false, 'error', case when p_staff then me.name || '''s ticket hasn''t been verified yet — send them to the registration desk.' else 'Your ticket hasn''t been verified yet — visit the registration desk.' end); end if;
+  if not me.ticket then return json_build_object('ok', false, 'error', case when p_staff then me.name || '''s ticket hasn''t been verified yet. Send them to the registration desk.' else 'Your ticket hasn''t been verified yet. Visit the registration desk.' end); end if;
 
   if b.kind = 'recharge' then
     d := b.coins;
@@ -310,9 +310,9 @@ begin
   else
     select max(at) into last_at from txs where user_id = me.id and ref = 'booth:' || b.id;
     if last_at is not null and now() - last_at < interval '20 seconds' then
-      return json_build_object('ok', false, 'error', 'Just scanned — wait a few seconds before paying again.');
+      return json_build_object('ok', false, 'error', 'Just scanned. Wait a few seconds before paying again.');
     end if;
-    if me.coins < b.coins then return json_build_object('ok', false, 'error', case when p_staff then 'Not enough coins — ' || me.name || ' has ' || me.coins || '.' else 'Not enough coins — try a recharge point!' end); end if;
+    if me.coins < b.coins then return json_build_object('ok', false, 'error', case when p_staff then 'Not enough coins: ' || me.name || ' has ' || me.coins || '.' else 'Not enough coins. Try a recharge point!' end); end if;
     d := -b.coins;
     insert into txs (user_id, delta, reason, ref) values (me.id, d, b.name, 'booth:' || b.id);
     update profiles set coins = coins + d where id = me.id returning * into me;
@@ -399,7 +399,7 @@ begin
     ticket = case when o.ref = 'ticket' then false else ticket end
   where id = t.id returning * into t;
   if o.ref like 'reward:%' then update rewards set stock = stock + 1 where id = substr(o.ref, 8); end if;
-  perform log_action('reverse', t.id, case when o.ref like 'booth:%' then substr(o.ref, 7) end, amt, o.reason || coalesce(' — ' || nullif(trim(p_reason), ''), ''));
+  perform log_action('reverse', t.id, case when o.ref like 'booth:%' then substr(o.ref, 7) end, amt, o.reason || coalesce(': ' || nullif(trim(p_reason), ''), ''));
   return json_build_object('ok', true, 'delta', amt, 'balance', t.coins);
 end $$;
 
@@ -492,6 +492,11 @@ revoke insert on join_requests from anon, authenticated;
 -- Email: welcome + organiser broadcasts (see lib/email, app/api/join, app/api/broadcast)
 -- ============================================================
 alter table join_requests add column if not exists unsubscribed boolean not null default false;
+-- Joining takes a name and an email. The GitHub username and the first event are optional extras, added right after
+-- (or later, from the link in the welcome email), because nobody remembers their username on the spot.
+alter table join_requests add column if not exists name text check (name is null or length(name) between 1 and 80);
+alter table join_requests alter column handle drop not null;
+alter table join_requests alter column first_event drop not null;
 
 -- Anyone with a valid signed link can unsubscribe: unsubscribe_join, defined with the Epoch interest list below.
 
@@ -620,7 +625,7 @@ begin
   if ttl is not null and length(ttl) > 60 then return json_build_object('ok', false, 'error', 'Keep the title under 60 characters.'); end if;
   if h !~ '^[a-z0-9]([a-z0-9-]{0,38})$' then return json_build_object('ok', false, 'error', 'That doesn''t look like a GitHub username.'); end if;
   if exists (select 1 from profiles where id = auth.uid() and lower(handle) = h) then
-    return json_build_object('ok', false, 'error', 'You can''t change your own access — ask another admin.');
+    return json_build_object('ok', false, 'error', 'You can''t change your own access. Ask another admin.');
   end if;
   perform pg_advisory_xact_lock(hashtext('appointments')); -- two admins changing admins at once can't both pass the last-admin check
   select id into t from profiles where lower(handle) = h;
@@ -651,7 +656,7 @@ begin
   perform pg_advisory_xact_lock(hashtext('appointments'));
   select * into a from appointments where id = p_id and revoked_at is null and ends_on >= today_ist() for update;
   if not found then return json_build_object('ok', false, 'error', 'That appointment has already ended.'); end if;
-  if a.user_id = auth.uid() then return json_build_object('ok', false, 'error', 'You can''t end your own access — ask another admin.'); end if;
+  if a.user_id = auth.uid() then return json_build_object('ok', false, 'error', 'You can''t end your own access. Ask another admin.'); end if;
   if a.role = 'admin' and a.starts_on <= today_ist() and not exists (
        select 1 from appointments x where x.id <> a.id and x.user_id <> a.user_id and x.role = 'admin' and x.revoked_at is null and x.starts_on <= today_ist() and x.ends_on >= today_ist()) then
     return json_build_object('ok', false, 'error', 'That would leave no active admin. Appoint another admin first.');
@@ -950,6 +955,30 @@ begin
   insert into event_feedback (event, rating, liked, improve) values (p_event, p_rating, nullif(trim(coalesce(p_liked, '')), ''), nullif(trim(coalesce(p_improve, '')), ''));
   return 'created';
 end $$;
+
+-- Joining in one step: name and email. 'created', 'exists' (that email already joined: still welcome) or 'busy'.
+create or replace function join_club(p_name text, p_email text) returns text
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare created boolean;
+begin
+  if (select count(*) from join_requests where created_at > now() - interval '1 hour') >= 300 then return 'busy'; end if;
+  insert into join_requests (name, email) values (left(trim(p_name), 80), lower(trim(p_email)))
+  on conflict ((lower(email))) do update set name = coalesce(join_requests.name, excluded.name)
+  returning (xmax = 0) into created; -- xmax 0: a new row, not an existing one
+  return case when created then 'created' else 'exists' end;
+end $$;
+
+-- The optional extras, for an email that already joined (the site checks the signed link first). Empty keeps what's there.
+create or replace function finish_join(p_email text, p_handle text, p_first_event text) returns text
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  update join_requests set handle = coalesce(nullif(trim(coalesce(p_handle, '')), ''), handle),
+                           first_event = coalesce(nullif(trim(coalesce(p_first_event, '')), ''), first_event)
+   where lower(email) = lower(trim(p_email));
+  return case when found then 'ok' else 'missing' end;
+end $$;
+revoke execute on function join_club(text, text), finish_join(text, text, text) from public, anon, authenticated;
+grant execute on function join_club(text, text), finish_join(text, text, text) to service_role;
 
 revoke execute on function submit_join(text, text, text), submit_message(text, text, text, text, text), submit_feedback(text, int, text, text) from public, anon, authenticated;
 grant execute on function submit_join(text, text, text), submit_message(text, text, text, text, text), submit_feedback(text, int, text, text) to service_role;

@@ -28,7 +28,7 @@ export function Recap({ event, recap }: { event: ClubEvent; recap: RecapData }) 
 
         {photos.length > 0 && <div className="mt-8"><PhotoGrid photos={photos} cols="columns-2 sm:columns-3" /></div>}
 
-        {yt && <div className="mt-8"><VideoEmbed id={yt} title={`${event.title} — video`} /></div>}
+        {yt && <div className="mt-8"><VideoEmbed id={yt} title={`${event.title}: video`} /></div>}
 
         {(recap.slides || (recap.video && !yt) || recap.materials) && (
           <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-[15px] font-semibold">

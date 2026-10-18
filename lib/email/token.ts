@@ -16,3 +16,6 @@ export const unsubscribeUrl = (site: string, email: string) => `${site}/unsubscr
 
 /** The machine-readable endpoint that mail apps use for one-click unsubscribe. */
 export const unsubscribeApiUrl = (site: string, email: string) => `${site}/api/unsubscribe?e=${encodeURIComponent(email.trim().toLowerCase())}&t=${tokenFor(email)}`;
+
+/** Where someone who joined adds their GitHub username and first event later: the /join page with their signed key. */
+export const finishUrl = (site: string, email: string) => `${site}/join?e=${encodeURIComponent(email.trim().toLowerCase())}&t=${tokenFor(email)}`;

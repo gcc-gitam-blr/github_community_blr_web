@@ -68,7 +68,7 @@ export const BOOTHS: Booth[] = [
   // ── recharge points: one attempt per attendee, each ────────────────
   B("recharge-trivia", "Tech Trivia Point", "recharge", "Compete", 20, "Rapid-fire tech & GitHub trivia. One attempt, twenty coins."),
   B("recharge-puzzle", "Mini Code Puzzle Point", "recharge", "Compete", 20, "A five-minute coding puzzle. Solve it, get paid."),
-  B("recharge-wheel", "Fortune Wheel of Challenges", "recharge", "Compete", 20, "Spin the wheel, take the challenge it lands on — beginner to expert."),
+  B("recharge-wheel", "Fortune Wheel of Challenges", "recharge", "Compete", 20, "Spin the wheel, take the challenge it lands on, from beginner to expert."),
   B("recharge-git", "Git Speed Quiz Point", "recharge", "Compete", 20, "How fast can you reach for the right Git command?"),
   B("recharge-debug", "Debug Dash Point", "recharge", "Compete", 20, "Spot the bug before the timer does."),
 
@@ -79,7 +79,7 @@ export const BOOTHS: Booth[] = [
   B("origami", "Origami Wonderland", "spend", "Make", 20, "Fold a paper laptop, robot or algorithm. Ten-minute guided sessions."),
   B("3d-print", "3D Printing Showcase", "spend", "Make", 30, "Write a script, generate a model, watch it print. Take a keychain home.", true),
   B("startup", "Startup Spotlight", "free", "Explore", 0, "Ten early-stage startup booths and the Pitch Perfect stage."),
-  B("retro", "Retro Gaming Nexus", "spend", "Play", 40, "Arcade cabinets, Tekken, Mortal Kombat, Mario — plus the code behind the games."),
+  B("retro", "Retro Gaming Nexus", "spend", "Play", 40, "Arcade cabinets, Tekken, Mortal Kombat, Mario, plus the code behind the games."),
   B("git-escape", "Git Escape Challenge", "spend", "Compete", 60, "A 15-minute GitHub-themed escape room. Commit your way out."),
   B("fortune", "Fortune Teller Booth", "spend", "Explore", 20, "Tech tarot, printed fortunes, and “Commit Your Future”."),
   B("lottery", "Commit Lottery", "spend", "Play", 20, "Tickets for the two-day draw: gadgets and GitHub merchandise."),

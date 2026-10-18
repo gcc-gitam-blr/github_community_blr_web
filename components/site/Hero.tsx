@@ -4,6 +4,7 @@ import { EpochCoin } from "@/components/epoch/EpochCoin";
 import { EpochInterest } from "@/components/site/EpochInterest";
 import { BOOTH_COUNT, EPOCH, STARTER_COINS } from "@/lib/epoch/config";
 import { HeroNext } from "@/components/site/HeroNext";
+import { HeroJoin } from "@/components/site/QuickJoin";
 
 /* The club's own git history, drawn: main plus two branches that merge back. Decorative. */
 const NODES: GNode[] = [
@@ -29,11 +30,9 @@ export function Hero() {
               <h1 className="text-[clamp(44px,6.4vw,94px)] leading-[0.94]">Code.<br />Collaborate.<br />Contribute<span aria-hidden className="ml-[.1em] animate-blink tracking-[-0.08em]">&gt;_</span></h1>
             </div>
             <p className="hero-fade mt-8 max-w-[46ch] text-[clamp(18px,1.6vw,20px)] text-ink-2" style={{ "--d": "0.15s" } as React.CSSProperties}>Students learning Git and GitHub together: hands-on workshops, real open-source contributions, and Epoch, our fest in December. No experience needed, and every session starts from zero.</p>
-            <div className="hero-fade mt-9 flex flex-wrap items-center gap-8" style={{ "--d": "0.25s" } as React.CSSProperties}>
-              <a href="#join" className="lift rounded-md border-2 border-ink bg-ink px-[26px] py-[15px] font-display font-bold text-white">Join the club</a>
-              <a href="#events" className="group inline-flex items-center gap-2 font-semibold text-link">See the year&apos;s events <span className="transition-transform group-hover:translate-x-1.5">→</span></a>
-            </div>
-            <div className="hero-fade mt-8 border-t border-line pt-5" style={{ "--d": "0.3s" } as React.CSSProperties}><HeroNext /></div>
+            {/* joining is right here: a name and an email, nothing to scroll for */}
+            <div className="hero-fade mt-9 max-w-[640px]" style={{ "--d": "0.25s" } as React.CSSProperties}><HeroJoin /></div>
+            <div className="hero-fade mt-5 border-t border-line pt-5" style={{ "--d": "0.3s" } as React.CSSProperties}><HeroNext /></div>
           </div>
           <div aria-hidden className="hidden justify-self-center lg:block"><GitGraph decorative nodes={NODES} edges={EDGES} className="max-h-[560px] w-full min-w-[230px]" /></div>
         </div>

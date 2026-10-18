@@ -19,7 +19,7 @@ export function Scanner({ onCode, paused }: { onCode: (text: string) => void; pa
           (text) => { if (!pausedRef.current) cb.current(text); }, () => {});
         stop = async () => { try { await q.stop(); q.clear(); } catch { /* already stopped */ } };
         if (dead) await stop(); else setStarting(false);
-      } catch { setErr("Camera unavailable — allow access, or type the code below."); setStarting(false); }
+      } catch { setErr("Camera unavailable. Allow access, or type the code below."); setStarting(false); }
     })();
     return () => { dead = true; void stop?.(); };
   }, []);

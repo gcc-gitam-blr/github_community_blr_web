@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { EPOCH, STARTER_COINS } from "@/lib/epoch/config";
 
-export const alt = "epoch_26 — two days, one currency. GITAM Bengaluru.";
+export const alt = "epoch_26: two days, one currency. GITAM Bengaluru.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

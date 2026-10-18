@@ -7,6 +7,7 @@ import { SiteFooter } from "@/components/site/SiteFooter";
 import { UpdateTag } from "@/components/site/UpdateTag";
 import { CLUB } from "@/lib/config";
 import { SITE_URL } from "@/lib/site";
+import { JoinStrip } from "@/components/site/QuickJoin";
 import { getUpdate, getUpdates, updateDate } from "@/lib/updates";
 
 export const dynamicParams = false;
@@ -43,7 +44,7 @@ export default async function UpdatePage({ params }: { params: Promise<{ slug: s
           {older ? <Link href={`/updates/${older.slug}`} className="rounded-[12px] border border-line p-4 transition hover:border-ink"><span className="text-[13px] text-ink-3">← Earlier</span><span className="mt-1 block font-semibold">{older.title}</span></Link> : <span />}
           {newer && <Link href={`/updates/${newer.slug}`} className="rounded-[12px] border border-line p-4 text-right transition hover:border-ink"><span className="text-[13px] text-ink-3">Newer →</span><span className="mt-1 block font-semibold">{newer.title}</span></Link>}
         </nav>
-        <p className="mt-10 text-center"><Link href="/#join" className="font-semibold text-link">Not a member yet? Join the club →</Link></p>
+        <JoinStrip title="Like what the club is up to?" text="Two fields and you're in. Your GitHub username can come later." />
       </main>
       <SiteFooter />
     </>

@@ -15,7 +15,7 @@ const fail = (error: string) => ({ ok: false as const, error });
 async function call<T extends object = object>(fn: string, args: Record<string, unknown>) {
   const { data, error } = await sb().rpc(fn, args);
   if (error) return fail(error.message);
-  return data?.ok ? { ok: true as const, ...(data as T) } : fail(data?.error ?? "That didn't work — please try again.");
+  return data?.ok ? { ok: true as const, ...(data as T) } : fail(data?.error ?? "That didn't work. Please try again.");
 }
 /** The shared browser client, for the /admin dashboard. */
 export const supabase = () => sb();
@@ -32,7 +32,7 @@ export const finishLogin = () => (finished ??= (async () => {
   history.replaceState(null, "", window.location.pathname + window.location.search);
   if (err) return { back: true, error: err };
   const { error } = await sb().auth.verifyOtp({ token_hash: token!, type: "email" });
-  return { back: true, error: error ? "That sign-in didn't finish — please try again." : null };
+  return { back: true, error: error ? "That sign-in didn't finish. Please try again." : null };
 })());
 /** Sends the browser to GitHub; it comes back to `next` signed in. */
 export const startLogin = (next = window.location.pathname) => { window.location.href = new URL(`/api/auth/github?next=${encodeURIComponent(next)}`, window.location.origin).href; }; // a server route: full navigation
@@ -150,7 +150,7 @@ export const supabaseStore: EpochStore = {
 
   async joinRequests() {
     const { data } = await sb().from("join_requests").select("*").order("created_at", { ascending: false }).limit(1000);
-    return (data ?? []).map((r) => ({ id: String(r.id), handle: r.handle, email: r.email, firstEvent: r.first_event, createdAt: r.created_at }));
+    return (data ?? []).map((r) => ({ id: String(r.id), name: r.name ?? null, handle: r.handle ?? null, email: r.email, firstEvent: r.first_event ?? null, createdAt: r.created_at }));
   },
 
   async feedback() {
@@ -175,7 +175,7 @@ export const supabaseStore: EpochStore = {
       const r = await fetch("/api/broadcast", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ subject, message, audience }) });
       const j = await r.json();
       return j.ok ? { ok: true, sent: j.sent, failed: j.failed, total: j.total } : fail(j.error ?? "Couldn't send.");
-    } catch { return fail("Network error — nothing was sent."); }
+    } catch { return fail("Network error. Nothing was sent."); }
   },
 
   async lookup(userId) {

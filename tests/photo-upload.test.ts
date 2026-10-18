@@ -11,7 +11,7 @@ const existing: Photo[] = [{ id: "a-01", event: "a", eventTitle: "A", index: 1, 
 const { manifest, added } = addToManifest(existing, "a", "A", [{ w: 960, h: 640, caption: "  First PR!  " }, { w: 640, h: 960 }]);
 ok("new photos are numbered after the folder's highest, so nothing is overwritten", added.map((p) => p.index).join() === "4,5" && added[0].id === "a-04");
 ok("everything already there stays", manifest.length === 5 && manifest.slice(0, 3).every((p, i) => p === existing[i]));
-ok("captions are trimmed and become the alt text; no caption gets a sensible one", added[0].caption === "First PR!" && added[0].alt === "First PR!" && added[1].alt === "A — photo 5");
+ok("captions are trimmed and become the alt text; no caption gets a sensible one", added[0].caption === "First PR!" && added[0].alt === "First PR!" && added[1].alt === "A, photo 5");
 ok("a new folder starts at 1", addToManifest(existing, "new", "New", [{ w: 1, h: 1 }]).added[0].index === 1);
 if (fails) { console.log(`${fails} photo-upload check(s) failed`); process.exit(1); }
 console.log("all photo-upload checks passed");

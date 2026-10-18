@@ -27,7 +27,7 @@ export function Policies({ admin, meId }: { admin: boolean; meId: string }) {
   return (
     <div className="space-y-4">
       {note && <p role={note.k === "err" ? "alert" : "status"} className={`rounded-md px-4 py-3 text-[14.5px] ${note.k === "err" ? "bg-[#ffebe9] text-[#a40e26]" : "bg-[#dafbe1] text-[#116329]"}`}>{note.t}</p>}
-      <p className="text-[14.5px] text-ink-2">Policies are written and approved by two different admins, and a published version is never changed: a change is a new version, and the old ones stay. They are internal; to make one public, publish it deliberately on the site. <b className="text-ink">Nothing is pre-filled: the club writes its own.</b></p>
+      <p className="text-[14.5px] text-ink-2">Policies are written and approved by two different admins, and a published version is never changed: a change is a new version, and the old ones stay. They are internal; to make one public, publish it deliberately on the site. <b className="text-ink">The club writes its own.</b> A draft charter to start from is in the repository, at <code>docs/CHARTER.md</code>.</p>
       {admin && (
         <Composer id="pol-h" title="New policy">
           <form onSubmit={(e) => { e.preventDefault(); void run(createPolicy(f.slug || slugFrom(f.title), f.title, f.owner), "Created. Write its first draft below.").then((ok) => ok && setF({ slug: "", title: "", owner: "" })); }} className="grid gap-3 sm:grid-cols-2">

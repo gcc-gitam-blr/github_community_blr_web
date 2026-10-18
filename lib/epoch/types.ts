@@ -54,7 +54,8 @@ export interface AuditEntry { id: string; at: string; actor: string; action: Aud
 
 /** Who an organiser broadcast goes to: club sign-ups, or the people waiting for the Epoch dates. */
 export type Audience = "members" | "epoch";
-export interface JoinRequest { id: string; handle: string; email: string; firstEvent: string; createdAt: string }
+/** Joining takes a name and an email; the GitHub username and first event are optional extras (null until added). */
+export interface JoinRequest { id: string; name: string | null; handle: string | null; email: string; firstEvent: string | null; createdAt: string }
 
 export interface ClubMessage { id: string; kind: string; name: string; email: string; handle: string; message: string; createdAt: string }
 

@@ -118,7 +118,7 @@ export async function importMembers(rows: MemberRow[], dryRun: boolean): Promise
 }
 /** Both exports go through a database function that records the download in the audit log. */
 export async function exportMembers(): Promise<Member[] | null> { const { data, error } = await supabase().rpc("export_members"); return error ? null : (data ?? []) as Member[]; }
-export async function exportSignups(): Promise<{ handle: string; email: string; first_event: string; created_at: string }[] | null> {
+export async function exportSignups(): Promise<{ name: string | null; handle: string | null; email: string; first_event: string | null; created_at: string }[] | null> {
   const { data, error } = await supabase().rpc("export_signups"); return error ? null : data ?? [];
 }
 

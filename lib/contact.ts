@@ -21,9 +21,9 @@ export function validateContact(i: ContactInput): string | null {
   if (!EMAIL_RE.test((i.email ?? "").trim())) return "That email doesn't look right.";
   const h = cleanHandle(i.handle ?? "");
   if (h && !HANDLE_RE.test(h)) return "That doesn't look like a GitHub username.";
-  if (i.kind === "apply" && !h) return "Add your GitHub username — we look at it when choosing the team.";
+  if (i.kind === "apply" && !h) return "Add your GitHub username. We look at it when choosing the team.";
   const m = (i.message ?? "").trim();
   if (m.length < 10) return "Tell us a little more (at least a sentence).";
-  if (m.length > 3000) return "That's a bit long — please keep it under 3000 characters.";
+  if (m.length > 3000) return "That's a bit long. Please keep it under 3000 characters.";
   return null;
 }

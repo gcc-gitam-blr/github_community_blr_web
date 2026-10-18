@@ -74,7 +74,7 @@ export default async function Projects() {
           </>
         )}
       </main>
-      <NextBand cmd="git checkout -b your-idea" title={<>Your idea<br />could be next.</>} text="Members post ideas, find teammates by skill, and the core team features the best of them here." href="/hub" cta="Open the project hub" second={{ href: "/#join", label: "Not a member yet? Join the club" }} tone="ink" />
+      <NextBand cmd="git checkout -b your-idea" title={<>Your idea<br />could be next.</>} text="Members post ideas, find teammates by skill, and the core team features the best of them here." href="/hub" cta="Open the project hub" second={{ href: "/join", label: "Not a member yet? Join the club" }} tone="ink" />
       <SiteFooter />
     </>
   );

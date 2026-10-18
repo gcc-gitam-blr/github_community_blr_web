@@ -28,7 +28,7 @@ export async function GET(req: Request) {
   const db = createClient(url, key, { auth: { persistSession: false } });
   const now = new Date(), since = new Date(now.getTime() - 7 * 864e5).toISOString();
   const [s, m, f] = await Promise.all([
-    db.from("join_requests").select("handle, created_at").gte("created_at", since).limit(1000),
+    db.from("join_requests").select("name, handle, created_at").gte("created_at", since).limit(1000),
     db.from("messages").select("kind").gte("created_at", since).limit(1000),
     db.from("event_feedback").select("event, rating").gte("created_at", since).limit(2000),
   ]);

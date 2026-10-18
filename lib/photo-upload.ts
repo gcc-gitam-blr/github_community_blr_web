@@ -18,7 +18,7 @@ export function addToManifest(manifest: Photo[], folder: string, title: string, 
   const start = Math.max(0, ...manifest.filter((p) => p.event === folder).map((p) => p.index));
   const added: Photo[] = photos.map((p, i) => {
     const index = start + i + 1, caption = (p.caption ?? "").trim().slice(0, 200);
-    return { id: `${folder}-${String(index).padStart(2, "0")}`, event: folder, eventTitle: title, index, w: p.w, h: p.h, alt: caption || `${title} — photo ${index}`, caption };
+    return { id: `${folder}-${String(index).padStart(2, "0")}`, event: folder, eventTitle: title, index, w: p.w, h: p.h, alt: caption || `${title}, photo ${index}`, caption };
   });
   return { manifest: [...manifest, ...added], added };
 }

@@ -40,8 +40,8 @@ export function parseQuiz(text: string): Quiz & { problems: Problem[] } {
     const d = cur; cur = null;
     if (d.answerText !== undefined && d.answer < 0) d.answer = pickAnswer(d.answerText, d.options);
     if (d.options.length < 2) return void problems.push({ line: d.line, message: `"${short(d.q)}" needs at least 2 options` });
-    if (d.options.length > MAX_OPTIONS) return void problems.push({ line: d.line, message: `"${short(d.q)}" has ${d.options.length} options — ${MAX_OPTIONS} at most` });
-    if (d.answer < 0 || d.answer >= d.options.length) return void problems.push({ line: d.line, message: `"${short(d.q)}" has no correct answer — tick it with [x] or add "Answer: B"` });
+    if (d.options.length > MAX_OPTIONS) return void problems.push({ line: d.line, message: `"${short(d.q)}" has ${d.options.length} options, and ${MAX_OPTIONS} is the most` });
+    if (d.answer < 0 || d.answer >= d.options.length) return void problems.push({ line: d.line, message: `"${short(d.q)}" has no correct answer. Tick it with [x] or add "Answer: B"` });
     questions.push({ q: d.q, options: d.options, answer: d.answer, time: d.time });
   };
 

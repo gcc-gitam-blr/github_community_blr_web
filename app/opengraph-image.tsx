@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 /* The preview card shown when the site link is shared (WhatsApp, LinkedIn, Discord…). */
-export const alt = "GitHub Community Club · GITAM Bengaluru — Code. Collaborate. Contribute.";
+export const alt = "GitHub Community Club · GITAM Bengaluru. Code. Collaborate. Contribute.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

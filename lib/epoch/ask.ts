@@ -26,7 +26,7 @@ export function answer(raw: string): Hit | null {
 
   const booth = BOOTHS.find((b) => q.includes(norm(b.name)) || (b.id.length > 2 && b.id !== "vr" && q.includes(b.id.replace(/-/g, " "))) || (b.id === "vr" && /\bvr\b|virtual/.test(q)));
   if (booth && has(q, "cost", "price", "how much", "coins", "pay", "worth", "earn")) {
-    return booth.kind === "recharge" ? A(`${booth.name} pays +${booth.coins} coins`, "Once per person — one attempt at each recharge point.", "/epoch/booths")
+    return booth.kind === "recharge" ? A(`${booth.name} pays +${booth.coins} coins`, "Once per person: one attempt at each recharge point.", "/epoch/booths")
       : booth.kind === "free" ? A(`${booth.name} is free`, booth.blurb, "/epoch/booths")
       : A(`${booth.name} costs ${booth.coins} coins per session`, booth.blurb, "/epoch/booths");
   }

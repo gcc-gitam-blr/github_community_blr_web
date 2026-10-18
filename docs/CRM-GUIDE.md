@@ -26,7 +26,7 @@ time), on the very next page load. Nobody has to remember to remove it.
 
 | Role | Who | Can |
 | --- | --- | --- |
-| **Volunteer** | Event-day staff | Mark attendance, check people in at the Epoch desk, scan at their booth. Cannot read sign-ups, messages or feedback. |
+| **Volunteer** | Event-day staff | Mark attendance, check people in at the Epoch desk, scan at their booth, run the exam timer and host quizzes. Cannot read sign-ups, messages or feedback. |
 | **Core** | The core team | Everything a volunteer can, plus read sign-ups, messages, feedback, members, events, tasks, meetings, decisions, assets and policies; propose events; create tasks and meetings; review applications they are assigned to. |
 | **Admin** | President / vice-president level | Everything, plus: change who has access, run recruitment, approve events, record decisions, edit assets, run the handover, publish policies, read the activity log. |
 | *No access* | Everyone else (including attendees) | Sees "ask an admin". |
@@ -41,7 +41,7 @@ Rules that never bend:
 
 ## 3. The tabs
 
-The menu is grouped: **Club** (Needs you, Attendance & certificates, Sign-ups & email, Messages, Feedback), **People**
+The menu is grouped: **Club** (Needs you, Attendance & certificates, Timer & quiz, Sign-ups & email, Messages, Feedback), **People**
 (Members, Recruitment, Projects, People & roles), **Work** (Event proposals, Tasks, Meetings & decisions, Assets & handover, Policies)
 and **Site** (Activity, Site errors, admins only). Volunteers see only the ones they can use.
 
@@ -54,6 +54,21 @@ The admin opens here: one list of everything waiting for you, gathered from ever
 due this week, people asking to join your project, applications to review, projects asking to be featured, and for
 admins: proposals to decide, policy drafts waiting for a second admin, access ending soon, accounts without an owner,
 too few admins). Each line links to the place to act. Start every visit here.
+
+### Timer & quiz
+The room tools, without typing addresses. **Exam timer:** write what it's for, pick a length (or type the minutes), add a
+line for the room, and press **Open it on the projector**: `/timer` opens in a new tab, filled in, waiting for **Start**.
+**Live quiz:** every quiz in `content/quizzes` and every quiz saved from the host page is listed; **Host** opens it on the
+projector with a room code, ready for players. Players open `/quiz` on their phones (the QR code and **Copy the link** are
+there for the slide) and type the code. **Past results** lists the last six quizzes with the winner, and a CSV of every
+player's score. **Write or paste a new one** opens the host page to write a quiz or paste one from a PDF.
+
+### Sign-ups & email
+People join with **a name and an email**, from the form at the top of the home page, `/join`, or the end of any event or
+update page. Their GitHub username and the first event they'd like are optional: they can add them straight away, or
+later from the link in their welcome email. So the table shows **not added yet** until they do, and the Monday email lists
+new people by username, or by name until they add one. **Download CSV** has everything; **Email everyone** writes to club
+sign-ups or to the people waiting for Epoch dates, and every email carries an unsubscribe link.
 
 ### People & roles
 Give someone access by GitHub username: pick a role, an optional title (President, Events lead…) and **the day it ends**.
@@ -138,7 +153,8 @@ completed when every step is done or waived with a reason.
 
 ### Policies
 The club's own rules, as versions. One admin writes a draft; a **different** admin approves and publishes it. A published
-version is **never edited**: a change is a new version, and the old ones stay. Nothing is pre-filled: the club writes them.
+version is **never edited**: a change is a new version, and the old ones stay. Nothing is pre-filled. A draft charter
+to start from is in [CHARTER.md](CHARTER.md): agree it at a core team meeting, then one admin pastes it in and another publishes it.
 
 ### Projects (and the member project hub)
 Members open **`/hub`** (signed in with GitHub; active members and the core team only) to: say which areas they like and what

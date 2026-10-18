@@ -10,6 +10,7 @@ import { Attendance } from "./Attendance";
 import { ClubPulse, FeedbackSummary, Inbox, SignUps } from "./Club";
 import { Node, Role, btn, card } from "./kit";
 import { Meetings } from "./Meetings";
+import { LiveTools, type QuizFile } from "./LiveTools";
 import { Members } from "./Members";
 import { NeedsYou, perSection, useNeeds } from "./NeedsYou";
 import { Proposals } from "./Proposals";
@@ -29,6 +30,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 const SECTIONS = [
   { id: "overview", label: "Needs you", group: "Club", core: true },
   { id: "attendance", label: "Attendance & certificates", group: "Club" },
+  { id: "live", label: "Timer & quiz", group: "Club" },
   { id: "signups", label: "Sign-ups & email", group: "Club", core: true },
   { id: "messages", label: "Messages", group: "Club", core: true },
   { id: "feedback", label: "Feedback", group: "Club", core: true },
@@ -94,7 +96,7 @@ function KeysNote() {
   );
 }
 
-export function AdminApp() {
+export function AdminApp({ quizzes = [] }: { quizzes?: QuizFile[] }) {
   const { store, me, ready, refresh } = useEpoch();
   const [user, setUser] = useState<Awaited<ReturnType<typeof signedInUser>> | undefined>(undefined);
   const [section, setSection] = useState<Section>("overview");
@@ -187,9 +189,10 @@ export function AdminApp() {
               <h1 className="mt-1.5 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.03em] sm:text-[38px]">{here.label}</h1>
             </div>
           )}
-          {!admin && <p className="text-[14px] text-ink-3">You&apos;re {me.role === "core" ? "on the core team" : "a volunteer"}: you can mark attendance and check people in; sending emails and changing who has access is for admins.</p>}
+          {!admin && <p className="text-[14px] text-ink-3">You&apos;re {me.role === "core" ? "on the core team" : "a volunteer"}: you can mark attendance, check people in and run the timer and quizzes; sending emails and changing who has access is for admins.</p>}
           {current === "overview" && <><NeedsYou items={needs} name={me.name || me.handle} groupOf={(id) => sectionOf(id)?.group ?? "People"} labelOf={(id) => sectionOf(id)?.label ?? "Project hub"} /><ClubPulse /></>}
           {current === "attendance" && <Attendance admin={admin} />}
+          {current === "live" && <LiveTools quizzes={quizzes} />}
           {current === "signups" && <SignUps />}
           {current === "messages" && <Inbox />}
           {current === "feedback" && <FeedbackSummary />}

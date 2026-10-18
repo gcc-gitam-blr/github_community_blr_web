@@ -14,6 +14,7 @@ import { useActiveSection } from "./useActiveSection";
 import { NAV_LINKS } from "./nav-links";
 import { ClubMark } from "@/components/ui/ClubMark";
 import { MemberButton } from "./MemberButton";
+import { useJoined } from "./QuickJoin";
 
 /* The header is a commit graph. Each place on the site is a commit on one branch; where you are is HEAD.
    Commits behind HEAD are filled and joined by a solid line (history); the ones ahead are hollow on a
@@ -47,6 +48,7 @@ export function Nav() {
   const path = usePathname();
   const home = path === "/";
   const section = useActiveSection(home);
+  const [joined] = useJoined(); // someone who joined on this browser is past "Join": Sign in / My club is their button
   const compact = useCompact();
   const live = useClientValue(() => epochIsLive(), false);
   const soon = useClientValue(() => daysToEpoch(), null);
@@ -63,14 +65,14 @@ export function Nav() {
         {(live || soon) ? (
           <EpochLink href={live ? "/epoch/wallet" : "/epoch/register"} className="flex items-center justify-center gap-2 bg-ink px-4 py-2 text-center font-mono text-[12.5px] text-white">
             <span className={`h-2 w-2 flex-none rounded-full ${live ? "animate-pulse-ring bg-brand" : "bg-gold"}`} />
-            {live ? <>Epoch is live — <u className="text-gold underline-offset-4">open your wallet</u> →</> : <>Epoch starts in <b className="text-gold">{soon} day{soon === 1 ? "" : "s"}</b> — get your ticket →</>}
+            {live ? <>Epoch is live: <u className="text-gold underline-offset-4">open your wallet</u> →</> : <>Epoch starts in <b className="text-gold">{soon} day{soon === 1 ? "" : "s"}</b> — get your ticket →</>}
           </EpochLink>
         ) : <Announcement />}
       </div>
 
       <div className="flex justify-center px-3 pt-3">
         <div className="head-pill pointer-events-auto" data-compact={compact}>
-          <a href={home ? "#top" : "/"} className="group flex flex-none items-center gap-2 rounded-full py-1 pl-0.5 pr-1.5" aria-label="GitHub Community BLR — home">
+          <a href={home ? "#top" : "/"} className="group flex flex-none items-center gap-2 rounded-full py-1 pl-0.5 pr-1.5" aria-label="GitHub Community BLR, home">
             <ClubMark size={32} className="transition-transform duration-300 ease-out group-hover:-rotate-[14deg]" />
             <span className="head-word hidden whitespace-nowrap font-display text-[15px] font-semibold tracking-tight xl:inline">GitHub Community</span>
             <b className="rounded bg-brand px-[6px] py-px font-display text-[15px] font-black">BLR</b>
@@ -83,9 +85,9 @@ export function Nav() {
           <SiteSearch />
           <ThemeToggle className="hidden lg:inline-flex" />
           <MemberButton />
-          <a href={href("/#join")} className="press hidden h-9 flex-none items-center whitespace-nowrap rounded-full bg-ink px-4 font-display text-[14px] font-bold text-white transition-colors duration-150 hover:bg-ink/85 lg:inline-flex">
+          {!joined && <a href="/join" className="press hidden h-9 flex-none items-center whitespace-nowrap rounded-full bg-ink px-4 font-display text-[14px] font-bold text-white transition-colors duration-150 hover:bg-ink/85 lg:inline-flex">
             <span className="head-join-long">Join the club</span><span className="head-join-short">Join</span>
-          </a>
+          </a>}
           <MobileMenu href={href} current={current} live={live} />
         </div>
       </div>

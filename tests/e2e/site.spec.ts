@@ -10,15 +10,19 @@ test.describe("club site", () => {
     await expect(page.getByRole("link", { name: /Join the club/ }).first()).toBeVisible();
   });
 
-  test("the join form guides people and refuses an incomplete sign-up", async ({ page }) => {
+  test("joining asks only for a name and an email, right in the hero, and says what's missing", async ({ page }) => {
     await page.goto("/");
-    const form = page.locator("#join form");
-    await form.scrollIntoViewIfNeeded();
-    await form.getByRole("button", { name: /Merge pull request/ }).click();
-    await expect(form.getByText(/complete all three steps/)).toBeVisible();
-    await form.getByPlaceholder("your-github-handle").fill("-bad-");
-    await expect(form.getByText(/doesn't look like a GitHub username/)).toBeVisible();
-    await expect(form.getByText(/3 of 3 checks pending/)).toBeVisible();
+    const hero = page.locator("#top form");
+    await expect(hero.getByPlaceholder("Your name")).toBeVisible(); // no scrolling needed
+    await expect(hero.getByPlaceholder("your-github-handle")).toHaveCount(0); // no GitHub username up front
+    await hero.getByRole("button", { name: "Join the club" }).click();
+    await expect(hero.getByText("What should we call you?")).toBeVisible();
+    await hero.getByPlaceholder("Your name").fill("Ada");
+    await hero.getByRole("button", { name: "Join the club" }).click();
+    await expect(hero.getByText(/email doesn't look right/)).toBeVisible();
+    const card = page.locator("#join form"); // the pull-request card at the bottom: the same two fields
+    await card.scrollIntoViewIfNeeded();
+    await expect(card.getByPlaceholder("Your name")).toBeVisible();
   });
 
   test("every footer link on the home page leads somewhere that exists", async ({ page, request }) => {
@@ -97,7 +101,7 @@ test.describe("club site", () => {
     for (const p of ["/", "/learn", "/contribute", "/board", "/memories", "/get-involved", "/privacy", "/events/git-merge-26", "/epoch", "/epoch/booths", "/epoch/register", "/epoch/leaderboard", "/epoch/guide", "/epoch/guide/organisers", "/epoch/screen", "/epoch/kiosk/vr"]) {
       await page.goto(p); await page.waitForTimeout(700);
     }
-    await page.goto("/"); await page.locator("#join").getByPlaceholder("your-github-handle").fill("octocat"); await page.waitForTimeout(2000); // GitHub lookup + avatar
+    await page.goto("/join?e=ada%40gitam.in&t=abc"); await page.getByPlaceholder("your-github-username").fill("octocat"); await page.waitForTimeout(2000); // the welcome email's link: GitHub lookup + avatar
     expect(bad).toEqual([]);
   });
 
@@ -237,7 +241,8 @@ test("the team: mentors, the five leads, everyone else, and their crew roles", a
     await expect(team.getByRole("heading", { name })).toBeVisible();
     await expect(team.getByText(role, { exact: true })).toBeVisible();
   }
-  for (const name of ["Geethika", "Aravind K", "Bhavana", "Niharika", "Apsara", "Lokesh", "Manogna"]) await expect(team.getByRole("heading", { name })).toBeVisible();
+  // everyone else: compact rows, names as text (not a heading each)
+  for (const name of ["Geethika", "Aravind K", "Bhavana", "Niharika", "Apsara", "Lokesh", "Manogna"]) await expect(team.getByText(name, { exact: true })).toBeVisible();
   // the crew roles, as assigned
   for (const [label, n] of [["Git Custodian I", 2], ["Code Gatekeeper I", 2], ["Pipeline Architect I", 1], ["Secrets & Security Officer I", 1], ["Issue Alchemist I", 2], ["Stack Explorer I", 1], ["Tech Scout I", 2], ["Onboarding Forge I", 1]] as const) await expect(team.getByText(label, { exact: true })).toHaveCount(n);
   await team.getByText("How our tech roles work").click();
@@ -373,4 +378,15 @@ test("organisers' one-key jumps: nothing for visitors, A opens the admin on an o
   await page.evaluate(() => localStorage.setItem("gcc-shortcuts-off", "1")); // turned off on this device
   await page.goto("/learn"); await page.keyboard.press("e"); await page.waitForTimeout(400);
   expect(new URL(page.url()).pathname).toBe("/learn");
+});
+
+test("someone who joined on this browser sees \"you're in\", not the join forms again", async ({ page }) => {
+  await page.goto("/events/git-merge-26");
+  await expect(page.getByRole("region", { name: "Join the club" }).getByPlaceholder("Your name")).toBeVisible(); // a visitor gets the form at the end
+  await page.evaluate(() => localStorage.setItem("gcc-joined", JSON.stringify({ name: "Ada Lovelace", email: "ada@gitam.in", extras: "later" })));
+  await page.reload();
+  await expect(page.getByRole("region", { name: "Join the club" })).toHaveCount(0);
+  await page.goto("/");
+  await expect(page.locator("#top").getByText("You're in, Ada.")).toBeVisible();
+  await expect(page.locator("header").getByRole("link", { name: /^Join/ })).toHaveCount(0);
 });

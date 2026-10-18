@@ -34,7 +34,7 @@ export function ScanPage() {
       setOut(r.ok ? { ok: true, title: r.booth.name, delta: r.delta, balance: r.balance } : r); if (r.ok) void refresh();
     } else if (staff) {
       const u = await store.lookup(p.id); if (u) setTarget(u); else setOut({ ok: false, error: "Unknown attendee." });
-    } else setOut({ ok: false, error: "That's another attendee's wallet — only organisers scan those." });
+    } else setOut({ ok: false, error: "That's another attendee's wallet. Only organisers can scan those." });
     setBusy(false);
   };
   const done = (o: Outcome) => { setOut(o); setTarget(null); void refresh(); };
@@ -57,7 +57,7 @@ export function ScanPage() {
           {!out && !target && (
             <div className="space-y-4 text-[17px] text-mute">
               <p><b className="font-medium text-ink">Recharge points</b> pay you coins, once each. <b className="font-medium text-ink">Spend booths</b> charge a few coins per session.</p>
-              {me && !me.ticket && !staff && <Notice kind="info">Your ticket isn&apos;t verified yet — pay at the registration desk and show your wallet QR there first.</Notice>}
+              {me && !me.ticket && !staff && <Notice kind="info">Your ticket isn&apos;t verified yet. Pay at the registration desk and show your wallet QR there first.</Notice>}
               {staff && <Notice kind="info">Scan an attendee&apos;s wallet QR. Verifying a ticket credits {STARTER_COINS} {EPOCH.currency}, once.</Notice>}
               <p className="text-[15px]">Something wrong? <Link href="/epoch/guide" className="text-ink underline underline-offset-2">What to do</Link></p>
             </div>

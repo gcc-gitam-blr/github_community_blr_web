@@ -76,7 +76,7 @@ export function Attendance({ admin }: { admin: boolean }) {
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([body], { type: "text/csv" })); a.download = `attendance-${event}.csv`; a.click(); URL.revokeObjectURL(a.href);
   };
 
-  const shown = (joins ?? []).filter((j) => !here.has(j.email.toLowerCase()) && (!filter || `${j.handle} ${j.email}`.toLowerCase().includes(filter.toLowerCase())));
+  const shown = (joins ?? []).filter((j) => !here.has(j.email.toLowerCase()) && (!filter || `${j.name ?? ""} ${j.handle ?? ""} ${j.email}`.toLowerCase().includes(filter.toLowerCase())));
 
   return (
     <div className="space-y-4">
@@ -123,13 +123,13 @@ export function Attendance({ admin }: { admin: boolean }) {
                 {shown.map((j) => (
                   <li key={j.id}><label className="flex cursor-pointer items-center gap-3 px-3 py-2.5 text-[14.5px] hover:bg-soft">
                     <input type="checkbox" checked={picked.has(j.id)} onChange={(e) => { const s = new Set(picked); if (e.target.checked) s.add(j.id); else s.delete(j.id); setPicked(s); }} />
-                    <span className="font-semibold">@{j.handle}</span><span className="truncate text-ink-3">{j.email}</span>
+                    <span className="font-semibold">{j.name ?? `@${j.handle}`}</span>{j.name && j.handle && <span className="text-ink-3">@{j.handle}</span>}<span className="truncate text-ink-3">{j.email}</span>
                   </label></li>
                 ))}
               </ul>
             )}
-            <button disabled={busy || !picked.size} onClick={() => add((joins ?? []).filter((j) => picked.has(j.id)).map((j) => ({ name: j.handle, email: j.email, handle: j.handle })), "From sign-ups")} className={`${btn} mt-3`}>Add {picked.size || ""} selected</button>
-            <p className="mt-2 text-[13px] text-ink-3">Sign-ups only have a GitHub username, so that&apos;s the name on their certificate. For full names, use Luma or add by hand.</p>
+            <button disabled={busy || !picked.size} onClick={() => add((joins ?? []).filter((j) => picked.has(j.id)).map((j) => ({ name: j.name ?? j.handle ?? j.email.split("@")[0], email: j.email, handle: j.handle ?? undefined })), "From sign-ups")} className={`${btn} mt-3`}>Add {picked.size || ""} selected</button>
+            <p className="mt-2 text-[13px] text-ink-3">The name they gave when joining goes on their certificate. To change one, add the person by hand instead.</p>
           </>)}
 
           {mode === "hand" && (<>

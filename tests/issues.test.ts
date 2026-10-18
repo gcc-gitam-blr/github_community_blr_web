@@ -1,5 +1,5 @@
 /* The beginner-issues feed: parsing GitHub's response (fetch is mocked), dropping pull requests, handling errors. */
-import { ago, clubIssues, worldIssues } from "../lib/issues";
+import { ago, clubIssues, pickIssues, worldIssues, type Issue } from "../lib/issues";
 
 let fails = 0; const ok = (n: string, c: boolean) => { console.log((c ? "PASS" : "FAIL") + "  " + n); if (!c) fails++; };
 const realFetch = globalThis.fetch; const calls: string[] = [];
@@ -18,6 +18,10 @@ const item = (id: number, extra: object = {}) => ({ id, title: `Issue ${id}`, ht
   globalThis.fetch = (async () => { throw new Error("offline"); }) as typeof fetch;
   ok("a network failure gives an empty list, not a crash", (await worldIssues()).length === 0);
   globalThis.fetch = realFetch;
+
+  const mk = (id: number, repo: string, title = `Fix the README ${id}`): Issue => ({ id, title, url: "", repo, comments: 0, updated: "", labels: [] });
+  const picked = pickIssues([mk(1, "a/x"), mk(2, "a/x"), mk(3, "a/x"), mk(4, "b/y", "修复文档链接"), mk(5, "c/z", "Fix typo in café menu"), mk(6, "d/w"), mk(7, "e/v"), mk(8, "f/u"), mk(9, "g/t")]);
+  ok("the GitHub-wide list: six at most, two per repository, titles a reader here can read", picked.length === 6 && picked.filter((i) => i.repo === "a/x").length === 2 && !picked.some((i) => i.id === 4) && picked.some((i) => i.id === 5));
 
   const now = Date.parse("2026-10-10T12:00:00Z");
   ok("ago(): today / yesterday / days / months", ago("2026-10-10T01:00:00Z", now) === "today" && ago("2026-10-09T01:00:00Z", now) === "yesterday" && ago("2026-10-05T01:00:00Z", now) === "5 days ago" && ago("2026-07-01T01:00:00Z", now) === "3 mo ago");

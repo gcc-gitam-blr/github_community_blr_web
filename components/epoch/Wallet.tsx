@@ -86,7 +86,7 @@ export function Wallet() {
             </div>
           </section>
 
-          {offline && <div className="mt-4"><Notice kind="info">You&apos;re offline — this is your last saved pass. The QR still works at the desk; your balance updates when you&apos;re back online.</Notice></div>}
+          {offline && <div className="mt-4"><Notice kind="info">You&apos;re offline. This is your last saved pass. The QR still works at the desk; your balance updates when you&apos;re back online.</Notice></div>}
           {!me.ticket && <div className="mt-4"><Notice kind="info">One step left: pay for your ticket at the registration desk and show them this QR. {STARTER_COINS} {EPOCH.currency} appear here within seconds.</Notice></div>}
 
           {/* feed: each line opens its receipt */}

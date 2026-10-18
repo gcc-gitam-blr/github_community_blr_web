@@ -45,7 +45,8 @@ export function MyClub() {
         <h2 className="text-[28px] leading-tight">Your corner of the club.</h2>
         <p className="mt-3 text-[17px] text-ink-2">Sign in with the GitHub account you use for the club. It takes one click, and there is no password to remember.</p>
         <button type="button" onClick={async () => (await import("@/lib/epoch/supabase-store")).startLogin("/me")} className="lift mt-6 inline-flex items-center gap-2 rounded-md border-2 border-ink bg-ink px-5 py-3 font-display font-bold text-white"><MarkGithubIcon size={18} />Sign in with GitHub</button>
-        <p className="mt-4 text-[13.5px] text-ink-3">We only read your public GitHub name and email. <Link href="/privacy" className="underline">Privacy</Link></p>
+        <p className="mt-4 text-[14.5px] text-ink-2">No GitHub account yet? <a href="https://github.com/signup" target="_blank" rel="noopener" className="font-semibold text-link underline-offset-2 hover:underline">Make one in a minute ↗</a>, or come to the next session and we&apos;ll set it up with you.</p>
+        <p className="mt-2 text-[13.5px] text-ink-3">We only read your public GitHub name and email. <Link href="/privacy" className="underline">Privacy</Link></p>
       </div>
       <ul className="grid gap-3 sm:grid-cols-2">
         {[
