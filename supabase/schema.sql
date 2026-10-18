@@ -492,6 +492,11 @@ revoke insert on join_requests from anon, authenticated;
 -- Email: welcome + organiser broadcasts (see lib/email, app/api/join, app/api/broadcast)
 -- ============================================================
 alter table join_requests add column if not exists unsubscribed boolean not null default false;
+-- Joining takes a name and an email. The GitHub username and the first event are optional extras, added right after
+-- (or later, from the link in the welcome email), because nobody remembers their username on the spot.
+alter table join_requests add column if not exists name text check (name is null or length(name) between 1 and 80);
+alter table join_requests alter column handle drop not null;
+alter table join_requests alter column first_event drop not null;
 
 -- Anyone with a valid signed link can unsubscribe: unsubscribe_join, defined with the Epoch interest list below.
 
@@ -950,6 +955,30 @@ begin
   insert into event_feedback (event, rating, liked, improve) values (p_event, p_rating, nullif(trim(coalesce(p_liked, '')), ''), nullif(trim(coalesce(p_improve, '')), ''));
   return 'created';
 end $$;
+
+-- Joining in one step: name and email. 'created', 'exists' (that email already joined: still welcome) or 'busy'.
+create or replace function join_club(p_name text, p_email text) returns text
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare created boolean;
+begin
+  if (select count(*) from join_requests where created_at > now() - interval '1 hour') >= 300 then return 'busy'; end if;
+  insert into join_requests (name, email) values (left(trim(p_name), 80), lower(trim(p_email)))
+  on conflict ((lower(email))) do update set name = coalesce(join_requests.name, excluded.name)
+  returning (xmax = 0) into created; -- xmax 0: a new row, not an existing one
+  return case when created then 'created' else 'exists' end;
+end $$;
+
+-- The optional extras, for an email that already joined (the site checks the signed link first). Empty keeps what's there.
+create or replace function finish_join(p_email text, p_handle text, p_first_event text) returns text
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  update join_requests set handle = coalesce(nullif(trim(coalesce(p_handle, '')), ''), handle),
+                           first_event = coalesce(nullif(trim(coalesce(p_first_event, '')), ''), first_event)
+   where lower(email) = lower(trim(p_email));
+  return case when found then 'ok' else 'missing' end;
+end $$;
+revoke execute on function join_club(text, text), finish_join(text, text, text) from public, anon, authenticated;
+grant execute on function join_club(text, text), finish_join(text, text, text) to service_role;
 
 revoke execute on function submit_join(text, text, text), submit_message(text, text, text, text, text), submit_feedback(text, int, text, text) from public, anon, authenticated;
 grant execute on function submit_join(text, text, text), submit_message(text, text, text, text, text), submit_feedback(text, int, text, text) to service_role;
