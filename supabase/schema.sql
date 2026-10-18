@@ -992,6 +992,16 @@ create table if not exists recruitment_campaigns (
   created_by uuid, created_at timestamptz not null default now(),
   check (closes_on >= opens_on)
 );
+-- each round's own form (Admin → Recruitment → Form): a short introduction, the questions (like a Google Form), and the
+-- teams applicants can pick from. Name, email and GitHub username are always asked. Rounds made before this get the
+-- two questions the first form asked.
+alter table recruitment_campaigns add column if not exists intro text;
+alter table recruitment_campaigns add column if not exists questions jsonb not null default '[{"id":"why","type":"long","label":"Why do you want to join the core team?","help":"A few sentences is plenty.","required":true},{"id":"built","type":"long","label":"Anything you''ve built, organised or contributed to?","help":"Optional. Links are welcome.","required":false}]'::jsonb;
+alter table recruitment_campaigns add column if not exists teams jsonb not null default '["Events","Tech","Design","Content","Outreach"]'::jsonb;
+do $$ begin
+  alter table recruitment_campaigns add constraint recruitment_campaigns_form_check check (jsonb_typeof(questions) = 'array' and length(questions::text) <= 20000
+    and jsonb_typeof(teams) = 'array' and length(teams::text) <= 1000 and (intro is null or length(intro) <= 1000));
+exception when duplicate_object then null; end $$;
 create table if not exists campaign_reviewers (
   campaign_id bigint not null references recruitment_campaigns on delete cascade,
   user_id uuid not null references profiles on delete cascade,
@@ -1004,13 +1014,16 @@ create table if not exists applications (
   email text not null check (length(email) <= 254 and email ~ '^[^\s@]+@[^\s@]+\.[^\s@]+$'),
   handle text not null check (handle ~* '^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9])){0,38}$'),
   team_pref text check (team_pref is null or length(team_pref) <= 40),
-  answers jsonb not null default '{}' check (jsonb_typeof(answers) = 'object' and length(answers::text) <= 4000),
+  answers jsonb not null default '{}' check (jsonb_typeof(answers) = 'object' and length(answers::text) <= 30000),
   status text not null default 'submitted' check (status in ('submitted','screening','interview','selected','waitlisted','rejected','withdrawn','onboarded')),
   created_at timestamptz not null default now(),
   status_changed_at timestamptz not null default now()
 );
 create unique index if not exists applications_one_per_email on applications (campaign_id, lower(email));
 create index if not exists applications_campaign on applications (campaign_id);
+-- a round's form can ask up to 20 questions: room for longer answers than the first, fixed form allowed
+alter table applications drop constraint if exists applications_answers_check;
+alter table applications add constraint applications_answers_check check (jsonb_typeof(answers) = 'object' and length(answers::text) <= 30000);
 create table if not exists application_reviews (
   id bigint generated always as identity primary key,
   application_id bigint not null references applications on delete cascade,
@@ -1129,25 +1142,77 @@ begin
   return json_build_object('ok', true);
 end $$;
 
+-- A round's form: an introduction, 1 to 20 questions and up to 12 teams. Admins only. Answers already given stay where they
+-- are, under each question's id, so editing a question's wording doesn't lose them.
+create or replace function set_campaign_form(p_id bigint, p_intro text, p_questions jsonb, p_teams jsonb) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare q jsonb; o jsonb; t jsonb; ids text[] := '{}'; n int := 0; at text;
+begin
+  if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins can change a recruitment form.'); end if;
+  if not exists (select 1 from recruitment_campaigns where id = p_id) then return json_build_object('ok', false, 'error', 'Campaign not found.'); end if;
+  if length(coalesce(p_intro, '')) > 1000 then return json_build_object('ok', false, 'error', 'Keep the introduction under 1000 characters.'); end if;
+  if p_questions is null or jsonb_typeof(p_questions) <> 'array' or jsonb_array_length(p_questions) not between 1 and 20 then return json_build_object('ok', false, 'error', 'A form has 1 to 20 questions.'); end if;
+  for q in select * from jsonb_array_elements(p_questions) loop
+    n := n + 1; at := 'Question ' || n;
+    if jsonb_typeof(q) <> 'object' or exists (select 1 from jsonb_object_keys(q) k where k not in ('id','type','label','help','required','options')) then return json_build_object('ok', false, 'error', 'Bad request.'); end if;
+    if coalesce(q ->> 'id', '') !~ '^[a-z0-9_-]{1,30}$' or (q ->> 'id') = any(ids) then return json_build_object('ok', false, 'error', at || ' is missing its id. Reload the page and try again.'); end if;
+    ids := ids || (q ->> 'id');
+    if coalesce(q ->> 'type', '') not in ('short','long','choice','checkboxes','dropdown','scale','link') then return json_build_object('ok', false, 'error', at || ': pick a type.'); end if;
+    if length(trim(coalesce(q ->> 'label', ''))) not between 3 and 200 then return json_build_object('ok', false, 'error', at || ' needs a question of 3 to 200 characters.'); end if;
+    if length(coalesce(q ->> 'help', '')) > 300 then return json_build_object('ok', false, 'error', at || ': keep the help text under 300 characters.'); end if;
+    if jsonb_typeof(coalesce(q -> 'required', 'false'::jsonb)) <> 'boolean' then return json_build_object('ok', false, 'error', 'Bad request.'); end if;
+    if q ->> 'type' in ('choice','checkboxes','dropdown') then
+      if jsonb_typeof(q -> 'options') is distinct from 'array' or jsonb_array_length(q -> 'options') not between 2 and 20 then return json_build_object('ok', false, 'error', at || ' needs 2 to 20 options.'); end if;
+      for o in select * from jsonb_array_elements(q -> 'options') loop
+        if jsonb_typeof(o) <> 'string' or length(trim(o #>> '{}')) not between 1 and 100 then return json_build_object('ok', false, 'error', at || ': each option is 1 to 100 characters.'); end if;
+      end loop;
+    end if;
+  end loop;
+  if p_teams is null or jsonb_typeof(p_teams) <> 'array' or jsonb_array_length(p_teams) > 12 then return json_build_object('ok', false, 'error', 'Up to 12 teams.'); end if;
+  for t in select * from jsonb_array_elements(p_teams) loop
+    if jsonb_typeof(t) <> 'string' or length(trim(t #>> '{}')) not between 1 and 40 then return json_build_object('ok', false, 'error', 'Each team name is 1 to 40 characters.'); end if;
+  end loop;
+  update recruitment_campaigns set intro = nullif(trim(coalesce(p_intro, '')), ''), questions = p_questions, teams = p_teams where id = p_id;
+  perform crm_log('campaign_form', 'campaign', p_id::text, jsonb_build_object('questions', n));
+  return json_build_object('ok', true);
+end $$;
+
 -- The campaign the public form is for: open, and today (India) is within its dates. Server key only (the site calls it).
 create or replace function open_campaign() returns json language sql security definer stable set search_path = public, pg_temp as $$
-  select json_build_object('id', id, 'name', name, 'closes_on', closes_on) from recruitment_campaigns
+  select json_build_object('id', id, 'name', name, 'closes_on', closes_on, 'intro', intro, 'questions', questions, 'teams', teams) from recruitment_campaigns
    where status = 'open' and opens_on <= today_ist() and closes_on >= today_ist() order by opens_on desc limit 1
 $$;
 
 -- ---- applying (public form, through the site's server) ----
 create or replace function submit_application(p_campaign bigint, p_name text, p_email text, p_handle text, p_team text, p_answers jsonb)
 returns text language plpgsql security definer set search_path = public, pg_temp as $$
-declare c recruitment_campaigns; aid bigint; k text; v jsonb;
+declare c recruitment_campaigns; aid bigint; k text; v jsonb; q jsonb; x jsonb;
 begin
   select * into c from recruitment_campaigns where id = p_campaign;
   if not found or c.status <> 'open' or c.opens_on > today_ist() or c.closes_on < today_ist() then return 'closed'; end if;
   if (select count(*) from applications where created_at > now() - interval '1 hour') >= 200 then return 'busy'; end if;
   p_answers := coalesce(p_answers, '{}');
-  if jsonb_typeof(p_answers) <> 'object' or (select count(*) from jsonb_object_keys(p_answers)) > 6 then raise exception 'bad answers'; end if;
+  if jsonb_typeof(p_answers) <> 'object' then raise exception 'bad answers'; end if;
+  -- every answer belongs to one of this round's questions, in the shape its type asks for
   for k, v in select * from jsonb_each(p_answers) loop
-    if jsonb_typeof(v) <> 'string' or length(v #>> '{}') > 1000 or length(k) > 30 then raise exception 'bad answers'; end if;
+    q := (select e from jsonb_array_elements(c.questions) e where e ->> 'id' = k limit 1);
+    if q is null then raise exception 'bad answers'; end if;
+    if q ->> 'type' = 'checkboxes' then
+      if jsonb_typeof(v) <> 'array' or jsonb_array_length(v) > 20 then raise exception 'bad answers'; end if;
+      for x in select * from jsonb_array_elements(v) loop
+        if jsonb_typeof(x) <> 'string' or not coalesce(q -> 'options', '[]'::jsonb) @> jsonb_build_array(x) then raise exception 'bad answers'; end if;
+      end loop;
+    else
+      if jsonb_typeof(v) <> 'string' or length(v #>> '{}') > 2000 then raise exception 'bad answers'; end if;
+      if q ->> 'type' in ('choice','dropdown') and not coalesce(q -> 'options', '[]'::jsonb) @> jsonb_build_array(v) then raise exception 'bad answers'; end if;
+      if q ->> 'type' = 'scale' and (v #>> '{}') !~ '^[1-5]$' then raise exception 'bad answers'; end if;
+    end if;
   end loop;
+  -- and every required question is answered
+  for q in select * from jsonb_array_elements(c.questions) loop
+    if coalesce((q ->> 'required')::boolean, false) and coalesce(p_answers -> (q ->> 'id'), '""'::jsonb) in ('""'::jsonb, '[]'::jsonb) then return 'incomplete'; end if;
+  end loop;
+  if nullif(trim(coalesce(p_team, '')), '') is not null and not c.teams @> jsonb_build_array(trim(p_team)) then raise exception 'bad team'; end if;
   insert into applications (campaign_id, name, email, handle, team_pref, answers)
   values (c.id, trim(p_name), lower(trim(p_email)), trim(p_handle), nullif(trim(coalesce(p_team, '')), ''), p_answers)
   on conflict (campaign_id, lower(email)) do nothing returning id into aid;
@@ -1328,12 +1393,32 @@ begin
   return query select * from join_requests order by created_at desc;
 end $$;
 
+-- A round's applications for a spreadsheet: admins only, and the download is logged like the other exports.
+create or replace function export_applications(p_campaign bigint) returns setof applications
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if my_role() <> 'admin' then return; end if;
+  perform crm_log('export', 'applications', p_campaign::text, jsonb_build_object('count', (select count(*) from applications where campaign_id = p_campaign)));
+  return query select * from applications where campaign_id = p_campaign order by created_at;
+end $$;
+
+-- After the site emails a round's applicants (/api/recruitment/email): which group, and how many. Admins only.
+create or replace function log_recruitment_email(p_campaign bigint, p_status text, p_count int) returns json
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if my_role() <> 'admin' then return json_build_object('ok', false, 'error', 'Only admins email applicants.'); end if;
+  perform crm_log('recruitment_email', 'campaign', p_campaign::text, jsonb_build_object('to', left(coalesce(p_status, ''), 20), 'people', greatest(coalesce(p_count, 0), 0)));
+  return json_build_object('ok', true);
+end $$;
+
 revoke execute on function create_campaign(text, text, date, date), set_campaign_dates(bigint, date, date), set_campaign_status(bigint, text),
+  set_campaign_form(bigint, text, jsonb, jsonb), export_applications(bigint), log_recruitment_email(bigint, text, int),
   add_reviewer(bigint, text), remove_reviewer(bigint, uuid), review_application(bigint, int, text), move_application(bigint, text),
   decide_application(bigint, text, text), onboard_application(bigint), create_member(text, text, text, text, date),
   update_member(uuid, text, text, text, text, date), set_member_status(uuid, text), import_members(jsonb, boolean),
   export_members(), export_signups() from public, anon;
 grant execute on function create_campaign(text, text, date, date), set_campaign_dates(bigint, date, date), set_campaign_status(bigint, text),
+  set_campaign_form(bigint, text, jsonb, jsonb), export_applications(bigint), log_recruitment_email(bigint, text, int),
   add_reviewer(bigint, text), remove_reviewer(bigint, uuid), review_application(bigint, int, text), move_application(bigint, text),
   decide_application(bigint, text, text), onboard_application(bigint), create_member(text, text, text, text, date),
   update_member(uuid, text, text, text, text, date), set_member_status(uuid, text), import_members(jsonb, boolean),
