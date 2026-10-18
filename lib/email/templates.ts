@@ -39,9 +39,9 @@ export function welcomeEmail(i: WelcomeInput): Mail {
   const html = frame(`You're in, ${first}`, `
 <h1 style="font-size:24px;line-height:1.25;margin:0 0 12px">You're in, ${esc(first)} 👋</h1>
 <p>Welcome to the GitHub Community Club. No experience needed: every session starts from zero, and you'll open your first pull request with people who've done it before.</p>
-${i.firstEventTitle ? `<p>You'd like to try <b>${esc(i.firstEventTitle)}</b> first. We'll remind you before it.</p>` : ""}
+${i.firstEventTitle ? `<p>You'd like to try <b>${esc(i.firstEventTitle)}</b> first. See you there.</p>` : ""}
 ${next}
-<p><b>Three small things:</b></p>
+<p><b>Before your first session:</b></p>
 <ol style="padding-left:20px;margin:0 0 8px">${steps.map((x) => `<li>${x}</li>`).join("")}</ol>
 ${wa ? button(wa, "Join the WhatsApp community") : ""}
 <p>Questions? Reply to this email. A real person on the team reads it.</p>
@@ -49,9 +49,9 @@ ${wa ? button(wa, "Join the WhatsApp community") : ""}
   const text = [
     `You're in, ${first}!`, "",
     "Welcome to the GitHub Community Club. No experience needed: every session starts from zero.",
-    i.firstEventTitle ? `You'd like to try "${i.firstEventTitle}" first. We'll remind you before it.` : "",
+    i.firstEventTitle ? `You'd like to try "${i.firstEventTitle}" first. See you there.` : "",
     i.nextEvent ? `Next up: ${i.nextEvent.title}, ${i.nextEvent.date}${i.nextEvent.url ? ` (${i.nextEvent.url})` : ""}` : "", "",
-    "Three small things:",
+    "Before your first session:",
     wa ? `- Join the WhatsApp community: ${wa}` : "",
     "- Make a free GitHub account if you don't have one.",
     i.finish && !i.handle ? `- Add your GitHub username (one minute): ${i.finish}` : "", "",
