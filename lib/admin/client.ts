@@ -161,6 +161,8 @@ export interface Proposal {
   id: number; title: string; kind: "workshop" | "talk" | "hackathon" | "meetup" | "fest" | "other"; proposed_by: string | null; proposed_date: string; venue: string; objective: string;
   expected_attendance: number | null; budget_inr: number | null; status: ProposalStatus; event_slug: string | null; decided_by: string | null; decision_note: string | null;
   outcome_note: string | null; attendance_event: string | null; attendance_note: string | null; created_at: string; updated_at: string;
+  details?: ProposalDetails; // for the official document; missing until the schema is re-run
+
 }
 export interface ChecklistItem { id: number; proposal_id: number; label: string; required: boolean; state: "open" | "done" | "na"; note: string | null; sort: number }
 export interface ProposalFields { title: string; kind: Proposal["kind"]; date: string; venue: string; objective: string; expected: number | null; budget: number | null }
@@ -187,7 +189,7 @@ export const linkProposalEvent = (id: number, slug: string) => rpcRes("link_prop
 // ---- Tasks, meetings and decisions ----
 export type TaskStatus = "todo" | "doing" | "blocked" | "done" | "dropped";
 export interface Task { id: number; title: string; details: string | null; owner_id: string; creator_id: string; due_on: string; status: TaskStatus; proposal_id: number | null; meeting_id: number | null; completed_at: string | null }
-export interface Meeting { id: number; title: string; held_on: string; kind: "core" | "general" | "planning" | "review" | "other"; agenda: string | null; minutes: string | null; created_by: string | null; minutes_finalised_at: string | null }
+export interface Meeting { id: number; title: string; held_on: string; kind: "core" | "general" | "planning" | "review" | "other"; agenda: string | null; minutes: string | null; created_by: string | null; minutes_finalised_at: string | null; details?: MeetingDetails }
 export interface MeetingNote { id: number; meeting_id: number; author_id: string | null; note: string; created_at: string }
 export interface DecisionRow { id: number; meeting_id: number | null; title: string; decision: string; rationale: string | null; decided_on: string; status: "active" | "superseded"; supersedes_id: number | null }
 export async function tasks(): Promise<Task[]> {
@@ -221,6 +223,44 @@ export const finaliseMinutes = (id: number) => rpcRes("finalise_minutes", { p_id
 export const addMinutesNote = (id: number, note: string) => rpcRes("add_minutes_note", { p_id: id, p_note: note });
 export const recordDecision = (meeting: number | null, title: string, decision: string, rationale: string, on: string) => rpcRes<{ id: number }>("record_decision", { p_meeting: meeting, p_title: title, p_decision: decision, p_rationale: rationale, p_decided_on: on });
 export const supersedeDecision = (old: number, title: string, decision: string, rationale: string) => rpcRes<{ id: number }>("supersede_decision", { p_old: old, p_title: title, p_decision: decision, p_rationale: rationale });
+
+// ---- Official documents: a proposal and minutes of a meeting, in the university's formats ----
+/** `date_tbd`: the date isn't fixed yet, so the document says "Yet to be decided". Outcomes and requirements: one per line. */
+export interface ProposalDetails { days?: number; date_tbd?: boolean; time?: string; mode?: "offline" | "online" | "hybrid"; audience?: string; description?: string; outcomes?: string; requirements?: string }
+export const setProposalDetails = (id: number, d: ProposalDetails) => rpcRes("set_proposal_details", { p_id: id, p_details: d });
+/** Times as HH:MM; chair and recorder are profile ids. */
+export interface MeetingDetails { starts?: string; ends?: string; mode?: "offline" | "online" | "hybrid"; venue?: string; chair?: string; recorder?: string }
+export const setMeetingDetails = (id: number, d: MeetingDetails) => rpcRes("set_meeting_details", { p_id: id, p_details: d });
+export interface RosterPerson { id: string; name: string; handle: string; title: string | null }
+export type Roster = { present: RosterPerson[]; absent: RosterPerson[] };
+/** Who came and who didn't (organisers on the team that day), each with their title on the day. */
+export async function meetingRoster(id: number): Promise<Roster | null> {
+  const { data } = await supabase().rpc("meeting_roster", { p_id: id });
+  return (data as Roster | null) ?? null;
+}
+/** Everything the proposal's document prints. */
+export async function proposalDoc(id: number): Promise<{ p: Proposal; by: string | null } | null> {
+  const { data } = await supabase().from("event_proposals").select("*").eq("id", id).maybeSingle();
+  if (!data) return null;
+  const p = data as Proposal;
+  const by = p.proposed_by ? ((await supabase().from("profiles").select("name").eq("id", p.proposed_by).maybeSingle()).data?.name as string | undefined) ?? null : null;
+  return { p, by };
+}
+/** Everything the minutes' document prints: the meeting, who came, its decisions, its action items and later notes. */
+export async function minutesDoc(id: number) {
+  const sb = supabase();
+  const [m, roster, d, t, n] = await Promise.all([
+    sb.from("meetings").select("*").eq("id", id).maybeSingle(), meetingRoster(id),
+    sb.from("decisions").select("*").eq("meeting_id", id).order("id"),
+    sb.from("tasks").select("id, title, owner_id, due_on, status").eq("meeting_id", id).order("due_on"),
+    sb.from("meeting_notes").select("*").eq("meeting_id", id).order("created_at"),
+  ]);
+  if (!m.data) return null;
+  const tasks = (t.data ?? []) as { id: number; title: string; owner_id: string; due_on: string; status: TaskStatus }[];
+  const ids = [...new Set(tasks.map((x) => x.owner_id))];
+  const names = ids.length ? Object.fromEntries(((await sb.from("profiles").select("id, name").in("id", ids)).data ?? []).map((x) => [x.id as string, x.name as string])) : {};
+  return { m: m.data as Meeting, roster: roster ?? { present: [], absent: [] }, decisions: (d.data ?? []) as DecisionRow[], tasks: tasks.map((x) => ({ ...x, owner: names[x.owner_id] ?? "" })), notes: (n.data ?? []) as MeetingNote[] };
+}
 
 // ---- Digital assets and the handover checklist ----
 export interface Asset { id: number; name: string; kind: "domain" | "hosting" | "repository" | "database" | "email" | "social" | "design" | "event_platform" | "other"; location_url: string | null; owner_id: string | null; backup_owner_id: string | null; notes: string | null; review_due_on: string | null }
