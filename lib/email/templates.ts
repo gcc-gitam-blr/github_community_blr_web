@@ -77,12 +77,12 @@ ${i.message}` };
 /** To the sender: a short "we got it". */
 export function contactAck(i: { name: string; kindLabel: string; site: string }): Mail {
   const first = i.name.trim().split(/\s+/)[0];
-  const html = frame("We got your message", `<h1 style="font-size:22px;margin:0 0 12px">Thanks, ${esc(first)} — we got it.</h1>
+  const html = frame("We got your message", `<h1 style="font-size:22px;margin:0 0 12px">Thanks, ${esc(first)}. We got it.</h1>
 <p>Your message (<i>${esc(i.kindLabel)}</i>) reached the GitHub Community Club team. A real person will reply, usually within a few days.</p>
 <p>Meanwhile, our WhatsApp community is the quickest way to see what's happening.</p>
 ${CLUB.joinUrl ? button(CLUB.joinUrl, "Join the WhatsApp community") : ""}
-<p style="margin-bottom:0">— The GitHub Community Club team</p>`, i.site);
-  return { subject: "We got your message", html, text: `Thanks, ${first} — we got your message (${i.kindLabel}). A real person will reply, usually within a few days.
+<p style="margin-bottom:0">The GitHub Community Club team</p>`, i.site);
+  return { subject: "We got your message", html, text: `Thanks, ${first}. We got your message (${i.kindLabel}). A real person will reply, usually within a few days.
 
 ${CLUB.name} · ${i.site}` };
 }
@@ -93,8 +93,8 @@ export interface BroadcastInput { subject: string; message: string; site: string
 export function broadcastEmail(i: BroadcastInput): Mail {
   const linkify = (s: string) => esc(s).replace(/(https?:\/\/[^\s<]+)/g, (u) => `<a href="${u}" style="color:#0969da">${u}</a>`);
   const paras = i.message.trim().split(/\n{2,}/).map((p) => `<p>${linkify(p).replace(/\n/g, "<br>")}</p>`).join("");
-  const html = frame(i.subject, `<h1 style="font-size:22px;line-height:1.3;margin:0 0 14px">${esc(i.subject)}</h1>${paras}<p style="margin-bottom:0">— The GitHub Community Club team</p>`, i.site, i.unsubscribe);
-  const text = `${i.subject}\n\n${i.message.trim()}\n\n— The GitHub Community Club team\n\n${CLUB.name} · ${i.site}\nUnsubscribe: ${i.unsubscribe}`;
+  const html = frame(i.subject, `<h1 style="font-size:22px;line-height:1.3;margin:0 0 14px">${esc(i.subject)}</h1>${paras}<p style="margin-bottom:0">The GitHub Community Club team</p>`, i.site, i.unsubscribe);
+  const text = `${i.subject}\n\n${i.message.trim()}\n\nThe GitHub Community Club team\n\n${CLUB.name} · ${i.site}\nUnsubscribe: ${i.unsubscribe}`;
   return { subject: i.subject, html, text };
 }
 
@@ -121,9 +121,9 @@ export function certificateEmail(i: CertificateInput): Mail {
 <p>Here's your certificate of participation for <b>${esc(i.eventTitle)}</b>. Open it to download a PDF or print it.</p>
 ${button(i.url, "View your certificate")}
 <p>Add it to your LinkedIn profile in one click: <a href="${i.linkedin}" style="color:#0969da">Add to LinkedIn</a>.</p>
-<p style="color:#59636e;font-size:14px">Anyone can check it's genuine at the link above — it stays online.</p>
+<p style="color:#59636e;font-size:14px">Anyone can check it's genuine at the link above. It stays online.</p>
 <p>See you at the next one!</p>`, i.site);
-  const text = `Thanks for coming, ${i.name.split(" ")[0]}!\n\nYour certificate of participation for ${i.eventTitle}:\n${i.url}\n\nAdd it to LinkedIn: ${i.linkedin}\n\nSee you at the next one!\n— ${CLUB.name}`;
+  const text = `Thanks for coming, ${i.name.split(" ")[0]}!\n\nYour certificate of participation for ${i.eventTitle}:\n${i.url}\n\nAdd it to LinkedIn: ${i.linkedin}\n\nSee you at the next one!\nThe ${CLUB.name} team`;
   return { subject: `Your certificate: ${i.eventTitle}`, html, text };
 }
 

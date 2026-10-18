@@ -11,7 +11,7 @@ export const eventTitle = (date: string) => eventByDate(date)?.title ?? date;
 export function linkedinUrl(i: { event: string; id: string; issued: string; site: string }) {
   const d = new Date(i.issued);
   const q = new URLSearchParams({
-    startTask: "CERTIFICATION_NAME", name: `${eventTitle(i.event)} — Certificate of participation`, organizationName: CLUB.name,
+    startTask: "CERTIFICATION_NAME", name: `${eventTitle(i.event)}: Certificate of participation`, organizationName: CLUB.name,
     issueYear: String(d.getFullYear()), issueMonth: String(d.getMonth() + 1), certUrl: certificateUrl(i.site, i.id), certId: i.id.slice(0, 8).toUpperCase(),
   });
   return `https://www.linkedin.com/profile/add?${q}`;
