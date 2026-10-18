@@ -98,10 +98,10 @@ function Setup({ onStart }: { onStart: (r: Run) => void }) {
             </div>
             <div className={`mt-3 flex items-center gap-2 rounded-2xl border-2 px-4 py-2.5 ${preset === null ? "border-[#3fc84e]" : "border-white/10"}`}>
               <span className="text-[15px] text-white/60">or exactly</span>
-              <input value={h} onChange={(e) => { setH(e.target.value.replace(/\D/g, "").slice(0, 2)); setPreset(null); }} inputMode="numeric" placeholder="0" aria-label="Hours"
+              <input value={h} onChange={(e) => { setH(e.target.value.replace(/\D/g, "").slice(0, 2)); setPreset(null); }} inputMode="numeric" placeholder={String(Math.floor((preset ?? 0) / 60))} aria-label="Hours"
                 className="w-12 rounded-lg bg-white/[0.06] px-2 py-1.5 text-center font-mono text-[18px] text-white focus:outline-none focus:ring-2 focus:ring-white/30" />
               <span className="text-white/50">h</span>
-              <input value={m} onChange={(e) => { setM(e.target.value.replace(/\D/g, "").slice(0, 3)); setPreset(null); }} inputMode="numeric" placeholder="40" aria-label="Minutes"
+              <input value={m} onChange={(e) => { setM(e.target.value.replace(/\D/g, "").slice(0, 3)); setPreset(null); }} inputMode="numeric" placeholder={String((preset ?? 0) % 60)} aria-label="Minutes"
                 className="w-14 rounded-lg bg-white/[0.06] px-2 py-1.5 text-center font-mono text-[18px] text-white focus:outline-none focus:ring-2 focus:ring-white/30" />
               <span className="text-white/50">min</span>
             </div>
