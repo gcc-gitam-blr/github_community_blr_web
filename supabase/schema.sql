@@ -297,7 +297,7 @@ begin
   if not found or b.kind = 'free' then return json_build_object('ok', false, 'error', 'That QR code isn''t a coin booth.'); end if;
   select * into me from profiles where id = p_user for update;
   if not found then return json_build_object('ok', false, 'error', case when p_staff then 'Unknown attendee QR.' else 'Register first.' end); end if;
-  if not me.ticket then return json_build_object('ok', false, 'error', case when p_staff then me.name || '''s ticket hasn''t been verified yet — send them to the registration desk.' else 'Your ticket hasn''t been verified yet — visit the registration desk.' end); end if;
+  if not me.ticket then return json_build_object('ok', false, 'error', case when p_staff then me.name || '''s ticket hasn''t been verified yet. Send them to the registration desk.' else 'Your ticket hasn''t been verified yet. Visit the registration desk.' end); end if;
 
   if b.kind = 'recharge' then
     d := b.coins;
@@ -310,9 +310,9 @@ begin
   else
     select max(at) into last_at from txs where user_id = me.id and ref = 'booth:' || b.id;
     if last_at is not null and now() - last_at < interval '20 seconds' then
-      return json_build_object('ok', false, 'error', 'Just scanned — wait a few seconds before paying again.');
+      return json_build_object('ok', false, 'error', 'Just scanned. Wait a few seconds before paying again.');
     end if;
-    if me.coins < b.coins then return json_build_object('ok', false, 'error', case when p_staff then 'Not enough coins — ' || me.name || ' has ' || me.coins || '.' else 'Not enough coins — try a recharge point!' end); end if;
+    if me.coins < b.coins then return json_build_object('ok', false, 'error', case when p_staff then 'Not enough coins: ' || me.name || ' has ' || me.coins || '.' else 'Not enough coins. Try a recharge point!' end); end if;
     d := -b.coins;
     insert into txs (user_id, delta, reason, ref) values (me.id, d, b.name, 'booth:' || b.id);
     update profiles set coins = coins + d where id = me.id returning * into me;
@@ -399,7 +399,7 @@ begin
     ticket = case when o.ref = 'ticket' then false else ticket end
   where id = t.id returning * into t;
   if o.ref like 'reward:%' then update rewards set stock = stock + 1 where id = substr(o.ref, 8); end if;
-  perform log_action('reverse', t.id, case when o.ref like 'booth:%' then substr(o.ref, 7) end, amt, o.reason || coalesce(' — ' || nullif(trim(p_reason), ''), ''));
+  perform log_action('reverse', t.id, case when o.ref like 'booth:%' then substr(o.ref, 7) end, amt, o.reason || coalesce(': ' || nullif(trim(p_reason), ''), ''));
   return json_build_object('ok', true, 'delta', amt, 'balance', t.coins);
 end $$;
 
@@ -625,7 +625,7 @@ begin
   if ttl is not null and length(ttl) > 60 then return json_build_object('ok', false, 'error', 'Keep the title under 60 characters.'); end if;
   if h !~ '^[a-z0-9]([a-z0-9-]{0,38})$' then return json_build_object('ok', false, 'error', 'That doesn''t look like a GitHub username.'); end if;
   if exists (select 1 from profiles where id = auth.uid() and lower(handle) = h) then
-    return json_build_object('ok', false, 'error', 'You can''t change your own access — ask another admin.');
+    return json_build_object('ok', false, 'error', 'You can''t change your own access. Ask another admin.');
   end if;
   perform pg_advisory_xact_lock(hashtext('appointments')); -- two admins changing admins at once can't both pass the last-admin check
   select id into t from profiles where lower(handle) = h;
@@ -656,7 +656,7 @@ begin
   perform pg_advisory_xact_lock(hashtext('appointments'));
   select * into a from appointments where id = p_id and revoked_at is null and ends_on >= today_ist() for update;
   if not found then return json_build_object('ok', false, 'error', 'That appointment has already ended.'); end if;
-  if a.user_id = auth.uid() then return json_build_object('ok', false, 'error', 'You can''t end your own access — ask another admin.'); end if;
+  if a.user_id = auth.uid() then return json_build_object('ok', false, 'error', 'You can''t end your own access. Ask another admin.'); end if;
   if a.role = 'admin' and a.starts_on <= today_ist() and not exists (
        select 1 from appointments x where x.id <> a.id and x.user_id <> a.user_id and x.role = 'admin' and x.revoked_at is null and x.starts_on <= today_ist() and x.ends_on >= today_ist()) then
     return json_build_object('ok', false, 'error', 'That would leave no active admin. Appoint another admin first.');
