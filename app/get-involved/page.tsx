@@ -20,6 +20,7 @@ export default async function GetInvolved({ searchParams }: { searchParams: Prom
             <p className="font-mono text-[13px] text-ink-2">{"// get involved"}</p>
             <h1 className="mt-4 text-[clamp(40px,6vw,76px)]">Build the club<br />with us.</h1>
             <p className="mt-5 max-w-[46ch] text-[19px] text-ink-2">The club is run by students and grows with whoever shows up. Tell us how you&apos;d like to help, or just say hello.</p>
+            <p className="mt-4 max-w-[46ch] rounded-md border border-line bg-soft px-4 py-3 text-[15.5px] text-ink-2"><b className="text-ink">Just want to join the club?</b> That&apos;s your name and email, nothing else. <a href="/join" className="font-semibold text-link hover:underline">Join in ten seconds →</a></p>
             <ul className="mt-8 space-y-3 text-[16px] text-ink-2">
               <li><b className="text-ink">Core team</b>: a few hours a week, real responsibility, great for your portfolio.</li>
               <li><b className="text-ink">Sponsors &amp; partners</b>: meet student developers at Epoch and our sessions.</li>
