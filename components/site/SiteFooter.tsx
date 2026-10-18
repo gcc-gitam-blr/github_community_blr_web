@@ -54,7 +54,7 @@ export function SiteFooter({ sticker = true, themes = true }: { sticker?: boolea
         {/* top: identity + calendar */}
         <div className="flex flex-wrap items-end justify-between gap-8 border-b border-[#30363d] py-14">
           <div className="max-w-[440px]">
-            <Link href="/" className="flex items-center gap-3" aria-label="GitHub Community Club BLR — home">
+            <Link href="/" className="flex items-center gap-3" aria-label="GitHub Community Club BLR, home">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/brand/club-mark.png" alt="" width={40} height={40} className="h-10 w-10" />
               <span className="font-display text-[20px] font-bold tracking-tight">GitHub Community Club <span className="text-[#3fb950]">BLR</span></span>

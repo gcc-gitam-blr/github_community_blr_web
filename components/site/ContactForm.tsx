@@ -49,7 +49,7 @@ export function ContactForm({ initial = "question" }: { initial?: Kind }) {
     } catch { setErr("Network error. Please try again."); setState("idle"); }
   };
 
-  const text = `Hi! (${cur.label})\n\n${v.message.trim()}\n\n— ${v.name.trim()}, ${v.email.trim()}${v.handle.trim() ? `, GitHub @${v.handle.trim().replace(/^@/, "")}` : ""}`;
+  const text = `Hi! (${cur.label})\n\n${v.message.trim()}\n\nFrom ${v.name.trim()}, ${v.email.trim()}${v.handle.trim() ? `, GitHub @${v.handle.trim().replace(/^@/, "")}` : ""}`;
   const copy = async () => { try { await navigator.clipboard.writeText(text); setCopied(true); } catch { setCopied(false); } };
   const where = insta ? "Instagram" : "WhatsApp";
 

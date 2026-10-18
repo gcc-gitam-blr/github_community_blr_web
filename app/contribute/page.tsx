@@ -73,7 +73,7 @@ export default async function Contribute() {
         {CLUB.githubOrg && (
           <section className="mt-20" aria-labelledby="ours">
             <h2 id="ours" className="text-[clamp(30px,4vw,48px)]">Issues in our club&apos;s projects</h2>
-            <p className="mb-6 mt-3 text-[17px] text-ink-2">Open “good first issue”s in <a className="text-link underline" href={`${CLUB.githubUrl}/${CLUB.githubOrg}`} target="_blank" rel="noopener">{CLUB.githubOrg}</a> — with club members to help you.</p>
+            <p className="mb-6 mt-3 text-[17px] text-ink-2">Open “good first issue”s in <a className="text-link underline" href={`${CLUB.githubUrl}/${CLUB.githubOrg}`} target="_blank" rel="noopener">{CLUB.githubOrg}</a>, with club members to help you.</p>
             <IssueList issues={club} empty="No open beginner issues in our projects right now. Pick one from the list below, or ask in the WhatsApp community and we'll find you one." />
           </section>
         )}

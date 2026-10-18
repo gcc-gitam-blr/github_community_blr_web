@@ -28,7 +28,7 @@ export const CHEAT: { group: string; blurb: string; cmds: Cmd[] }[] = [
     { cmd: "git pull", what: "Download and merge the latest changes" },
     { cmd: "git fetch", what: "Download changes without merging them yet" },
   ] },
-  { group: "Undo", blurb: "Everyone makes mistakes — Git can undo most.", cmds: [
+  { group: "Undo", blurb: "Everyone makes mistakes. Git can undo most of them.", cmds: [
     { cmd: "git restore <file>", what: "Throw away changes to a file (not staged)" },
     { cmd: "git restore --staged <file>", what: "Unstage a file, keep your changes" },
     { cmd: "git commit --amend", what: "Fix the last commit's message or contents" },
@@ -47,12 +47,12 @@ export const CHEAT: { group: string; blurb: string; cmds: Cmd[] }[] = [
 
 export interface Resource { title: string; by: string; url: string; blurb: string; level: "Start here" | "Next" | "Go further" }
 export const RESOURCES: Resource[] = [
-  { title: "GitHub Skills", by: "GitHub", url: "https://skills.github.com", blurb: "Short interactive courses that run inside a real repository — the best first stop.", level: "Start here" },
+  { title: "GitHub Skills", by: "GitHub", url: "https://skills.github.com", blurb: "Short interactive courses that run inside a real repository. The best first stop.", level: "Start here" },
   { title: "First Contributions", by: "Open source", url: "https://github.com/firstcontributions/first-contributions", blurb: "Make your very first pull request, step by step, on a project built for practice.", level: "Start here" },
   { title: "Learn Git Branching", by: "Peter Cottle", url: "https://learngitbranching.js.org", blurb: "A visual, game-like way to understand branches, merges and rebases.", level: "Start here" },
   { title: "GitHub Docs", by: "GitHub", url: "https://docs.github.com", blurb: "The official reference. Search it whenever you're stuck.", level: "Next" },
-  { title: "Pro Git (free book)", by: "Scott Chacon & Ben Straub", url: "https://git-scm.com/book", blurb: "The standard Git book — free online. Chapters 1–3 cover almost everything you'll need.", level: "Next" },
-  { title: "GitHub Student Developer Pack", by: "GitHub Education", url: "https://education.github.com/pack", blurb: "Free tools for students — Copilot, hosting, domains and more. Verify with your college email.", level: "Next" },
+  { title: "Pro Git (free book)", by: "Scott Chacon & Ben Straub", url: "https://git-scm.com/book", blurb: "The standard Git book, free online. Chapters 1–3 cover almost everything you'll need.", level: "Next" },
+  { title: "GitHub Student Developer Pack", by: "GitHub Education", url: "https://education.github.com/pack", blurb: "Free tools for students: Copilot, hosting, domains and more. Verify with your college email.", level: "Next" },
   { title: "Good First Issue", by: "Community", url: "https://goodfirstissue.dev", blurb: "Find beginner-friendly issues in real open-source projects.", level: "Go further" },
   { title: "Open Source Guides", by: "GitHub", url: "https://opensource.guide", blurb: "How to contribute, how projects work, and how to be a good community member.", level: "Go further" },
 ];

@@ -14,7 +14,7 @@ export const ROLES: Record<CrewId, { title: string; crew: 0 | 1 | 2; industry: s
   gatekeeper: { title: "Code Gatekeeper", crew: 0, industry: "Senior code reviewer / QA lead", access: "Write · Maintain",
     what: "The last line of defence for the codebase: reviews incoming pull requests against the style guide, suggests improvements, and decides when code is clean enough to merge." },
   scout: { title: "Tech Scout", crew: 0, industry: "Technology strategist / stack cartographer", access: "Triage",
-    what: "Watches what's new and relevant in tech — APIs, open-source trends, frameworks — and turns it into project blueprints: two or three realistic options each semester, with the stack each one needs." },
+    what: "Watches what's new and relevant in tech (APIs, open-source trends, frameworks) and turns it into project blueprints: two or three realistic options each semester, with the stack each one needs." },
   pipeline: { title: "Pipeline Architect", crew: 1, industry: "DevOps / CI-CD engineer", access: "Maintain",
     what: "Writes the GitHub Actions workflows that run tests, check links and lint every pull request automatically." },
   security: { title: "Secrets & Security Officer", crew: 1, industry: "DevSecOps / AppSec engineer", access: "Maintain · Admin",
