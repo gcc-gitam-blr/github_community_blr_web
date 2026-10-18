@@ -5,7 +5,8 @@ import { Reveal } from "@/components/ui/Reveal";
 import { Head } from "./Sections";
 import { Shuffled } from "./Shuffled";
 
-/* The team, like a GitHub organisation: mentors (the owners), the five leads, then everyone else six to a row.
+/* The team, like a GitHub organisation: mentors (the owners), the five leads with photos, then everyone else as the
+   compact rows of an organisation's People page (so the section stays short on a phone).
    Technical roles are shown as labels coloured by crew; "How our tech roles work" explains them. */
 type Member = (typeof CLUB.team)[number];
 type Person = { name: string; handle: string; photo?: string; githubAvatar?: boolean };
@@ -39,7 +40,7 @@ function CrewLabel({ r }: { r: CrewRole }) {
 }
 const Tag = ({ t }: { t: string }) => <span className="inline-block rounded-md border border-line bg-soft px-1.5 py-px text-[12px] font-medium text-ink-2">{t}</span>;
 
-function Card({ m, i, big }: { m: Member; i: number; big: boolean }) {
+function Card({ m, i, big = true }: { m: Member; i: number; big?: boolean }) {
   return (
     <Reveal as="li" delay={big ? (i % 6) * 0.05 : 0}>
       <div className="lift aspect-square overflow-hidden rounded-[18px] border-2 border-ink bg-soft"><Face p={m} px={big ? 240 : 200} i={i} text={big ? "text-[clamp(44px,5vw,64px)]" : "text-[clamp(36px,4vw,52px)]"} /></div>
@@ -53,6 +54,20 @@ function Card({ m, i, big }: { m: Member; i: number; big: boolean }) {
   );
 }
 
+/** Everyone else: a small face, the name, and their labels, four to a row on a wide screen. */
+function Row({ m, i }: { m: Member; i: number }) {
+  return (
+    <li className="flex min-w-0 items-start gap-3 py-3">
+      <span className="h-14 w-14 flex-none overflow-hidden rounded-[12px] border-2 border-ink bg-soft"><Face p={m} px={56} i={i} text="text-[20px]" /></span>
+      <span className="min-w-0">
+        <span className="block font-display text-[16.5px] font-bold leading-tight">{m.name}</span>
+        {m.handle && <a href={`https://github.com/${m.handle}`} target="_blank" rel="noopener" className="block truncate font-mono text-[12.5px] text-link hover:underline">@{m.handle}</a>}
+        {(m.tags?.length || m.crew?.length) ? <span className="mt-1.5 flex flex-wrap gap-1">{m.tags?.map((t) => <Tag key={t} t={t} />)}{m.crew?.map((r) => <CrewLabel key={r.role} r={r} />)}</span> : null}
+      </span>
+    </li>
+  );
+}
+
 export function Team() {
   if (!CLUB.team.length) return null;
   const by = (g: Member["group"]) => CLUB.team.filter((m) => m.group === g);
@@ -62,7 +77,7 @@ export function Team() {
   return (
     <section id="team" className={pad}>
       <div className={wrap}>
-        <Head tag={`// core team · ${CLUB.year}`} title="The maintainers.">Students like you, who decided to stop waiting and start organising. <Link href="/apply" className="font-semibold text-link hover:underline">Want to join them? Apply here</Link></Head>
+        <Head tag={`// core team · ${CLUB.year}`} title="The maintainers.">The students who run the sessions, review your first pull requests and build Epoch. The team takes new people every term. <Link href="/apply" className="font-semibold text-link hover:underline">How to join the team</Link></Head>
 
         {mentors.length > 0 && (
           <Reveal className="mb-14">
@@ -87,11 +102,14 @@ export function Team() {
         <ul className="grid grid-cols-2 gap-x-4 gap-y-9 sm:grid-cols-3 lg:grid-cols-5">
           {leads.map((m, i) => <Card key={m.name} m={m} i={i} big />)}
         </ul>
-        {/* …then everyone else, six to a row, in a new order on every visit — it isn't a ranking */}
+        {/* …then everyone else, in a new order on every visit: it isn't a ranking */}
         {members.length > 0 && (
-          <Shuffled className="mt-12 grid grid-cols-2 gap-x-4 gap-y-9 border-t border-line pt-12 sm:grid-cols-3 lg:grid-cols-6">
-            {members.map((m, i) => <Card key={m.name} m={m} i={i + leads.length} big={false} />)}
-          </Shuffled>
+          <Reveal className="mt-12 border-t border-line pt-8">
+            <p className="mb-2 flex flex-wrap items-baseline gap-x-3"><span className="font-display text-[18px] font-bold">Members</span><span className="font-mono text-[13px] text-ink-3">{members.length} people running sessions, projects and Epoch</span></p>
+            <Shuffled className="grid grid-cols-1 gap-x-6 sm:grid-cols-2 lg:grid-cols-4">
+              {members.map((m, i) => <Row key={m.name} m={m} i={i + leads.length} />)}
+            </Shuffled>
+          </Reveal>
         )}
 
         {used.size > 0 && (
