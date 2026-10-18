@@ -11,12 +11,12 @@ export async function POST(req: Request) {
   const problem = validateFeedback(input);
   if (problem === "spam") return reply({ ok: true });
   if (problem) return reply({ ok: false, error: problem }, 422);
-  if (await rateLimited(req, "feedback", 12)) return reply({ ok: false, error: "Too many submissions from here — please try again later." }, 429);
+  if (await rateLimited(req, "feedback", 12)) return reply({ ok: false, error: "Too many submissions from here. Please try again later." }, 429);
 
   const db = serverDb();
-  if (!db) return reply({ ok: false, error: "Feedback isn't connected yet — tell us on WhatsApp instead." }, 503);
+  if (!db) return reply({ ok: false, error: "Feedback isn't connected yet. Tell us on WhatsApp instead." }, 503);
   const { data, error } = await db.rpc("submit_feedback", { p_event: input.event, p_rating: input.rating, p_liked: input.liked?.trim() || null, p_improve: input.improve?.trim() || null });
-  if (error) return reply({ ok: false, error: "Couldn't save that — please try again." }, 502);
-  if (data === "busy") return reply({ ok: false, error: "Lots of feedback right now — please try again in a little while." }, 429);
+  if (error) return reply({ ok: false, error: "Couldn't save that. Please try again." }, 502);
+  if (data === "busy") return reply({ ok: false, error: "Lots of feedback right now. Please try again in a little while." }, 429);
   return reply({ ok: true }, 201);
 }

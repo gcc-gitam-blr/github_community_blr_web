@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   if (message.length < 10 || message.length > 5000) return json({ ok: false, error: "Message must be 10–5000 characters." }, 422);
   const audience = body.audience ?? "members";
   if (!(audience in LISTS)) return json({ ok: false, error: "Pick who it goes to." }, 422);
-  if (!emailConfigured()) return json({ ok: false, error: "Email isn't set up yet — add the email settings in Vercel (see README)." }, 503);
+  if (!emailConfigured()) return json({ ok: false, error: "Email isn't set up yet: add the email settings in Vercel (see the README)." }, 503);
 
   const db = createClient(URL, KEY, { global: { headers: { Authorization: `Bearer ${token}` } }, auth: { persistSession: false } });
   const { data: user } = await db.auth.getUser(token);
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
   const { data: rows, error } = await db.from(LISTS[audience as keyof typeof LISTS]).select("email").eq("unsubscribed", false).limit(MAX_PER_SEND + 1);
   if (error) return json({ ok: false, error: "Couldn't load the list." }, 502);
   if (!rows?.length) return json({ ok: false, error: "Nobody to email yet." }, 422);
-  if (rows.length > MAX_PER_SEND) return json({ ok: false, error: `That's more than ${MAX_PER_SEND} people — send in batches or ask a developer to raise the limit.` }, 422);
+  if (rows.length > MAX_PER_SEND) return json({ ok: false, error: `That's more than ${MAX_PER_SEND} people: send in batches or ask a developer to raise the limit.` }, 422);
 
   // one login for the whole batch, tried before anything is sent: a wrong password stops here, with what to do
   const mailer = await batchMailer();

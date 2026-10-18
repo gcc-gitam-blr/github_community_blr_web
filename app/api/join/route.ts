@@ -20,14 +20,14 @@ export async function POST(req: Request) {
   if (problem === "spam") return reply({ ok: true, status: "created" }); // don't tell bots they were caught
   if (problem) return reply({ ok: false, error: problem }, 422);
 
-  if (await rateLimited(req, "join", 5)) return reply({ ok: false, error: "Too many sign-ups from here — try again in a few minutes." }, 429);
+  if (await rateLimited(req, "join", 5)) return reply({ ok: false, error: "Too many sign-ups from here. Try again in a few minutes." }, 429);
 
   const db = serverDb();
   if (!db) return reply({ ok: false, error: "Sign-ups are not connected yet.", fallback: true }, 503);
 
   const { data, error } = await db.rpc("submit_join", { p_handle: cleanHandle(input.handle), p_email: input.email.trim().toLowerCase(), p_first_event: input.firstEvent });
-  if (error) return reply({ ok: false, error: "Couldn't save that — please try again.", fallback: true }, 502);
-  if (data === "busy") return reply({ ok: false, error: "Lots of sign-ups right now — please try again in a little while.", fallback: true }, 429);
+  if (error) return reply({ ok: false, error: "Couldn't save that. Please try again.", fallback: true }, 502);
+  if (data === "busy") return reply({ ok: false, error: "Lots of sign-ups right now. Please try again in a little while.", fallback: true }, 429);
   if (data === "exists") return reply({ ok: true, status: "exists" }); // that email already signed up
   // a welcome email, if email is set up. A failure here never fails the sign-up itself.
   const email = input.email.trim().toLowerCase(), today = new Date().toISOString().slice(0, 10);

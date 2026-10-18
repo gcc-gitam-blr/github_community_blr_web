@@ -81,7 +81,7 @@ export async function sendCertificates(event: string, ids?: string[]): Promise<R
   try {
     const r = await fetch("/api/certificates", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ event, ids }) });
     return await r.json();
-  } catch { return { ok: false, error: "Network error — please try again." }; }
+  } catch { return { ok: false, error: "Network error. Please try again." }; }
 }
 
 /** Errors from visitors' browsers in the last 30 days (older ones are deleted). Only admins can read them. */
