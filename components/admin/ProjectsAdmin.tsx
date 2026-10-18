@@ -20,7 +20,7 @@ type Data = { ideas: Idea[]; team: TeamMember[]; requests: JoinRequest[]; names:
 export function ProjectsAdmin({ admin, meId }: { admin: boolean; meId: string }) {
   const [view, setView] = useState<"survey" | "review" | "all">("survey");
   const [sum, setSum] = useState<Summary | null>(null); const [answers, setAnswers] = useState<Answer[] | null>(null); const [data, setData] = useState<Data | null>(null);
-  const [note, setNote] = useState<Note>(null); const [busy, setBusy] = useState(false); const [area, setArea] = useState<string>("web"); const [club, setClub] = useState(false);
+  const [note, setNote] = useState<Note>(null); const [busy, setBusy] = useState(false); const [area, setArea] = useState<string>(""); /* "" = everyone who answered */ const [club, setClub] = useState(false);
   const load = useCallback(async () => { const [s, a, d] = await Promise.all([summary(), allInterests(), loadIdeas()]); setSum(s); setAnswers(a); setData(d); }, []);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch, then set state after the await
   useEffect(() => { void load(); }, [load]);
@@ -43,15 +43,15 @@ export function ProjectsAdmin({ admin, meId }: { admin: boolean; meId: string })
             <p className="mt-1 text-[14.5px] text-ink-2">{sum.responses} of {sum.members ?? "?"} active members have answered. Members tell us here which areas they like and what they&apos;d build: use it to pick a club project everyone can join.</p>
             <ul className="mt-4 grid gap-2 sm:grid-cols-2">
               {(sum.domains ?? []).map((d) => (
-                <li key={d.domain}><button onClick={() => setArea(d.domain)} aria-pressed={area === d.domain} className={`flex w-full items-center gap-3 rounded-md border px-3 py-2 text-left text-[14.5px] ${area === d.domain ? "border-ink bg-soft" : "border-line hover:bg-soft/60"}`}><span className="flex-1">{domainLabel(d.domain)}</span><span className="font-mono text-ink-3">{d.count}</span></button></li>
+                <li key={d.domain}><button onClick={() => setArea(area === d.domain ? "" : d.domain)} aria-pressed={area === d.domain} className={`flex w-full items-center gap-3 rounded-md border px-3 py-2 text-left text-[14.5px] ${area === d.domain ? "border-ink bg-soft" : "border-line hover:bg-soft/60"}`}><span className="flex-1">{domainLabel(d.domain)}</span><span className="font-mono text-ink-3">{d.count}</span></button></li>
               ))}
             </ul>
             {(sum.skills ?? []).length > 0 && <p className="mt-4 text-[14px] text-ink-3">Most common skills: <span className="font-mono text-ink-2">{(sum.skills ?? []).map((k) => `${k.skill} ${k.count}`).join(" · ")}</span></p>}
           </>)}
         </section>
         <section className={card} aria-labelledby="who-h">
-          <div className={head}><h2 id="who-h" className="text-[18px]">Who likes {domainLabel(area)}</h2><span className={count}>{(answers ?? []).filter((a) => a.domains.includes(area)).length}</span></div>
-          {answers === null ? <p className="p-5 text-ink-3">Loading…</p> : (() => { const rows = answers.filter((a) => a.domains.includes(area)); return rows.length === 0 ? <p className="p-5 text-ink-3">Nobody has picked this area yet.</p> : (
+          <div className={head}><h2 id="who-h" className="text-[18px]">{area ? `Who likes ${domainLabel(area)}` : "Everyone who answered"}</h2><span className={count}>{(answers ?? []).filter((a) => !area || a.domains.includes(area)).length}</span>{area && <button onClick={() => setArea("")} className={`${btnSoft} ml-auto`}>Show everyone</button>}</div>
+          {answers === null ? <p className="p-5 text-ink-3">Loading…</p> : (() => { const rows = answers.filter((a) => !area || a.domains.includes(area)); return rows.length === 0 ? <p className="p-5 text-ink-3">{area ? "Nobody has picked this area yet." : "Nobody has answered yet. Members fill it in under What I&apos;m into in the hub."}</p> : (
             <ul className="divide-y divide-line">
               {rows.map((a) => (
                 <li key={a.user_id} className="px-5 py-3 text-[14.5px]">
