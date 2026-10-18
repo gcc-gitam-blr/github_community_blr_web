@@ -109,8 +109,9 @@ const memberArgs = (m: MemberRow) => ({ p_name: m.name, p_email: m.email, p_hand
 export const createMember = (m: MemberRow) => rpcRes("create_member", memberArgs(m));
 export const updateMember = (id: string, m: MemberRow) => rpcRes("update_member", { p_id: id, ...memberArgs(m) });
 export const setMemberStatus = (id: string, status: Member["status"]) => rpcRes("set_member_status", { p_id: id, p_status: status });
-export interface ImportReport { total: number; valid: number; dry_run: boolean; errors: { row: number; error: string }[] }
-/** Checks (dryRun) or writes a list of people. With any problem nothing is written, and the report says which rows. */
+export interface ImportReport { total: number; valid: number; dry_run: boolean; added?: number; updated?: number; unchanged?: number; errors: { row: number; error: string }[]; notes?: { row: number; note: string }[] }
+/** Checks (dryRun) or writes a list of people. With any problem nothing is written, and the report says which rows.
+    People already on the list are kept; only what their record is missing is filled in. */
 export async function importMembers(rows: MemberRow[], dryRun: boolean): Promise<(ImportReport & { ok: boolean }) | { ok: false; error: string }> {
   const { data, error } = await supabase().rpc("import_members", { p_rows: rows, p_dry_run: dryRun });
   if (error) return { ok: false, error: error.message };
