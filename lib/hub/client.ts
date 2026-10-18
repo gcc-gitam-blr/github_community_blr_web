@@ -9,17 +9,26 @@ export interface Idea { id: number; title: string; summary: string; domains: str
 export interface TeamMember { project_id: number; user_id: string; role: "owner" | "member"; shows_publicly: boolean }
 export interface JoinRequest { id: number; project_id: number; user_id: string; message: string | null; status: "pending" | "accepted" | "declined" | "withdrawn"; created_at: string }
 export interface Summary { allowed: boolean; responses?: number; members?: number | null; domains?: { domain: string; count: number | null }[]; skills?: { skill: string; count: number }[]; hours?: Record<string, number | null> }
-export interface Teammate { handle: string; name: string; domains: string[]; skills: string[]; wants: string | null; hours: string | null }
+export interface Teammate { handle: string; name: string; domains: string[]; skills: string[]; wants: string | null; hours: string | null; listed: boolean }
 export interface IdeaFields { title: string; summary: string; domains: string[]; skills: string[]; teamSize: number | null; repo: string }
 
 export async function whoAmI(): Promise<{ id: string; handle: string; name: string } | null> {
   const { data: { user } } = await supabase().auth.getUser();
   if (!user) return null;
   const m = user.user_metadata as { user_name?: string; full_name?: string; name?: string };
-  return { id: user.id, handle: m.user_name ?? "", name: m.full_name || m.name || m.user_name || "You" };
+  const name = m.full_name || m.name || m.user_name || "You";
+  await linkMe(name);
+  return { id: user.id, handle: m.user_name ?? "", name };
+}
+/** Makes (or finds) this person's profile, and links it to their member record by email or GitHub username. Without it,
+    someone who only ever signed in here or on My club has nothing a member record can point to. Safe to call every visit. */
+export async function linkMe(name: string) {
+  try { await supabase().rpc("register_profile", { p_name: name.trim().slice(0, 80) || "Member" }); } catch { /* the checks after this say what's missing */ }
 }
 /** Is the signed-in person an active member (or on the core team)? The database answers; nobody else gets into the hub. */
 export async function canTakePart(): Promise<boolean> { const { data } = await supabase().rpc("can_take_part"); return data === true; }
+/** Their organiser role (volunteer, core, admin) or "none". The hub uses it only to explain; the database decides. */
+export async function myRole(): Promise<string> { const { data } = await supabase().rpc("my_role"); return typeof data === "string" ? data : "none"; }
 
 export async function myInterests(uid: string): Promise<Interests | null> {
   const { data } = await supabase().from("member_interests").select("domains, skills, wants, hours, discoverable").eq("user_id", uid).maybeSingle();

@@ -27,6 +27,8 @@ export function MyClub() {
       const { data: { user } } = await sb.auth.getUser();
       if (!live) return;
       if (!user) { setSt({ s: "out" }); return; }
+      const um = user.user_metadata as { user_name?: string; full_name?: string; name?: string };
+      await (await import("@/lib/hub/client")).linkMe(um.full_name || um.name || um.user_name || "Member"); // profile + member link, before the checks below
       const [att, prof, hub, board] = await Promise.all([sb.rpc("my_attendance"), sb.from("profiles").select("coins").eq("id", user.id).maybeSingle(), sb.rpc("can_take_part"), sb.rpc("my_board_status")]);
       if (!live) return;
       const meta = user.user_metadata as { user_name?: string; full_name?: string; name?: string };
