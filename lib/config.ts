@@ -54,6 +54,8 @@ export const CLUB = {
   lumaEpochCalendar: settings.lumaEpochCalendar ?? "",
   email: settings.email ?? "",
   socials: settings.socials as { label: string; href: string }[],
+  // the logos on the official PDFs (Admin → Event proposals, Meetings); uploaded in the content editor
+  docs: ((d) => ({ universityLogo: opt(d?.universityLogo), studentLifeLogo: opt(d?.studentLifeLogo) }))((settings as { docs?: { universityLogo?: string | null; studentLifeLogo?: string | null } }).docs),
 
   // A message shown above the site header (dismissible), between `from` and `until`.
   announcements: (announcements.announcements as { id: string; text: string; href?: string | null; from?: string | null; until?: string | null }[]).map((a) => ({ id: a.id, text: a.text, href: opt(a.href), from: opt(a.from), until: opt(a.until) })) as { id: string; text: string; href?: string; from?: string; until?: string }[],

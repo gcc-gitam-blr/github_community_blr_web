@@ -54,6 +54,10 @@ export default config({
         lumaCalendar: fields.url({ label: "Luma calendar (club)" }),
         lumaEpochCalendar: fields.url({ label: "Luma calendar (Epoch)" }),
         socials: fields.array(fields.object({ label: fields.text({ label: "Name", description: "Instagram, LinkedIn…", ...req }), href: fields.url({ label: "Link", ...req }) }), { label: "Social links", itemLabel: (p) => p.fields.label.value }),
+        docs: fields.object({
+          universityLogo: fields.image({ label: "University logo", description: "Top left on the minutes of a meeting. A PNG with a clear background prints best.", directory: "public/official", publicPath: "/official/" }),
+          studentLifeLogo: fields.image({ label: "Student Life logo", description: "Top left on event proposals and top right on minutes.", directory: "public/official", publicPath: "/official/" }),
+        }, { label: "Official documents", description: "The logos on the PDFs made from Admin → Event proposals and Meetings & decisions, in the university's formats." }),
       },
     }),
     announcements: singleton({
