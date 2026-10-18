@@ -77,10 +77,34 @@ the first time they do. The page warns when fewer than two admins are active, an
 
 ### Members
 The club's people: name, email, GitHub username, team, dates, and active / alumni / inactive. Admins add, edit, change
-status, and **import a spreadsheet** (a CSV with `name` and `email`, optionally `handle`, `team`, `joined_on`). The import
-is checked first: if any row is wrong, **nothing** is saved and you are told which rows. Downloads are logged.
+status, and **import a spreadsheet**: an Excel file (.xlsx) or a CSV, straight from Excel or Google Sheets. The first row
+names the columns, in your own words: "Name of the student", "Email ID", "GitHub Username", "Domain", "Date of joining" all
+work, other columns are ignored, and the page shows which column it read for what. Only a name and an email are needed.
+(An old .xls or a Numbers file has to be saved as .xlsx or CSV first.)
+
+The import is checked first: if any row is wrong, **nothing** is saved and you are told which rows. **People already on the
+list are not a problem:** their record is kept, and the file only fills in what it is missing (GitHub username, team,
+joined date). So keep one sheet, update it, and import it again whenever you like. Downloads are logged.
+
+**Getting someone into the hub.** The hub opens to an active member once their sign-in is **linked** to their row. It links
+by GitHub username or by email, whichever matches, and it happens by itself: when the row is added, imported or edited, and
+every time they sign in. Each active row says **Signed in** or **Hasn't signed in yet**. If someone is on the list but the
+hub still says they're not, their row has neither their GitHub username nor the email on their GitHub account: add the
+username (the hub tells them exactly which one to give you), and ask them to reload.
 
 Open **History** on any member to see their events, their access, their projects and what they're into, in one place.
+
+### Who sees what, and Preview as
+**People & roles** ends with a **Who sees what** table: members, volunteers, the core team and admins, for the public
+site, My club, the hub and every admin section. To check it with your own eyes, use **Preview as** under the menu: the
+core team or a volunteer (the menu and buttons become theirs), or a member (the pages members get, each opened as they see
+it, including the hub at `/hub?as=member`). Previewing only changes your screen; anything you press still runs as you.
+
+In the hub, members find only people who ticked **Let teammates find me**; the core team and admins find everyone who
+answered, with **Hidden from members** on the rest. Everyone sees their own card under **How others see you**.
+
+Admin is the top role: it sees everything. What no single admin can do is on purpose: approve their own proposal,
+application or policy, or change their own access. Those take a second admin.
 
 ### Recruitment
 Each round has its **own form**, built like a Google Form, and its responses in one place.
