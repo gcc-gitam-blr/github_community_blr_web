@@ -12,7 +12,7 @@ import { MyTeams } from "./MyTeams";
 /* The project hub (/hub): sign in with GitHub, say what you like, find a project or people. Only active members and the
    core team get in; the database decides (can_take_part), this page only explains. */
 type Who = { id: string; handle: string; name: string };
-type State = { s: "loading" } | { s: "off" } | { s: "out" } | { s: "closed"; who: Who; email: string } | { s: "in"; who: Who; staff: boolean };
+type State = { s: "loading" } | { s: "off" } | { s: "out" } | { s: "closed"; who: Who; email: string } | { s: "in"; who: Who; staff: boolean; preview: boolean };
 type Data = { ideas: Idea[]; team: TeamMember[]; requests: JoinRequest[]; names: Record<string, { handle: string; name: string }> };
 const TABS = [["into", "What I'm into"], ["ideas", "Project ideas"], ["people", "Find people"], ["teams", "My teams"]] as const;
 type Tab = (typeof TABS)[number][0];
@@ -30,7 +30,9 @@ export function ProjectHub() {
       if (!live) return;
       if (!who) return setSt({ s: "out" });
       const [ok, role, email] = await Promise.all([canTakePart(), myRole(), (async () => (await (await import("@/lib/epoch/supabase-store")).supabase().auth.getUser()).data.user?.email ?? "")()]);
-      if (live) setSt(ok ? { s: "in", who, staff: role === "core" || role === "admin" } : { s: "closed", who, email });
+      // ?as=member: the admin's "open as a member" preview, for the core team and admins only
+      const staff = role === "core" || role === "admin", preview = staff && new URLSearchParams(window.location.search).get("as") === "member";
+      if (live) setSt(ok ? { s: "in", who, staff: staff && !preview, preview } : { s: "closed", who, email });
     })();
     return () => { live = false; };
   }, []);
@@ -65,6 +67,7 @@ export function ProjectHub() {
   const pendingForMe = data ? data.requests.filter((r) => r.status === "pending" && data.ideas.some((i) => i.id === r.project_id && i.owner_id === st.who.id)).length : 0;
   return (
     <div className="mt-10">
+      {st.preview && <p role="status" className="mb-6 rounded-md border border-[#d4a72c] bg-[#fff8c5] px-4 py-3 text-[14.5px] text-[#4d2d00]">Previewing the hub as a member sees it: Find people shows only people who opted in. <a href="/hub" className="font-semibold underline">Back to your own view</a></p>}
       <div className="flex flex-wrap items-center gap-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         {st.who.handle && <img src={`https://github.com/${st.who.handle}.png?size=120`} alt="" width={48} height={48} className="h-12 w-12 rounded-full border border-line" />}
