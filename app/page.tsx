@@ -4,7 +4,6 @@ import { About, Events, Faq, Join, Learn, Projects } from "@/components/site/Sec
 import { Team } from "@/components/site/Team";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { WhatIsGitHub } from "@/components/site/WhatIsGitHub";
-import { GitHubChangelog } from "@/components/site/GitHubChangelog";
 import { Gallery } from "@/components/site/Gallery";
 
 export default function Home() {
@@ -15,7 +14,6 @@ export default function Home() {
       <main id="main">
         <Hero />
         <WhatIsGitHub />
-        <GitHubChangelog variant="home" />
         <About />
         <Learn />
         <Events />

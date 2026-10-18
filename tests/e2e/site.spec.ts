@@ -182,7 +182,7 @@ test("stickers on the laptop lid can be dragged, rubber-band at the edges, and s
 });
 
 test("GitHub Changelog headlines link only to GitHub's own changelog (and hide if the feed is down)", async ({ page }) => {
-  for (const path of ["/", "/updates"]) {
+  for (const path of ["/updates"]) { // the home page no longer carries the changelog
     await page.goto(path);
     const links = await page.locator("#gh-changelog ~ * a, [aria-labelledby=gh-changelog] ol a").evaluateAll((as) => as.map((a) => a.getAttribute("href")!));
     for (const h of links) expect(h, path).toMatch(/^https:\/\/github\.blog\/changelog\//);
