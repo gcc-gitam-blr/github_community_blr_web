@@ -44,7 +44,7 @@ export default async function UpdatePage({ params }: { params: Promise<{ slug: s
           {older ? <Link href={`/updates/${older.slug}`} className="rounded-[12px] border border-line p-4 transition hover:border-ink"><span className="text-[13px] text-ink-3">← Earlier</span><span className="mt-1 block font-semibold">{older.title}</span></Link> : <span />}
           {newer && <Link href={`/updates/${newer.slug}`} className="rounded-[12px] border border-line p-4 text-right transition hover:border-ink"><span className="text-[13px] text-ink-3">Newer →</span><span className="mt-1 block font-semibold">{newer.title}</span></Link>}
         </nav>
-        <JoinStrip title="Like what the club is up to?" text="Join with your name and email: you get a welcome, the next session and the WhatsApp link. Your GitHub username can come later." />
+        <JoinStrip title="Like what the club is up to?" text="Two fields and you're in. Your GitHub username can come later." />
       </main>
       <SiteFooter />
     </>
