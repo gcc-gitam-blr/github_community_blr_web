@@ -75,7 +75,7 @@ function MinutesPage({ m, roster, decisions, tasks, notes }: Minutes) {
   const who = (x: RosterPerson) => `${x.name}${x.title ? `, ${x.title}` : ""}`;
   return (
     <article className="doc-page doc-serif">
-      <header className="doc-head"><Logo src={CLUB.docs.universityLogo} alt="GITAM" /><Logo src={CLUB.docs.studentLifeLogo} alt="GITAM Student Life" /></header>
+      {(CLUB.docs.universityLogo || CLUB.docs.studentLifeLogo) && <header className="doc-head"><Logo src={CLUB.docs.universityLogo} alt="GITAM" /><Logo src={CLUB.docs.studentLifeLogo} alt="GITAM Student Life" /></header>}
       <h1 className="doc-title">GitHub Community Club Meeting<br />Minutes of Meeting</h1>
       <p className="doc-meta"><span><b>Date:</b> {dotDate(m.held_on)}</span><span>{d.starts && <><b>Time</b>: {clock(d.starts)} </>}<b>Mode:</b> {MODE[d.mode ?? "offline"]}{d.venue ? `, ${d.venue}` : ""}</span></p>
       {m.agenda && <><p><b>Agenda:</b></p><Rich text={m.agenda} list /></>}
