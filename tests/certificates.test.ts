@@ -11,7 +11,7 @@ ok("events are named from the club calendar", eventTitle("2026-10-28") === "GIT 
 
 const li = new URL(linkedinUrl({ event: "2026-10-12", id, issued: "2026-10-07T12:00:00Z", site }));
 ok("LinkedIn opens 'add certification' filled in", li.hostname === "www.linkedin.com" && li.searchParams.get("startTask") === "CERTIFICATION_NAME");
-ok("…with the event, the club, the month and the proof link", li.searchParams.get("name")!.startsWith("Learn GitHub") && li.searchParams.get("organizationName") === "GitHub Community Club BLR" && li.searchParams.get("issueYear") === "2026" && li.searchParams.get("issueMonth") === "10" && li.searchParams.get("certUrl") === certificateUrl(site, id));
+ok("…with the event, the club, the month and the proof link", li.searchParams.get("name")!.startsWith(eventTitle("2026-10-12")) && li.searchParams.get("organizationName") === "GitHub Community Club BLR" && li.searchParams.get("issueYear") === "2026" && li.searchParams.get("issueMonth") === "10" && li.searchParams.get("certUrl") === certificateUrl(site, id));
 
 const m = certificateEmail({ name: "Ada <script>Lovelace", eventTitle: "GIT Merge 26", url: "https://x/certificates/1", linkedin: "https://www.linkedin.com/profile/add?x=1", site: "https://x" });
 ok("the subject names the event", m.subject === "Your certificate: GIT Merge 26");

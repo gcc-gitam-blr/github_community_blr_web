@@ -19,7 +19,7 @@ export type Shape = "diamond" | "square" | "ring" | "triangle";
 export type NodeColor = "blue" | "purple" | "mint" | "green";
 
 export interface Recap { text: string; numbers?: { value: number; label: string }[]; photos?: string; video?: string; slides?: string; materials?: Material[] }
-export interface ClubEventData { date: string; dateLabel?: string; href?: string; luma?: string; recap?: Recap; type: string; title: string; text: string; where: string; shape: Shape; color: NodeColor }
+export interface ClubEventData { slug?: string; date: string; dateLabel?: string; href?: string; luma?: string; recap?: Recap; type: string; title: string; text: string; where: string; shape: Shape; color: NodeColor }
 export interface TeamMember { name: string; role?: string; past?: string; group: "mentor" | "lead" | "member"; owner?: boolean; crew?: CrewRole[]; tags?: string[]; handle: string; photo?: string; githubAvatar?: boolean }
 export interface Contributor { name: string; handle: string; photo?: string; githubAvatar?: boolean }
 
@@ -67,7 +67,7 @@ export const CLUB = {
 
   // After an event, its recap shows on its page. Photos: photos-inbox/<event-slug>/ then `node scripts/photos.mjs`.
   events: (events.events as (Raw<ClubEventData> & { recap?: Raw<Recap> | null })[]).map((e) => ({
-    date: e.date as string, dateLabel: opt(e.dateLabel as string), href: opt(e.href as string), luma: opt(e.luma as string), recap: recap(e.recap),
+    slug: opt(e.slug as string), date: e.date as string, dateLabel: opt(e.dateLabel as string), href: opt(e.href as string), luma: opt(e.luma as string), recap: recap(e.recap),
     type: e.type as string, title: e.title as string, text: e.text as string, where: e.where as string, shape: e.shape as Shape, color: e.color as NodeColor,
   })) as ClubEventData[],
 

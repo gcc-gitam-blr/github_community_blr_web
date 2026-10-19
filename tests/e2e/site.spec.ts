@@ -390,3 +390,28 @@ test("someone who joined on this browser sees \"you're in\", not the join forms 
   await expect(page.locator("#top").getByText("You're in, Ada.")).toBeVisible();
   await expect(page.locator("header").getByRole("link", { name: /^Join/ })).toHaveCount(0);
 });
+
+test("the join form says you're in only when it was saved, and an older sign-up without a key still saves its extras", async ({ page }) => {
+  // a "joined" answer with no key (what a caught bot gets) is never shown as joined
+  await page.route("**/api/join", (r) => r.fulfill({ json: { ok: true, status: "created" } }));
+  await page.goto("/");
+  const hero = page.locator("#top");
+  await hero.getByPlaceholder("Your name").fill("Ada Lovelace"); await hero.getByPlaceholder("you@gitam.in").fill("ada@gitam.in");
+  await hero.getByRole("button", { name: "Join the club" }).click();
+  await expect(hero.getByText("That didn't go through. Please try again.")).toBeVisible();
+  await expect(hero.getByText(/You're in/)).toHaveCount(0);
+
+  // someone this browser remembers, but with no key: saving joins again with the same email, then saves with the new key
+  await page.unroute("**/api/join");
+  const sent: { join?: unknown; more?: { token?: string; handle?: string } } = {};
+  await page.route("**/api/join", (r) => { sent.join = r.request().postDataJSON(); return r.fulfill({ json: { ok: true, status: "exists", token: "fresh-key" } }); });
+  await page.route("**/api/join/more", (r) => { sent.more = r.request().postDataJSON(); return r.fulfill({ json: { ok: true } }); });
+  await page.evaluate(() => localStorage.setItem("gcc-joined", JSON.stringify({ name: "Ada Lovelace", email: "ada@gitam.in" })));
+  await page.reload();
+  await hero.getByPlaceholder("your-github-username").fill("ada-l");
+  await hero.getByRole("button", { name: "Save" }).click();
+  await expect(hero.getByText("Join again with the same email to add these.")).toHaveCount(0);
+  await expect.poll(() => sent.more?.token).toBe("fresh-key");
+  expect(sent.more?.handle).toBe("ada-l");
+  await expect(hero.getByPlaceholder("your-github-username")).toHaveCount(0); // done: the extras close
+});

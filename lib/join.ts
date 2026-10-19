@@ -4,20 +4,20 @@ import { CLUB } from "./config";
    Two steps, because a long form loses people: first just a name and an email (that's a sign-up), then, optionally, a
    GitHub username and what they want to try first. The second step is saved with a signed key that only the server can
    make, returned by the first step and put in the welcome email, so nobody can change someone else's sign-up. */
-export interface JoinInput { name: string; email: string; website?: string; elapsedMs?: number /* time on the form */ }
+export interface JoinInput { name: string; email: string; website?: string }
 export interface MoreInput { email: string; token: string; handle?: string; firstEvent?: string }
 export type JoinResult = { ok: true; status: "created" | "exists"; token?: string } | { ok: false; error: string; fallback?: boolean };
 
 export const HANDLE_RE = /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i; // GitHub's own username rule
 export const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/;
 export const MIN_FILL_MS = 2500; // the longer forms (contact, feedback, applications): humans take longer than this
-export const JOIN_MIN_MS = 800;  // joining is two fields, often filled by the browser: only a script is this quick
 
 export const cleanHandle = (h: string) => h.trim().replace(/^@/, "");
 
 export function validateJoin(i: JoinInput): string | null {
-  if (i.website) return "spam"; // honeypot: a hidden field only bots fill in
-  if (i.elapsedMs !== undefined && i.elapsedMs < JOIN_MIN_MS) return "spam"; // measured in the browser, so a wrong device clock can't cause false alarms
+  // honeypot: a hidden field only bots fill in. No "too fast" check here: the browser fills both fields and people press
+  // Join at once, so timing caught real people (who were then told they'd joined when nothing was saved), never bots.
+  if (i.website) return "spam";
   const name = (i.name ?? "").trim();
   if (name.length < 2 || name.length > 80) return "What should we call you?";
   if (!EMAIL_RE.test((i.email ?? "").trim())) return "That email doesn't look right.";

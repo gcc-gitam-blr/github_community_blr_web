@@ -2,6 +2,8 @@
    and "not set" (empty text, empty lists, an empty recap) reads as missing, never as an empty value on the page. */
 import { CLUB } from "../lib/config";
 import { EPOCH, SCHEDULE, SPONSORS } from "../lib/epoch/config";
+import fs from "node:fs";
+import path from "node:path";
 import { eventSlug } from "../lib/events";
 
 let fails = 0; const ok = (n: string, c: boolean) => { console.log((c ? "PASS" : "FAIL") + "  " + n); if (!c) fails++; };
@@ -12,6 +14,14 @@ ok("club settings are filled in", [CLUB.name, CLUB.university, CLUB.year].every(
 ok("every event has a real date, title, type, description and place", CLUB.events.every((e) => /^\d{4}-\d{2}-\d{2}$/.test(e.date) && [e.title, e.type, e.text, e.where].every(filled)));
 ok("every event has a timeline shape and colour", CLUB.events.every((e) => SHAPES.includes(e.shape) && COLORS.includes(e.color)));
 ok("event pages get unique addresses", new Set(CLUB.events.map(eventSlug)).size === CLUB.events.length);
+ok("every event keeps its own page address, so renaming an event never breaks a link already shared", CLUB.events.every((e) => !!e.slug && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(e.slug)));
+// every /events/… link written in the posts and the content files points at an event that exists
+{
+  const slugs = new Set(CLUB.events.map(eventSlug)), dirs = ["content/updates", "content/club"];
+  const broken = dirs.flatMap((d) => fs.readdirSync(d).filter((f) => /\.(md|mdoc|json)$/.test(f)).flatMap((f) =>
+    [...fs.readFileSync(path.join(d, f), "utf8").matchAll(/\/events\/([a-z0-9-]+)/g)].map((m) => m[1]).filter((s) => !slugs.has(s)).map((s) => `${f}: /events/${s}`)));
+  ok(`links to event pages all work${broken.length ? ` (broken: ${broken.join(", ")})` : ""}`, broken.length === 0);
+}
 ok("an empty recap reads as no recap", CLUB.events.every((e) => !e.recap || filled(e.recap.text)));
 ok("unset event fields are missing, not empty", CLUB.events.every((e) => e.dateLabel !== "" && e.luma !== "" && e.href !== ""));
 ok("Epoch keeps its own section link", CLUB.events.some((e) => e.href === "/epoch"));

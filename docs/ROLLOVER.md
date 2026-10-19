@@ -53,7 +53,8 @@ Content editor → **Events**:
 
 - **Keep last year's events.** Past events stay on the site with their recaps; don't delete them.
 - Add the new year's events. If a date isn't fixed, set a rough date and a **Date label** like
-  `January 2028`.
+  `January 2028`. Give each one a short **Page address** (like `git-merge-27`): that's its link, and it stays the same
+  even if the title changes later, so links shared on WhatsApp and Luma keep working. Never change an address once shared.
 - Home page blocks → **Numbers**: only real numbers you can count, with a file name like `events/2027-28.md`.
 - **Announcements**: remove the old ones; add one for the first event if you like.
 - **Updates**: write a short post welcoming the new team. Posts are kept as a record, so don't delete old ones.

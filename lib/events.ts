@@ -3,7 +3,9 @@ import { CLUB } from "./config";
 /* Helpers for the club's events: stable URLs, ordering, and iCalendar output. */
 export type ClubEvent = (typeof CLUB.events)[number];
 
-export const eventSlug = (e: ClubEvent) => e.title.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+/** The event's page address: its own (set once in the content editor, so renaming never breaks a shared link), or one made from the title. */
+export const slugify = (t: string) => t.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+export const eventSlug = (e: ClubEvent) => (e.slug ? slugify(e.slug) : slugify(e.title));
 export const EVENTS = [...CLUB.events].sort((a, b) => a.date.localeCompare(b.date));
 export const findEvent = (slug: string) => EVENTS.find((e) => eventSlug(e) === slug);
 /** "v2026.10.05" — every event is a release of the club */

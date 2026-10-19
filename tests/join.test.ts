@@ -1,12 +1,12 @@
 /* Joining the club: name and email first, the GitHub username and first event later. The shared checks and the
    /api/join and /api/join/more endpoints (called directly, no server needed). */
-import { JOIN_MIN_MS, validateJoin, validateMore } from "../lib/join";
+import { validateJoin, validateMore } from "../lib/join";
 import { CLUB } from "../lib/config";
 import { tokenFor } from "../lib/email/token";
 
 let fails = 0; const ok = (n: string, c: boolean) => { console.log((c ? "PASS" : "FAIL") + "  " + n); if (!c) fails++; };
 const EVENT = CLUB.events[0].date;
-const good = { name: "Ada Lovelace", email: "ada@gitam.in", elapsedMs: 4_000 };
+const good = { name: "Ada Lovelace", email: "ada@gitam.in" };
 const req = (path: string, body: unknown, ip = "1.1.1.1") => new Request(`http://x${path}`, { method: "POST", headers: { "content-type": "application/json", "x-forwarded-for": ip }, body: JSON.stringify(body) });
 
 (async () => {
@@ -20,7 +20,7 @@ const req = (path: string, body: unknown, ip = "1.1.1.1") => new Request(`http:/
   ok("no GitHub username or event is needed to join", validateJoin({ name: "Ada", email: "ada@gitam.in" }) === null);
   ok("a one-letter name or a bad email is refused, with a friendly reason", validateJoin({ ...good, name: "A" }) === "What should we call you?" && validateJoin({ ...good, email: "ada@" }) !== null);
   ok("a filled honeypot is spam", validateJoin({ ...good, website: "http://spam" }) === "spam");
-  ok(`only a script fills two fields in under ${JOIN_MIN_MS} ms; a person using autofill (about a second) is fine`, validateJoin({ ...good, elapsedMs: 200 }) === "spam" && validateJoin({ ...good, elapsedMs: 1_100 }) === null);
+  ok("a browser that fills both fields and a person who presses Join at once is a person, not a bot (timing is no longer a test)", validateJoin({ ...good, elapsedMs: 5 } as never) === null && validateJoin(good) === null);
 
   // ---- step 2: the optional extras ----
   const t = tokenFor("ada@gitam.in");
@@ -32,7 +32,8 @@ const req = (path: string, body: unknown, ip = "1.1.1.1") => new Request(`http:/
   let r = await post({ ...good, email: "nope" }, "2.2.2.2");
   ok("joining with invalid input is a 422", r.status === 422 && (await r.json()).ok === false);
   r = await post({ ...good, website: "x" }, "3.3.3.3");
-  ok("spam is quietly accepted (and dropped)", r.status === 200 && (await r.json()).ok === true);
+  const sp = await r.json();
+  ok("spam is quietly accepted (and dropped), with no key, so a page never shows you are in for it", r.status === 200 && sp.ok === true && !sp.token);
   r = await post(good, "4.4.4.4");
   ok("without a database the form is asked to fall back", r.status === 503 && (await r.json()).fallback === true);
   let last = 0; for (let i = 0; i < 6; i++) last = (await post(good, "5.5.5.5")).status;
