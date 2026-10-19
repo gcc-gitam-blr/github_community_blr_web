@@ -38,6 +38,14 @@ export async function addAttendees(event: string, people: Attendee[]): Promise<R
   return error ? { ok: false, error: error.message } : { ok: true, added: data?.length ?? 0 };
 }
 
+/** Correct the name printed on someone's certificate (and used in the email). Organisers only, by the table's rules. */
+export async function renameAttendee(id: string, name: string): Promise<Res> {
+  const n = name.trim().replace(/\s+/g, " ");
+  if (n.length < 2 || n.length > 80) return { ok: false, error: "A name is 2 to 80 characters." };
+  const { error } = await supabase().from("attendance").update({ name: n }).eq("id", id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
 export async function removeAttendee(id: string): Promise<Res> {
   const { error } = await supabase().from("attendance").delete().eq("id", id);
   return error ? { ok: false, error: error.message } : { ok: true };
