@@ -63,8 +63,10 @@ export function Certificate({ name, handle, event, eventKey, issued, number, url
           </div>
           <div className="text-center">
             <div className="mx-auto mb-1 w-[clamp(90px,16vw,180px)] border-t-2 border-ink" />
-            <p className="text-[clamp(7px,1vw,12px)] font-semibold">On behalf of the club</p>
-            <p className="text-[clamp(6px,0.8vw,10px)] text-[#57606a]">{CLUB.university}</p>
+            {/* the club issues it: the university is where the club is, not the issuer */}
+            <p className="text-[clamp(6px,0.8vw,10px)] uppercase tracking-[0.12em] text-[#57606a]">Issued by</p>
+            <p className="text-[clamp(7px,1vw,12px)] font-semibold">{CLUB.name}</p>
+            <p className="text-[clamp(6px,0.8vw,10px)] text-[#57606a]">A student club at {CLUB.university}</p>
           </div>
           <div className="flex items-end gap-2">
             <p className="hidden text-right text-[clamp(6px,0.8vw,10.5px)] leading-snug text-[#57606a] sm:block">Scan to<br />verify</p>
