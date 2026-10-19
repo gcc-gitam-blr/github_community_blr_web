@@ -1,4 +1,5 @@
 import { CLUB } from "../config";
+import { greetName } from "../attendance";
 import { digestHeadline, type Digest } from "../digest";
 
 /* Plain, readable HTML emails (inline styles — email clients ignore stylesheets) plus a text version.
@@ -112,18 +113,32 @@ export function applicantEmail(i: ApplicantInput): Mail {
   return { subject: i.subject, html, text };
 }
 
-export interface CertificateInput { name: string; eventTitle: string; url: string; linkedin: string; site: string }
+export interface CertificateInput { name: string; eventTitle: string; url: string; linkedin: string; site: string; feedback?: string; next?: { title: string; date: string; url: string } }
+
+export { greetName }; // the rule lives with the attendance helpers, so the admin page can use it too
 
 /** Sent by an admin after an event, only to people marked as attended. */
 export function certificateEmail(i: CertificateInput): Mail {
+  const first = greetName(i.name);
+  const hello = first ? `Thanks for coming, ${first}` : "Thanks for coming";
   const html = frame(`Your certificate for ${i.eventTitle}`, `
-<h1 style="font-size:24px;line-height:1.25;margin:0 0 12px">Thanks for coming, ${esc(i.name.split(" ")[0])} 🎉</h1>
+<h1 style="font-size:24px;line-height:1.25;margin:0 0 12px">${esc(hello)} 🎉</h1>
 <p>Here's your certificate of participation for <b>${esc(i.eventTitle)}</b>. Open it to download a PDF or print it.</p>
 ${button(i.url, "View your certificate")}
 <p>Add it to your LinkedIn profile in one click: <a href="${i.linkedin}" style="color:#0969da">Add to LinkedIn</a>.</p>
-<p style="color:#59636e;font-size:14px">Anyone can check it's genuine at the link above. It stays online.</p>
-<p>See you at the next one!</p>`, i.site);
-  const text = `Thanks for coming, ${i.name.split(" ")[0]}!\n\nYour certificate of participation for ${i.eventTitle}:\n${i.url}\n\nAdd it to LinkedIn: ${i.linkedin}\n\nSee you at the next one!\nThe ${CLUB.name} team`;
+${i.feedback ? `<p><b>How was it?</b> Two minutes, anonymous, and it shapes the next session: <a href="${i.feedback}" style="color:#0969da">tell us</a>.</p>` : ""}
+${i.next ? `<p><b>Next up:</b> ${esc(i.next.title)}, ${esc(i.next.date)} · <a href="${i.next.url}" style="color:#0969da">RSVP</a></p>` : "<p>See you at the next one!</p>"}
+<p style="color:#59636e;font-size:14px">Anyone can check it's genuine at the link above; it stays online. Name spelt wrong on it? Reply to this email and we'll fix it.</p>
+<p style="margin-bottom:0">The ${esc(CLUB.name)} team</p>`, i.site);
+  const text = [
+    `${hello}!`, "",
+    `Your certificate of participation for ${i.eventTitle}:`, i.url, "",
+    `Add it to LinkedIn: ${i.linkedin}`, "",
+    i.feedback ? `How was it? Two minutes, anonymous: ${i.feedback}` : "",
+    i.next ? `Next up: ${i.next.title}, ${i.next.date} (${i.next.url})` : "See you at the next one!", "",
+    "Name spelt wrong on it? Reply to this email and we'll fix it.", "",
+    `The ${CLUB.name} team`,
+  ].filter((l, n, all) => l !== "" || all[n - 1] !== "").join("\n");
   return { subject: `Your certificate: ${i.eventTitle}`, html, text };
 }
 

@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { certificateUrl, eventByDate, linkedinUrl } from "@/lib/certificates";
 import { batchMailer, emailConfigured } from "@/lib/email/send";
 import { certificateEmail } from "@/lib/email/templates";
+import { EVENTS, eventDate, eventSlug, todayInIndia } from "@/lib/events";
 import { SITE_URL } from "@/lib/site";
 
 /* POST /api/certificates — an admin emails certificates to the people marked as attended at one event.
@@ -43,12 +44,16 @@ export async function POST(req: Request) {
     if (problem) return json({ ok: false, error: `Nothing was sent. ${problem}` }, 502);
     const sentIds: string[] = []; let failed = 0, why: string | undefined;
     // stop starting new emails in time to record who got one before the function's 60 s are up; the rest go next time
+    // the same for everyone in this batch: the event's feedback form, and the next event to come
+    const upcoming = EVENTS.find((e) => e.date > event.date && e.date >= todayInIndia());
+    const feedback = event.dateLabel ? undefined : `${SITE_URL}/events/${eventSlug(event)}#feedback`;
+    const nextUp = upcoming && { title: upcoming.title, date: eventDate(upcoming), url: upcoming.luma ?? `${SITE_URL}/events/${eventSlug(upcoming)}` };
     const queue = [...rows], now = new Date().toISOString(), stopAt = Date.now() + 45_000;
     await Promise.all(Array.from({ length: 3 }, async () => {
       while (queue.length && Date.now() < stopAt) {
         const r = queue.shift()!;
         const url = certificateUrl(SITE_URL, r.id);
-        const mail = certificateEmail({ name: r.name, eventTitle: event.title, url, linkedin: linkedinUrl({ event: event.date, id: r.id, issued: now, site: SITE_URL }), site: SITE_URL });
+        const mail = certificateEmail({ name: r.name, eventTitle: event.title, url, linkedin: linkedinUrl({ event: event.date, id: r.id, issued: now, site: SITE_URL }), site: SITE_URL, feedback, next: nextUp });
         const res = await mailer.send(r.email, mail);
         if (res.sent) sentIds.push(r.id);
         else { failed++; why ??= res.why; console.error("certificate email failed:", res.error); }

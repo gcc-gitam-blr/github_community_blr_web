@@ -51,3 +51,10 @@ export function fromLine(line: string): Attendee | null {
   if (name.length < 2 || !EMAIL.test(email)) return null;
   return { name: name.slice(0, 80), email: email.toLowerCase(), handle: githubHandle(gh) };
 }
+
+/** A first name to greet someone by, or null when the name on file is really a GitHub username (one word, lower-case,
+    maybe digits or dashes): "Thanks for coming, lechakrawarthy" reads like a machine wrote it. */
+export const greetName = (name: string) => {
+  const first = name.trim().split(/\s+/)[0] ?? "";
+  return !first || (!/\s/.test(name.trim()) && /^[a-z0-9-]+$/.test(first) && /[0-9-]|^[a-z]{12,}$/.test(first)) ? null : first;
+};

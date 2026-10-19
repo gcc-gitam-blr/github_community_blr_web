@@ -1,6 +1,6 @@
 /* Certificates: the email, the LinkedIn link and the certificate number. */
 import { certNumber, certificateUrl, eventTitle, linkedinUrl } from "../lib/certificates";
-import { certificateEmail } from "../lib/email/templates";
+import { certificateEmail, greetName } from "../lib/email/templates";
 
 let fails = 0; const ok = (n: string, c: boolean) => { console.log((c ? "PASS" : "FAIL") + "  " + n); if (!c) fails++; };
 const id = "2b7c9e10-1f2a-4c3d-9e8f-0a1b2c3d4e5f", site = "https://githubcommunityblr.vercel.app/";
@@ -17,6 +17,13 @@ const m = certificateEmail({ name: "Ada <script>Lovelace", eventTitle: "GIT Merg
 ok("the subject names the event", m.subject === "Your certificate: GIT Merge 26");
 ok("the email links the certificate and LinkedIn", m.html.includes("https://x/certificates/1") && m.html.includes("linkedin.com/profile/add") && m.text.includes("https://x/certificates/1"));
 ok("names are escaped in the HTML", !m.html.includes("<script>") && m.html.includes("Ada &lt;script&gt;Lovelace".split(" ")[0]));
+
+ok("someone is greeted by their first name, not by a GitHub username", greetName("Ada Lovelace") === "Ada" && greetName("Ruchitha") === "Ruchitha" && greetName("lechakrawarthy") === null && greetName("ruchithat25") === null && greetName("dev-nisha") === null);
+const u = certificateEmail({ name: "lechakrawarthy", eventTitle: "GitHub 101", url: "https://x/c/2", linkedin: "https://www.linkedin.com/profile/add?x=2", site: "https://x",
+  feedback: "https://x/events/github-101#feedback", next: { title: "GIT Merge 26", date: "Wednesday, 28 October 2026", url: "https://luma.com/x" } });
+ok("…so a username on file gets a plain thank-you", u.html.includes("Thanks for coming 🎉") && !u.html.includes("lechakrawarthy") && u.text.startsWith("Thanks for coming!"));
+ok("the email asks for feedback, names the next event with its RSVP, and says how to fix a misspelt name", u.html.includes("https://x/events/github-101#feedback") && u.html.includes("GIT Merge 26") && u.html.includes("https://luma.com/x") && u.text.includes("Reply to this email"));
+ok("without a next event it still says see you at the next one", m.html.includes("See you at the next one!"));
 
 if (fails) { console.log(`${fails} certificate check(s) failed`); process.exit(1); }
 console.log("all certificate checks passed");
