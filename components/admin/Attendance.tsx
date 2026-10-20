@@ -4,7 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useEpoch } from "@/components/epoch/EpochProvider";
 import { CLUB } from "@/lib/config";
 import { fromLine, fromLumaCsv, type Attendee, type Import } from "@/lib/attendance";
-import { addAttendees, attendance, removeAttendee, sendCertificates, type AttendanceRow } from "@/lib/admin/client";
+import { addAttendees, attendance, removeAttendee, renameAttendee, sendCertificates, type AttendanceRow } from "@/lib/admin/client";
+import { greetName } from "@/lib/attendance";
+import { noteProblem } from "@/lib/email/templates";
+import { CertEmail, loadMsg, saveMsg, type CertMsg } from "./CertEmail";
 import type { JoinRequest } from "@/lib/epoch/types";
 import { useConfirm } from "@/components/ui/Confirm";
 import { State, btn, card } from "./kit";
@@ -23,6 +26,8 @@ export function Attendance({ admin }: { admin: boolean }) {
   const { store } = useEpoch();
   const [event, setEvent] = useState(defaultEvent);
   const [rows, setRows] = useState<AttendanceRow[] | null>(null);
+  const [editing, setEditing] = useState<{ id: string; name: string } | null>(null); // the name being corrected
+  const [msgs, setMsgs] = useState<Record<string, CertMsg>>({}); // the email's message and subject, per event (saved on this device)
   const [note, setNote] = useState<{ k: "ok" | "err"; t: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [ask, dialog] = useConfirm();
@@ -41,6 +46,10 @@ export function Attendance({ admin }: { admin: boolean }) {
   const here = useMemo(() => new Set((rows ?? []).map((r) => r.email)), [rows]);
   const unsent = (rows ?? []).filter((r) => !r.emailed_at).length;
   const title = events.find((e) => e.date === event)?.title ?? event;
+  const msg = msgs[event] ?? loadMsg(event);
+  const setMsg = (m: CertMsg) => { setMsgs((x) => ({ ...x, [event]: m })); saveMsg(event, m); };
+  // the preview uses the first person still waiting for theirs, so it shows a real name
+  const sample = (rows ?? []).find((r) => !r.emailed_at)?.name ?? rows?.[0]?.name ?? "Ada Lovelace";
 
   const add = async (people: Attendee[], what: string) => {
     setBusy(true); setNote(null);
@@ -61,9 +70,11 @@ export function Attendance({ admin }: { admin: boolean }) {
 
   const send = async (ids?: string[]) => {
     const n = ids?.length ?? unsent;
-    if (!(await ask({ title: `Email ${n} certificate${n === 1 ? "" : "s"}?`, body: <>For <b>{title}</b>. Emails can&apos;t be called back once they&apos;re sent.</>, yes: `Send ${n} email${n === 1 ? "" : "s"}` }))) return;
+    const bad = noteProblem(msg.note.trim(), msg.subject.trim());
+    if (bad) return setNote({ k: "err", t: `${bad} (in The email, above the list)` });
+    if (!(await ask({ title: `Email ${n} certificate${n === 1 ? "" : "s"}?`, body: <>For <b>{title}</b>, {msg.note.trim() ? "with your message" : "the standard email"}. Emails can&apos;t be called back once they&apos;re sent.</>, yes: `Send ${n} email${n === 1 ? "" : "s"}` }))) return;
     setBusy(true); setNote(null);
-    const r = await sendCertificates(event, ids); setBusy(false);
+    const r = await sendCertificates(event, ids, { note: msg.note.trim(), subject: msg.subject.trim() }); setBusy(false);
     setNote(r.ok
       ? { k: r.failed ? "err" : "ok", t: `Sent ${r.sent} of ${r.total}.${r.left ? ` ${r.left} still to send: press the button again.` : ""}${r.failed ? ` ${r.failed} failed. ${r.problem ?? "Try again later."}` : ""}` }
       : { k: "err", t: r.error });
@@ -141,6 +152,8 @@ export function Attendance({ admin }: { admin: boolean }) {
         </div>
       </section>
 
+      {admin && rows && rows.length > 0 && <CertEmail event={event} sample={sample} value={msg} onChange={setMsg} />}
+
       <section className={card} aria-labelledby="list-h">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3">
           <h2 id="list-h" className="text-[18px]">Attended {title}</h2>
@@ -157,7 +170,21 @@ export function Attendance({ admin }: { admin: boolean }) {
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.id} className="border-t border-line">
-                    <td className="px-5 py-2.5"><span className="font-semibold">{r.name}</span>{r.handle && <span className="ml-2 text-ink-3">@{r.handle}</span>}</td>
+                    <td className="px-5 py-2.5">
+                      {editing?.id === r.id ? (
+                        <form className="flex items-center gap-2" onSubmit={async (e) => { e.preventDefault(); const x = await renameAttendee(r.id, editing.name); if (!x.ok) setNote({ k: "err", t: x.error }); else { setEditing(null); await load(); } }}>
+                          <label className="sr-only" htmlFor={`name-${r.id}`}>Name on the certificate</label>
+                          <input id={`name-${r.id}`} autoFocus value={editing.name} maxLength={80} onChange={(e) => setEditing({ id: r.id, name: e.target.value })} onKeyDown={(e) => { if (e.key === "Escape") setEditing(null); }} className="w-[220px] rounded-md border border-line bg-white px-2 py-1 text-[14.5px]" />
+                          <button className="font-semibold text-link hover:underline">Save</button>
+                          <button type="button" onClick={() => setEditing(null)} className="text-ink-3 hover:underline">Cancel</button>
+                        </form>
+                      ) : (<>
+                        <span className="font-semibold">{r.name}</span>{r.handle && <span className="ml-2 text-ink-3">@{r.handle}</span>}
+                        <button onClick={() => setEditing({ id: r.id, name: r.name })} className="ml-2 text-[13px] text-ink-3 hover:text-ink hover:underline" aria-label={`Edit the name for ${r.name}`}>Edit</button>
+                        {/* a GitHub username in the name field prints on the certificate as it is: worth fixing before sending */}
+                        {!greetName(r.name) && <span className="mt-0.5 block text-[12.5px] text-[#9a6700]">Looks like a username, not a name. It prints on the certificate as it is.</span>}
+                      </>)}
+                    </td>
                     <td className="text-ink-2">{r.email}</td>
                     <td>{r.emailed_at ? <State tone="ok">Sent {new Date(r.emailed_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</State> : <State tone="draft">Not sent</State>}</td>
                     <td className="whitespace-nowrap px-5 text-right">

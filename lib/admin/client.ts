@@ -38,6 +38,14 @@ export async function addAttendees(event: string, people: Attendee[]): Promise<R
   return error ? { ok: false, error: error.message } : { ok: true, added: data?.length ?? 0 };
 }
 
+/** Correct the name printed on someone's certificate (and used in the email). Organisers only, by the table's rules. */
+export async function renameAttendee(id: string, name: string): Promise<Res> {
+  const n = name.trim().replace(/\s+/g, " ");
+  if (n.length < 2 || n.length > 80) return { ok: false, error: "A name is 2 to 80 characters." };
+  const { error } = await supabase().from("attendance").update({ name: n }).eq("id", id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
 export async function removeAttendee(id: string): Promise<Res> {
   const { error } = await supabase().from("attendance").delete().eq("id", id);
   return error ? { ok: false, error: error.message } : { ok: true };
@@ -75,11 +83,11 @@ export async function pendingRoles(): Promise<Pending[]> {
 }
 
 /** `left`: not tried yet (the batch stops before the server's time limit); `problem`: why some failed, in words. */
-export async function sendCertificates(event: string, ids?: string[]): Promise<Res<{ sent: number; failed: number; total: number; left?: number; problem?: string }>> {
+export async function sendCertificates(event: string, ids?: string[], msg?: { note: string; subject: string }): Promise<Res<{ sent: number; failed: number; total: number; left?: number; problem?: string }>> {
   const { data: { session } } = await supabase().auth.getSession();
   if (!session) return { ok: false, error: "Sign in again." };
   try {
-    const r = await fetch("/api/certificates", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ event, ids }) });
+    const r = await fetch("/api/certificates", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ event, ids, ...msg }) });
     return await r.json();
   } catch { return { ok: false, error: "Network error. Please try again." }; }
 }

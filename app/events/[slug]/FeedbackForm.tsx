@@ -30,7 +30,7 @@ export function FeedbackForm({ date, title }: { date: string; title: string }) {
   if (state === "done") return <section className="mt-6 rounded-[12px] border-2 border-ink bg-[#dafbe1] p-6" role="status"><h2 className="text-[22px]">Thank you!</h2><p className="mt-1 text-ink-2">Your feedback helps us make the next session better.</p></section>;
   const shown = hover || rating;
   return (
-    <form onSubmit={submit} noValidate className="relative mt-6 rounded-[12px] border border-line bg-white p-6 sm:p-8">
+    <form id="feedback" onSubmit={submit} noValidate className="relative mt-6 scroll-mt-28 rounded-[12px] border border-line bg-white p-6 sm:p-8">
       <h2 className="text-[24px]">How was {title}?</h2>
       <p className="mt-1 text-[15px] text-ink-2">Anonymous, and it takes a minute. Honest answers help most.</p>
       <fieldset className="mt-5">
