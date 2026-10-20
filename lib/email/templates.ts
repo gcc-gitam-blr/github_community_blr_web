@@ -113,7 +113,22 @@ export function applicantEmail(i: ApplicantInput): Mail {
   return { subject: i.subject, html, text };
 }
 
-export interface CertificateInput { name: string; eventTitle: string; url: string; linkedin: string; site: string; feedback?: string; next?: { title: string; date: string; url: string } }
+export interface CertificateInput { name: string; eventTitle: string; url: string; linkedin: string; site: string; feedback?: string; next?: { title: string; date: string; url: string };
+  /** the team's own message for this send (a festival wish, a word about the day), right under the greeting */
+  note?: string; subject?: string }
+
+export const CERT_NOTE_MAX = 800, CERT_SUBJECT_MAX = 120;
+export const certSubject = (eventTitle: string) => `Your certificate: ${eventTitle}`;
+/** {name} is the person's first name ("there" when we only have a username), {event} the event's title. */
+export const fillNote = (t: string, name: string, eventTitle: string) => t.replace(/\{name\}/g, greetName(name) ?? "there").replace(/\{event\}/g, eventTitle);
+/** What stops a send: a [placeholder] left in from a starter message, or too long. */
+export function noteProblem(note: string, subject: string): string | null {
+  const left = `${note} ${subject}`.match(/\[[^\]]{1,30}\]/);
+  if (left) return `Fill in ${left[0]} first.`;
+  if (note.length > CERT_NOTE_MAX) return `Keep the message under ${CERT_NOTE_MAX} characters.`;
+  if (subject.length > CERT_SUBJECT_MAX) return `Keep the subject under ${CERT_SUBJECT_MAX} characters.`;
+  return null;
+}
 
 export { greetName }; // the rule lives with the attendance helpers, so the admin page can use it too
 
@@ -121,8 +136,12 @@ export { greetName }; // the rule lives with the attendance helpers, so the admi
 export function certificateEmail(i: CertificateInput): Mail {
   const first = greetName(i.name);
   const hello = first ? `Thanks for coming, ${first}` : "Thanks for coming";
+  const note = i.note?.trim() ? fillNote(i.note.trim(), i.name, i.eventTitle) : "";
+  // the note: paragraphs on blank lines, line breaks kept; set apart so it reads as a message from people, not boilerplate
+  const noteHtml = note ? `<div style="margin:0 0 18px;padding:14px 16px;border-left:4px solid #2da44e;background:#f6f8fa;border-radius:6px">${note.split(/\n\s*\n/).map((p) => `<p style="margin:0 0 8px">${esc(p).replace(/\n/g, "<br>")}</p>`).join("")}</div>` : "";
   const html = frame(`Your certificate for ${i.eventTitle}`, `
 <h1 style="font-size:24px;line-height:1.25;margin:0 0 12px">${esc(hello)} 🎉</h1>
+${noteHtml}
 <p>Here's your certificate of participation for <b>${esc(i.eventTitle)}</b>. Open it to download a PDF or print it.</p>
 ${button(i.url, "View your certificate")}
 <p>Add it to your LinkedIn profile in one click: <a href="${i.linkedin}" style="color:#0969da">Add to LinkedIn</a>.</p>
@@ -132,6 +151,7 @@ ${i.next ? `<p><b>Next up:</b> ${esc(i.next.title)}, ${esc(i.next.date)} · <a h
 <p style="margin-bottom:0">The ${esc(CLUB.name)} team</p>`, i.site);
   const text = [
     `${hello}!`, "",
+    note, note ? "" : "",
     `Your certificate of participation for ${i.eventTitle}:`, i.url, "",
     `Add it to LinkedIn: ${i.linkedin}`, "",
     i.feedback ? `How was it? Two minutes, anonymous: ${i.feedback}` : "",
@@ -139,7 +159,7 @@ ${i.next ? `<p><b>Next up:</b> ${esc(i.next.title)}, ${esc(i.next.date)} · <a h
     "Name spelt wrong on it? Reply to this email and we'll fix it.", "",
     `The ${CLUB.name} team`,
   ].filter((l, n, all) => l !== "" || all[n - 1] !== "").join("\n");
-  return { subject: `Your certificate: ${i.eventTitle}`, html, text };
+  return { subject: i.subject?.trim() || certSubject(i.eventTitle), html, text };
 }
 
 /** Monday morning, to organisers: the past week on the site, in a few lines, with a link to /admin. */

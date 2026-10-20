@@ -1,8 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
-import { certificateUrl, eventByDate, linkedinUrl } from "@/lib/certificates";
+import { certificateExtras, certificateUrl, eventByDate, linkedinUrl } from "@/lib/certificates";
 import { batchMailer, emailConfigured } from "@/lib/email/send";
-import { certificateEmail } from "@/lib/email/templates";
-import { EVENTS, eventDate, eventSlug, todayInIndia } from "@/lib/events";
+import { certificateEmail, noteProblem } from "@/lib/email/templates";
 import { SITE_URL } from "@/lib/site";
 
 /* POST /api/certificates — an admin emails certificates to the people marked as attended at one event.
@@ -18,11 +17,16 @@ export async function POST(req: Request) {
   if (!URL || !KEY) return json({ ok: false, error: "The database isn't connected yet." }, 503);
   const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) return json({ ok: false, error: "Sign in first." }, 401);
-  let body: { event?: string; ids?: string[] };
+  let body: { event?: string; ids?: string[]; note?: string; subject?: string };
   try { body = await req.json(); } catch { return json({ ok: false, error: "Bad request." }, 400); }
   const event = eventByDate(body.event ?? "");
   if (!event) return json({ ok: false, error: "Pick an event." }, 422);
   if (body.ids && (!Array.isArray(body.ids) || body.ids.some((x) => typeof x !== "string"))) return json({ ok: false, error: "Bad request." }, 400);
+  // the team's own message and subject for this send (Admin → Attendance → The email)
+  if ((body.note !== undefined && typeof body.note !== "string") || (body.subject !== undefined && typeof body.subject !== "string")) return json({ ok: false, error: "Bad request." }, 400);
+  const note = (body.note ?? "").trim(), subject = (body.subject ?? "").trim();
+  const bad = noteProblem(note, subject);
+  if (bad) return json({ ok: false, error: bad }, 422);
   if (!emailConfigured()) return json({ ok: false, error: "Email isn't set up yet: add the email settings in Vercel (see the README)." }, 503);
 
   const db = createClient(URL, KEY, { global: { headers: { Authorization: `Bearer ${token}` } }, auth: { persistSession: false } });
@@ -45,15 +49,13 @@ export async function POST(req: Request) {
     const sentIds: string[] = []; let failed = 0, why: string | undefined;
     // stop starting new emails in time to record who got one before the function's 60 s are up; the rest go next time
     // the same for everyone in this batch: the event's feedback form, and the next event to come
-    const upcoming = EVENTS.find((e) => e.date > event.date && e.date >= todayInIndia());
-    const feedback = event.dateLabel ? undefined : `${SITE_URL}/events/${eventSlug(event)}#feedback`;
-    const nextUp = upcoming && { title: upcoming.title, date: eventDate(upcoming), url: upcoming.luma ?? `${SITE_URL}/events/${eventSlug(upcoming)}` };
+    const { feedback, next: nextUp } = certificateExtras(event, SITE_URL);
     const queue = [...rows], now = new Date().toISOString(), stopAt = Date.now() + 45_000;
     await Promise.all(Array.from({ length: 3 }, async () => {
       while (queue.length && Date.now() < stopAt) {
         const r = queue.shift()!;
         const url = certificateUrl(SITE_URL, r.id);
-        const mail = certificateEmail({ name: r.name, eventTitle: event.title, url, linkedin: linkedinUrl({ event: event.date, id: r.id, issued: now, site: SITE_URL }), site: SITE_URL, feedback, next: nextUp });
+        const mail = certificateEmail({ name: r.name, eventTitle: event.title, url, linkedin: linkedinUrl({ event: event.date, id: r.id, issued: now, site: SITE_URL }), site: SITE_URL, feedback, next: nextUp, note, subject });
         const res = await mailer.send(r.email, mail);
         if (res.sent) sentIds.push(r.id);
         else { failed++; why ??= res.why; console.error("certificate email failed:", res.error); }

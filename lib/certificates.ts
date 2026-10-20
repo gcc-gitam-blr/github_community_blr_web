@@ -1,11 +1,21 @@
 import { CLUB } from "./config";
-import { EVENTS } from "./events";
+import { EVENTS, eventDate, eventSlug, todayInIndia, type ClubEvent } from "./events";
 
 /* Certificates of participation: one per person who actually attended (see the attendance table).
    Each has a public page at /certificates/<id> that anyone can open to check it's real. */
 export const certificateUrl = (site: string, id: string) => `${site.replace(/\/$/, "")}/certificates/${id}`;
 export const eventByDate = (date: string) => EVENTS.find((e) => e.date === date);
 export const eventTitle = (date: string) => eventByDate(date)?.title ?? date;
+
+/** What the certificate email adds after the certificate: the event's feedback form, and the next event to come with its
+    RSVP link. Shared by the send (app/api/certificates) and the admin's preview, so the preview is the email. */
+export function certificateExtras(event: ClubEvent, site: string) {
+  const base = site.replace(/\/$/, ""), upcoming = EVENTS.find((e) => e.date > event.date && e.date >= todayInIndia());
+  return {
+    feedback: event.dateLabel ? undefined : `${base}/events/${eventSlug(event)}#feedback`,
+    next: upcoming && { title: upcoming.title, date: eventDate(upcoming), url: upcoming.luma ?? `${base}/events/${eventSlug(upcoming)}` },
+  };
+}
 
 /** LinkedIn's "Add licence or certification" form, filled in. */
 export function linkedinUrl(i: { event: string; id: string; issued: string; site: string }) {

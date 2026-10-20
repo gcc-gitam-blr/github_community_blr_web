@@ -83,11 +83,11 @@ export async function pendingRoles(): Promise<Pending[]> {
 }
 
 /** `left`: not tried yet (the batch stops before the server's time limit); `problem`: why some failed, in words. */
-export async function sendCertificates(event: string, ids?: string[]): Promise<Res<{ sent: number; failed: number; total: number; left?: number; problem?: string }>> {
+export async function sendCertificates(event: string, ids?: string[], msg?: { note: string; subject: string }): Promise<Res<{ sent: number; failed: number; total: number; left?: number; problem?: string }>> {
   const { data: { session } } = await supabase().auth.getSession();
   if (!session) return { ok: false, error: "Sign in again." };
   try {
-    const r = await fetch("/api/certificates", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ event, ids }) });
+    const r = await fetch("/api/certificates", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ event, ids, ...msg }) });
     return await r.json();
   } catch { return { ok: false, error: "Network error. Please try again." }; }
 }
