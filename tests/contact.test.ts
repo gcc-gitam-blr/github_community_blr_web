@@ -35,7 +35,7 @@ const settle = () => new Promise((r) => setTimeout(r, 300));
   ok("a 3001-character message is rejected", validateContact({ ...good, message: "x".repeat(3001) }) !== null);
   ok("a bad email is rejected", validateContact({ ...good, email: "ada@" }) !== null);
   ok("a filled honeypot is spam", validateContact({ ...good, website: "x" }) === "spam");
-  ok("an instant submit is spam", validateContact({ ...good, elapsedMs: 100 }) === "spam");
+  ok("an instant submit is told to send again, not silently dropped", validateContact({ ...good, elapsedMs: 100 })?.startsWith("That was quick") === true);
 
   Object.assign(process.env, { NEXT_PUBLIC_SITE_URL: "https://club.test", EMAIL_SECRET: "s" });
   const { POST } = await import("../app/api/contact/route");
