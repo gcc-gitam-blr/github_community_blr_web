@@ -99,7 +99,7 @@ export function ApplyForm() {
         )}
         {round.questions.map((q) => <Field key={q.id} q={q} value={answers[q.id]} set={(x) => setAnswers({ ...answers, [q.id]: x })} />)}
       </div>
-      <input ref={honey} name="website" tabIndex={-1} autoComplete="off" aria-hidden className="absolute -left-[9999px] h-0 w-0 opacity-0" />
+      <input ref={honey} name="gcc-hp-x" tabIndex={-1} autoComplete="off" aria-hidden hidden />
       <p role="alert" className="mt-4 min-h-[1.5em] text-[14.5px] text-[#a40e26]">{err}</p>
       <button disabled={state === "sending"} className="mt-2 rounded-md bg-ink px-6 py-3.5 font-display font-bold text-white transition-colors hover:bg-ink/85 disabled:opacity-60">{state === "sending" ? "Sending…" : "Send application"}</button>
       <p className="mt-4 text-[13px] text-ink-3">Please don&apos;t include sensitive personal details (health, religion, caste, ID numbers). Only this round&apos;s reviewers and the club&apos;s admins can read your application. <a href="/privacy" className="underline underline-offset-2">Privacy</a></p>
