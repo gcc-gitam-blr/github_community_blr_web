@@ -6,6 +6,8 @@ import { CLUB } from "@/lib/config";
 import { fromLine, fromLumaCsv, type Attendee, type Import } from "@/lib/attendance";
 import { addAttendees, attendance, removeAttendee, renameAttendee, sendCertificates, type AttendanceRow } from "@/lib/admin/client";
 import { greetName } from "@/lib/attendance";
+import { noteProblem } from "@/lib/email/templates";
+import { CertEmail, loadMsg, saveMsg, type CertMsg } from "./CertEmail";
 import type { JoinRequest } from "@/lib/epoch/types";
 import { useConfirm } from "@/components/ui/Confirm";
 import { State, btn, card } from "./kit";
@@ -25,6 +27,7 @@ export function Attendance({ admin }: { admin: boolean }) {
   const [event, setEvent] = useState(defaultEvent);
   const [rows, setRows] = useState<AttendanceRow[] | null>(null);
   const [editing, setEditing] = useState<{ id: string; name: string } | null>(null); // the name being corrected
+  const [msgs, setMsgs] = useState<Record<string, CertMsg>>({}); // the email's message and subject, per event (saved on this device)
   const [note, setNote] = useState<{ k: "ok" | "err"; t: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [ask, dialog] = useConfirm();
@@ -43,6 +46,10 @@ export function Attendance({ admin }: { admin: boolean }) {
   const here = useMemo(() => new Set((rows ?? []).map((r) => r.email)), [rows]);
   const unsent = (rows ?? []).filter((r) => !r.emailed_at).length;
   const title = events.find((e) => e.date === event)?.title ?? event;
+  const msg = msgs[event] ?? loadMsg(event);
+  const setMsg = (m: CertMsg) => { setMsgs((x) => ({ ...x, [event]: m })); saveMsg(event, m); };
+  // the preview uses the first person still waiting for theirs, so it shows a real name
+  const sample = (rows ?? []).find((r) => !r.emailed_at)?.name ?? rows?.[0]?.name ?? "Ada Lovelace";
 
   const add = async (people: Attendee[], what: string) => {
     setBusy(true); setNote(null);
@@ -63,9 +70,11 @@ export function Attendance({ admin }: { admin: boolean }) {
 
   const send = async (ids?: string[]) => {
     const n = ids?.length ?? unsent;
-    if (!(await ask({ title: `Email ${n} certificate${n === 1 ? "" : "s"}?`, body: <>For <b>{title}</b>. Emails can&apos;t be called back once they&apos;re sent.</>, yes: `Send ${n} email${n === 1 ? "" : "s"}` }))) return;
+    const bad = noteProblem(msg.note.trim(), msg.subject.trim());
+    if (bad) return setNote({ k: "err", t: `${bad} (in The email, above the list)` });
+    if (!(await ask({ title: `Email ${n} certificate${n === 1 ? "" : "s"}?`, body: <>For <b>{title}</b>, {msg.note.trim() ? "with your message" : "the standard email"}. Emails can&apos;t be called back once they&apos;re sent.</>, yes: `Send ${n} email${n === 1 ? "" : "s"}` }))) return;
     setBusy(true); setNote(null);
-    const r = await sendCertificates(event, ids); setBusy(false);
+    const r = await sendCertificates(event, ids, { note: msg.note.trim(), subject: msg.subject.trim() }); setBusy(false);
     setNote(r.ok
       ? { k: r.failed ? "err" : "ok", t: `Sent ${r.sent} of ${r.total}.${r.left ? ` ${r.left} still to send: press the button again.` : ""}${r.failed ? ` ${r.failed} failed. ${r.problem ?? "Try again later."}` : ""}` }
       : { k: "err", t: r.error });
@@ -142,6 +151,8 @@ export function Attendance({ admin }: { admin: boolean }) {
           </>)}
         </div>
       </section>
+
+      {admin && rows && rows.length > 0 && <CertEmail event={event} sample={sample} value={msg} onChange={setMsg} />}
 
       <section className={card} aria-labelledby="list-h">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3">
