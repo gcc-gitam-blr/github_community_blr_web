@@ -71,7 +71,7 @@ export function JoinForm({ tone = "hero", onJoined }: { tone?: "hero" | "card"; 
         <button disabled={busy} className={`lift h-[54px] flex-none rounded-md border-2 border-ink bg-ink px-6 font-display text-[16px] font-bold text-white disabled:opacity-70 ${hero ? "" : "w-full bg-[#1a7f37]"}`}>{busy ? "Joining…" : hero ? "Join the club" : "Merge pull request"}</button>
       </div>
       {/* the honeypot: hidden from people and screen readers, and named so browsers don't autofill it */}
-      <input ref={honey} name="gcc-hp-x" tabIndex={-1} autoComplete="off" aria-hidden className="absolute -left-[9999px] h-0 w-0 opacity-0" />
+      <input ref={honey} name="gcc-hp-x" tabIndex={-1} autoComplete="off" aria-hidden hidden />
       <p role="status" aria-live="polite" className={`mt-2.5 min-h-[1.4em] text-[13.5px] ${err ? "text-[#a40e26]" : "text-ink-3"}`}>{err || (who?.email && nameIn === null && emailIn === null ? `Filled in from your GitHub sign-in (@${who.handle}). Free; we'll email you what's next and the WhatsApp link.` : "Free, no experience needed. We'll email you what's next and the WhatsApp link.")}</p>
     </form>
   );

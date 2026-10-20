@@ -33,7 +33,7 @@ const custom = { ...good, answers: { why: "I want to design the club's posters."
   ok("a GitHub username is required and must be real", validateApplication({ ...good, handle: "" }, FIRST) !== null && validateApplication({ ...good, handle: "-bad-" }, FIRST) !== null);
   ok("a bad email, a one-letter name and a short 'why' are refused", validateApplication({ ...good, email: "pia@" }, FIRST) !== null && validateApplication({ ...good, name: "P" }, FIRST) !== null && validateApplication({ ...good, answers: { why: "ok" } }, FIRST) !== null);
   ok("each answer stops at 2000 characters; questions the round doesn't ask are refused", validateApplication({ ...good, answers: { why: "x".repeat(2001) } }, FIRST) !== null && validateApplication({ ...good, answers: { why: "A".repeat(30), phone: "123" } }, FIRST) !== null);
-  ok("the honeypot and an instant submit are spam", validateApplication({ ...good, website: "x" }, FIRST) === "spam" && validateApplication({ ...good, elapsedMs: 100 }, FIRST) === "spam");
+  ok("the honeypot is spam; an instant submit is told to send again, not dropped", validateApplication({ ...good, website: "x" }, FIRST) === "spam" && validateApplication({ ...good, elapsedMs: 100 }, FIRST)?.startsWith("That was quick") === true);
   ok("answers are trimmed and empty ones dropped", JSON.stringify(cleanAnswers({ why: " hi there friend ", built: "  " }, DEFAULT_QUESTIONS)) === JSON.stringify({ why: "hi there friend" }));
 
   // ---- a round's own form ----

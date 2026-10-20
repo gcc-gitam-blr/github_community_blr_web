@@ -1,4 +1,4 @@
-import { EMAIL_RE, HANDLE_RE, MIN_FILL_MS, cleanHandle } from "./join";
+import { EMAIL_RE, HANDLE_RE, MIN_FILL_MS, TOO_FAST, cleanHandle } from "./join";
 
 /* Core-team applications, shared by the form (instant feedback) and /api/apply (the real check; the database checks
    once more). Every round has its own form, built in Admin → Recruitment like a Google Form. Name, email and GitHub
@@ -38,7 +38,7 @@ const empty = (v: Answer | undefined) => v === undefined || (Array.isArray(v) ? 
 /** Name, email, GitHub username and the spam checks: the same for every round. */
 export function basicProblem(i: ApplyInput): string | null {
   if (i.website) return "spam"; // honeypot
-  if (i.elapsedMs !== undefined && i.elapsedMs < MIN_FILL_MS) return "spam";
+  if (i.elapsedMs !== undefined && i.elapsedMs < MIN_FILL_MS) return TOO_FAST; // said, not dropped: a fast human just sends again
   if (!Number.isInteger(i.campaign) || i.campaign < 1) return "Applications aren't open right now.";
   const name = (i.name ?? "").trim();
   if (name.length < 2 || name.length > 80) return "Please enter your name.";

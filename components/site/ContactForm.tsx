@@ -93,7 +93,7 @@ export function ContactForm({ initial = "question" }: { initial?: Kind }) {
         <label className="block sm:col-span-2"><span className="mb-1.5 block text-[14px] font-medium">{cur.ask}</span><textarea className={field} rows={6} value={v.message} onChange={set("message")} maxLength={3000} /></label>
       </div>
 
-      <input ref={honey} name="website" tabIndex={-1} autoComplete="off" aria-hidden className="absolute -left-[9999px] h-0 w-0 opacity-0" />
+      <input ref={honey} name="gcc-hp-x" tabIndex={-1} autoComplete="off" aria-hidden hidden />
       <p role="alert" className="mt-4 min-h-[1.5em] text-[14.5px] text-red-600">{err}</p>
       <button disabled={state === "sending"} className="mt-2 rounded-md bg-ink px-6 py-3.5 font-display font-bold text-white transition hover:bg-ink/85 disabled:opacity-60">{state === "sending" ? "Sending…" : "Send message"}</button>
       <p className="mt-4 text-[13px] text-ink-3">We use your details only to reply. <a href="/privacy" className="underline underline-offset-2">Privacy</a></p>

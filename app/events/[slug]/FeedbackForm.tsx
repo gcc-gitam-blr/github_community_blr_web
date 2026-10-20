@@ -46,7 +46,7 @@ export function FeedbackForm({ date, title }: { date: string; title: string }) {
       </fieldset>
       <label className="mt-4 block"><span className="mb-1.5 block text-[14px] font-medium">What did you like?</span><textarea className={area} rows={3} value={liked} onChange={(e) => setLiked(e.target.value)} maxLength={1000} /></label>
       <label className="mt-4 block"><span className="mb-1.5 block text-[14px] font-medium">What should we improve?</span><textarea className={area} rows={3} value={improve} onChange={(e) => setImprove(e.target.value)} maxLength={1000} /></label>
-      <input ref={honey} name="website" tabIndex={-1} autoComplete="off" aria-hidden className="absolute -left-[9999px] h-0 w-0 opacity-0" />
+      <input ref={honey} name="gcc-hp-x" tabIndex={-1} autoComplete="off" aria-hidden hidden />
       <p role="alert" className="mt-3 min-h-[1.4em] text-[14.5px] text-red-600">{err}</p>
       <button disabled={state === "sending"} className="mt-1 rounded-md bg-ink px-5 py-3 font-display font-bold text-white disabled:opacity-60">{state === "sending" ? "Sending…" : "Send feedback"}</button>
     </form>

@@ -12,6 +12,9 @@ export const HANDLE_RE = /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i; // GitHub's
 export const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/;
 export const MIN_FILL_MS = 2500; // the longer forms (contact, feedback, applications): humans take longer than this
 
+/** What a form says when it was sent faster than a person types: visible, so a real person is never silently dropped. */
+export const TOO_FAST = "That was quick. Check it over, then send it again.";
+
 export const cleanHandle = (h: string) => h.trim().replace(/^@/, "");
 
 export function validateJoin(i: JoinInput): string | null {

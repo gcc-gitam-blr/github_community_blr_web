@@ -1,4 +1,4 @@
-import { EMAIL_RE, HANDLE_RE, MIN_FILL_MS, cleanHandle } from "./join";
+import { EMAIL_RE, HANDLE_RE, MIN_FILL_MS, TOO_FAST, cleanHandle } from "./join";
 
 /* "Get involved" messages: shared by the form (instant feedback) and /api/contact (the real check). */
 export const KINDS = [
@@ -14,7 +14,8 @@ export type ContactResult = { ok: true } | { ok: false; error: string; fallback?
 
 export function validateContact(i: ContactInput): string | null {
   if (i.website) return "spam"; // honeypot
-  if (i.elapsedMs !== undefined && i.elapsedMs < MIN_FILL_MS) return "spam";
+  // too quick for a person usually means a script; say so instead of dropping it, so a fast human just sends again
+  if (i.elapsedMs !== undefined && i.elapsedMs < MIN_FILL_MS) return TOO_FAST;
   if (!KINDS.some((k) => k.id === i.kind)) return "Pick what this is about.";
   const name = (i.name ?? "").trim();
   if (name.length < 2 || name.length > 80) return "Please enter your name.";

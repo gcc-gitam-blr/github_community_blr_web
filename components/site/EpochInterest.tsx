@@ -50,7 +50,7 @@ export function EpochInterest({ dark = false, className = "" }: { dark?: boolean
           className={`min-w-0 flex-1 basis-[200px] rounded-md border px-3.5 py-2.5 text-[16px] outline-none transition ${t.field} ${t.ring}`} />
         <button disabled={state === "sending"} className={`rounded-md px-4 py-2.5 font-display text-[15px] font-bold transition disabled:opacity-60 ${t.btn} ${t.ring}`}>{state === "sending" ? "Saving…" : "Watch releases"}</button>
       </div>
-      <input ref={honey} name="website" tabIndex={-1} autoComplete="off" aria-hidden className="absolute -left-[9999px] h-0 w-0 opacity-0" />
+      <input ref={honey} name="gcc-hp-x" tabIndex={-1} autoComplete="off" aria-hidden hidden />
       <p id={`${id}-err`} role="alert" className={`mt-2 text-[14px] empty:hidden md:col-start-2 ${t.err}`}>{err}</p>
       <p id={`${id}-note`} className={`mt-2 text-[13px] md:col-start-2 ${t.sub}`}>Only Epoch news, from the club. Every email has an unsubscribe link. <Link href="/privacy" className={`underline underline-offset-2 ${t.ring}`}>Privacy</Link></p>
     </form>
