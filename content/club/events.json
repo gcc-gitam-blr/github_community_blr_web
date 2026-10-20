@@ -25,13 +25,14 @@
       }
     },
     {
-      "title": "GIT Merge 26",
+      "title": "GitHub: Open source Unlocked",
       "slug": "git-merge-26",
       "date": "2026-10-28",
       "type": "Open Source",
       "text": "A GitHub and open-source event: learn Git, explore open source, make beginner-friendly contributions.",
       "where": "GITAM Bengaluru",
       "luma": "https://luma.com/iztx970g",
+      "proposalId": 0,
       "shape": "square",
       "color": "purple",
       "recap": {
