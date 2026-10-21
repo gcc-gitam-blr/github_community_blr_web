@@ -252,6 +252,10 @@ html.lenis, html.lenis body { height: auto; }
   .head-join .head-join-short { display: inline; }
 }
 @media (max-width: 1023px) and (prefers-reduced-motion: reduce) { .head-join { animation: none; } }
+/* …and makes room for itself, so the menu button always fits: the theme switch (the menu has it too) and the page
+   label step aside, and on the narrowest phones the decorative dots as well */
+@media (max-width: 1023px) { .head-pill[data-join="true"] .head-theme, .head-pill[data-join="true"] .mini-label { display: none; } }
+@media (max-width: 379px) { .head-pill[data-join="true"] .mini-dots { display: none; } }
 .head-pill[data-compact="true"]:not(:hover):not(:focus-within) .head-join-long { display: none; }
 .head-pill[data-compact="true"]:not(:hover):not(:focus-within) .head-join-short { display: inline; }
 .commit-link { transition: padding 280ms var(--ease-out), gap 280ms var(--ease-out); }

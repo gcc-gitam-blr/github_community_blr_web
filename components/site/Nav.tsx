@@ -88,7 +88,7 @@ export function Nav() {
       </div>
 
       <div className="flex justify-center px-3 pt-3">
-        <div className="head-pill pointer-events-auto" data-compact={compact}>
+        <div className="head-pill pointer-events-auto" data-compact={compact} data-join={!joined && phoneJoin}>
           <a href={home ? "#top" : "/"} className="group flex flex-none items-center gap-2 rounded-full py-1 pl-0.5 pr-1.5" aria-label="GitHub Community BLR, home">
             <ClubMark size={32} className="transition-transform duration-300 ease-out group-hover:-rotate-[14deg]" />
             <span className="head-word hidden whitespace-nowrap font-display text-[15px] font-semibold tracking-tight xl:inline">GitHub Community</span>
@@ -100,7 +100,7 @@ export function Nav() {
           <MiniGraph head={head} label={head >= 0 ? COMMITS[head].label : home ? "main" : page} />
 
           <SiteSearch />
-          <ThemeToggle className="hidden lg:inline-flex" />
+          <ThemeToggle className="head-theme hidden lg:inline-flex" />
           <MemberButton />
           {!joined && <a href="/join" className={`press head-join h-9 flex-none items-center whitespace-nowrap rounded-full bg-ink px-4 font-display text-[14px] font-bold text-white transition-colors duration-150 hover:bg-ink/85 ${phoneJoin ? "inline-flex" : "hidden"} lg:inline-flex`}>
             <span className="head-join-long">Join the club</span><span className="head-join-short">Join</span>
