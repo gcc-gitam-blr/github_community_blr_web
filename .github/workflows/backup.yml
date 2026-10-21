@@ -29,6 +29,9 @@ jobs:
           if [ -z "$SUPABASE_DB_URL" ]; then
             echo "::notice::No SUPABASE_DB_URL secret, so there is nothing to back up. Add it under Settings → Secrets and variables → Actions."
             echo "skip=true" >> "$GITHUB_OUTPUT"
+          elif [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::error::No BACKUP_PASSPHRASE secret, so the backup can't be encrypted and is not saved. Add it under Settings → Secrets and variables → Actions, and keep a copy: it's needed to open a backup."
+            exit 1
           fi
       - name: Install pg_dump 17 (it must be at least as new as Supabase's Postgres)
         if: steps.check.outputs.skip != 'true'
