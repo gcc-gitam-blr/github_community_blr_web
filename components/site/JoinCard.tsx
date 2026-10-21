@@ -1,7 +1,7 @@
 "use client";
 import { JoinForm, JoinedPanel, useJoined } from "./QuickJoin";
 
-/* Joining, shaped like a pull request into the club: name and email are the commit, "Merge pull request" joins.
+/* Joining, shaped like a pull request into the club: name and email are the commit. The button itself says plainly what it does ("Join the club"): the site is for people new to Git.
    The same two steps as the hero (components/site/QuickJoin.tsx): after merging, the optional extras. */
 export function JoinCard() {
   const [joined] = useJoined();

@@ -39,7 +39,7 @@ export function EpochInterest({ dark = false, className = "" }: { dark?: boolean
     <p role="status" className={`text-[15px] ${className}`}>This address unsubscribed from our emails, so we won&apos;t email it. The dates will be on this page and in our WhatsApp community.</p>
   );
   if (state === "created" || state === "exists") return (
-    <p role="status" className={`flex items-center gap-2 text-[15px] ${className}`}><CheckIcon size={18} className={dark ? "text-gold" : "text-[#1a7f37]"} />{state === "created" ? "Watching. We'll email you when the Epoch dates are out." : "You're already on the list. We'll email you when the dates are out."}</p>
+    <p role="status" className={`flex items-center gap-2 text-[15px] ${className}`}><CheckIcon size={18} className={dark ? "text-gold" : "text-[#1a7f37]"} />{state === "created" ? "You're on the list. We'll email you when the Epoch dates are out." : "You're already on the list. We'll email you when the dates are out."}</p>
   );
 
   return (
@@ -48,7 +48,7 @@ export function EpochInterest({ dark = false, className = "" }: { dark?: boolean
       <div className={`mt-2 flex flex-wrap gap-2 ${dark ? "md:mt-0" : ""}`}>
         <input id={id} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@gitam.in" autoComplete="email" aria-describedby={`${id}-note ${id}-err`}
           className={`min-w-0 flex-1 basis-[200px] rounded-md border px-3.5 py-2.5 text-[16px] outline-none transition ${t.field} ${t.ring}`} />
-        <button disabled={state === "sending"} className={`rounded-md px-4 py-2.5 font-display text-[15px] font-bold transition disabled:opacity-60 ${t.btn} ${t.ring}`}>{state === "sending" ? "Saving…" : "Watch releases"}</button>
+        <button disabled={state === "sending"} className={`rounded-md px-4 py-2.5 font-display text-[15px] font-bold transition disabled:opacity-60 ${t.btn} ${t.ring}`}>{state === "sending" ? "Saving…" : "Email me"}</button>
       </div>
       <input ref={honey} name="gcc-hp-x" tabIndex={-1} autoComplete="off" aria-hidden hidden />
       <p id={`${id}-err`} role="alert" className={`mt-2 text-[14px] empty:hidden md:col-start-2 ${t.err}`}>{err}</p>

@@ -45,5 +45,12 @@ export function nextEvent(today: string): { event: ClubEvent; days: number } | n
   return { event: e, days: Math.round((Date.parse(e.date + "T00:00:00Z") - Date.parse(today + "T00:00:00Z")) / 864e5) };
 }
 
+/** The most recent event before `today` that has a recap written (text, numbers or a video): proof the club is active,
+    shown under "Next" in the hero. Nothing until the first recap is written. */
+export function lastEvent(today: string, events: readonly ClubEvent[] = EVENTS): ClubEvent | null {
+  const done = events.filter((e) => e.date < today && !e.dateLabel && (e.recap?.text?.trim() || e.recap?.numbers?.length || e.recap?.video));
+  return done.length ? done.reduce((a, b) => (b.date > a.date ? b : a)) : null;
+}
+
 /** Today's date in India (YYYY-MM-DD), whatever time zone the server runs in. */
 export const todayInIndia = () => new Date(Date.now() + 330 * 60_000).toISOString().slice(0, 10);

@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
+import { EVENTS, eventSlug } from "@/lib/events";
+import { getUpdates } from "@/lib/updates";
 
 /* On a phone: nothing may scroll sideways, and the phone menu and tab bar work. */
-const PAGES = ["/", "/learn", "/contribute", "/board", "/memories", "/get-involved", "/join", "/apply", "/projects", "/hub", "/privacy", "/updates", "/updates/calendar-2026-27", "/events/git-merge-26", "/epoch", "/epoch/booths", "/epoch/shop", "/epoch/leaderboard", "/epoch/register", "/epoch/wallet", "/epoch/scan", "/epoch/admin", "/epoch/guide", "/epoch/guide/organisers", "/epoch/kiosk/vr", "/no-such-page"];
+const PAGES = ["/", "/learn", "/contribute", "/board", "/memories", "/get-involved", "/join", "/apply", "/projects", "/hub", "/privacy", "/updates", `/updates/${getUpdates()[0].slug}`, `/events/${eventSlug(EVENTS[0])}`, "/epoch", "/epoch/booths", "/epoch/shop", "/epoch/leaderboard", "/epoch/register", "/epoch/wallet", "/epoch/scan", "/epoch/admin", "/epoch/guide", "/epoch/guide/organisers", "/epoch/kiosk/vr", "/no-such-page"];
 
 for (const path of PAGES) {
   test(`${path} fits the screen`, async ({ page }) => {

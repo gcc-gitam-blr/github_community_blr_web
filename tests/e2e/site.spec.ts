@@ -1,5 +1,13 @@
 import { expect, test } from "@playwright/test";
 import contributors from "../../content/club/contributors.json";
+// Names, titles and links come from the content, never typed in: renaming anything in the content editor must not fail CI
+// (tests/content-proof.test.ts checks that).
+import { CLUB } from "@/lib/config";
+import { roleLabel } from "@/lib/crew";
+import { EVENTS, eventSlug, eventTag } from "@/lib/events";
+import { getUpdates } from "@/lib/updates";
+
+const icsText = (s: string) => s.replace(/[\\;,]/g, (c) => "\\" + c); // how a title is written inside a calendar file
 
 test.describe("club site", () => {
   test("home page tells people what the club is", async ({ page }) => {
@@ -33,22 +41,25 @@ test.describe("club site", () => {
   });
 
   test("an event page works like a release page, with a calendar file", async ({ page, request }) => {
-    await page.goto("/events/git-merge-26");
-    await expect(page.getByRole("heading", { level: 1, name: "GIT Merge 26" })).toBeVisible();
-    await expect(page.getByText("v2026.10.12")).toBeVisible();
-    const ics = await request.get("/events/git-merge-26/event.ics");
+    const ev = EVENTS.find((e) => !e.dateLabel)!;
+    await page.goto(`/events/${eventSlug(ev)}`);
+    await expect(page.getByRole("heading", { level: 1, name: ev.title })).toBeVisible();
+    await expect(page.getByText(eventTag(ev)).first()).toBeVisible();
+    const ics = await request.get(`/events/${eventSlug(ev)}/event.ics`);
     expect(ics.status()).toBe(200);
-    expect(await ics.text()).toContain("SUMMARY:GIT Merge 26");
+    expect(await ics.text()).toContain(`SUMMARY:${icsText(ev.title)}`);
   });
 
-  test("Learn GitHub is on 12 October, matching Luma", async ({ request }) => {
-    const ics = await (await request.get("/events/learn-github-and-make-your-first-contribution/event.ics")).text();
-    expect(ics).toContain("DTSTART;VALUE=DATE:20261012");
+  test("every event's calendar file has the event's date", async ({ request }) => {
+    for (const ev of EVENTS.filter((e) => !e.dateLabel)) {
+      const ics = await (await request.get(`/events/${eventSlug(ev)}/event.ics`)).text();
+      expect(ics, ev.title).toContain(`DTSTART;VALUE=DATE:${ev.date.replace(/-/g, "")}`);
+    }
   });
 
-  test("the calendar file lists all six events", async ({ request }) => {
+  test("the calendar file lists every event", async ({ request }) => {
     const ics = await (await request.get("/calendar.ics")).text();
-    expect((ics.match(/BEGIN:VEVENT/g) ?? []).length).toBe(6);
+    expect((ics.match(/BEGIN:VEVENT/g) ?? []).length).toBe(EVENTS.length);
   });
 
   test("the cheat sheet searches and finds commands", async ({ page }) => {
@@ -98,7 +109,7 @@ test.describe("club site", () => {
     const bad: string[] = [];
     page.on("console", (m) => { if (/Content Security Policy|Refused to/i.test(m.text())) bad.push(m.text().slice(0, 140)); });
     page.on("pageerror", (e) => bad.push("script error: " + e.message.slice(0, 140)));
-    for (const p of ["/", "/learn", "/contribute", "/board", "/memories", "/get-involved", "/privacy", "/events/git-merge-26", "/epoch", "/epoch/booths", "/epoch/register", "/epoch/leaderboard", "/epoch/guide", "/epoch/guide/organisers", "/epoch/screen", "/epoch/kiosk/vr"]) {
+    for (const p of ["/", "/learn", "/contribute", "/board", "/memories", "/get-involved", "/privacy", `/events/${eventSlug(EVENTS[0])}`, "/epoch", "/epoch/booths", "/epoch/register", "/epoch/leaderboard", "/epoch/guide", "/epoch/guide/organisers", "/epoch/screen", "/epoch/kiosk/vr"]) {
       await page.goto(p); await page.waitForTimeout(700);
     }
     await page.goto("/join?e=ada%40gitam.in&t=abc"); await page.getByPlaceholder("your-github-username").fill("octocat"); await page.waitForTimeout(2000); // the welcome email's link: GitHub lookup + avatar
@@ -137,23 +148,24 @@ test("with no inbox switched on, Get involved hands the message to Instagram ins
   await page.waitForTimeout(3500); // humans take a few seconds; the spam check knows that
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByRole("heading", { name: /send it to us on Instagram/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Copy & open Instagram/ })).toHaveAttribute("href", "https://ig.me/m/github.gitamblr");
+  const insta = CLUB.socials.map((s) => s.href.match(/instagram\.com\/([^/?#]+)/)?.[1]).find(Boolean)!;
+  await expect(page.getByRole("link", { name: /Copy & open Instagram/ })).toHaveAttribute("href", `https://ig.me/m/${insta}`);
   await page.getByRole("button", { name: "Copy only" }).click();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain("Git internals");
 });
 
 test("updates: the list, a post, the home page and the RSS feed agree", async ({ page, request }) => {
+  const [newest] = getUpdates(); // the home page shows the newest posts, whatever they're called
   await page.goto("/updates");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("What's new");
-  await page.getByRole("link", { name: /Start here: Learn GitHub/ }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Start here");
-  await expect(page.getByRole("link", { name: /RSVP on Luma/ })).toHaveAttribute("href", "https://luma.com/exkd0eax");
+  await page.getByRole("link", { name: newest.title }).first().click();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(newest.title);
   await page.goto("/");
-  await expect(page.getByRole("link", { name: /Start here: Learn GitHub/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: newest.title }).first()).toBeVisible();
   const rss = await request.get("/updates/feed.xml");
   expect(rss.headers()["content-type"]).toContain("rss+xml");
   const xml = await rss.text();
-  expect((xml.match(/<item>/g) ?? []).length).toBeGreaterThanOrEqual(4);
+  expect((xml.match(/<item>/g) ?? []).length).toBeGreaterThanOrEqual(Math.min(4, getUpdates().length));
   expect(xml).not.toMatch(/href="\/[^/]/); // links inside the feed are absolute
 });
 
@@ -224,27 +236,31 @@ test("site search: / opens it, results are keyboard-driven, Enter goes there, Es
   await page.waitForURL(/\/learn\?q=git%20stash/);
   await expect(page.locator("section[aria-labelledby=cheat] code")).toHaveCount(2); // the cheat sheet opens already filtered
   await page.keyboard.press("Control+k");
-  await page.getByRole("combobox", { name: "Search the site" }).fill("december");
-  await expect(page.getByRole("option", { name: /Epoch is coming in December/ })).toBeVisible(); // update posts come from /search.json
+  const post = getUpdates()[0];
+  await page.getByRole("combobox", { name: "Search the site" }).fill(post.title);
+  await expect(page.getByRole("option", { name: post.title }).first()).toBeVisible(); // update posts come from /search.json
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
 
 
-test("the team: mentors, the five leads, everyone else, and their crew roles", async ({ page, request }) => {
+test("the team: mentors, the leads, everyone else, and their crew roles, as in the content", async ({ page, request }) => {
   await page.goto("/");
   const team = page.locator("#team");
   await team.scrollIntoViewIfNeeded();
-  for (const line of ["Mentor · Tech & Design", "Former President, 2024-25", "Former Inclusion & Events Head", "Former President, 2025-26", "Former Vice-President, 2025-26"]) await expect(team.getByText(line)).toBeVisible();
-  for (const [name, role] of [["Monisha S", "President"], ["Dhigveerraju G", "Vice President"], ["Supriya K S", "Secretary"], ["T Sai Ruchitha", "Design Lead"], ["Chandrika", "External Relations Head"]]) {
-    await expect(team.getByRole("heading", { name })).toBeVisible();
-    await expect(team.getByText(role, { exact: true })).toBeVisible();
+  const group = (g: string) => CLUB.team.filter((m) => m.group === g);
+  for (const m of group("mentor")) for (const line of [m.role, m.past]) if (line) await expect(team.getByText(line).first()).toBeVisible();
+  for (const m of group("lead")) {
+    await expect(team.getByRole("heading", { name: m.name, exact: true })).toBeVisible();
+    if (m.role) await expect(team.getByText(m.role, { exact: true }).first()).toBeVisible();
   }
   // everyone else: compact rows, names as text (not a heading each)
-  for (const name of ["Geethika", "Aravind K", "Bhavana", "Niharika", "Apsara", "Lokesh", "Manogna"]) await expect(team.getByText(name, { exact: true })).toBeVisible();
+  for (const m of group("member")) await expect(team.getByText(m.name, { exact: true }).first()).toBeVisible();
   // the crew roles, as assigned
-  for (const [label, n] of [["Git Custodian I", 2], ["Code Gatekeeper I", 2], ["Pipeline Architect I", 1], ["Secrets & Security Officer I", 1], ["Issue Alchemist I", 2], ["Stack Explorer I", 1], ["Tech Scout I", 2], ["Onboarding Forge I", 1]] as const) await expect(team.getByText(label, { exact: true })).toHaveCount(n);
+  const crews = new Map<string, number>();
+  for (const m of CLUB.team) for (const c of m.crew ?? []) crews.set(roleLabel(c), (crews.get(roleLabel(c)) ?? 0) + 1);
+  for (const [label, n] of crews) await expect(team.getByText(label, { exact: true })).toHaveCount(n);
   await team.getByText("How our tech roles work").click();
   await expect(team.getByText(/merge conflicts newer members run into/)).toBeVisible();
   await expect(team.getByText(/first pull request/).first()).toBeVisible(); // Onboarding Forge is explained too
@@ -278,11 +294,11 @@ test("'Tell me when the dates are out' is on the home page and /epoch, and says 
     const box = page.getByLabel("Tell me when the dates are out");
     await box.scrollIntoViewIfNeeded();
     await box.fill("grace@");
-    await page.getByRole("button", { name: "Watch releases" }).click();
+    await page.getByRole("button", { name: "Email me" }).click();
     await expect(page.getByText("That email doesn't look right.")).toBeVisible();
   }
   await page.getByLabel("Tell me when the dates are out").fill("grace@gitam.in");
-  await page.getByRole("button", { name: "Watch releases" }).click();
+  await page.getByRole("button", { name: "Email me" }).click();
   await expect(page.getByText(/isn't switched on yet, so nothing was saved/)).toBeVisible(); // the test build has no database
 });
 
@@ -290,7 +306,7 @@ test("an address that unsubscribed is told it won't be emailed, not that it's on
   await page.route("**/api/epoch-interest", (r) => r.fulfill({ json: { ok: true, status: "unsubscribed" } })); // what the database answers for it
   await page.goto("/epoch");
   await page.getByLabel("Tell me when the dates are out").fill("grace@gitam.in");
-  await page.getByRole("button", { name: "Watch releases" }).click();
+  await page.getByRole("button", { name: "Email me" }).click();
   await expect(page.getByRole("status")).toContainText("unsubscribed from our emails, so we won't email it");
   await expect(page.getByText(/already on the list/)).toHaveCount(0);
 });
@@ -334,11 +350,12 @@ test("the theme follows the system until you choose, and the switch remembers yo
 });
 
 test("each member has a board page with their badges, how to earn the rest, and their merges", async ({ page }) => {
-  await page.goto("/board/lechakrawarthy");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Chakrawarthy");
+  const member = CLUB.team.find((m) => m.handle)!;
+  await page.goto(`/board/${member.handle}`);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(member.name);
   await expect(page.getByRole("heading", { name: "Badges" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Merged this club year" })).toBeVisible();
-  expect((await page.request.get("/board/lechakrawarthy/opengraph-image")).headers()["content-type"]).toContain("image/png");
+  expect((await page.request.get(`/board/${member.handle}/opengraph-image`)).headers()["content-type"]).toContain("image/png");
   expect((await page.request.get("/board/not-a-member")).status()).toBe(404);
 });
 
@@ -381,7 +398,7 @@ test("organisers' one-key jumps: nothing for visitors, A opens the admin on an o
 });
 
 test("someone who joined on this browser sees \"you're in\", not the join forms again", async ({ page }) => {
-  await page.goto("/events/git-merge-26");
+  await page.goto(`/events/${eventSlug(EVENTS[0])}`);
   await expect(page.getByRole("region", { name: "Join the club" }).getByPlaceholder("Your name")).toBeVisible(); // a visitor gets the form at the end
   await page.evaluate(() => localStorage.setItem("gcc-joined", JSON.stringify({ name: "Ada Lovelace", email: "ada@gitam.in", extras: "later" })));
   await page.reload();
