@@ -40,6 +40,10 @@ const nextConfig: NextConfig = {
   env: { NEXT_PUBLIC_COMMIT_SHA: (process.env.VERCEL_GIT_COMMIT_SHA ?? "").slice(0, 7) },
   // A stray package-lock.json in the parent folder made Next guess the wrong workspace root.
   turbopack: { root: path.resolve(__dirname) },
+  // the events live on the home page; someone typing /events lands there instead of on a 404
+  async redirects() {
+    return [{ source: "/events", destination: "/#events", permanent: false }];
+  },
   async headers() {
     return process.env.NODE_ENV === "production" ? [{ source: "/:path*", headers }] : [];
   },
