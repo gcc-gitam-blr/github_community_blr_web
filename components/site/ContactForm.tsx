@@ -5,7 +5,8 @@ import { CLUB } from "@/lib/config";
 import { ApplyForm } from "./ApplyForm";
 
 // Instagram DMs open straight from ig.me/m/<account>; used while the club inbox isn't switched on.
-const insta = CLUB.socials.find((s) => s.label === "Instagram")?.href.match(/instagram\.com\/([^/?#]+)/)?.[1];
+// found by the link itself, not its label, so renaming "Instagram" in the content editor changes nothing here
+const insta = CLUB.socials.map((s) => s.href.match(/instagram\.com\/([^/?#]+)/)?.[1]).find(Boolean);
 const DM_URL = insta ? `https://ig.me/m/${insta}` : CLUB.joinUrl;
 
 /* The Get involved form: pick what it's about, then say who you are. */
