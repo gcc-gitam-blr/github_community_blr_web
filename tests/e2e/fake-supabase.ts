@@ -7,6 +7,7 @@ import http from "node:http";
 import fs from "node:fs";
 import { PGlite } from "@electric-sql/pglite";
 
+import { AUTH_USERS } from "../auth-stub";
 const PORT = Number(process.env.FAKE_SUPABASE_PORT) || 54329;
 const SQL = fs.readFileSync("supabase/schema.sql", "utf8");
 const db = new PGlite();
@@ -15,7 +16,7 @@ async function setup() {
   await db.exec(`
     create role anon; create role authenticated; create role service_role;
     create schema auth;
-    create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb);
+    ${AUTH_USERS}
     create function auth.uid() returns uuid language sql stable as $$ select null::uuid $$;
     create publication supabase_realtime;
   `);

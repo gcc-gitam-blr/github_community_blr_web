@@ -14,6 +14,7 @@ import { useLiveLeaderboard, type BoardLink } from "@/lib/epoch/live";
 import { BOOTHS, STARTER_COINS, EPOCH } from "@/lib/epoch/config";
 import type { Reward } from "@/lib/epoch/types";
 
+import { atHandle } from "@/lib/handle";
 export function BoothsPage() {
   return <Frame title="Where coins go." sub="Recharge points earn. Everything else spends."><BoothSection /></Frame>;
 }
@@ -70,7 +71,7 @@ export function LeaderboardPage() {
         {rows?.map((r, i) => (
           <motion.li key={r.id} layout={!still} transition={{ type: "spring", stiffness: 420, damping: 38 }} className={`flex items-center gap-5 border-b border-hair py-5 ${me?.id === r.id ? "-mx-4 rounded-2xl bg-white/60 px-4" : ""}`}>
             <span className="w-8 text-[19px] tabular-nums text-mute">{i + 1}</span>
-            <div className="min-w-0 flex-1"><p className="truncate text-[24px] font-medium tracking-[-0.03em]">{r.name}</p><p className={`${label} truncate`}>@{r.handle}{r.climbed > 0 && <span className="ml-2 text-[#1a7f37]">↑ {r.climbed}</span>}{r.gained > 0 && <span key={`${r.id}-${r.earned}`} className="ml-2 inline-block animate-[fade-out_4s_ease-out_forwards] rounded-full bg-[#dafbe1] px-2 tabular-nums text-[#1a7f37] motion-reduce:animate-none">+{r.gained}</span>}</p></div>
+            <div className="min-w-0 flex-1"><p className="truncate text-[24px] font-medium tracking-[-0.03em]">{r.name}</p><p className={`${label} truncate`}>{atHandle(r.handle)}{r.climbed > 0 && <span className="ml-2 text-[#1a7f37]">↑ {r.climbed}</span>}{r.gained > 0 && <span key={`${r.id}-${r.earned}`} className="ml-2 inline-block animate-[fade-out_4s_ease-out_forwards] rounded-full bg-[#dafbe1] px-2 tabular-nums text-[#1a7f37] motion-reduce:animate-none">+{r.gained}</span>}</p></div>
             <span className="flex items-center gap-2 text-[24px] font-medium tabular-nums"><Coin size={22} />{r.earned}</span>
           </motion.li>
         ))}

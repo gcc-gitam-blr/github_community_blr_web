@@ -12,6 +12,7 @@ import { istTime, laterDay, untilLabel } from "@/lib/epoch/happening";
 import { useLiveLeaderboard } from "@/lib/epoch/live";
 import { SITE_URL } from "@/lib/site";
 
+import { atHandle } from "@/lib/handle";
 /* /epoch/screen: for a projector or TV at the venue. One 16:9 frame, no scrolling, nothing that needs a mouse;
    type is sized from the screen's height so it reads from the back of a hall. It keeps the screen awake, follows
    the live leaderboard (reconnecting on its own), and reloads itself every few hours to pick up a new deploy. */
@@ -43,7 +44,7 @@ export function BigScreen() {
           {rows?.map((r, i) => (
             <motion.li key={r.id} layout={!still} transition={{ type: "spring", stiffness: 380, damping: 36 }} className="flex min-h-0 flex-1 items-center gap-[1.6vw] border-b border-white/10 last:border-0">
               <span className={`w-[3.2vw] text-[3.4vh] tabular-nums ${i < 3 ? "text-[#ffc933]" : "text-white/60"}`}>{i + 1}</span>
-              <span className="min-w-0 flex-1 truncate text-[4.4vh] font-medium tracking-[-0.03em]">{r.name}<span className="ml-[1vw] text-[2.4vh] font-normal text-white/60">@{r.handle}</span></span>
+              <span className="min-w-0 flex-1 truncate text-[4.4vh] font-medium tracking-[-0.03em]">{r.name}<span className="ml-[1vw] text-[2.4vh] font-normal text-white/60">{atHandle(r.handle)}</span></span>
               {r.gained > 0 && <span key={`${r.id}-${r.earned}`} className="animate-[fade-out_6s_ease-out_forwards] rounded-full bg-[#1a7f37] px-[0.8vw] py-[0.3vh] text-[2.4vh] tabular-nums motion-reduce:animate-none">+{r.gained}</span>}
               <span className="flex items-center gap-[0.6vw] text-[4.4vh] font-medium tabular-nums"><Coin size={34} />{r.earned}</span>
             </motion.li>

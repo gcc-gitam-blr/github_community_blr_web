@@ -88,6 +88,33 @@ ${CLUB.joinUrl ? button(CLUB.joinUrl, "Join the WhatsApp community") : ""}
 ${CLUB.name} · ${i.site}` };
 }
 
+/** Epoch's "Email me a code": the code, big, in the subject too so a phone's notification shows it. */
+export function signInCodeEmail(i: { code: string; site: string }): Mail {
+  const code = esc(i.code);
+  const html = frame(`Your Epoch sign-in code is ${i.code}`, `<h1 style="font-size:22px;margin:0 0 12px">Your sign-in code</h1>
+<p>Type this on the Epoch page where you asked for it:</p>
+<p style="margin:20px 0;font:700 32px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:6px">${code}</p>
+<p>It works once, for a short while. If you didn't ask for it, ignore this email: nobody can sign in without the code.</p>
+<p style="margin-bottom:0">The GitHub Community Club team</p>`, i.site);
+  return { subject: `${i.code} is your Epoch sign-in code`, html, text: `Your Epoch sign-in code: ${i.code}
+
+Type it on the Epoch page where you asked for it. It works once, for a short while. If you didn't ask for it, ignore this email.
+
+${CLUB.name} · ${i.site}` };
+}
+
+/** An organiser asked for an email code: organisers sign in with GitHub, so say so instead of sending one. */
+export function organiserSignInEmail(i: { site: string }): Mail {
+  const html = frame("Organisers sign in with GitHub", `<h1 style="font-size:22px;margin:0 0 12px">Sign in with GitHub instead</h1>
+<p>Someone asked for an Epoch sign-in code for this address. It has organiser access, and organisers sign in with GitHub, so no code was sent.</p>
+${button(`${i.site.replace(/\/$/, "")}/epoch/register`, "Sign in with GitHub")}
+<p style="margin-bottom:0">If that wasn't you, nothing has changed and there's nothing to do.</p>`, i.site);
+  return { subject: "Sign in to Epoch with GitHub", html, text: `Someone asked for an Epoch sign-in code for this address. It has organiser access, and organisers sign in with GitHub, so no code was sent.
+
+Sign in with GitHub: ${i.site.replace(/\/$/, "")}/epoch/register
+If that wasn't you, there's nothing to do.` };
+}
+
 export interface BroadcastInput { subject: string; message: string; site: string; unsubscribe: string }
 
 /** A message from the organisers. Blank lines start new paragraphs; URLs become links. */

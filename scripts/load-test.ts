@@ -15,6 +15,7 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import pg from "pg";
 
+import { AUTH_USERS } from "../tests/auth-stub";
 const PHONES = Number(process.env.PHONES ?? 300), POOL = Number(process.env.POOL ?? 20), ACTIONS = 12, DESKS = 6, UNDOS = Number(process.env.UNDOS ?? 150);
 const NAME = process.env.LOAD_NAME ?? "epoch-load-test", PORT = Number(process.env.LOAD_PORT ?? 55432); // override to run two at once
 const sh = (cmd: string) => execSync(cmd, { stdio: ["ignore", "pipe", "pipe"] }).toString().trim();
@@ -65,7 +66,7 @@ async function main() {
   const phones = Array.from({ length: PHONES }, () => randomUUID()), desks = Array.from({ length: DESKS }, () => randomUUID());
   await pool.query(`
     create role anon; create role authenticated; create role service_role; create schema auth;
-    create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb);
+    ${AUTH_USERS}
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.uid', true), '')::uuid $$;`);
   await pool.query(fs.readFileSync("supabase/schema.sql", "utf8"));
   await pool.query(`insert into auth.users select id, 'user' || n || '@gitam.in', jsonb_build_object('user_name', 'user' || n) from unnest($1::uuid[]) with ordinality as t(id, n)`, [[...phones, ...desks]]);

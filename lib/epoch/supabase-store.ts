@@ -34,6 +34,23 @@ export const finishLogin = () => (finished ??= (async () => {
   const { error } = await sb().auth.verifyOtp({ token_hash: token!, type: "email" });
   return { back: true, error: error ? "That sign-in didn't finish. Please try again." : null };
 })());
+/** "Email me a code" (app/api/auth/email): the server emails a one-time code to the address. */
+export async function sendEmailCode(email: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const r = await fetch("/api/auth/email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
+    const j = (await r.json()) as { ok: boolean; error?: string };
+    return j.ok ? { ok: true } : { ok: false, error: j.error ?? "Couldn't send a code. Please try again." };
+  } catch { return { ok: false, error: "Network error. Please try again." }; }
+}
+/** The code from that email: Supabase checks it (once, and only for a while) and signs this browser in. */
+export async function verifyEmailCode(email: string, code: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const a = { email: email.trim().toLowerCase(), token: code.replace(/\s+/g, "") };
+  // the code comes from a magic link (the server's generateLink); current Supabase checks it as "email", older as "magiclink"
+  let { error } = await sb().auth.verifyOtp({ ...a, type: "email" });
+  if (error) ({ error } = await sb().auth.verifyOtp({ ...a, type: "magiclink" }));
+  return error ? { ok: false, error: "That code didn't work. Check it, or ask for a new one." } : { ok: true };
+}
+
 /** Sends the browser to GitHub; it comes back to `next` signed in. */
 export const startLogin = (next = window.location.pathname) => { window.location.href = new URL(`/api/auth/github?next=${encodeURIComponent(next)}`, window.location.origin).href; }; // a server route: full navigation
 

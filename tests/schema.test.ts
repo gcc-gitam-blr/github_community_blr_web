@@ -4,6 +4,7 @@
 import { PGlite } from "@electric-sql/pglite";
 import fs from "node:fs";
 
+import { AUTH_USERS } from "./auth-stub";
 const db = new PGlite();
 let fails = 0; const ok = (n: string, c: boolean) => { console.log((c ? "PASS" : "FAIL") + "  " + n); if (!c) fails++; };
 const as = (uid: string) => db.query(`select set_config('test.uid', $1, false)`, [uid]);
@@ -19,7 +20,7 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   await db.exec(`
     create role anon; create role authenticated; create role service_role;
     create schema auth;
-    create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb);
+    ${AUTH_USERS}
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.uid', true), '')::uuid $$;
     insert into auth.users values ('${ADA}', 'ada@gitam.in', '{"user_name":"ada"}'), ('${ORG}', 'org@gitam.in', '{"user_name":"org"}');
     create publication supabase_realtime; -- Supabase makes this one for Realtime

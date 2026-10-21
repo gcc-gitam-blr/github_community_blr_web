@@ -54,20 +54,22 @@ export async function githubIdentity(env: LoginEnv, origin: string, code: string
 
 /** The part of Supabase's admin API we use (so tests can pass a fake). */
 export interface AuthAdmin {
-  createUser(a: { email: string; email_confirm: boolean; user_metadata: object }): Promise<{ data: { user: { id: string } | null }; error: { message: string; code?: string; status?: number } | null }>;
-  generateLink(a: { type: "magiclink"; email: string }): Promise<{ data: { user: { id: string } | null; properties: { hashed_token: string } | null }; error: { message: string } | null }>;
-  updateUserById(id: string, a: { user_metadata: object }): Promise<{ error: { message: string } | null }>;
+  createUser(a: { email: string; email_confirm: boolean; user_metadata: object; app_metadata?: object }): Promise<{ data: { user: { id: string } | null }; error: { message: string; code?: string; status?: number } | null }>;
+  generateLink(a: { type: "magiclink"; email: string }): Promise<{ data: { user: { id: string } | null; properties: { hashed_token: string; email_otp?: string } | null }; error: { message: string } | null }>;
+  updateUserById(id: string, a: { user_metadata?: object; app_metadata?: object }): Promise<{ error: { message: string } | null }>;
 }
 
 /** Finds or creates the Supabase user for this GitHub account and returns a one-time login token. */
 export async function loginToken(admin: AuthAdmin, gh: GitHubUser, email: string): Promise<{ ok: true; token: string; userId: string } | { ok: false; error: string }> {
   // the same keys Supabase's own GitHub provider writes, so register_profile reads the handle either way
   const meta = { user_name: gh.login, preferred_username: gh.login, full_name: gh.name ?? gh.login, name: gh.name ?? gh.login, avatar_url: gh.avatar_url, provider_id: String(gh.id) };
-  const created = await admin.createUser({ email, email_confirm: true, user_metadata: meta });
+  // the database trusts only app_metadata for the username (github_login() in schema.sql): users can edit user_metadata
+  const app = { github_login: gh.login, github_id: String(gh.id) };
+  const created = await admin.createUser({ email, email_confirm: true, user_metadata: meta, app_metadata: app });
   const exists = created.error && (created.error.code === "email_exists" || /already (been )?registered|already exists/i.test(created.error.message));
   if (created.error && !exists) return { ok: false, error: "Couldn't create your account. Please try again." };
   const link = await admin.generateLink({ type: "magiclink", email });
   if (link.error || !link.data.user || !link.data.properties) return { ok: false, error: "Couldn't sign you in. Please try again." };
-  if (exists) await admin.updateUserById(link.data.user.id, { user_metadata: meta }); // keep handle/avatar current
+  if (exists) await admin.updateUserById(link.data.user.id, { user_metadata: meta, app_metadata: app }); // keep handle/avatar current
   return { ok: true, token: link.data.properties.hashed_token, userId: link.data.user.id };
 }

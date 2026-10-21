@@ -3,6 +3,7 @@
 import { PGlite } from "@electric-sql/pglite";
 import fs from "node:fs";
 
+import { AUTH_USERS } from "./auth-stub";
 const db = new PGlite();
 let fails = 0; const ok = (n: string, c: boolean) => { console.log((c ? "PASS" : "FAIL") + "  " + n); if (!c) fails++; };
 const SQL = fs.readFileSync("supabase/schema.sql", "utf8");
@@ -27,7 +28,7 @@ const EXPECTED: Record<string, string[]> = {
   set_role: SIGNED_IN, assign_booth: SIGNED_IN,
   // appointments: each checks my_role() = 'admin' (or organiser, for list_people) itself
   grant_appointment: SIGNED_IN, end_appointment: SIGNED_IN, list_people: SIGNED_IN,
-  role_of: NOBODY, crm_log: NOBODY, profile_role_mirror: NOBODY, appointment_changed: NOBODY, // internal: other functions and triggers only
+  role_of: NOBODY, github_login: NOBODY, crm_log: NOBODY, profile_role_mirror: NOBODY, appointment_changed: NOBODY, // internal: other functions and triggers only
   // members and recruitment: each checks my_role() and the record's state itself; applying goes through the server
   create_campaign: SIGNED_IN, set_campaign_dates: SIGNED_IN, set_campaign_status: SIGNED_IN, add_reviewer: SIGNED_IN, remove_reviewer: SIGNED_IN,
   review_application: SIGNED_IN, move_application: SIGNED_IN, decide_application: SIGNED_IN, onboard_application: SIGNED_IN,
@@ -65,7 +66,7 @@ const EXPECTED: Record<string, string[]> = {
   await db.exec(`
     create role anon; create role authenticated; create role service_role;
     create schema auth;
-    create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb);
+    ${AUTH_USERS}
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.uid', true), '')::uuid $$;
     create publication supabase_realtime;
   `);

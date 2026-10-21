@@ -246,21 +246,46 @@ do $$ begin
   end if;
 end $$;
 
+-- The GitHub username behind an account, from places only the server or GitHub can write: app_metadata.github_login
+-- (set by the site's own GitHub sign-in, lib/auth/github-login.ts) or the GitHub identity (Supabase's own GitHub sign-in,
+-- used on previews and localhost). Never user_metadata: a signed-in user can change that themselves.
+create or replace function github_login(p_uid uuid) returns text
+language sql security definer set search_path = public, pg_temp stable as $$
+  select coalesce(
+    (select nullif(raw_app_meta_data->>'github_login', '') from auth.users where id = p_uid),
+    (select nullif(identity_data->>'user_name', '') from auth.identities where user_id = p_uid and provider = 'github' order by created_at desc limit 1))
+$$;
+revoke execute on function github_login(uuid) from public, anon, authenticated;
+
+-- Two kinds of account: GitHub sign-in (github_login() knows the username) and Epoch's email code (it doesn't).
+-- An email-only account gets a handle starting with "~", which GitHub never allows, so it can't be mistaken for a
+-- GitHub username: not by the members list, and not by access an admin granted to a username before its first sign-in.
 create or replace function register_profile(p_name text)
 returns profiles language plpgsql security definer set search_path = public, pg_temp as $$
-declare me profiles; u auth.users; pr record; aid bigint;
+declare me profiles; u auth.users; pr record; aid bigint; gh text; base text; h text; n int := 1;
 begin
+  select * into u from auth.users where id = auth.uid();
+  gh := github_login(u.id);
   select * into me from profiles where id = auth.uid();
   if found then
-    -- every sign-in, not just the first: a member added (or given a username) after someone first signed in is linked now
-    update members set user_id = me.id where user_id is null and (lower(email) = lower(coalesce(me.email, '')) or lower(handle) = lower(me.handle));
-    return me;
+    -- signed in with an email code before, with GitHub now: the GitHub username replaces the "~" one, if it's free
+    if me.handle like '~%' and gh is not null and not exists (select 1 from profiles where lower(handle) = lower(gh) and id <> me.id) then
+      update profiles set handle = gh where id = me.id returning * into me;
+    end if;
+  else
+    if gh is not null then h := gh;
+    else
+      base := '~' || coalesce(nullif(left(regexp_replace(lower(split_part(u.email, '@', 1)), '[^a-z0-9-]', '', 'g'), 30), ''), 'member');
+      h := base;
+      while exists (select 1 from profiles where lower(handle) = lower(h)) loop n := n + 1; h := base || '-' || n; end loop;
+    end if;
+    insert into profiles (id, handle, name, email) values (u.id, h, p_name, u.email) returning * into me;
   end if;
-  select * into u from auth.users where id = auth.uid();
-  insert into profiles (id, handle, name, email)
-  values (u.id, coalesce(u.raw_user_meta_data->>'user_name', split_part(u.email,'@',1)), p_name, u.email)
-  returning * into me;
-  update members set user_id = me.id where user_id is null and (lower(email) = lower(coalesce(me.email, '')) or lower(handle) = lower(me.handle));
+  -- every sign-in, not just the first: a member added (or given a username) after someone first signed in is linked now.
+  -- The email always proves who it is; a handle only when it's a GitHub username.
+  update members set user_id = me.id where user_id is null
+     and (lower(email) = lower(coalesce(me.email, '')) or (me.handle not like '~%' and lower(handle) = lower(me.handle)));
+  if me.handle like '~%' then return me; end if;
   -- an admin may have granted this GitHub username access before their first sign-in: it becomes an appointment now
   -- (a grant with no end date, or one that has already ended, is left for an admin to fix)
   select * into pr from pending_roles where handle = lower(me.handle);
@@ -583,13 +608,14 @@ language sql security definer set search_path = public, pg_temp stable as
 $$ select name, event, handle, coalesce(emailed_at, created_at) from attendance where id = p_id $$;
 grant execute on function certificate(uuid) to anon, authenticated;
 
--- "My club" (/me): the signed-in person's own attendance, and so their certificates. Matched by the email GitHub
--- gave them or their GitHub username; nobody can read anyone else's this way.
+-- "My club" (/me): the signed-in person's own attendance, and so their certificates. Matched by their sign-in email or
+-- the GitHub username on their profile (set by register_profile from github_login(), never from anything the user can
+-- edit); nobody can read anyone else's this way.
 create or replace function my_attendance()
 returns table (id uuid, event text, name text)
 language sql security definer set search_path = public, pg_temp stable as $$
-  select a.id, a.event, a.name from attendance a join auth.users u on u.id = auth.uid()
-  where a.email = lower(u.email) or (a.handle is not null and lower(a.handle) = lower(u.raw_user_meta_data->>'user_name'))
+  select a.id, a.event, a.name from attendance a join auth.users u on u.id = auth.uid() left join profiles p on p.id = u.id
+  where a.email = lower(u.email) or (a.handle is not null and p.handle not like '~%' and lower(a.handle) = lower(p.handle))
   order by a.event desc
 $$;
 revoke execute on function my_attendance() from public, anon;
@@ -1020,7 +1046,7 @@ create or replace function members_link_account() returns trigger language plpgs
 begin
   if new.user_id is null then
     select p.id into new.user_id from profiles p
-     where (new.handle is not null and lower(p.handle) = lower(new.handle)) or lower(p.email) = lower(new.email)
+     where (new.handle is not null and p.handle not like '~%' and lower(p.handle) = lower(new.handle)) or lower(p.email) = lower(new.email)
      order by (new.handle is not null and lower(p.handle) = lower(new.handle)) desc limit 1;
   end if;
   return new;
@@ -1029,7 +1055,7 @@ drop trigger if exists members_link_account on members;
 create trigger members_link_account before insert or update of email, handle on members for each row execute function members_link_account();
 -- and once, for everyone already on the list who signed in before their record could be linked
 update members m set user_id = p.id from profiles p
- where m.user_id is null and ((m.handle is not null and lower(p.handle) = lower(m.handle)) or lower(p.email) = lower(m.email));
+ where m.user_id is null and ((m.handle is not null and p.handle not like '~%' and lower(p.handle) = lower(m.handle)) or lower(p.email) = lower(m.email));
 revoke insert, update, delete on members from anon, authenticated;
 drop policy if exists "core and admins read members" on members;
 create policy "core and admins read members" on members for select using (my_role() in ('core','admin'));
