@@ -278,11 +278,11 @@ test("'Tell me when the dates are out' is on the home page and /epoch, and says 
     const box = page.getByLabel("Tell me when the dates are out");
     await box.scrollIntoViewIfNeeded();
     await box.fill("grace@");
-    await page.getByRole("button", { name: "Watch releases" }).click();
+    await page.getByRole("button", { name: "Email me" }).click();
     await expect(page.getByText("That email doesn't look right.")).toBeVisible();
   }
   await page.getByLabel("Tell me when the dates are out").fill("grace@gitam.in");
-  await page.getByRole("button", { name: "Watch releases" }).click();
+  await page.getByRole("button", { name: "Email me" }).click();
   await expect(page.getByText(/isn't switched on yet, so nothing was saved/)).toBeVisible(); // the test build has no database
 });
 
@@ -290,7 +290,7 @@ test("an address that unsubscribed is told it won't be emailed, not that it's on
   await page.route("**/api/epoch-interest", (r) => r.fulfill({ json: { ok: true, status: "unsubscribed" } })); // what the database answers for it
   await page.goto("/epoch");
   await page.getByLabel("Tell me when the dates are out").fill("grace@gitam.in");
-  await page.getByRole("button", { name: "Watch releases" }).click();
+  await page.getByRole("button", { name: "Email me" }).click();
   await expect(page.getByRole("status")).toContainText("unsubscribed from our emails, so we won't email it");
   await expect(page.getByText(/already on the list/)).toHaveCount(0);
 });
