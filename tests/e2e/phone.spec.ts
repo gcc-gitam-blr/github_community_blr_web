@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { CLUB } from "@/lib/config";
 import { EVENTS, eventSlug } from "@/lib/events";
 import { getUpdates } from "@/lib/updates";
 
@@ -77,4 +78,37 @@ test("phones never download the animated 3D stickers (they're desktop-only)", as
   page.on("request", (r) => { if (/\/stickers\/(cat|duck)-3d\.webp/.test(r.url())) heavy.push(r.url()); });
   for (const path of ["/", "/learn"]) { await page.goto(path); await page.mouse.wheel(0, 6000); await page.waitForTimeout(800); }
   expect(heavy).toEqual([]);
+});
+
+test("a Join button arrives in the header once the hero's form scrolls away, never on /join, and the menu always fits", async ({ page }) => {
+  const join = page.locator("header a[href='/join']");
+  await page.goto("/");
+  await expect(join).toBeHidden(); // the hero's own form is right there
+  await page.locator("#about").scrollIntoViewIfNeeded();
+  await expect(join).toBeVisible();
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 760 });
+    const menu = await page.getByRole("button", { name: "Open menu" }).boundingBox();
+    expect(menu!.width, `menu button at ${width}px`).toBeGreaterThanOrEqual(40);
+    expect(menu!.x + menu!.width, `menu button at ${width}px`).toBeLessThanOrEqual(width);
+  }
+  await page.goto("/learn");
+  await expect(join).toBeVisible(); // no hero form off the home page
+  await page.goto("/join");
+  await expect(join).toBeHidden(); // the page is the form
+  await page.evaluate(() => localStorage.setItem("gcc-joined", JSON.stringify({ name: "Ada Lovelace", email: "ada@gitam.in", extras: "later" })));
+  await page.goto("/learn");
+  await expect(join).toHaveCount(0); // joined on this browser: no more Join buttons
+});
+
+test("the contributors show ten until 'Show all'", async ({ page }) => {
+  await page.goto("/");
+  const box = page.locator("#team").getByRole("heading", { name: /Contributors/ }).locator("..");
+  await box.scrollIntoViewIfNeeded();
+  const chips = box.locator("li:visible");
+  const total = CLUB.contributors.length;
+  if (total <= 10) { await expect(chips).toHaveCount(total); return; }
+  await expect(chips).toHaveCount(10);
+  await box.getByRole("button", { name: `Show all ${total}` }).click();
+  await expect(chips).toHaveCount(total);
 });

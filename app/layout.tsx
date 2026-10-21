@@ -23,7 +23,8 @@ export const metadata: Metadata = {
   description: "The GitHub Community Club at GITAM University Bengaluru. Workshops, open source and Epoch, our flagship technical event.",
   openGraph: { title: "GitHub Community Club · GITAM Bengaluru", description: "Code. Collaborate. Contribute. Learn Git & GitHub, open source and hands-on workshops at GITAM Bengaluru.", type: "website", siteName: "GitHub Community Club BLR" },
   twitter: { card: "summary_large_image" },
-  icons: { icon: [{ url: "/brand/favicon-32.png", sizes: "32x32", type: "image/png" }], apple: "/brand/apple-touch.png" }, // the club logo (scripts/brand.mjs)
+  // the branch mark, not the Octocat: next to github.com in a row of tabs, the club's tab must look like the club (scripts/brand.mjs)
+  icons: { icon: [{ url: "/favicon.svg", type: "image/svg+xml" }, { url: "/brand/favicon-32.png", sizes: "32x32", type: "image/png" }], apple: "/brand/apple-touch.png" },
 };
 export const viewport: Viewport = { themeColor: "#ffffff", viewportFit: "cover" }; // cover: lets fixed bars use env(safe-area-inset-*)
 

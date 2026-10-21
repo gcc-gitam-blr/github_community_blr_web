@@ -4,6 +4,7 @@ import { CREWS, LEVELS, ROLES, roleLabel, type CrewRole } from "@/lib/crew";
 import { Reveal } from "@/components/ui/Reveal";
 import { Head } from "./Sections";
 import { Shuffled } from "./Shuffled";
+import { ShowAll } from "./ShowAll";
 
 /* The team, like a GitHub organisation: mentors (the owners), the five leads with photos, then everyone else as the
    compact rows of an organisation's People page (so the section stays short on a phone).
@@ -45,11 +46,11 @@ function Card({ m, i, big = true }: { m: Member; i: number; big?: boolean }) {
   return (
     <Reveal as="li" delay={big ? (i % 6) * 0.05 : 0}>
       <div className="lift aspect-square overflow-hidden rounded-[18px] border-2 border-ink bg-soft"><Face p={m} px={big ? 240 : 200} i={i} text={big ? "text-[clamp(44px,5vw,64px)]" : "text-[clamp(36px,4vw,52px)]"} /></div>
-      <h3 className={`mt-4 leading-tight ${big ? "text-[22px]" : "text-[19px]"}`}>{m.name}</h3>
-      {m.role && <p className={`mt-1 font-semibold text-ink-2 ${big ? "text-[15px]" : "text-[14px]"}`}>{m.role}</p>}
+      <h3 className={`mt-3 leading-tight sm:mt-4 ${big ? "text-[16px] sm:text-[22px]" : "text-[19px]"}`}>{m.name}</h3>
+      {m.role && <p className={`mt-1 font-semibold text-ink-2 ${big ? "text-[13px] sm:text-[15px]" : "text-[14px]"}`}>{m.role}</p>}
       {/* hats first, then the technical role on its own line, so cards in a row line up */}
       {m.tags && <p className="mt-2 flex flex-wrap gap-1.5">{m.tags.map((t) => <Tag key={t} t={t} />)}</p>}
-      {m.crew && <p className="mt-1.5 flex flex-wrap gap-1.5">{m.crew.map((r) => <CrewLabel key={r.role} r={r} />)}</p>}
+      {m.crew && <p className={`mt-1.5 flex flex-wrap gap-1.5 ${big ? "lead-crew" : ""}`}>{m.crew.map((r) => <CrewLabel key={r.role} r={r} />)}</p>}
       {m.handle && <a href={`https://github.com/${m.handle}`} target="_blank" rel="noopener" className="mt-1.5 block font-mono text-[13px] text-link hover:underline">@{m.handle}</a>}
     </Reveal>
   );
@@ -100,7 +101,8 @@ export function Team() {
         )}
 
         {/* the five leads, equal and a little larger… */}
-        <ul className="grid grid-cols-2 gap-x-4 gap-y-9 sm:grid-cols-3 lg:grid-cols-5">
+        {/* three to a row on phones too: five big cards two to a row made the team the longest part of the page */}
+        <ul className="grid grid-cols-3 gap-x-3 gap-y-7 sm:gap-x-4 sm:gap-y-9 lg:grid-cols-5">
           {leads.map((m, i) => <Card key={m.name} m={m} i={i} big />)}
         </ul>
         {/* …then everyone else, in a new order on every visit: it isn't a ranking */}
@@ -142,6 +144,7 @@ export function Team() {
         {CLUB.contributors.length > 0 && (
           <Reveal className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 rounded-[16px] border border-line bg-white p-5 sm:p-6">
             <h3 className="flex items-center gap-2 text-[18px]">Contributors <span className="rounded-full bg-soft px-2 py-0.5 font-sans text-[12.5px] font-semibold text-ink-2">{CLUB.contributors.length}</span></h3>
+            <ShowAll total={CLUB.contributors.length} label={`Show all ${CLUB.contributors.length}`}>
             <Shuffled className="flex flex-wrap gap-2">
               {CLUB.contributors.map((c, i) => {
                 const inner = (<><span className="h-7 w-7 flex-none overflow-hidden rounded-full" aria-hidden><Face p={c} px={28} i={i} text="text-[11px] font-bold" /></span>{c.name}</>);
@@ -149,6 +152,7 @@ export function Team() {
                 return <li key={c.name}>{c.handle ? <a href={`https://github.com/${c.handle}`} target="_blank" rel="noopener" className={`${cls} transition-colors duration-150 hover:border-ink/40`}>{inner}</a> : <span className={cls}>{inner}</span>}</li>;
               })}
             </Shuffled>
+            </ShowAll>
             <p className="font-mono text-[13px] text-ink-3">the people who&apos;ve shaped the club over the years</p>
           </Reveal>
         )}

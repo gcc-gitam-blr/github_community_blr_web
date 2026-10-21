@@ -244,6 +244,18 @@ html.lenis, html.lenis body { height: auto; }
 .head-pill[data-compact="true"]:not(:hover):not(:focus-within) .commit-edge { width: 10px; }
 .head-pill[data-compact="true"]:not(:hover):not(:focus-within) .head-word { display: none; }
 .head-join-short { display: none; }
+/* phones: just "Join", arriving once the hero's form scrolls away (Nav.tsx); the page label beside the dots gives way */
+@keyframes head-join-in { from { opacity: 0; scale: .9; } }
+@media (max-width: 1023px) {
+  .head-join { padding-inline: 14px; animation: head-join-in 180ms var(--ease-out); }
+  .head-join .head-join-long { display: none; }
+  .head-join .head-join-short { display: inline; }
+}
+@media (max-width: 1023px) and (prefers-reduced-motion: reduce) { .head-join { animation: none; } }
+/* …and makes room for itself, so the menu button always fits: the theme switch (the menu has it too) and the page
+   label step aside, and on the narrowest phones the decorative dots as well */
+@media (max-width: 1023px) { .head-pill[data-join="true"] .head-theme, .head-pill[data-join="true"] .mini-label { display: none; } }
+@media (max-width: 379px) { .head-pill[data-join="true"] .mini-dots { display: none; } }
 .head-pill[data-compact="true"]:not(:hover):not(:focus-within) .head-join-long { display: none; }
 .head-pill[data-compact="true"]:not(:hover):not(:focus-within) .head-join-short { display: inline; }
 .commit-link { transition: padding 280ms var(--ease-out), gap 280ms var(--ease-out); }
@@ -265,6 +277,11 @@ html.lenis, html.lenis body { height: auto; }
   .mini-label { animation: none; }
 }
 
+/* phones: a long list shows its first ten until "Show all" (components/site/ShowAll.tsx) */
+@media (max-width: 639px) { .show-some[data-all="false"] li:nth-child(n+11) { display: none; } }
+/* the leads sit three to a row on phones (components/site/Team.tsx): their role labels a size down so they wrap less */
+@media (max-width: 639px) { .lead-crew > span { font-size: 11px; line-height: 1.3; } }
+
 /* ---------- the admin's menu (components/admin/AdminApp.tsx): its sections hang off one branch, like the site's menu ----------
    phones: a row of commits to swipe through; from tablets up: a vertical branch with a node per group and HEAD in green */
 .adm-branch { position: relative; display: flex; gap: 4px; } /* relative: the counts' hidden words stay inside the scrolling row on phones */
@@ -273,7 +290,11 @@ html.lenis, html.lenis body { height: auto; }
   transition: background-color 150ms ease, color 150ms ease; }
 .adm-branch .is-head .adm-link { color: var(--color-ink); font-weight: 650; background: #fff; box-shadow: inset 0 0 0 1px var(--color-line); }
 .adm-count { flex: none; min-width: 20px; padding: 2px 6px; border-radius: 999px; background: #fd8c73; color: #0b0b0f; text-align: center; font: 700 11.5px/1.25 var(--font-mono); }
-.adm-out { display: none; }
+/* the tools on other pages (Epoch desk, content editor, photos): a wrapped row under the swipe row on phones, a column below the branch from tablets up */
+.adm-outs { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; }
+.adm-out { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--color-ink-2); }
+.adm-out:hover { color: var(--color-ink); text-decoration: underline; text-underline-offset: 4px; }
+.adm-out-note { display: none; }
 @media (hover: hover) and (pointer: fine) { .adm-link:hover { color: var(--color-ink); background: rgb(11 11 15 / .045); } .adm-branch .is-head .adm-link:hover { background: #fff; } }
 @media (min-width: 768px) {
   .adm-branch { position: relative; flex-direction: column; gap: 1px; }
@@ -281,8 +302,8 @@ html.lenis, html.lenis body { height: auto; }
   .adm-group { position: relative; display: flex; align-items: center; gap: 10px; padding: 16px 0 6px 6px; font: 600 11.5px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--color-ink-3); }
   .adm-group:first-child { padding-top: 0; }
   .adm-link { position: relative; flex: 1; min-width: 0; border-radius: 8px; padding: 7px 10px; }
-  .adm-out { display: flex; align-items: center; gap: 6px; margin: 14px 0 0 32px; font-size: 14px; color: var(--color-ink-2); }
-  .adm-out:hover { color: var(--color-ink); text-decoration: underline; text-underline-offset: 4px; }
+  .adm-outs { flex-direction: column; gap: 6px; margin: 14px 0 0 32px; }
+  .adm-out-note { display: block; max-width: 190px; font-size: 12.5px; line-height: 1.45; color: var(--color-ink-3); }
 }
 :root[data-theme="dark"]:not(:has([data-light-only])) .adm-branch .is-head .adm-link { background: #161616; }
 :root[data-theme="dark"]:not(:has([data-light-only])) .adm-branch::before { background: rgb(255 255 255 / .16); }

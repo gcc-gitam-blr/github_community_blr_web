@@ -183,7 +183,16 @@ export function AdminApp({ quizzes = [] }: { quizzes?: QuizFile[] }) {
               </Fragment>
             ))}
           </ul>
-          <Link href="/epoch/admin" className="adm-out">Epoch desk <span aria-hidden>↗</span></Link>
+          {/* the organiser tools that live on their own pages: the Epoch desk for everyone here; the content editor and
+              photo upload for the core team, behind a second GitHub login (write access to the site's repository) */}
+          <div className="adm-outs">
+            <Link href="/epoch/admin" className="adm-out">Epoch desk <span aria-hidden>↗</span></Link>
+            {(me.role === "admin" || me.role === "core") && <>
+              <Link href="/keystatic" className="adm-out">Content editor <span aria-hidden>↗</span></Link>
+              <Link href="/photos" className="adm-out">Photos <span aria-hidden>↗</span></Link>
+              <p className="adm-out-note">The editor and photos use their own GitHub sign-in, for people with write access to the site&apos;s repository.</p>
+            </>}
+          </div>
           {(me.role === "admin" || me.role === "core") && <PreviewPicker real={me.role} value={preview} onChange={setPreview} />}
           <KeysNote />
         </nav>
