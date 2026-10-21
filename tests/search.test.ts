@@ -3,7 +3,7 @@ import { baseIndex, search, type Entry } from "../lib/search";
 import { EVENTS } from "../lib/events";
 
 let fails = 0; const ok = (n: string, c: boolean) => { console.log((c ? "PASS" : "FAIL") + "  " + n); if (!c) fails++; };
-const idx: Entry[] = [...baseIndex(), { kind: "Update", title: "Epoch is coming in December", hint: "2 October 2026 · Epoch", href: "/updates/epoch-in-december" }];
+const idx: Entry[] = [...baseIndex(), { kind: "Update", title: "A sample post about December", hint: "1 January 2026 · Test", href: "/updates/sample-post" }];
 const top = (q: string) => search(idx, q)[0];
 
 ok("the index has pages, sections, events, questions and commands", ["Page", "Section", "Event", "Question", "Git command"].every((k) => idx.some((e) => e.kind === k)));
