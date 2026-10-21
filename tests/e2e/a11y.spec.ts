@@ -1,9 +1,12 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { CLUB } from "@/lib/config";
+import { EVENTS, eventSlug } from "@/lib/events";
+import { getUpdates } from "@/lib/updates";
 
 /* Automated accessibility checks (axe-core, WCAG 2.1 A/AA). They catch contrast, labels, names, roles and more.
    They don't replace trying the site with a keyboard and a screen reader, but they stop regressions. */
-const PAGES = ["/", "/certificates/sample", "/learn", "/contribute", "/board", "/board/lechakrawarthy", "/me", "/photos", "/memories", "/get-involved", "/join", "/apply", "/admin/doc?proposal=1", "/projects", "/hub", "/privacy", "/updates", "/updates/calendar-2026-27", "/events/git-merge-26", "/epoch", "/epoch/booths", "/epoch/shop", "/epoch/register", "/epoch/leaderboard", "/epoch/guide", "/epoch/guide/organisers", "/epoch/screen", "/epoch/kiosk/vr", "/unsubscribe?e=a%40b.in&t=x", "/admin", "/no-such-page"];
+const PAGES = ["/", "/certificates/sample", "/learn", "/contribute", "/board", `/board/${CLUB.team.find((m) => m.handle)!.handle}`, "/me", "/photos", "/memories", "/get-involved", "/join", "/apply", "/admin/doc?proposal=1", "/projects", "/hub", "/privacy", "/updates", `/updates/${getUpdates()[0].slug}`, `/events/${eventSlug(EVENTS[0])}`, "/epoch", "/epoch/booths", "/epoch/shop", "/epoch/register", "/epoch/leaderboard", "/epoch/guide", "/epoch/guide/organisers", "/epoch/screen", "/epoch/kiosk/vr", "/unsubscribe?e=a%40b.in&t=x", "/admin", "/no-such-page"];
 
 // dark mode follows the visitor's system setting; Epoch keeps its own light look, so only the club pages are checked again
 const DARK = PAGES.filter((p) => !p.startsWith("/epoch") && !p.startsWith("/unsubscribe"));
