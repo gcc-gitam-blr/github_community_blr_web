@@ -44,7 +44,10 @@ export async function sendEmailCode(email: string): Promise<{ ok: true } | { ok:
 }
 /** The code from that email: Supabase checks it (once, and only for a while) and signs this browser in. */
 export async function verifyEmailCode(email: string, code: string): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { error } = await sb().auth.verifyOtp({ email: email.trim().toLowerCase(), token: code.replace(/\s+/g, ""), type: "email" });
+  const a = { email: email.trim().toLowerCase(), token: code.replace(/\s+/g, "") };
+  // the code comes from a magic link (the server's generateLink); current Supabase checks it as "email", older as "magiclink"
+  let { error } = await sb().auth.verifyOtp({ ...a, type: "email" });
+  if (error) ({ error } = await sb().auth.verifyOtp({ ...a, type: "magiclink" }));
   return error ? { ok: false, error: "That code didn't work. Check it, or ask for a new one." } : { ok: true };
 }
 
