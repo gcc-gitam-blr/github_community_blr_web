@@ -7,6 +7,7 @@ import type { AddressInfo } from "node:net";
 import { SMTPServer } from "smtp-server";
 import { applySchema, checkEmail, checkSupabase, makeAdmin, mergeEnv, newSecret, pushVercel, type Fetch } from "../scripts/connect-lib";
 
+import { AUTH_USERS } from "./auth-stub";
 let fails = 0; const ok = (n: string, c: boolean) => { console.log((c ? "PASS" : "FAIL") + "  " + n); if (!c) fails++; };
 const res = (status: number, body = "") => new Response(body, { status });
 
@@ -30,7 +31,7 @@ const UNTIL = new Date(Date.now() + 365 * 864e5).toISOString().slice(0, 10); // 
   // the schema, over a real Postgres connection
   const db = new PGlite();
   await db.exec(`create role anon; create role authenticated; create role service_role; create schema auth;
-    create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb);
+    ${AUTH_USERS}
     create function auth.uid() returns uuid language sql stable as $$ select null::uuid $$;`);
   const server = new PGLiteSocketServer({ db, port: 0, host: "127.0.0.1" });
   await server.start();

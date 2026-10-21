@@ -3,6 +3,7 @@
 import { PGlite } from "@electric-sql/pglite";
 import fs from "node:fs";
 
+import { AUTH_USERS } from "./auth-stub";
 const db = new PGlite();
 let fails = 0; const ok = (n: string, c: boolean) => { console.log((c ? "PASS" : "FAIL") + "  " + n); if (!c) fails++; };
 const SQL = fs.readFileSync("supabase/schema.sql", "utf8");
@@ -27,7 +28,7 @@ const audit = async (action: string) => (await one<{ n: number }>("select count(
   await db.exec(`
     create role anon; create role authenticated; create role service_role;
     create schema auth;
-    create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb);
+    ${AUTH_USERS}
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.uid', true), '')::uuid $$;
     create publication supabase_realtime;
   `);
