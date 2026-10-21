@@ -7,6 +7,7 @@ import { AttendeeSearch, COIN_BOOTHS, boothName } from "./Staff";
 import { useEpoch } from "./EpochProvider";
 import type { AuditAction, AuditEntry, Profile, Role } from "@/lib/epoch/types";
 
+import { atHandle } from "@/lib/handle";
 /* The organiser desk's own tools: find an attendee, who runs which booth, and the audit log. */
 
 const h2 = "text-[28px] font-medium tracking-[-0.03em]";
@@ -39,8 +40,8 @@ export function Team() {
     setMsg(r.ok ? { k: "ok", t: done } : { k: "err", t: r.error ?? "That didn't work." });
     if (r.ok) await load();
   };
-  const role = (p: Profile, r: Role) => act(store?.setRole(p.handle, r), r === "attendee" ? `@${p.handle} is an attendee again.` : `@${p.handle} is now ${r === "admin" ? "an admin" : "a volunteer"}.`);
-  const booth = (p: Profile, b: string) => act(store?.assignBooth(p.handle, b || null), b ? `@${p.handle} now runs ${boothName(b)}.` : `@${p.handle} is on the desk.`);
+  const role = (p: Profile, r: Role) => act(store?.setRole(p.handle, r), r === "attendee" ? `${atHandle(p.handle) || p.name} is an attendee again.` : `${atHandle(p.handle) || p.name} is now ${r === "admin" ? "an admin" : "a volunteer"}.`);
+  const booth = (p: Profile, b: string) => act(store?.assignBooth(p.handle, b || null), b ? `${atHandle(p.handle) || p.name} now runs ${boothName(b)}.` : `${atHandle(p.handle) || p.name} is on the desk.`);
   const add = async () => { const h = handle.trim().replace(/^@/, ""); if (!h) return; await act(store?.setRole(h, "volunteer"), `@${h} is now a volunteer. Pick their booth below.`); setHandle(""); };
 
   const list = [...(rows ?? [])].sort((a, b) => (a.role === b.role ? a.name.localeCompare(b.name) : a.role === "admin" ? -1 : 1));
@@ -58,13 +59,13 @@ export function Team() {
         <ul className="divide-y divide-hair border-y border-hair">
           {shown.map((p) => (
             <li key={p.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
-              <span className="min-w-0 flex-1 basis-[160px]"><span className="block truncate text-[16px] font-medium">{p.name}</span><span className="block truncate font-mono text-[12px] text-mute">@{p.handle}</span></span>
+              <span className="min-w-0 flex-1 basis-[160px]"><span className="block truncate text-[16px] font-medium">{p.name}</span><span className="block truncate font-mono text-[12px] text-mute">{atHandle(p.handle)}</span></span>
               {admin && p.id !== me?.id ? (<>
-                <select aria-label={`Role for @${p.handle}`} disabled={busy} value={p.role} onChange={(e) => role(p, e.target.value as Role)} className={`${field} !w-auto !rounded-full !py-2 !pl-4 !pr-8 !text-[14px]`}>
+                <select aria-label={`Role for ${atHandle(p.handle) || p.name}`} disabled={busy} value={p.role} onChange={(e) => role(p, e.target.value as Role)} className={`${field} !w-auto !rounded-full !py-2 !pl-4 !pr-8 !text-[14px]`}>
                   <option value="volunteer">Volunteer</option><option value="admin">Admin</option><option value="attendee">Remove access</option>
                 </select>
                 {p.role === "volunteer" && (
-                  <select aria-label={`Booth for @${p.handle}`} disabled={busy} value={p.booth ?? ""} onChange={(e) => booth(p, e.target.value)} className={`${field} !w-auto !max-w-full !rounded-full !py-2 !pl-4 !pr-8 !text-[14px]`}>
+                  <select aria-label={`Booth for ${atHandle(p.handle) || p.name}`} disabled={busy} value={p.booth ?? ""} onChange={(e) => booth(p, e.target.value)} className={`${field} !w-auto !max-w-full !rounded-full !py-2 !pl-4 !pr-8 !text-[14px]`}>
                     <option value="">Desk (check-in)</option>{COIN_BOOTHS.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
                   </select>
                 )}

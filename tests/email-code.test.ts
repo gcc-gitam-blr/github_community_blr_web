@@ -2,6 +2,7 @@
 import { emailSignInCode } from "../lib/auth/email-code";
 import type { AuthAdmin } from "../lib/auth/github-login";
 import { organiserSignInEmail, signInCodeEmail } from "../lib/email/templates";
+import { atHandle } from "../lib/handle";
 
 let fails = 0; const ok = (n: string, c: boolean) => { console.log((c ? "PASS" : "FAIL") + "  " + n); if (!c) fails++; };
 
@@ -43,6 +44,8 @@ let fails = 0; const ok = (n: string, c: boolean) => { console.log((c ? "PASS" :
   ok("…and says what to do if you didn't ask for it", /didn't ask/.test(m.text));
   const o = organiserSignInEmail({ site: "https://club.test/" });
   ok("an organiser is told to use GitHub, with a link, and gets no code", /GitHub/.test(o.subject) && o.html.includes("https://club.test/epoch/register") && !/\d{6}/.test(o.text));
+
+  ok("a GitHub username shows as @name; an email-code account's ~ handle shows as nothing", atHandle("ada-l") === "@ada-l" && atHandle("~ada") === "" && atHandle("") === "" && atHandle(null) === "");
 
   if (fails) { console.log(`${fails} email-code check(s) failed`); process.exit(1); }
   console.log("all email-code checks passed");

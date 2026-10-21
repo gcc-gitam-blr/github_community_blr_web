@@ -9,6 +9,7 @@ import { REVERSE_WINDOW_MIN, reverseBlock, scanBlock } from "@/lib/epoch/rules";
 import { place, shortRef } from "@/lib/epoch/receipt";
 import type { Profile, Tx } from "@/lib/epoch/types";
 
+import { atHandle } from "@/lib/handle";
 /* Staff tools on the scan page and the desk: find an attendee, then check them in, scan for a booth,
    award (admins) or reverse a mistake. The store (and on the live site, the database) decides what's allowed;
    this only offers what will work for the signed-in organiser. */
@@ -50,7 +51,7 @@ export function AttendeeSearch({ onPick, id = "find" }: { onPick: (p: Profile) =
               {shown.map((p) => (
                 <li key={p.id}>
                   <button type="button" onClick={() => { onPick(p); setQ(""); setRows(null); }} className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-ink/[.03] focus-visible:bg-ink/[.04]">
-                    <span className="min-w-0 flex-1"><span className="block truncate text-[16px] font-medium">{p.name}</span><span className="block truncate text-[13px] text-mute">@{p.handle}{p.email ? ` · ${p.email}` : ""}</span></span>
+                    <span className="min-w-0 flex-1"><span className="block truncate text-[16px] font-medium">{p.name}</span><span className="block truncate text-[13px] text-mute">{[atHandle(p.handle), p.email].filter(Boolean).join(" · ")}</span></span>
                     <span className="shrink-0 text-right font-mono text-[13px]">{p.coins} {EPOCH.currency}<span className={`block text-[12px] ${p.ticket ? "text-[#1a7f37]" : "text-mute"}`}>{p.ticket ? "checked in" : "not checked in"}</span></span>
                   </button>
                 </li>
@@ -96,7 +97,7 @@ export function StaffPanel({ target, onClose, onResult }: { target: Profile; onC
     <div className="space-y-5">
       <div>
         <p className="text-[32px] font-medium leading-tight tracking-[-0.03em]">{target.name}</p>
-        <p className={label}>@{target.handle} · {target.coins} coins · ticket {target.ticket ? "verified" : "pending"}</p>
+        <p className={label}>{atHandle(target.handle) && `${atHandle(target.handle)} · `}{target.coins} coins · ticket {target.ticket ? "verified" : "pending"}</p>
       </div>
       {err && <Notice kind="err">{err}</Notice>}
       {!target.ticket && <button disabled={busy} onClick={verify} className={`${btnInk} w-full`}>Verify ticket · +{STARTER_COINS} {EPOCH.currency}</button>}

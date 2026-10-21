@@ -15,6 +15,7 @@ import { EPOCH, RECHARGE_POINTS, STARTER_COINS } from "@/lib/epoch/config";
 import { filterTxs, kindLabel, place, withBalances, type TxFilter } from "@/lib/epoch/receipt";
 import type { Tx } from "@/lib/epoch/types";
 
+import { atHandle } from "@/lib/handle";
 function Balance({ value }: { value: number }) {
   const [n, setN] = useState(value);
   const shown = useRef(value); // the number on screen, so a new balance counts on from there
@@ -73,7 +74,7 @@ export function Wallet() {
           {/* balance card */}
           <section className={`${glass} mt-5 p-7 sm:p-9`}>
             <div className="flex items-center justify-between gap-3">
-              <span className="text-[14px] text-mute">@{me.handle}</span>
+              <span className="text-[14px] text-mute">{atHandle(me.handle) || me.name}</span>
               <span className={`rounded-full px-3.5 py-1 text-[13px] ${me.ticket ? "bg-ink text-white" : "bg-ink/[.07] text-mute"}`}>{me.ticket ? "Ticket verified" : "Ticket pending"}</span>
             </div>
             <div className="mt-8 flex items-end justify-between gap-6">
