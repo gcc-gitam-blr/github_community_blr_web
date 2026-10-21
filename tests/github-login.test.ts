@@ -36,22 +36,23 @@ const env: LoginEnv = { clientId: "cid", clientSecret: "secret", serviceKey: "se
   ok("no verified email → tells them where to add one", !noMail.ok && /settings\/emails/.test(noMail.error));
 
   // Supabase's side
-  const users = new Map<string, { id: string; meta: Record<string, string> }>();
+  const users = new Map<string, { id: string; meta: Record<string, string>; app: Record<string, string> }>();
   const admin: AuthAdmin = {
-    async createUser({ email, user_metadata }) {
+    async createUser({ email, user_metadata, app_metadata }) {
       if (users.has(email)) return { data: { user: null }, error: { message: "A user with this email address has already been registered", code: "email_exists", status: 422 } };
-      const u = { id: `u${users.size + 1}`, meta: user_metadata as Record<string, string> }; users.set(email, u); return { data: { user: { id: u.id } }, error: null };
+      const u = { id: `u${users.size + 1}`, meta: user_metadata as Record<string, string>, app: (app_metadata ?? {}) as Record<string, string> }; users.set(email, u); return { data: { user: { id: u.id } }, error: null };
     },
     async generateLink({ email }) { const u = users.get(email); return u ? { data: { user: { id: u.id }, properties: { hashed_token: `tok-${u.id}-${Math.random()}` } }, error: null } : { data: { user: null, properties: null }, error: { message: "User not found" } }; },
-    async updateUserById(id, { user_metadata }) { for (const u of users.values()) if (u.id === id) u.meta = user_metadata as Record<string, string>; return { error: null }; },
+    async updateUserById(id, { user_metadata, app_metadata }) { for (const u of users.values()) if (u.id === id) { if (user_metadata) u.meta = user_metadata as Record<string, string>; if (app_metadata) u.app = app_metadata as Record<string, string>; } return { error: null }; },
   };
   if (!who.ok) throw new Error("setup");
   const first = await loginToken(admin, who.user, who.email);
   ok("a new person gets an account and a one-time token", first.ok && first.userId === "u1" && first.token.startsWith("tok-u1"));
-  ok("their GitHub handle is stored where register_profile reads it", users.get("ada@gitam.in")!.meta.user_name === "Ada-L");
+  ok("their GitHub handle is stored for the app to show", users.get("ada@gitam.in")!.meta.user_name === "Ada-L");
+  ok("…and where only the server can write it, which is all the database trusts", users.get("ada@gitam.in")!.app.github_login === "Ada-L");
   const again = await loginToken(admin, { ...who.user, login: "ada-renamed" }, who.email);
   ok("signing in again reuses the same account", again.ok && again.userId === "u1" && users.size === 1);
-  ok("…and refreshes a changed GitHub handle", users.get("ada@gitam.in")!.meta.user_name === "ada-renamed");
+  ok("…and refreshes a changed GitHub handle, in both places", users.get("ada@gitam.in")!.meta.user_name === "ada-renamed" && users.get("ada@gitam.in")!.app.github_login === "ada-renamed");
   const broken = await loginToken({ ...admin, createUser: async () => ({ data: { user: null }, error: { message: "Database error" } }) }, who.user, "new@x.in");
   ok("a database failure is a friendly error, not a crash", !broken.ok && /try again/.test(broken.error));
 
