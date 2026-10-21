@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { tokenFor } from "../../lib/email/token";
+import { EVENTS, eventSlug } from "@/lib/events";
 
 /* Every public form, end to end: the page, the API route and the real SQL functions (supabase/schema.sql, running in
    tests/e2e/fake-supabase.ts), and back. Each test checks what the person sees AND that the row was really saved, so a
@@ -87,7 +88,7 @@ test("/join joins, and the welcome email's link adds the username later; a wrong
 });
 
 test("the join form at the end of an event page saves a sign-up", async ({ page, request }) => {
-  await page.goto("/events/git-merge-26");
+  await page.goto(`/events/${eventSlug(EVENTS[0])}`);
   const strip = page.getByRole("region", { name: "Join the club" });
   await joinIn(page, strip, /^Join the club$/, "Ken T", "ken@gitam.in");
   await expect(page.getByText("You're in, Ken.")).toBeVisible();
@@ -123,7 +124,7 @@ test("asking to hear when the Epoch dates are out saves the address", async ({ p
   const box = page.locator("form").filter({ has: page.getByRole("button", { name: "Email me" }) }).first();
   await box.getByPlaceholder("you@gitam.in").fill("alan@gitam.in");
   await box.getByRole("button", { name: "Email me" }).click();
-  await expect(page.getByText(/Watching\. We'll email you/)).toBeVisible();
+  await expect(page.getByText(/You're on the list\. We'll email you/)).toBeVisible();
   expect(await sql(request, "select email from epoch_interest")).toEqual([{ email: "alan@gitam.in" }]);
 });
 
