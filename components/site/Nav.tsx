@@ -44,12 +44,29 @@ function useCompact() {
   return compact;
 }
 
+/** Phones: is the hero's own join form out of sight? Then the header offers "Join" instead. Off the home page there's
+    no hero form, so it's always true there (except /join, which is all form). */
+function useHeroFormGone(home: boolean) {
+  const [gone, setGone] = useState(!home);
+  useEffect(() => {
+    if (!home) return; // starts out true off the home page
+    const form = document.querySelector("#top form");
+    if (!form) return; // no form in the hero means this browser has joined, and then there's no Join button at all
+    const io = new IntersectionObserver(([e]) => setGone(!e.isIntersecting), { rootMargin: "-64px 0px 0px 0px" }); // under the header counts as gone
+    io.observe(form);
+    return () => io.disconnect();
+  }, [home]);
+  return gone;
+}
+
 export function Nav() {
   const path = usePathname();
   const home = path === "/";
   const section = useActiveSection(home);
   const [joined] = useJoined(); // someone who joined on this browser is past "Join": Sign in / My club is their button
   const compact = useCompact();
+  const formGone = useHeroFormGone(home);
+  const phoneJoin = formGone && path !== "/join"; // desktop always has room for it; phones only once the hero's form is out of sight
   const live = useClientValue(() => epochIsLive(), false);
   const soon = useClientValue(() => daysToEpoch(), null);
 
@@ -85,7 +102,7 @@ export function Nav() {
           <SiteSearch />
           <ThemeToggle className="hidden lg:inline-flex" />
           <MemberButton />
-          {!joined && <a href="/join" className="press hidden h-9 flex-none items-center whitespace-nowrap rounded-full bg-ink px-4 font-display text-[14px] font-bold text-white transition-colors duration-150 hover:bg-ink/85 lg:inline-flex">
+          {!joined && <a href="/join" className={`press head-join h-9 flex-none items-center whitespace-nowrap rounded-full bg-ink px-4 font-display text-[14px] font-bold text-white transition-colors duration-150 hover:bg-ink/85 ${phoneJoin ? "inline-flex" : "hidden"} lg:inline-flex`}>
             <span className="head-join-long">Join the club</span><span className="head-join-short">Join</span>
           </a>}
           <MobileMenu href={href} current={current} live={live} />

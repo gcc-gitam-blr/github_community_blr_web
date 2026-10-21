@@ -244,6 +244,14 @@ html.lenis, html.lenis body { height: auto; }
 .head-pill[data-compact="true"]:not(:hover):not(:focus-within) .commit-edge { width: 10px; }
 .head-pill[data-compact="true"]:not(:hover):not(:focus-within) .head-word { display: none; }
 .head-join-short { display: none; }
+/* phones: just "Join", arriving once the hero's form scrolls away (Nav.tsx); the page label beside the dots gives way */
+@keyframes head-join-in { from { opacity: 0; scale: .9; } }
+@media (max-width: 1023px) {
+  .head-join { padding-inline: 14px; animation: head-join-in 180ms var(--ease-out); }
+  .head-join .head-join-long { display: none; }
+  .head-join .head-join-short { display: inline; }
+}
+@media (max-width: 1023px) and (prefers-reduced-motion: reduce) { .head-join { animation: none; } }
 .head-pill[data-compact="true"]:not(:hover):not(:focus-within) .head-join-long { display: none; }
 .head-pill[data-compact="true"]:not(:hover):not(:focus-within) .head-join-short { display: inline; }
 .commit-link { transition: padding 280ms var(--ease-out), gap 280ms var(--ease-out); }
