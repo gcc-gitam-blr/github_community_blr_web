@@ -281,7 +281,11 @@ html.lenis, html.lenis body { height: auto; }
   transition: background-color 150ms ease, color 150ms ease; }
 .adm-branch .is-head .adm-link { color: var(--color-ink); font-weight: 650; background: #fff; box-shadow: inset 0 0 0 1px var(--color-line); }
 .adm-count { flex: none; min-width: 20px; padding: 2px 6px; border-radius: 999px; background: #fd8c73; color: #0b0b0f; text-align: center; font: 700 11.5px/1.25 var(--font-mono); }
-.adm-out { display: none; }
+/* the tools on other pages (Epoch desk, content editor, photos): a wrapped row under the swipe row on phones, a column below the branch from tablets up */
+.adm-outs { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; }
+.adm-out { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--color-ink-2); }
+.adm-out:hover { color: var(--color-ink); text-decoration: underline; text-underline-offset: 4px; }
+.adm-out-note { display: none; }
 @media (hover: hover) and (pointer: fine) { .adm-link:hover { color: var(--color-ink); background: rgb(11 11 15 / .045); } .adm-branch .is-head .adm-link:hover { background: #fff; } }
 @media (min-width: 768px) {
   .adm-branch { position: relative; flex-direction: column; gap: 1px; }
@@ -289,8 +293,8 @@ html.lenis, html.lenis body { height: auto; }
   .adm-group { position: relative; display: flex; align-items: center; gap: 10px; padding: 16px 0 6px 6px; font: 600 11.5px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--color-ink-3); }
   .adm-group:first-child { padding-top: 0; }
   .adm-link { position: relative; flex: 1; min-width: 0; border-radius: 8px; padding: 7px 10px; }
-  .adm-out { display: flex; align-items: center; gap: 6px; margin: 14px 0 0 32px; font-size: 14px; color: var(--color-ink-2); }
-  .adm-out:hover { color: var(--color-ink); text-decoration: underline; text-underline-offset: 4px; }
+  .adm-outs { flex-direction: column; gap: 6px; margin: 14px 0 0 32px; }
+  .adm-out-note { display: block; max-width: 190px; font-size: 12.5px; line-height: 1.45; color: var(--color-ink-3); }
 }
 :root[data-theme="dark"]:not(:has([data-light-only])) .adm-branch .is-head .adm-link { background: #161616; }
 :root[data-theme="dark"]:not(:has([data-light-only])) .adm-branch::before { background: rgb(255 255 255 / .16); }
