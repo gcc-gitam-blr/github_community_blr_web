@@ -36,6 +36,7 @@ export function Face({ p, px, i, text }: { p: Person; px: number; i: number; tex
 /** "Git Custodian I", as a label coloured by its crew. */
 function CrewLabel({ r }: { r: CrewRole }) {
   const def = ROLES[r.role];
+  if (!def) return null; // a role this code doesn't know (an old content file, a hand edit): skip the badge rather than break the whole home page
   return <span title={`${def.industry} · GitHub access: ${def.access}`} className={`inline-block rounded-md border px-1.5 py-px text-[12px] font-semibold leading-snug ${TONE[CREWS[def.crew].tone]}`}>{roleLabel(r)}</span>;
 }
 const Tag = ({ t }: { t: string }) => <span className="inline-block rounded-md border border-line bg-soft px-1.5 py-px text-[12px] font-medium text-ink-2">{t}</span>;
