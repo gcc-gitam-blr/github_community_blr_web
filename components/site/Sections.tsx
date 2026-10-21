@@ -130,7 +130,8 @@ async function getFeatured(): Promise<Featured[]> {
 
 export async function Projects() {
   const [repos, featured] = await Promise.all([getRepos(), getFeatured()]);
-  if (!repos.length && !featured.length) return null;
+  // one lonely repository with no stars reads as "nothing here": wait for a member project or a second repository
+  if (!featured.length && repos.length < 2) return null;
   return (
     <section id="projects" className={`${pad} bg-soft`}>
       <div className={wrap}>
