@@ -61,14 +61,14 @@ test("joining again with the same email is welcomed, not an error, and stays one
 
 test("the pull-request card at the bottom of the home page joins too", async ({ page, request }) => {
   await page.goto("/#join");
-  await joinIn(page, page.locator("#join"), /Merge pull request/, "Linus T", "linus@gitam.in");
+  await joinIn(page, page.locator("#join"), /Join the club/, "Linus T", "linus@gitam.in");
   await expect(page.locator("#join").getByText("You're in, Linus.")).toBeVisible();
   expect(await sql(request, "select email from join_requests")).toEqual([{ email: "linus@gitam.in" }]);
 });
 
 test("/join joins, and the welcome email's link adds the username later; a wrong link is refused", async ({ page, request }) => {
   await page.goto("/join");
-  await joinIn(page, page.locator("main"), /Join the club|Merge pull request/, "Margaret H", "margaret@gitam.in");
+  await joinIn(page, page.locator("main"), /Join the club/, "Margaret H", "margaret@gitam.in");
   await expect(page.locator("main").getByText("You're in, Margaret.")).toBeVisible();
 
   // a different browser, from the welcome email's link
@@ -120,9 +120,9 @@ test("feedback on an event is saved", async ({ page, request }) => {
 
 test("asking to hear when the Epoch dates are out saves the address", async ({ page, request }) => {
   await page.goto("/");
-  const box = page.locator("form").filter({ has: page.getByRole("button", { name: "Watch releases" }) }).first();
+  const box = page.locator("form").filter({ has: page.getByRole("button", { name: "Email me" }) }).first();
   await box.getByPlaceholder("you@gitam.in").fill("alan@gitam.in");
-  await box.getByRole("button", { name: "Watch releases" }).click();
+  await box.getByRole("button", { name: "Email me" }).click();
   await expect(page.getByText(/Watching\. We'll email you/)).toBeVisible();
   expect(await sql(request, "select email from epoch_interest")).toEqual([{ email: "alan@gitam.in" }]);
 });

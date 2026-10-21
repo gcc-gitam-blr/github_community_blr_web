@@ -68,7 +68,7 @@ export function JoinForm({ tone = "hero", onJoined }: { tone?: "hero" | "card"; 
       <div className={hero ? "flex flex-wrap gap-2.5" : "grid gap-2.5"}>
         <label className="contents"><span className="sr-only">Your name</span><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" autoComplete="name" maxLength={80} className={field} /></label>
         <label className="contents"><span className="sr-only">Email</span><input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="you@gitam.in" autoComplete="email" className={field} /></label>
-        <button disabled={busy} className={`lift h-[54px] flex-none rounded-md border-2 border-ink bg-ink px-6 font-display text-[16px] font-bold text-white disabled:opacity-70 ${hero ? "" : "w-full bg-[#1a7f37]"}`}>{busy ? "Joining…" : hero ? "Join the club" : "Merge pull request"}</button>
+        <button disabled={busy} className={`lift h-[54px] flex-none rounded-md border-2 border-ink bg-ink px-6 font-display text-[16px] font-bold text-white disabled:opacity-70 ${hero ? "" : "w-full bg-[#1a7f37]"}`}>{busy ? "Joining…" : "Join the club"}</button>
       </div>
       {/* the honeypot: hidden from people and screen readers, and named so browsers don't autofill it */}
       <input ref={honey} name="gcc-hp-x" tabIndex={-1} autoComplete="off" aria-hidden hidden />
