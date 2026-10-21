@@ -25,14 +25,20 @@ export function visitorKey(scope: string, ip: string, salt = process.env.RATE_LI
    and restarts. If the database isn't connected, refuses the call, is missing the function or doesn't answer within
    1.5 s, the per-instance limiter takes over: a slow database must never block a sign-up. */
 export async function rateLimited(req: Request, scope: string, limit = 5, windowMs = 600_000): Promise<boolean> {
-  const ip = clientIp(req), db = serverDb();
+  return keyLimited(scope, clientIp(req), limit, windowMs);
+}
+
+/** The same counter for any key, not just the visitor's IP: e.g. an email address, so one address can't be sent a pile
+    of sign-in codes from many devices. The key is hashed the same way, so the database never stores it either. */
+export async function keyLimited(scope: string, key: string, limit = 5, windowMs = 600_000): Promise<boolean> {
+  const db = serverDb();
   if (db) {
     try {
       const { data, error } = await db
-        .rpc("rate_hit", { p_key: visitorKey(scope, ip), p_limit: limit, p_window_seconds: Math.round(windowMs / 1000) })
+        .rpc("rate_hit", { p_key: visitorKey(scope, key), p_limit: limit, p_window_seconds: Math.round(windowMs / 1000) })
         .abortSignal(AbortSignal.timeout(1500));
       if (!error && typeof data === "boolean") return !data;
     } catch { /* fall back below */ }
   }
-  return limited(`${scope}:${ip}`, limit, windowMs);
+  return limited(`${scope}:${key}`, limit, windowMs);
 }
