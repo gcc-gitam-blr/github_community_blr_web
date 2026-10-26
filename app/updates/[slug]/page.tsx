@@ -23,7 +23,7 @@ export default async function UpdatePage({ params }: { params: Promise<{ slug: s
   const u = getUpdate((await params).slug);
   if (!u) notFound();
   const all = getUpdates(), i = all.indexOf(u), newer = all[i - 1], older = all[i + 1];
-  const jsonLd = { "@context": "https://schema.org", "@type": "NewsArticle", headline: u.title, description: u.summary, datePublished: u.date, url: `${SITE_URL}/updates/${u.slug}`, publisher: { "@type": "Organization", name: CLUB.name, url: SITE_URL } };
+  const jsonLd = { "@context": "https://schema.org", "@type": "NewsArticle", headline: u.title, description: u.summary, datePublished: u.date, url: `${SITE_URL}/updates/${u.slug}`, image: `${SITE_URL}/opengraph-image`, author: { "@type": "Organization", name: CLUB.name, url: SITE_URL }, publisher: { "@type": "Organization", name: CLUB.name, url: SITE_URL, logo: { "@type": "ImageObject", url: `${SITE_URL}/brand/club-mark.png` } } };
 
   return (
     <>

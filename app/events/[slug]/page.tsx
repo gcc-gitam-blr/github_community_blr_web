@@ -32,13 +32,16 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
   const i = EVENTS.indexOf(e), prev = EVENTS[i - 1], next = EVENTS[i + 1];
   const url = `${SITE_URL}/events/${eventSlug(e)}`;
 
-  // schema.org Event — lets search engines show the date and place
+  // schema.org Event — lets search engines show the date and place.
+  // e.dateLabel means the page itself only commits to month precision (e.g. "December 2026 · dates to be
+  // announced"), so the machine-readable date must match that, not assert the day from e.date as fact.
   const jsonLd = {
     "@context": "https://schema.org", "@type": "Event", name: e.title, description: e.text,
-    startDate: e.date, ...(e.dateLabel ? {} : { endDate: e.date }),
+    startDate: e.dateLabel ? e.date.slice(0, 7) : e.date, ...(e.dateLabel ? {} : { endDate: e.date }),
     eventStatus: "https://schema.org/EventScheduled", eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     location: { "@type": "Place", name: "GITAM University, Bengaluru", address: { "@type": "PostalAddress", addressLocality: "Bengaluru", addressRegion: "Karnataka", addressCountry: "IN" } },
     organizer: { "@type": "Organization", name: CLUB.name, url: SITE_URL }, url,
+    image: `${url}/opengraph-image`, ...(e.luma ? { offers: { "@type": "Offer", url: e.luma, availability: "https://schema.org/InStock" } } : {}),
   };
 
   return (
