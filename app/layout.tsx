@@ -21,6 +21,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title: { default: "GitHub Community Club · GITAM Bengaluru", template: "%s · GitHub Community Club BLR" },
   description: "The GitHub Community Club at GITAM University Bengaluru. Workshops, open source and Epoch, our flagship technical event.",
+  alternates: { canonical: "./" }, // self-referencing on every page; resolves against metadataBase + the page's own path
   openGraph: { title: "GitHub Community Club · GITAM Bengaluru", description: "Code. Collaborate. Contribute. Learn Git & GitHub, open source and hands-on workshops at GITAM Bengaluru.", type: "website", siteName: "GitHub Community Club BLR" },
   twitter: { card: "summary_large_image" },
   // the branch mark, not the Octocat: next to github.com in a row of tabs, the club's tab must look like the club (scripts/brand.mjs)
