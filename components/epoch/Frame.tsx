@@ -2,10 +2,10 @@
 export function Frame({ title, sub, aside, children }: { kicker?: string; title: React.ReactNode; sub?: React.ReactNode; aside?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="mx-auto min-h-screen w-full max-w-[1120px] px-6 pb-20 pt-28 md:px-10 md:pt-40">
-      <div className="mb-12 flex flex-wrap items-end justify-between gap-5">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-5 md:mb-12">
         <div>
           <h1 className="text-[clamp(44px,7vw,96px)] font-medium leading-[0.98] tracking-[-0.05em]">{title}</h1>
-          {sub && <p className="mt-5 max-w-[52ch] text-[19px] text-mute">{sub}</p>}
+          {sub && <p className="mt-3 max-w-[52ch] text-[19px] text-mute md:mt-5">{sub}</p>}
         </div>
         {aside}
       </div>

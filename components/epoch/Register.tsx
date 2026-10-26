@@ -91,7 +91,7 @@ export function Register() {
   const who = me ? atHandle(me.handle) || me.name : "";
   return (
     <Frame title="Get your ticket." sub={`Create a profile, then pay at the registration desk and show your QR. ${STARTER_COINS} ${EPOCH.currency} land in your wallet.`}>
-      <form onSubmit={submit} noValidate className={`${glass} mx-auto max-w-[560px] space-y-6 p-8 sm:p-10`}>
+      <form onSubmit={submit} noValidate className={`${glass} mx-auto max-w-[560px] space-y-5 p-6 sm:space-y-6 sm:p-10`}>
         {me && <Notice kind="ok">You&apos;re already in as {who}. <Link className="underline" href="/epoch/wallet">Open wallet</Link></Notice>}
         {!remote && <label className="block"><span className={`${label} mb-2 block`}>GitHub handle</span><input className={field} value={f.handle} onChange={set("handle")} placeholder="@your-handle" autoComplete="off" /></label>}
         {step === "details" ? <>
