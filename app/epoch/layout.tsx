@@ -13,9 +13,12 @@ import { NotOnKiosk } from "@/components/epoch/NotOnKiosk";
 // the browser bar matches Epoch's paper instead of the club's white
 export const viewport: Viewport = { themeColor: "#f4f1ea", viewportFit: "cover" };
 
+const EPOCH_TITLE = "epoch: GITAM Bengaluru's GitHub tech fest";
+const EPOCH_DESC = "Two days of workshops, competitions and 20+ booths on one currency: Epoch Coins.";
 export const metadata: Metadata = {
-  title: "epoch: GITAM Bengaluru's GitHub tech fest",
-  description: "Two days of workshops, competitions and 20+ booths on one currency: Epoch Coins.",
+  title: { default: EPOCH_TITLE, template: "%s · Epoch" }, // a plain string here would reset the template for every /epoch/* child page
+  description: EPOCH_DESC,
+  openGraph: { title: EPOCH_TITLE, description: EPOCH_DESC }, // without this, sub-pages fall back to the root site's generic OG title/description on share
   icons: { icon: "/epoch-coin.svg", apple: "/icons/apple-touch-icon.png" },
   appleWebApp: { capable: true, title: "Epoch", statusBarStyle: "default" },
 };
