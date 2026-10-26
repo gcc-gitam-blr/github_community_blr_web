@@ -7,7 +7,7 @@ import { Coin } from "../Bits";
 import { BOOTHS } from "@/lib/epoch/config";
 import type { Booth } from "@/lib/epoch/types";
 
-/* 21 booths is too many to read in one go, so they're grouped into four
+/* BOOTHS.length booths is too many to read in one go, so they're grouped into four
    and shown one group at a time. Each group has its own Octodex mascot. */
 const GROUPS: { id: string; label: string; sticker: StickerName; tint: string; line: string; test: (b: Booth) => boolean }[] = [
   { id: "recharge", label: "Recharge points", sticker: "jetpack", tint: "#ffd966", line: "Earn coins. One go at each.", test: (b) => b.kind === "recharge" },
