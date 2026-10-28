@@ -9,6 +9,7 @@ import { Sticker } from "@/components/ui/Sticker";
 import { CLUB, commitHash } from "@/lib/config";
 import { EVENTS, eventDate, eventSlug, eventTag, findEvent } from "@/lib/events";
 import { SITE_URL } from "@/lib/site";
+import { breadcrumbJsonLd } from "@/lib/breadcrumb";
 import { ShareButton } from "./ShareButton";
 import { LatestBadge } from "./LatestBadge";
 import { FeedbackForm } from "./FeedbackForm";
@@ -43,11 +44,13 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
     organizer: { "@type": "Organization", name: CLUB.name, url: SITE_URL }, url,
     image: `${url}/opengraph-image`, ...(e.luma ? { offers: { "@type": "Offer", url: e.luma, availability: "https://schema.org/InStock" } } : {}),
   };
+  const breadcrumb = breadcrumbJsonLd([{ name: "Events", path: "/#events" }, { name: e.title, path: `/events/${eventSlug(e)}` }]);
 
   return (
     <>
       <Nav />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
       <main className="mx-auto w-full max-w-[1040px] px-5 pb-24 pt-[120px] md:px-10">
         <Link href="/#events" className="mb-8 inline-flex items-center gap-2 text-[14px] text-link hover:underline"><ArrowLeftIcon size={16} />All events</Link>
 

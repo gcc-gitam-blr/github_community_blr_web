@@ -7,6 +7,7 @@ import { SiteFooter } from "@/components/site/SiteFooter";
 import { UpdateTag } from "@/components/site/UpdateTag";
 import { CLUB } from "@/lib/config";
 import { SITE_URL } from "@/lib/site";
+import { breadcrumbJsonLd } from "@/lib/breadcrumb";
 import { JoinStrip } from "@/components/site/QuickJoin";
 import { getUpdate, getUpdates, updateDate } from "@/lib/updates";
 
@@ -24,11 +25,13 @@ export default async function UpdatePage({ params }: { params: Promise<{ slug: s
   if (!u) notFound();
   const all = getUpdates(), i = all.indexOf(u), newer = all[i - 1], older = all[i + 1];
   const jsonLd = { "@context": "https://schema.org", "@type": "NewsArticle", headline: u.title, description: u.summary, datePublished: u.date, url: `${SITE_URL}/updates/${u.slug}`, image: `${SITE_URL}/opengraph-image`, author: { "@type": "Organization", name: CLUB.name, url: SITE_URL }, publisher: { "@type": "Organization", name: CLUB.name, url: SITE_URL, logo: { "@type": "ImageObject", url: `${SITE_URL}/brand/club-mark.png` } } };
+  const breadcrumb = breadcrumbJsonLd([{ name: "Updates", path: "/updates" }, { name: u.title, path: `/updates/${u.slug}` }]);
 
   return (
     <>
       <Nav />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
       <main id="main" className="mx-auto w-full max-w-[1040px] px-5 pb-24 pt-[120px] md:px-10">
         <Link href="/updates" className="mb-8 inline-flex items-center gap-2 text-[14px] text-link hover:underline"><ArrowLeftIcon size={16} />All updates</Link>
         <article className="rounded-[12px] border border-line bg-white">
