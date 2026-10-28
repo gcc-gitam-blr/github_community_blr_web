@@ -26,10 +26,10 @@ export function FaqIssues() {
               <summary className="flex cursor-pointer list-none items-start gap-3 px-5 py-4 transition hover:bg-soft/60 [&::-webkit-details-marker]:hidden">
                 <span className="mt-1"><Check /></span>
                 <span className="min-w-0 flex-1">
-                  <span className="text-[17px] font-semibold leading-snug group-open:text-link sm:text-[18px]">{f.q}</span>
-                  {(LABELS[i] ?? []).map((l) => <span key={l.t} className={`ml-2 inline-block rounded-full px-2 py-px align-middle font-mono text-[11px] font-bold ${l.c}`}>{l.t}</span>)}
+                  <span className="text-[17px] font-semibold leading-snug group-open:text-link sm:text-[18px]">{f.q}</span>{" "}
+                  {(LABELS[i] ?? []).map((l) => <span key={l.t} className={`ml-2 inline-block rounded-full px-2 py-px align-middle font-mono text-[11px] font-bold ${l.c}`}>{l.t}</span>)}{" "}
                   <span className="mt-1 block font-mono text-[12px] text-ink-3">#{i + 1} · closed as answered by the core team</span>
-                </span>
+                </span>{" "}
                 <span className="mt-1 font-mono text-[12px] text-ink-3">💬 1</span>
               </summary>
               <div className="flex gap-3 px-5 pb-5 pl-[52px]">
