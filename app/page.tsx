@@ -13,7 +13,12 @@ export default function Home() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
-      { "@type": "Organization", "@id": `${SITE_URL}/#org`, name: CLUB.name, url: SITE_URL, logo: `${SITE_URL}/brand/club-mark.png`, email: CLUB.email || undefined, ...(CLUB.githubOrg ? { sameAs: [`${CLUB.githubUrl}/${CLUB.githubOrg}`] } : {}), parentOrganization: { "@type": "CollegeOrUniversity", name: CLUB.university } },
+      {
+        "@type": "Organization", "@id": `${SITE_URL}/#org`, name: CLUB.name, url: SITE_URL, logo: `${SITE_URL}/brand/club-mark.png`, email: CLUB.email || undefined,
+        // WhatsApp is a join link, not a profile page, so it's left out here
+        sameAs: [...(CLUB.githubOrg ? [`${CLUB.githubUrl}/${CLUB.githubOrg}`] : []), ...CLUB.socials.filter((s) => s.label !== "WhatsApp").map((s) => s.href)],
+        parentOrganization: { "@type": "CollegeOrUniversity", name: CLUB.university },
+      },
       { "@type": "WebSite", "@id": `${SITE_URL}/#site`, url: SITE_URL, name: CLUB.name, publisher: { "@id": `${SITE_URL}/#org` } },
     ],
   };
