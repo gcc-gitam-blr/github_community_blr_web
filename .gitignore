@@ -39,3 +39,6 @@ public/team/*
 demo-video/
 .vercel
 .env*
+
+# scratch SEO audit output (claude-seo plugin)
+*-audit/
