@@ -54,7 +54,7 @@ export function SiteSearch() {
   return (
     <>
       <button type="button" onClick={() => show("click")} aria-label="Search the site" aria-keyshortcuts="/ Control+K"
-        className="ml-auto inline-flex h-10 flex-none items-center justify-center gap-1.5 rounded-full px-2.5 text-ink-2 transition-colors duration-150 hover:bg-black/[.05] hover:text-ink lg:ml-0 lg:h-9">
+        className="ml-auto inline-flex h-11 flex-none items-center justify-center gap-1.5 rounded-full px-2.5 text-ink-2 transition-colors duration-150 hover:bg-black/[.05] hover:text-ink lg:ml-0 lg:h-9">
         <SearchIcon size={17} /><span className="sr-only">Search</span>
         <kbd className="hidden rounded border border-line bg-white/80 px-1.5 font-mono text-[11.5px] text-ink-3 xl:inline">/</kbd>
       </button>

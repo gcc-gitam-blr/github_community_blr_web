@@ -10,7 +10,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
   const next = theme === "dark" ? "light" : "dark";
   return (
     <button type="button" onClick={() => setChoice(next)} aria-label={`Switch to ${next} mode`} title={`Switch to ${next} mode`}
-      className={`inline-flex h-10 w-10 flex-none items-center justify-center rounded-full text-ink-2 transition-colors duration-150 hover:bg-black/[.05] hover:text-ink lg:h-9 lg:w-9 ${className}`}>
+      className={`inline-flex h-11 w-11 flex-none items-center justify-center rounded-full text-ink-2 transition-colors duration-150 hover:bg-black/[.05] hover:text-ink lg:h-9 lg:w-9 ${className}`}>
       {theme === "dark" ? <SunIcon size={17} /> : <MoonIcon size={17} />}
     </button>
   );
