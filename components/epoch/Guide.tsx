@@ -46,7 +46,7 @@ const help = CLUB.email ? <>Or email <a className="underline underline-offset-2"
 
 export function AttendeeGuide() {
   const parts: Part[] = [
-    { t: "Before you come", body: <p>Sign up at <b className="font-medium">/epoch/register</b> with your GitHub account. You get a wallet with your own QR code. Add it to your home screen so it&apos;s one tap away.</p> },
+    { t: "Before you come", body: <p>Sign up at <b className="font-medium">/epoch/register</b> with your name and email — no GitHub account needed. You get a wallet with your own QR code. Add it to your home screen so it&apos;s one tap away.</p> },
     { t: "At the registration desk", body: <p>Pay for your ticket at the desk{price ? ` (${price})` : ""}; there&apos;s no online payment. They scan your wallet QR and <b className="font-medium">{STARTER_COINS} {C}</b> land in your wallet, once.</p> },
     { t: "Spending coins", body: <p>Each booth costs a few coins per session{vr ? ` (${vr.name.replace(/ Zone$/, "")} is ${vr.coins})` : ""}. Open your wallet, tap <b className="font-medium">Scan</b> and point it at the booth&apos;s QR. Or let the booth&apos;s volunteer scan yours.</p> },
     { t: "Earning more", body: <p>There are {RECHARGE_POINTS.length} recharge points. Win the quick challenge and get +{RECHARGE_POINTS[0]?.coins} {C}, once at each. The leaderboard counts what you earn, so spending never lowers your rank.</p> },
