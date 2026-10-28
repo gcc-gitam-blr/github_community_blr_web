@@ -7,7 +7,7 @@ import { atHandle } from "@/lib/handle";
 import { Frame, Notice } from "./Frame";
 import { btnInk, btnSoft, field, glass, label } from "./Bits";
 import { useEpoch } from "./EpochProvider";
-import { EPOCH, STARTER_COINS } from "@/lib/epoch/config";
+import { EPOCH, STARTER_COINS, priceLabel } from "@/lib/epoch/config";
 
 const EMAIL_OK = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
 
@@ -91,6 +91,11 @@ export function Register() {
   const who = me ? atHandle(me.handle) || me.name : "";
   return (
     <Frame title="Get your ticket." sub={`Create a profile, then pay at the registration desk and show your QR. ${STARTER_COINS} ${EPOCH.currency} land in your wallet.`}>
+      <dl className="mx-auto mb-6 grid max-w-[560px] grid-cols-3 gap-4 text-center">
+        {[["When", EPOCH.dates], ["Where", EPOCH.venue], ["Price", priceLabel()]].map(([k, v]) => (
+          <div key={k}><dt className={`${label} uppercase tracking-wide`}>{k}</dt><dd className="mt-1 text-[15px] leading-snug text-ink">{v}</dd></div>
+        ))}
+      </dl>
       <form onSubmit={submit} noValidate className={`${glass} mx-auto max-w-[560px] space-y-5 p-6 sm:space-y-6 sm:p-10`}>
         {me && <Notice kind="ok">You&apos;re already in as {who}. <Link className="underline" href="/epoch/wallet">Open wallet</Link></Notice>}
         {!remote && <label className="block"><span className={`${label} mb-2 block`}>GitHub handle</span><input className={field} value={f.handle} onChange={set("handle")} placeholder="@your-handle" autoComplete="off" /></label>}
