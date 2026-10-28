@@ -17,7 +17,9 @@ export const generateStaticParams = () => getUpdates().map((u) => ({ slug: u.slu
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const u = getUpdate((await params).slug);
   if (!u) return {};
-  return { title: u.title, description: u.summary, openGraph: { title: u.title, description: u.summary, type: "article", publishedTime: u.date }, alternates: { types: { "application/rss+xml": "/updates/feed.xml" } } };
+  // a long post title plus the full brand suffix runs past Google's SERP cutoff, so a long one gets the short suffix instead
+  const title = `${u.title} · GitHub Community Club BLR`.length > 60 ? { absolute: `${u.title} · GCC BLR` } : u.title;
+  return { title, description: u.summary, openGraph: { title: u.title, description: u.summary, type: "article", publishedTime: u.date }, alternates: { types: { "application/rss+xml": "/updates/feed.xml" } } };
 }
 
 export default async function UpdatePage({ params }: { params: Promise<{ slug: string }> }) {

@@ -24,7 +24,9 @@ export const generateStaticParams = () => EVENTS.map((e) => ({ slug: eventSlug(e
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const e = findEvent((await params).slug);
   if (!e) return {};
-  return { title: e.title, description: `${eventDate(e)} · ${e.where}. ${e.text}`, openGraph: { title: e.title, description: e.text, type: "article" } };
+  // a long event title plus the full brand suffix runs past Google's SERP cutoff, so a long one gets the short suffix instead
+  const title = `${e.title} · GitHub Community Club BLR`.length > 60 ? { absolute: `${e.title} · GCC BLR` } : e.title;
+  return { title, description: `${eventDate(e)} · ${e.where}. ${e.text}`, openGraph: { title: e.title, description: e.text, type: "article" } };
 }
 
 export default async function EventPage({ params }: { params: Promise<{ slug: string }> }) {
