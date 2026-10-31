@@ -1,6 +1,6 @@
 # Roadmap
 
-The live checklist for the club site. Every item has a status and the exact page to open to check it. This file is updated as work lands, so it is the place to look. Last updated: 22 October 2026.
+The live checklist for the club site. Every item has a status and the exact page to open to check it. This file is updated as work lands, so it is the place to look. Last updated: 31 October 2026.
 
 ## How to check
 
@@ -16,15 +16,13 @@ The live checklist for the club site. Every item has a status and the exact page
 
 ## Settings you need to add (once)
 
-**Do these three first (found 22 Oct 2026):** the backup has never succeeded, and the weekly clean-up the privacy page promises is off.
+**Backups and the weekly clean-up are on (checked 31 Oct 2026).** The Backup workflow has been green since 21 Oct, and the digest address answers "Not allowed." instead of "CRON_SECRET isn't set".
 
 | | Where | What | Turns on |
 |---|---|---|---|
-| 🙋 | GitHub → Settings → Secrets and variables → Actions → `SUPABASE_DB_URL` → Update | The connection string again from Supabase → Connect → **Session pooler**, with the current database password in it (Supabase → Project Settings → Database → Reset password if nobody has it). The saved one has an old password: every backup so far failed with "password authentication failed". | Weekly backups |
-| 🙋 | GitHub → Settings → Secrets and variables → Actions → New secret `BACKUP_PASSPHRASE` | Any long random text. **Keep a copy in a password manager**: a backup can't be opened without it. | Weekly backups (encrypted, because anyone can download a public repo's artifacts) |
-| 🙋 | Vercel → Settings → Environment Variables → `CRON_SECRET` (Production), then redeploy | Any long random text, e.g. from https://generate-secret.vercel.app/32 | The weekly clean-up (the privacy page's promises) and the Monday digest. Check: https://www.gccgitamblr.club/api/cron/digest stops saying "CRON_SECRET isn't set" |
-
-Then run the backup once by hand: GitHub → Actions → **Backup** → Run workflow. It should be green with a `club-data-backup` file.
+| ✅ | GitHub → Settings → Secrets and variables → Actions → `SUPABASE_DB_URL` | The Session pooler connection string with the current database password. | Weekly backups: https://github.com/gcc-gitam-blr/github_community_blr_web/actions/workflows/backup.yml |
+| ✅ | GitHub → Settings → Secrets and variables → Actions → `BACKUP_PASSPHRASE` | **Keep a copy in a password manager**: a backup can't be opened without it. | Weekly backups (encrypted, because anyone can download a public repo's artifacts) |
+| ✅ | Vercel → Settings → Environment Variables → `CRON_SECRET` (Production) | | The weekly clean-up (the privacy page's promises) and the Monday digest |
 
 The others:
 
@@ -50,6 +48,8 @@ The others:
 
 Saving in the content editor commits to `main`; Vercel publishes it whatever CI says. CI's red ✗ after an edit used to mean a test had an event name or the club's name typed into it. Since 22 Oct 2026 the tests read names from the content files, and every test file runs even when one fails, so an ordinary edit (renaming an event, a person, an update) can't turn CI red. If an edit ever does, the failing check says which file and why.
 
+**Fixed 31 Oct 2026:** the home page's git graph (desktop, right of the hero) now names the events from the content editor, so renaming or moving an event shows there too. On https://www.gccgitamblr.club/epoch the header's Get ticket button no longer touches the screen edge on 390px phones. The Epoch intro line uses a colon, not an em dash.
+
 The site's server code runs in Tokyo (`vercel.json` → `regions: hnd1`), next to the Supabase database, instead of the US east coast. Requests from India now cross to Japan once, not to the US and Japan.
 
 ---
@@ -71,7 +71,7 @@ The site's server code runs in Tokyo (`vercel.json` → `regions: hnd1`), next t
 | ✅ | 1.1 | Team section | https://www.gccgitamblr.club/#team | 🙋 Only 2 people have a GitHub handle; handles add avatars and the board. |
 | ✅ | 1.2 | Photo gallery | https://www.gccgitamblr.club/ (appears above the FAQ once there are photos) | 🙋 Photos: `photos-inbox/<folder>/`, then `node scripts/photos.mjs`. |
 | 🙋 | 1.3 | A message from the club lead | — | 3–4 sentences and a name. |
-| 🙋 | 1.4 | Event times and rooms | https://www.gccgitamblr.club/#events | Dates and Luma links are set. Times, rooms and Epoch's dates are needed. |
+| 🙋 | 1.4 | Event times and rooms | https://www.gccgitamblr.club/#events | Luma links are set. Waiting on the department to confirm the dates of Open Source Unlocked and Epoch; the 2 Oct calendar post and the event dates get updated once they do. Times and rooms are needed too. |
 | ✅ | 1.5 | Privacy page | https://www.gccgitamblr.club/privacy | |
 | ✅ | 1.6 | Club email | https://www.gccgitamblr.club/ (footer) | github_community@gitam.in |
 | ✅ | 1.7 | Event recaps | https://www.gccgitamblr.club/keystatic → Events → an event → Recap | Write one, then open that event's page. Nothing shows until a recap is written. |
@@ -82,7 +82,7 @@ The site's server code runs in Tokyo (`vercel.json` → `regions: hnd1`), next t
 | | # | Item | Check it | Notes |
 |---|---|------|----------|-------|
 | ✅ | 2.1 | Welcome email on sign-up | Join on https://www.gccgitamblr.club/#join with your own email | |
-| ✅ | 2.2 | Weekly digest to organisers | Your inbox, Monday 9:00 | 🙋 Turns on when `CRON_SECRET` is set in Vercel. Optional `ORGANISER_EMAILS`. |
+| ✅ | 2.2 | Weekly digest to organisers | Your inbox, Monday 9:00 | On. Optional `ORGANISER_EMAILS`. |
 | ✅ | 2.3 | Durable rate limiting | Nothing to click | Form limits are counted in the database, so they hold across every server. Only a scrambled code is stored, never an IP. |
 | ✅ | 2.4 | Learning hub | https://www.gccgitamblr.club/learn | |
 | ✅ | 2.5 | Good first issues feed | https://www.gccgitamblr.club/contribute | The club-projects part comes back once the club has its own org. |
@@ -128,8 +128,8 @@ The site's server code runs in Tokyo (`vercel.json` → `regions: hnd1`), next t
 | ✅ | 5.1 | Content editor | https://www.gccgitamblr.club/keystatic | Every save is a commit. 🙋 Connect it to GitHub for the live site (README, ~10 min). |
 | ✅ | 5.2 | Contributor onboarding | https://github.com/gcc-gitam-blr/github_community_blr_web/issues?q=is%3Aopen+label%3A%22good+first+issue%22 | 5 starter issues (#7–#11), each naming the exact file; CONTRIBUTING.md points to them and says pull requests go to `dev`. The repo is public, so anyone can pick them up. |
 | ✅ | 5.3 | Year-rollover guide | https://github.com/gcc-gitam-blr/github_community_blr_web/blob/main/docs/ROLLOVER.md | Plain steps for next year's team. |
-| ✅ | 5.4 | Backups & data retention | https://www.gccgitamblr.club/privacy (how long each thing is kept) | Weekly clean-up of old data, weekly backup kept 30 days. 🙋 Not running yet: see the three settings at the top. |
-| ✅ | 5.5 | Uptime check | https://github.com/gcc-gitam-blr/github_community_blr_web/actions/workflows/uptime.yml | Every 6 hours; opens a "Site is down" issue if the site fails. 🙋 The `SITE_URL` repository variable. |
+| ✅ | 5.4 | Backups & data retention | https://www.gccgitamblr.club/privacy (how long each thing is kept) | Weekly clean-up of old data, weekly backup kept 30 days. Both running. |
+| ✅ | 5.5 | Uptime check | https://github.com/gcc-gitam-blr/github_community_blr_web/actions/workflows/uptime.yml | Every 6 hours; opens a "Site is down" issue if the site fails. |
 
 ## Phase 6 — New features (building now, in this order)
 
