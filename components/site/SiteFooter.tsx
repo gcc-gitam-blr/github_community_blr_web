@@ -15,11 +15,12 @@ const COMMIT = process.env.NEXT_PUBLIC_COMMIT_SHA ?? ""; // set at build time fr
 const ORG = CLUB.githubOrg ? `${CLUB.githubUrl}/${CLUB.githubOrg}` : "";
 
 type L = { label: string; href: string; ext?: boolean };
-// four short columns: about the club, ways to take part, Epoch, and the club elsewhere (GitHub's own guides are on /learn)
+// four short columns: about the club, ways to take part, Epoch, and the club elsewhere (GitHub's own guides are on /learn).
+// Only the places people go to on purpose: Epoch's booths, shop and leaderboard are in its own tab bar, the board on /learn.
 const COLUMNS: { title: string; links: L[] }[] = [
-  { title: "Club", links: [{ label: "About", href: "/#about" }, { label: "Events 2026-27", href: "/#events" }, { label: "Team", href: "/#team" }, { label: "Updates", href: "/updates" }, ...(MEMORIES_LINKED ? [{ label: "Memories", href: "/memories" }] : []), { label: "FAQ", href: "/#faq" }] },
-  { title: "Take part", links: [{ label: "Join the club", href: "/join" }, { label: "Learn hub", href: "/learn" }, { label: "Contribute", href: "/contribute" }, { label: "Board", href: "/board" }, { label: "My club", href: "/me" }, { label: "Write to us", href: "/get-involved" }] },
-  { title: "Epoch", links: [{ label: "Overview", href: "/epoch" }, { label: "My wallet", href: "/epoch/wallet" }, { label: "Booths", href: "/epoch/booths" }, { label: "Merch shop", href: "/epoch/shop" }, { label: "Leaderboard", href: "/epoch/leaderboard" }, { label: "Guide for the day", href: "/epoch/guide" }] },
+  { title: "Club", links: [{ label: "About & team", href: "/#about" }, { label: "Events 2026-27", href: "/#events" }, { label: "Updates", href: "/updates" }, ...(MEMORIES_LINKED ? [{ label: "Memories", href: "/memories" }] : []), { label: "FAQ", href: "/#faq" }] },
+  { title: "Take part", links: [{ label: "Join the club", href: "/join" }, { label: "Learn Git & GitHub", href: "/learn" }, { label: "Your first contribution", href: "/contribute" }, { label: "My club", href: "/me" }, { label: "Help out or get in touch", href: "/get-involved" }] },
+  { title: "Epoch", links: [{ label: "What Epoch is", href: "/epoch" }, { label: "Guide for the day", href: "/epoch/guide" }, { label: "My wallet", href: "/epoch/wallet" }] },
   { title: "Elsewhere", links: [
     ...(ORG ? [{ label: "This site's code", href: ORG, ext: true }] : []),
     ...CLUB.socials.filter((s) => s.href && s.href !== "#").map((s) => ({ label: s.label, href: s.href, ext: true })),
