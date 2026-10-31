@@ -28,7 +28,7 @@ const EXPECTED: Record<string, string[]> = {
   set_role: SIGNED_IN, assign_booth: SIGNED_IN,
   // appointments: each checks my_role() = 'admin' (or organiser, for list_people) itself
   grant_appointment: SIGNED_IN, end_appointment: SIGNED_IN, list_people: SIGNED_IN,
-  role_of: NOBODY, github_login: NOBODY, crm_log: NOBODY, profile_role_mirror: NOBODY, appointment_changed: NOBODY, // internal: other functions and triggers only
+  role_of: NOBODY, github_login: NOBODY, crm_log: NOBODY, profile_role_mirror: NOBODY, appointment_changed: NOBODY, list_attendee: NOBODY, // internal: other functions and triggers only
   // members and recruitment: each checks my_role() and the record's state itself; applying goes through the server
   create_campaign: SIGNED_IN, set_campaign_dates: SIGNED_IN, set_campaign_status: SIGNED_IN, add_reviewer: SIGNED_IN, remove_reviewer: SIGNED_IN,
   review_application: SIGNED_IN, move_application: SIGNED_IN, decide_application: SIGNED_IN, onboard_application: SIGNED_IN,

@@ -526,6 +526,8 @@ alter table join_requests add column if not exists unsubscribed boolean not null
 alter table join_requests add column if not exists name text check (name is null or length(name) between 1 and 80);
 alter table join_requests alter column handle drop not null;
 alter table join_requests alter column first_event drop not null;
+-- 'attended': put on the list by an event's check-in (see list_attendee below), not by the join form. Null: joined themselves.
+alter table join_requests add column if not exists source text check (source is null or source = 'attended');
 
 -- Anyone with a valid signed link can unsubscribe: unsubscribe_join, defined with the Epoch interest list below.
 
@@ -964,7 +966,7 @@ create policy "staff manage quiz sets" on quiz_sets for all using (my_role() in 
 create or replace function submit_join(p_handle text, p_email text, p_first_event text)
 returns text language plpgsql security definer set search_path = public, pg_temp as $$
 begin
-  if (select count(*) from join_requests where created_at > now() - interval '1 hour') >= 300 then return 'busy'; end if;
+  if (select count(*) from join_requests where created_at > now() - interval '1 hour' and source is null) >= 300 then return 'busy'; end if;
   insert into join_requests (handle, email, first_event) values (trim(p_handle), lower(trim(p_email)), p_first_event)
   on conflict ((lower(email))) do nothing;
   return case when found then 'created' else 'exists' end; -- 'exists': that email already signed up
@@ -987,15 +989,18 @@ begin
 end $$;
 
 -- Joining in one step: name and email. 'created', 'exists' (that email already joined: still welcome) or 'busy'.
+-- Someone on the list only because they came to an event counts as new when they join themselves, so they get the welcome.
+-- Check-in imports don't count towards the hourly limit: a big event's list mustn't make the form say 'busy'.
 create or replace function join_club(p_name text, p_email text) returns text
 language plpgsql security definer set search_path = public, pg_temp as $$
-declare created boolean;
+declare created boolean; attended boolean;
 begin
-  if (select count(*) from join_requests where created_at > now() - interval '1 hour') >= 300 then return 'busy'; end if;
+  if (select count(*) from join_requests where created_at > now() - interval '1 hour' and source is null) >= 300 then return 'busy'; end if;
+  select source = 'attended' into attended from join_requests where lower(email) = lower(trim(p_email));
   insert into join_requests (name, email) values (left(trim(p_name), 80), lower(trim(p_email)))
-  on conflict ((lower(email))) do update set name = coalesce(join_requests.name, excluded.name)
+  on conflict ((lower(email))) do update set name = coalesce(join_requests.name, excluded.name), source = null
   returning (xmax = 0) into created; -- xmax 0: a new row, not an existing one
-  return case when created then 'created' else 'exists' end;
+  return case when created or coalesce(attended, false) then 'created' else 'exists' end;
 end $$;
 
 -- The optional extras, for an email that already joined (the site checks the signed link first). Empty keeps what's there.
@@ -1012,6 +1017,28 @@ grant execute on function join_club(text, text), finish_join(text, text, text) t
 
 revoke execute on function submit_join(text, text, text), submit_message(text, text, text, text, text), submit_feedback(text, int, text, text) from public, anon, authenticated;
 grant execute on function submit_join(text, text, text), submit_message(text, text, text, text, text), submit_feedback(text, int, text, text) to service_role;
+
+-- The newsletter list: everyone who came to an event is on it, next to the people who joined. An address already on the
+-- list is left alone, so anyone who unsubscribed stays unsubscribed. An address the list can't hold is skipped, never
+-- an error, so a check-in always saves.
+create or replace function list_attendee() returns trigger
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if length(new.email) <= 254 and new.email ~ '^[^\s@]+@[^\s@]+\.[^\s@]+$' then
+    insert into join_requests (name, email, source) values (left(new.name, 80), lower(new.email), 'attended')
+    on conflict ((lower(email))) do nothing;
+  end if;
+  return new;
+end $$;
+revoke execute on function list_attendee() from public, anon, authenticated;
+drop trigger if exists attendance_joins_list on attendance;
+create trigger attendance_joins_list after insert on attendance for each row execute function list_attendee();
+-- everyone checked in before the trigger existed (a re-run adds nobody twice)
+insert into join_requests (name, email, source)
+select distinct on (lower(a.email)) left(a.name, 80), lower(a.email), 'attended' from attendance a
+ where length(a.email) <= 254 and a.email ~ '^[^\s@]+@[^\s@]+\.[^\s@]+$'
+ order by lower(a.email), a.created_at
+on conflict ((lower(email))) do nothing;
 
 -- ============================================================
 -- Members and recruitment (admin → Members, Recruitment).
