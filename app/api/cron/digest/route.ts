@@ -28,7 +28,7 @@ export async function GET(req: Request) {
   const db = createClient(url, key, { auth: { persistSession: false } });
   const now = new Date(), since = new Date(now.getTime() - 7 * 864e5).toISOString();
   const [s, m, f] = await Promise.all([
-    db.from("join_requests").select("name, handle, created_at").gte("created_at", since).limit(1000),
+    db.from("join_requests").select("*").gte("created_at", since).limit(1000), // "*": works before and after the schema has `source`
     db.from("messages").select("kind").gte("created_at", since).limit(1000),
     db.from("event_feedback").select("event, rating").gte("created_at", since).limit(2000),
   ]);
@@ -43,7 +43,9 @@ export async function GET(req: Request) {
   if (aw.error) console.error("digest: asset_problems_for_digest failed (is supabase/schema.sql up to date?):", aw.error.message);
   const pw = await db.rpc("policy_reviews_due");
   if (pw.error) console.error("digest: policy_reviews_due failed (is supabase/schema.sql up to date?):", pw.error.message);
-  const digest = buildDigest({ signups: s.data ?? [], messages: m.data ?? [], feedback: f.data ?? [], access: w.error ? undefined : w.data, tasks: tw.error ? undefined : tw.data, assets: aw.error ? undefined : aw.data, policies: pw.error ? undefined : pw.data }, now);
+  // people put on the list by an event's check-in didn't sign up this week; only the ones who joined themselves count
+  const signups = (s.data ?? []).filter((r) => r.source !== "attended").map((r) => ({ name: r.name, handle: r.handle, created_at: r.created_at }));
+  const digest = buildDigest({ signups, messages: m.data ?? [], feedback: f.data ?? [], access: w.error ? undefined : w.data, tasks: tw.error ? undefined : tw.data, assets: aw.error ? undefined : aw.data, policies: pw.error ? undefined : pw.data }, now);
   if (!digest) return json({ ok: true, sent: 0, skipped: "Nothing happened this week." });
 
   // admins are whoever holds an active admin appointment today (appointment_admin_emails), not the profile's role copy

@@ -167,7 +167,7 @@ export const supabaseStore: EpochStore = {
 
   async joinRequests() {
     const { data } = await sb().from("join_requests").select("*").order("created_at", { ascending: false }).limit(1000);
-    return (data ?? []).map((r) => ({ id: String(r.id), name: r.name ?? null, handle: r.handle ?? null, email: r.email, firstEvent: r.first_event ?? null, createdAt: r.created_at }));
+    return (data ?? []).map((r) => ({ id: String(r.id), name: r.name ?? null, handle: r.handle ?? null, email: r.email, firstEvent: r.first_event ?? null, createdAt: r.created_at, attended: r.source === "attended" }));
   },
 
   async feedback() {
