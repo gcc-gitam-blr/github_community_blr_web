@@ -5,16 +5,19 @@ import { EpochInterest } from "@/components/site/EpochInterest";
 import { BOOTH_COUNT, EPOCH, STARTER_COINS } from "@/lib/epoch/config";
 import { HeroNext } from "@/components/site/HeroNext";
 import { HeroJoin } from "@/components/site/QuickJoin";
+import { EVENTS } from "@/lib/events";
 
-/* The club's own git history, drawn: main plus two branches that merge back. Decorative. */
+/* The club's own git history, drawn: main plus two branches that merge back. Decorative.
+   main's commits are the club's events in date order (Epoch has its own branch), so a rename in the editor shows here. */
+const MAIN = EVENTS.filter((e) => e.type !== "Flagship" && e.href !== "/epoch").map((e) => `main · ${e.title}`);
 const NODES: GNode[] = [
-  { id: "a", lane: 1, row: 0, shape: "diamond", color: "blue", label: "main · first workshop" },
-  { id: "b", lane: 1, row: 1, shape: "square", color: "blue", label: "main · GIT Merge 26" },
+  { id: "a", lane: 1, row: 0, shape: "diamond", color: "blue", label: MAIN[0] },
+  { id: "b", lane: 1, row: 1, shape: "square", color: "blue", label: MAIN[1] },
   { id: "c", lane: 2, row: 1, shape: "ring", color: "purple", label: "feat/open-source · first PR" },
-  { id: "d", lane: 1, row: 2, shape: "diamond", color: "blue", label: "main · Build & Deploy" },
+  { id: "d", lane: 1, row: 2, shape: "diamond", color: "blue", label: MAIN[2] },
   { id: "e", lane: 2, row: 2, shape: "ring", color: "purple", label: "feat/open-source · merged" },
   { id: "f", lane: 0, row: 3, shape: "triangle", color: "mint", label: "feat/epoch · coins live" },
-  { id: "g", lane: 1, row: 3, shape: "square", color: "blue", label: "main · Profile Makeover" },
+  { id: "g", lane: 1, row: 3, shape: "square", color: "blue", label: MAIN[3] },
   { id: "h", lane: 0, row: 4, shape: "triangle", color: "mint", label: "feat/epoch · shipped" },
 ];
 const EDGES: [string, string][] = [["a", "b"], ["a", "c"], ["b", "d"], ["c", "e"], ["d", "f"], ["d", "g"], ["f", "h"]];
