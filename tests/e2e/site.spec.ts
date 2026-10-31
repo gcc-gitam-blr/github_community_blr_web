@@ -367,11 +367,12 @@ test("My club explains itself when sign-in isn't switched on, and stays out of s
 });
 
 test("the newsletter draft comes from the site's own content", async ({ request }) => {
-  const d = await (await request.get("/api/newsletter?month=2026-10")).json();
-  expect(d.month).toBe("2026-10");
-  expect(d.subject).toBe("GitHub Community Club · October 2026");
-  expect(d.message).toContain("See you there");
-  expect((await (await request.get("/api/newsletter?month=nonsense")).json()).month).toMatch(/^\d{4}-\d{2}$/); // falls back to the usual month
+  const d = await (await request.get("/api/newsletter")).json();
+  expect(d.today).toMatch(/^\d{4}-\d{2}-\d{2}$/); // this week's, from today in India
+  expect(d.subject).toMatch(/ · GitHub Community Club$/);
+  expect(d.message).toContain("ONE GIT COMMAND");
+  expect(d.message).toMatch(/\[\[[\s\S]+\]\]/); // the part an organiser writes before it can be sent
+  expect(d.message).toContain("See you soon");
 });
 
 test("adding photos asks for the editor login first, and the upload API refuses without it", async ({ page, request }) => {
