@@ -10,7 +10,7 @@ export const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", 
 
 const GREEN = "#2ea043", INK = "#0b0b0f";
 
-function frame(preheader: string, inner: string, site: string, unsubscribe?: string) {
+function frame(preheader: string, inner: string, site: string, unsubscribe?: string, why?: string) {
   return `<!doctype html><html><body style="margin:0;background:#f6f8fa;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:${INK}">
 <span style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(preheader)}</span>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:28px 12px">
@@ -18,7 +18,7 @@ function frame(preheader: string, inner: string, site: string, unsubscribe?: str
 <tr><td style="padding:22px 28px;border-bottom:1px solid #d0d7de"><b style="font-size:17px">GitHub Community</b> <span style="background:${GREEN};color:${INK};font-weight:800;border-radius:4px;padding:1px 7px;font-size:14px">BLR</span></td></tr>
 <tr><td style="padding:28px;font-size:16px;line-height:1.6">${inner}</td></tr>
 <tr><td style="padding:18px 28px;border-top:1px solid #d0d7de;font-size:12.5px;line-height:1.6;color:#59636e">
-${esc(CLUB.name)} · ${esc(CLUB.university)}<br>
+${why ? `${esc(why)}<br>` : ""}${esc(CLUB.name)} · ${esc(CLUB.university)}<br>
 <a href="${site}" style="color:#59636e">${site.replace(/^https?:\/\//, "")}</a>${unsubscribe ? ` · <a href="${unsubscribe}" style="color:#59636e">Unsubscribe</a>` : ""}
 </td></tr></table></td></tr></table></body></html>`;
 }
@@ -115,7 +115,8 @@ Sign in with GitHub: ${i.site.replace(/\/$/, "")}/epoch/register
 If that wasn't you, there's nothing to do.` };
 }
 
-export interface BroadcastInput { subject: string; message: string; site: string; unsubscribe: string }
+/** `why`: one line at the bottom saying how they got on this list. */
+export interface BroadcastInput { subject: string; message: string; site: string; unsubscribe: string; why?: string }
 
 /** A message from the organisers. Blank lines start new paragraphs; URLs become links. */
 export function broadcastEmail(i: BroadcastInput): Mail {

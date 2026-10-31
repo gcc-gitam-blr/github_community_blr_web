@@ -3,6 +3,7 @@ import { batchMailer, emailConfigured } from "@/lib/email/send";
 import { broadcastEmail } from "@/lib/email/templates";
 import { unsubscribeApiUrl, unsubscribeUrl } from "@/lib/email/token";
 import { SITE_URL } from "@/lib/site";
+import { TO_WRITE } from "@/lib/newsletter";
 
 /* POST /api/broadcast — an admin emails everyone on one list who hasn't unsubscribed: club sign-ups ("members",
    the default) or the "tell me when Epoch dates are out" list ("epoch"). One unsubscribe link covers both.
@@ -12,6 +13,8 @@ export const maxDuration = 60;
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL, KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const MAX_PER_SEND = 450; // stays under a Gmail account's ~500/day limit
 const LISTS = { members: "join_requests", epoch: "epoch_interest" } as const;
+// the footer line that tells each person why this reached them
+const WHY = { members: "You're getting this because you joined the club or came to one of our events.", epoch: "You're getting this because you asked to hear when Epoch's dates are out." } as const;
 
 const json = (b: object, status = 200) => Response.json(b, { status });
 
@@ -25,6 +28,7 @@ export async function POST(req: Request) {
   const subject = (body.subject ?? "").trim(), message = (body.message ?? "").trim();
   if (subject.length < 3 || subject.length > 120) return json({ ok: false, error: "Subject must be 3–120 characters." }, 422);
   if (message.length < 10 || message.length > 5000) return json({ ok: false, error: "Message must be 10–5000 characters." }, 422);
+  if (TO_WRITE.test(message)) return json({ ok: false, error: "Part of the draft still needs writing: fill in or delete the part in [[ ]] first." }, 422);
   const audience = body.audience ?? "members";
   if (!(audience in LISTS)) return json({ ok: false, error: "Pick who it goes to." }, 422);
   if (!emailConfigured()) return json({ ok: false, error: "Email isn't set up yet: add the email settings in Vercel (see the README)." }, 503);
@@ -48,7 +52,7 @@ export async function POST(req: Request) {
     const queue = [...rows];
     await Promise.all(Array.from({ length: 3 }, async () => {
       for (let r = queue.shift(); r; r = queue.shift()) {
-        const mail = broadcastEmail({ subject, message, site: SITE_URL, unsubscribe: unsubscribeUrl(SITE_URL, r.email) });
+        const mail = broadcastEmail({ subject, message, site: SITE_URL, unsubscribe: unsubscribeUrl(SITE_URL, r.email), why: WHY[audience as keyof typeof WHY] });
         const res = await mailer.send(r.email, mail, { unsubscribe: unsubscribeApiUrl(SITE_URL, r.email) });
         if (res.sent) sent++;
         else { failed++; why ??= res.why; console.error("broadcast email failed:", res.error); }
