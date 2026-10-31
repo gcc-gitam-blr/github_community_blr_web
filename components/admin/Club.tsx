@@ -7,6 +7,7 @@ import { exportSignups } from "@/lib/admin/client";
 import { csvCell } from "@/lib/admin/members";
 import { CLUB } from "@/lib/config";
 import { KINDS } from "@/lib/contact";
+import { TO_WRITE } from "@/lib/newsletter";
 import { clubStats } from "@/lib/stats";
 import type { Audience, ClubMessage, EventFeedback, JoinRequest } from "@/lib/epoch/types";
 import { Note, btn, btnSoft, card, count, head, input } from "./kit";
@@ -107,14 +108,15 @@ export function SignUps() {
   const [sending, setSending] = useState(false); const [result, setResult] = useState<{ k: "ok" | "err"; t: string } | null>(null);
   const [audience, setAudience] = useState<Audience>("members");
   const [waiting, setWaiting] = useState<number | null>(null);
-  const [month, setMonth] = useState(""); const [drafting, setDrafting] = useState(false);
-  // fills the form with a draft of that month's newsletter (empty month = the usual one); nothing is sent until Send
+  const [drafting, setDrafting] = useState(false);
+  // fills the form with this week's newsletter; nothing is sent until Send, and not while the [[ ]] part is unwritten
   const draft = async () => {
     setDrafting(true); setResult(null);
-    try { const d = await (await fetch(`/api/newsletter${month ? `?month=${month}` : ""}`)).json(); setSubject(d.subject); setMessage(d.message); if (!month) setMonth(d.month); }
+    try { const d = await (await fetch("/api/newsletter")).json(); setSubject(d.subject); setMessage(d.message); }
     catch { setResult({ k: "err", t: "Couldn't build the draft. Try again." }); }
     setDrafting(false);
   };
+  const unwritten = TO_WRITE.test(message);
   useEffect(() => { if (me?.role === "admin") void store?.epochInterestCount?.().then(setWaiting); }, [store, me?.role]);
   const people = audience === "epoch" ? waiting ?? 0 : rows?.length ?? 0;
   const [ask, dialog] = useConfirm();
@@ -139,7 +141,7 @@ export function SignUps() {
       <section className={card} aria-labelledby="signups-h">
         <div className={head}>
           <h2 id="signups-h" className="text-[18px]">Club sign-ups</h2>{rows && <span className={count}>{rows.length}</span>}
-          <span className="text-[13.5px] text-ink-3">From every Join the club form: the home page, /join, and event and update pages</span>
+          <span className="text-[13.5px] text-ink-3">Everyone who joined from a form, and everyone checked in at an event</span>
           {rows && rows.length > 0 && <button onClick={csv} className={`${btnSoft} ml-auto`}>Download CSV</button>}
         </div>
         {!store?.joinRequests ? <p className="p-5 text-ink-3">Connect the database to collect sign-ups here.</p>
@@ -154,7 +156,7 @@ export function SignUps() {
                     <tr key={r.id} className="border-t border-line">
                       <td className="px-5 py-2.5 font-semibold">{r.name ?? <span className="font-normal text-ink-3">no name</span>}</td>
                       <td>{r.handle ? <a className="underline-offset-4 hover:underline" href={`https://github.com/${r.handle}`} target="_blank" rel="noopener">@{r.handle}</a> : <span className="text-ink-3">not added yet</span>}</td>
-                      <td className="text-ink-2">{r.email}</td><td>{r.firstEvent ? eventName(r.firstEvent) : <span className="text-ink-3">not picked</span>}</td>
+                      <td className="text-ink-2">{r.email}</td><td>{r.firstEvent ? eventName(r.firstEvent) : <span className="text-ink-3">{r.attended ? "came to an event" : "not picked"}</span>}</td>
                       <td className="whitespace-nowrap px-5 text-right text-ink-3">{short(r.createdAt)}</td>
                     </tr>
                   ))}
@@ -170,10 +172,9 @@ export function SignUps() {
           <div className={head}><h2 id="email-h" className="text-[18px]">Email everyone</h2><span className="text-[13.5px] text-ink-3">Only people who haven&apos;t unsubscribed; every email carries an unsubscribe link</span></div>
           <div className="space-y-4 p-5">
             <div className="flex flex-wrap items-center gap-2 rounded-md bg-soft p-3">
-              <label htmlFor="nl-month" className="text-[14px] font-semibold">Monthly newsletter</label>
-              <input id="nl-month" type="month" value={month} onChange={(e) => setMonth(e.target.value)} className={`${input} !w-auto !py-1.5`} />
-              <button type="button" onClick={draft} disabled={drafting} className={btnSoft}>{drafting ? "Drafting…" : "Draft it"}</button>
-              <span className="text-[13px] text-ink-3">Fills the form from that month&apos;s events, recaps, news and merges. Read it, edit it, then send.</span>
+              <span className="text-[14px] font-semibold">Weekly newsletter</span>
+              <button type="button" onClick={draft} disabled={drafting} className={btnSoft}>{drafting ? "Drafting…" : "Draft this week's"}</button>
+              <span className="text-[13px] text-ink-3">Fills the form with this week&apos;s events, last week&apos;s recaps, news, a Git command and what GitHub shipped. Write the part in [[ ]], read it through, then send. Sunday evening or Monday morning works best.</span>
             </div>
             <fieldset className="flex flex-wrap gap-2">
               <legend className="mb-2 text-[14px] font-semibold">Who gets it</legend>
@@ -183,11 +184,11 @@ export function SignUps() {
                 </label>
               ))}
             </fieldset>
-            <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject, e.g. GIT Merge 26 is this Monday" className={input} aria-label="Subject" maxLength={120} />
+            <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject, e.g. Tue 3 Nov: Open Source Unlocked" className={input} aria-label="Subject" maxLength={120} />
             <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder={"Write your message. A blank line starts a new paragraph; links become clickable."} rows={7} className={input} aria-label="Message" maxLength={5000} />
             <div className="flex flex-wrap items-center gap-3">
-              <button disabled={sending || subject.trim().length < 3 || message.trim().length < 10} onClick={send} className={btn}>{sending ? "Sending…" : `Send to ${people} ${people === 1 ? "person" : "people"}`}</button>
-              <Note note={result} />
+              <button disabled={sending || unwritten || subject.trim().length < 3 || message.trim().length < 10} onClick={send} className={btn}>{sending ? "Sending…" : `Send to ${people} ${people === 1 ? "person" : "people"}`}</button>
+              {unwritten ? <p className="text-[13.5px] text-ink-2">Fill in or delete the part in <b>[[ ]]</b> to send.</p> : <Note note={result} />}
             </div>
           </div>
         </section>
