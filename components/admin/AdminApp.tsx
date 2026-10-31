@@ -28,26 +28,28 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 /* The club's admin dashboard. Who may see it is decided by the database (an active appointment), not by this page:
    signed out → "Sign in with GitHub"; signed in but not an organiser → ask an admin; organisers → the dashboard. */
 // `core`: for the core team and admins (volunteers are event-day staff: attendance and the Epoch desk). `admin`: admins only.
+// `more`: the tools a club reaches for a few times a year, folded under "More tools" so the everyday ones stand out.
 const SECTIONS = [
   { id: "overview", label: "Needs you", group: "Club", core: true },
-  { id: "attendance", label: "Attendance & certificates", group: "Club" },
-  { id: "live", label: "Timer & quiz", group: "Club" },
-  { id: "signups", label: "Sign-ups & email", group: "Club", core: true },
-  { id: "messages", label: "Messages", group: "Club", core: true },
-  { id: "feedback", label: "Feedback", group: "Club", core: true },
+  { id: "signups", label: "Newsletter & sign-ups", group: "Club", core: true },
+  { id: "inbox", label: "Messages & feedback", group: "Club", core: true },
+  { id: "attendance", label: "Attendance & certificates", group: "Event day" },
+  { id: "live", label: "Timer & quiz", group: "Event day" },
   { id: "members", label: "Members", group: "People", core: true },
-  { id: "recruitment", label: "Recruitment", group: "People", core: true },
-  { id: "projects", label: "Projects", group: "People", core: true },
   { id: "people", label: "People & roles", group: "People" },
-  { id: "proposals", label: "Event proposals", group: "Work", core: true },
-  { id: "tasks", label: "Tasks", group: "Work", core: true },
-  { id: "meetings", label: "Meetings & decisions", group: "Work", core: true },
-  { id: "assets", label: "Assets & handover", group: "Work", core: true },
-  { id: "policies", label: "Policies", group: "Work", core: true },
-  { id: "activity", label: "Activity", group: "Site", admin: true },
-  { id: "errors", label: "Site errors", group: "Site", admin: true },
-] as const satisfies readonly { id: string; label: string; group: string; admin?: boolean; core?: boolean }[];
+  { id: "recruitment", label: "Recruitment", group: "People", core: true },
+  { id: "proposals", label: "Event proposals", group: "More", core: true, more: true },
+  { id: "tasks", label: "Tasks", group: "More", core: true, more: true },
+  { id: "meetings", label: "Meetings & decisions", group: "More", core: true, more: true },
+  { id: "assets", label: "Assets & handover", group: "More", core: true, more: true },
+  { id: "policies", label: "Policies", group: "More", core: true, more: true },
+  { id: "projects", label: "Member projects", group: "More", core: true, more: true },
+  { id: "activity", label: "Activity", group: "More", admin: true, more: true },
+  { id: "errors", label: "Site errors", group: "More", admin: true, more: true },
+] as const satisfies readonly { id: string; label: string; group: string; admin?: boolean; core?: boolean; more?: boolean }[];
 type Section = (typeof SECTIONS)[number]["id"];
+// addresses from before messages and feedback shared a section, so old links and bookmarks still land somewhere
+const ALIASES: Record<string, Section> = { messages: "inbox", feedback: "inbox" };
 
 const door = `${card} mx-auto max-w-[560px] p-6 sm:p-8`; // the cards before the dashboard: sign in, no access yet
 const doorH = "font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.03em]";
@@ -103,6 +105,7 @@ export function AdminApp({ quizzes = [] }: { quizzes?: QuizFile[] }) {
   const [section, setSection] = useState<Section>("overview");
   const [err, setErr] = useState("");
   const [preview, setPreview] = useState<Preview | null>(null); // see the dashboard as a lower role (this screen only)
+  const [moreOpen, setMoreOpen] = useState<boolean | null>(null); // null: open only while you're on one of them
   const live = store?.mode === "supabase";
   // what waits for this person, for the home and the menu's counts (core and admins; read again on each section change)
   const staff = (me?.role === "admin" || me?.role === "core") && (!preview || preview === "core");
@@ -110,7 +113,7 @@ export function AdminApp({ quizzes = [] }: { quizzes?: QuizFile[] }) {
 
   // which section, from the address (#attendance), so links and the back button work
   useEffect(() => {
-    const read = () => { const h = window.location.hash.slice(1) as Section; if (SECTIONS.some((s) => s.id === h)) setSection(h); };
+    const read = () => { const raw = window.location.hash.slice(1), h = (ALIASES[raw] ?? raw) as Section; if (SECTIONS.some((s) => s.id === h)) setSection(h); };
     read(); window.addEventListener("hashchange", read); return () => window.removeEventListener("hashchange", read);
   }, []);
 
@@ -164,24 +167,38 @@ export function AdminApp({ quizzes = [] }: { quizzes?: QuizFile[] }) {
   const here = SECTIONS.find((s) => s.id === current)!;
   const counts = perSection(needs);
   const sectionOf = (id: string | null) => SECTIONS.find((s) => s.id === id);
+  const everyday = allowed.filter((s) => !("more" in s)), extra = allowed.filter((s) => "more" in s);
+  const showMore = moreOpen ?? extra.some((s) => s.id === current);
+  const extraCount = extra.reduce((n, s) => n + (counts[s.id] ?? 0), 0);
+  const item = (s: (typeof allowed)[number], i: number, list: typeof allowed) => (
+    <Fragment key={s.id}>
+      {(i === 0 || list[i - 1].group !== s.group) && <li aria-hidden className="adm-group"><Node group={s.group} size={20} />{s.group}</li>}
+      <li className={`commit ${current === s.id ? "is-head" : ""}`}>
+        <a href={`#${s.id}`} aria-current={current === s.id ? "page" : undefined} className="adm-link">
+          <span className="commit-node" aria-hidden />
+          <span className="min-w-0 flex-1 truncate">{s.label}</span>
+          {counts[s.id] ? <span className="adm-count">{counts[s.id]}<span className="sr-only"> waiting for you</span></span> : null}
+        </a>
+      </li>
+    </Fragment>
+  );
   return (
     <Shell who={me.handle} role={me.role} onSignOut={signOut}>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-[232px_minmax(0,1fr)] md:gap-10">
         {/* the sections hang off one branch, like the site's menu: a node for each group, HEAD (green) where you are */}
         <nav aria-label="Admin sections" className="-mx-5 min-w-0 overflow-x-auto px-5 md:sticky md:top-6 md:mx-0 md:self-start md:overflow-visible md:px-0">
           <ul className="adm-branch">
-            {allowed.map((s, i) => (
-              <Fragment key={s.id}>
-                {(i === 0 || allowed[i - 1].group !== s.group) && <li aria-hidden className="adm-group"><Node group={s.group} size={20} />{s.group}</li>}
-                <li className={`commit ${current === s.id ? "is-head" : ""}`}>
-                  <a href={`#${s.id}`} aria-current={current === s.id ? "page" : undefined} className="adm-link">
-                    <span className="commit-node" aria-hidden />
-                    <span className="min-w-0 flex-1 truncate">{s.label}</span>
-                    {counts[s.id] ? <span className="adm-count">{counts[s.id]}<span className="sr-only"> waiting for you</span></span> : null}
-                  </a>
-                </li>
-              </Fragment>
-            ))}
+            {everyday.map(item)}
+            {extra.length > 0 && <>
+              <li className="commit">
+                <button type="button" onClick={() => setMoreOpen(!showMore)} aria-expanded={showMore} className="adm-link w-full text-left">
+                  <span className="commit-node" aria-hidden />
+                  <span className="min-w-0 flex-1 truncate">{showMore ? "Fewer tools" : `More tools (${extra.length})`}</span>
+                  {!showMore && extraCount ? <span className="adm-count">{extraCount}<span className="sr-only"> waiting for you</span></span> : null}
+                </button>
+              </li>
+              {showMore && extra.map(item)}
+            </>}
           </ul>
           {/* the organiser tools that live on their own pages: the Epoch desk for everyone here; the content editor and
               photo upload for the core team, behind a second GitHub login (write access to the site's repository) */}
@@ -212,8 +229,7 @@ export function AdminApp({ quizzes = [] }: { quizzes?: QuizFile[] }) {
           {current === "attendance" && <Attendance admin={admin} />}
           {current === "live" && <LiveTools quizzes={quizzes} />}
           {current === "signups" && <SignUps />}
-          {current === "messages" && <Inbox />}
-          {current === "feedback" && <FeedbackSummary />}
+          {current === "inbox" && <><Inbox /><FeedbackSummary /></>}
           {current === "members" && <Members admin={admin} />}
           {current === "recruitment" && <Recruitment admin={admin} meId={me.id} />}
           {current === "proposals" && <Proposals admin={admin} meId={me.id} />}

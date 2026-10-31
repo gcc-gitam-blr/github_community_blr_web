@@ -50,9 +50,9 @@ export function Role({ role, children }: { role: string; children: React.ReactNo
 /** The menu's groups, each with its own node from the home page's graph, so a group is recognisable at a glance. */
 export const GROUPS: Record<string, { shape: Shape; fill: string }> = {
   Club: { shape: "ring", fill: "#4fd1a1" },
+  "Event day": { shape: "triangle", fill: "#ffd966" },
   People: { shape: "diamond", fill: "#b48be6" },
-  Work: { shape: "square", fill: "#b9e0f7" },
-  Site: { shape: "triangle", fill: "#ffd966" },
+  More: { shape: "square", fill: "#b9e0f7" },
 };
 
 /** A small node: a filled circle with the group's glyph, drawn in ink like the home page's graph. */
