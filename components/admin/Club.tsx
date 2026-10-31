@@ -138,6 +138,33 @@ export function SignUps() {
   return (
     <>
       {dialog}
+      {store?.broadcast && me?.role === "admin" && (
+        <section className={card} aria-labelledby="email-h">
+          <div className={head}><h2 id="email-h" className="text-[18px]">Email everyone</h2><span className="text-[13.5px] text-ink-3">Only people who haven&apos;t unsubscribed; every email carries an unsubscribe link</span></div>
+          <div className="space-y-4 p-5">
+            <div className="flex flex-wrap items-center gap-2 rounded-md bg-soft p-3">
+              <span className="text-[14px] font-semibold">Weekly newsletter</span>
+              <button type="button" onClick={draft} disabled={drafting} className={btnSoft}>{drafting ? "Drafting…" : "Draft this week's"}</button>
+              <span className="text-[13px] text-ink-3">Fills the form with this week&apos;s events, last week&apos;s recaps, news, a Git command and what GitHub shipped. Write the part in [[ ]], read it through, then send. Sunday evening or Monday morning works best.</span>
+            </div>
+            <fieldset className="flex flex-wrap gap-2">
+              <legend className="mb-2 text-[14px] font-semibold">Who gets it</legend>
+              {([["members", `Club sign-ups (${rows?.length ?? 0})`], ["epoch", `Waiting for Epoch dates${waiting === null ? "" : ` (${waiting})`}`]] as const).map(([id, l]) => (
+                <label key={id} className={`cursor-pointer rounded-full border px-3.5 py-1.5 text-[13.5px] transition-colors duration-150 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-link ${audience === id ? "border-ink bg-ink font-semibold text-white" : "border-line hover:border-ink/40"}`}>
+                  <input type="radio" name="audience" value={id} checked={audience === id} onChange={() => setAudience(id)} className="sr-only" />{l}
+                </label>
+              ))}
+            </fieldset>
+            <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject, e.g. Tue 3 Nov: Open Source Unlocked" className={input} aria-label="Subject" maxLength={120} />
+            <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder={"Write your message. A blank line starts a new paragraph; links become clickable."} rows={7} className={input} aria-label="Message" maxLength={5000} />
+            <div className="flex flex-wrap items-center gap-3">
+              <button disabled={sending || unwritten || subject.trim().length < 3 || message.trim().length < 10} onClick={send} className={btn}>{sending ? "Sending…" : `Send to ${people} ${people === 1 ? "person" : "people"}`}</button>
+              {unwritten ? <p className="text-[13.5px] text-ink-2">Fill in or delete the part in <b>[[ ]]</b> to send.</p> : <Note note={result} />}
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className={card} aria-labelledby="signups-h">
         <div className={head}>
           <h2 id="signups-h" className="text-[18px]">Club sign-ups</h2>{rows && <span className={count}>{rows.length}</span>}
@@ -166,33 +193,6 @@ export function SignUps() {
             {rows.length > shown.length && <button onClick={() => setAll(true)} className="w-full border-t border-line px-5 py-3 text-left text-[14px] font-semibold text-link hover:bg-soft">Show all {rows.length}</button>}
           </>)}
       </section>
-
-      {store?.broadcast && me?.role === "admin" && (
-        <section className={card} aria-labelledby="email-h">
-          <div className={head}><h2 id="email-h" className="text-[18px]">Email everyone</h2><span className="text-[13.5px] text-ink-3">Only people who haven&apos;t unsubscribed; every email carries an unsubscribe link</span></div>
-          <div className="space-y-4 p-5">
-            <div className="flex flex-wrap items-center gap-2 rounded-md bg-soft p-3">
-              <span className="text-[14px] font-semibold">Weekly newsletter</span>
-              <button type="button" onClick={draft} disabled={drafting} className={btnSoft}>{drafting ? "Drafting…" : "Draft this week's"}</button>
-              <span className="text-[13px] text-ink-3">Fills the form with this week&apos;s events, last week&apos;s recaps, news, a Git command and what GitHub shipped. Write the part in [[ ]], read it through, then send. Sunday evening or Monday morning works best.</span>
-            </div>
-            <fieldset className="flex flex-wrap gap-2">
-              <legend className="mb-2 text-[14px] font-semibold">Who gets it</legend>
-              {([["members", `Club sign-ups (${rows?.length ?? 0})`], ["epoch", `Waiting for Epoch dates${waiting === null ? "" : ` (${waiting})`}`]] as const).map(([id, l]) => (
-                <label key={id} className={`cursor-pointer rounded-full border px-3.5 py-1.5 text-[13.5px] transition-colors duration-150 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-link ${audience === id ? "border-ink bg-ink font-semibold text-white" : "border-line hover:border-ink/40"}`}>
-                  <input type="radio" name="audience" value={id} checked={audience === id} onChange={() => setAudience(id)} className="sr-only" />{l}
-                </label>
-              ))}
-            </fieldset>
-            <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject, e.g. Tue 3 Nov: Open Source Unlocked" className={input} aria-label="Subject" maxLength={120} />
-            <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder={"Write your message. A blank line starts a new paragraph; links become clickable."} rows={7} className={input} aria-label="Message" maxLength={5000} />
-            <div className="flex flex-wrap items-center gap-3">
-              <button disabled={sending || unwritten || subject.trim().length < 3 || message.trim().length < 10} onClick={send} className={btn}>{sending ? "Sending…" : `Send to ${people} ${people === 1 ? "person" : "people"}`}</button>
-              {unwritten ? <p className="text-[13.5px] text-ink-2">Fill in or delete the part in <b>[[ ]]</b> to send.</p> : <Note note={result} />}
-            </div>
-          </div>
-        </section>
-      )}
     </>
   );
 }
