@@ -25,6 +25,7 @@ export default function Privacy() {
         <H>What we collect, and why</H>
         <L>
           <li><b>When you join the club:</b> your GitHub username, email address, and which event you want to try first. We use it to welcome you, remind you about events, and plan sessions.</li>
+          <li><b>When you come to one of our events:</b> your name and email from the event&apos;s check-in list (and your GitHub username if you gave it). We use them for your certificate, and to send you the club&apos;s newsletter: what&apos;s coming up, what happened, and something useful about Git and GitHub. Every newsletter has a one-click unsubscribe, and once you unsubscribe we don&apos;t email you again.</li>
           <li><b>When you ask to hear about Epoch dates:</b> only your email address. We use it to tell you when the dates are announced, and for Epoch news after that. Nothing else.</li>
           <li><b>When you use Epoch (our fest):</b> your name and email (organisers sign in with GitHub instead, which adds their GitHub username), your Epoch Coins balance, and a record of your coin transactions (where you scanned or spent coins). We use it to run the event and the leaderboard. The leaderboard shows only your name, or your GitHub username if you signed in with GitHub.</li>
           <li><b>When you write to us</b> (to help out, speak, sponsor or ask a question): your name, email, GitHub username if you give it, and your message, so we can reply.</li>
