@@ -98,6 +98,25 @@ export async function sendCertificates(event: string, ids?: string[], msg?: { no
   } catch { return { ok: false, error: "Network error. Please try again." }; }
 }
 
+/** One round of an email to a whole list (app/api/broadcast): start one with its content, or carry on with `{ id }`.
+    `left` is how many still wait; `problem` says why a round paused (a daily limit, a refused login). */
+export interface BroadcastRound { id?: number; sent: number; done?: number; left: number; total: number; problem?: string }
+export type BroadcastBody = { id: number } | { audience: "members" | "epoch"; lesson?: string; note?: string; subject?: string; message?: string; test?: boolean };
+export async function broadcastRound(body: BroadcastBody): Promise<Res<BroadcastRound>> {
+  const { data: { session } } = await supabase().auth.getSession();
+  if (!session) return { ok: false, error: "Sign in again." };
+  try {
+    const r = await fetch("/api/broadcast", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify(body) });
+    return await r.json();
+  } catch { return { ok: false, error: "Network error. Nothing more was sent; press Continue to carry on." }; }
+}
+/** The latest send that stopped before reaching everyone (a closed tab, Gmail's daily limit), so it can be finished. */
+export async function unfinishedBroadcast(): Promise<{ id: number; subject: string; recipients: number; created_at: string } | null> {
+  const { data, error } = await supabase().from("broadcasts").select("id, subject, recipients, created_at").is("finished_at", null).not("audience", "is", null)
+    .gte("created_at", new Date(Date.now() - 14 * 864e5).toISOString()).order("id", { ascending: false }).limit(1).maybeSingle();
+  return error ? null : (data as { id: number; subject: string; recipients: number; created_at: string } | null);
+}
+
 /** Errors from visitors' browsers in the last 30 days (older ones are deleted). Only admins can read them. */
 export async function clientErrors(): Promise<ErrorRow[] | null> {
   const { data, error } = await supabase().from("client_errors").select("*").order("created_at", { ascending: false }).limit(1000);

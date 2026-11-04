@@ -544,6 +544,27 @@ drop policy if exists "staff read broadcasts" on broadcasts;
 create policy "staff read broadcasts" on broadcasts for select using (my_role() in ('core','admin')); -- volunteers are event-day staff and don't read these
 drop policy if exists "admins log broadcasts" on broadcasts;
 create policy "admins log broadcasts" on broadcasts for insert with check (my_role() = 'admin' and sent_by = auth.uid());
+-- A send goes out one email at a time over several minutes (app/api/broadcast, lib/email/paced.ts), so it is saved
+-- first with what it says, and each address is recorded the moment its email goes. A send that pauses (a closed tab,
+-- Gmail's daily limit) carries on from where it stopped and never emails anyone twice.
+alter table broadcasts add column if not exists audience text check (audience is null or audience in ('members','epoch'));
+alter table broadcasts add column if not exists lesson text;
+alter table broadcasts add column if not exists note text check (note is null or length(note) <= 600);
+alter table broadcasts add column if not exists message text check (message is null or length(message) <= 5000);
+alter table broadcasts add column if not exists finished_at timestamptz;
+drop policy if exists "admins update broadcasts" on broadcasts;
+create policy "admins update broadcasts" on broadcasts for update using (my_role() = 'admin') with check (my_role() = 'admin');
+create table if not exists broadcast_deliveries (
+  broadcast_id bigint not null references broadcasts on delete cascade,
+  email text not null check (email = lower(email)),
+  sent_at timestamptz not null default now(),
+  primary key (broadcast_id, email)
+);
+alter table broadcast_deliveries enable row level security;
+drop policy if exists "admins read deliveries" on broadcast_deliveries;
+create policy "admins read deliveries" on broadcast_deliveries for select using (my_role() = 'admin');
+drop policy if exists "admins record deliveries" on broadcast_deliveries;
+create policy "admins record deliveries" on broadcast_deliveries for insert with check (my_role() = 'admin');
 
 -- ============================================================
 -- "Get involved" messages: core-team applications, sponsors, speakers, questions.

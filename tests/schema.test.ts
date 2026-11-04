@@ -111,6 +111,13 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
   ok("an admin can log a broadcast", (await one<{ n: number }>("select count(*)::int n from broadcasts")).n === 1);
   let tooShort = false; try { await db.query("insert into broadcasts (sent_by, subject, recipients) values ($1, 'x', 1)", [ORG]); } catch { tooShort = true; }
   ok("a broadcast with a 1-letter subject is refused", tooShort);
+  // a send that goes out one at a time: saved with its content, each address recorded once as its email goes
+  const bid = (await one<{ id: number }>("insert into broadcasts (sent_by, subject, audience, lesson, note) values ($1, 'Spot the problem', 'members', 'branches', 'Bring a laptop') returning id", [ORG])).id;
+  await db.query("insert into broadcast_deliveries (broadcast_id, email) values ($1, 'ada@gitam.in')", [bid]);
+  let twice = false; try { await db.query("insert into broadcast_deliveries (broadcast_id, email) values ($1, 'ada@gitam.in')", [bid]); } catch { twice = true; }
+  ok("an admin records who a send has reached, and the same address can't be recorded twice", twice && (await one<{ n: number }>("select count(*)::int n from broadcast_deliveries")).n === 1);
+  await db.query("update broadcasts set recipients = 1, finished_at = now() where id = $1", [bid]);
+  ok("an admin closes the send when everyone has it", (await one<{ done: boolean }>("select finished_at is not null done from broadcasts where id = $1", [bid])).done);
   // get-involved messages
   await as(ADA);
   await db.query("insert into messages (kind, name, email, handle, message) values ('apply','Ada','ada@gitam.in','ada','I would like to help run events.')");
@@ -135,6 +142,9 @@ const ADA = "00000000-0000-0000-0000-00000000000a", ORG = "00000000-0000-0000-00
     finally { await db.exec("reset role"); }
   };
   await db.exec("grant usage on schema public to authenticated; grant select on profiles to authenticated;");
+  await db.exec("grant select, insert on broadcast_deliveries to authenticated;");
+  ok("an attendee can't see who got an email", (await asApi(ADA, "select * from broadcast_deliveries")).rows.length === 0 && (await asApi(ORG, "select * from broadcast_deliveries")).rows.length === 1);
+  ok("…or record one", !!(await asApi(ADA, "insert into broadcast_deliveries (broadcast_id, email) values ($1, 'bob@gitam.in')", [bid])).error);
   const add = (uid: string, email: string) => asApi(uid, "insert into attendance (event, name, email) values ('2026-10-07', 'Ada Lovelace', $1) returning id", [email]);
   ok("an attendee can't add attendance", !!(await add(ADA, "ada@gitam.in")).error);
   ok("an attendee can't read attendance", (await asApi(ADA, "select * from attendance")).rows.length === 0);

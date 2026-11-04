@@ -19,7 +19,8 @@ const smtp = new SMTPServer({
 });
 
 // ---- fake Supabase ----
-const db = { joins: [] as { email: string; unsubscribed: boolean }[], role: "admin", unsub: [] as string[], broadcasts: [] as unknown[],
+const db = { joins: [] as { email: string; unsubscribed: boolean }[], role: "admin", unsub: [] as string[],
+  broadcasts: [] as { id: number; recipients: number; subject: string; finished_at: string | null }[], deliveries: [] as { broadcast_id: number; email: string }[],
   attendance: [] as { id: string; name: string; email: string; created_at: string; emailed_at: string | null }[] };
 const fake = http.createServer((req, res) => {
   let body = ""; req.on("data", (c) => (body += c)); req.on("end", () => {
@@ -34,7 +35,14 @@ const fake = http.createServer((req, res) => {
       db.joins.push({ email: row.p_email, unsubscribed: false }); return send(200, "created");
     }
     if (url.startsWith("/rest/v1/join_requests")) return send(200, db.joins.filter((j) => !j.unsubscribed).map((j) => ({ email: j.email })));
-    if (url.startsWith("/rest/v1/broadcasts")) { db.broadcasts.push(JSON.parse(body)); return send(201, null); }
+    // a send is saved first, each address is recorded as its email goes, and the send is closed when everyone has it
+    const qs = new URL(url, "http://x").searchParams, idOf = (k: string) => Number((qs.get(k) ?? "").replace(/^eq\./, ""));
+    if (url.startsWith("/rest/v1/broadcasts") && req.method === "POST") { const row = { ...JSON.parse(body), id: db.broadcasts.length + 1, finished_at: null }; db.broadcasts.push(row); return send(201, { id: row.id }); }
+    if (url.startsWith("/rest/v1/broadcasts") && req.method === "GET") return send(200, db.broadcasts.find((b) => b.id === idOf("id")) ?? null);
+    if (url.startsWith("/rest/v1/broadcasts") && req.method === "PATCH") { Object.assign(db.broadcasts.find((b) => b.id === idOf("id")) ?? {}, JSON.parse(body)); return send(204, null); }
+    if (url.startsWith("/rest/v1/broadcast_deliveries") && req.method === "GET") return send(200, db.deliveries.filter((d) => d.broadcast_id === idOf("broadcast_id")).map((d) => ({ email: d.email })));
+    if (url.startsWith("/rest/v1/broadcast_deliveries") && req.method === "POST") { db.deliveries.push(JSON.parse(body)); return send(201, null); }
+    if (url.startsWith("/rest/v1/profiles")) return send(200, { name: "Ada Admin" });
     if (url.startsWith("/rest/v1/attendance") && req.method === "GET") return send(200, db.attendance.filter((a) => !a.emailed_at));
     if (url.startsWith("/rest/v1/attendance") && req.method === "PATCH") {
       const ids = decodeURIComponent(new URL(url, "http://x").searchParams.get("id") ?? "").replace(/^in\.\(|^eq\.|\)$/g, "").split(",").map((x) => x.replace(/"/g, ""));
@@ -164,9 +172,21 @@ const settle = () => new Promise((r) => setTimeout(r, 300));
   inbox.length = 0;
   r = await broadcast(postJson("http://x/api/broadcast", goodBody, { authorization: "Bearer t" }));
   const j = await r.json();
-  ok("broadcast: an admin sends to every subscribed address", r.status === 200 && j.sent === 3 && j.failed === 0 && inbox.length === 3);
+  ok("broadcast: an admin sends to every subscribed address", r.status === 200 && j.sent === 3 && j.total === 3 && !j.problem && inbox.length === 3);
   ok("broadcast: each recipient gets their own personal unsubscribe link", new Set(inbox.map((m) => m.text?.match(/Unsubscribe: (\S+)/)?.[1])).size === 3);
-  ok("broadcast: it is logged with subject and recipient count", (db.broadcasts[0] as { recipients: number; subject: string })?.recipients === 3);
+  ok("broadcast: it is logged with subject and recipient count, and closed once everyone has it", db.broadcasts[0]?.recipients === 3 && !!db.broadcasts[0]?.finished_at && j.left === 0 && j.id === 1);
+  ok("broadcast: each address is recorded as its email goes, so nobody gets two", db.deliveries.filter((d) => d.broadcast_id === 1).length === 3);
+  // a send that stopped part-way (a closed tab, the daily limit) carries on with only the people it hasn't reached
+  db.broadcasts[0].finished_at = null; db.deliveries = db.deliveries.filter((d) => d.email !== "cleo@gitam.in"); inbox.length = 0;
+  r = await broadcast(postJson("http://x/api/broadcast", { id: 1 }, { authorization: "Bearer t" }));
+  const jr = await r.json();
+  ok("broadcast: carrying on sends only to whoever hasn't had it yet", r.status === 200 && jr.sent === 1 && jr.left === 0 && inbox.length === 1 && toOf(inbox[0]) === "cleo@gitam.in");
+  inbox.length = 0;
+  r = await broadcast(postJson("http://x/api/broadcast", { id: 1 }, { authorization: "Bearer t" }));
+  ok("broadcast: carrying on with a finished send sends nothing", (await r.json()).sent === 0 && inbox.length === 0);
+  r = await broadcast(postJson("http://x/api/broadcast", { ...goodBody, test: true }, { authorization: "Bearer t" }));
+  ok("broadcast: a test goes only to the admin who asked, marked [Test], and isn't saved as a send", r.status === 200 && inbox.length === 1 && toOf(inbox[0]) === "admin@test" && inbox[0].subject?.startsWith("[Test] ") === true && db.broadcasts.length === 1);
+  inbox.length = 0;
   db.joins[2].unsubscribed = true; inbox.length = 0;
   r = await broadcast(postJson("http://x/api/broadcast", goodBody, { authorization: "Bearer t" }));
   ok("broadcast: people who unsubscribed are skipped", (await r.json()).sent === 2 && inbox.length === 2);

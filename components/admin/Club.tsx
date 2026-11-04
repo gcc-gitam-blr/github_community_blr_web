@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { StarFillIcon } from "@primer/octicons-react";
 import { useEpoch } from "@/components/epoch/EpochProvider";
 import { useConfirm } from "@/components/ui/Confirm";
-import { exportSignups } from "@/lib/admin/client";
+import { broadcastRound, exportSignups, unfinishedBroadcast, type BroadcastBody } from "@/lib/admin/client";
 import { csvCell } from "@/lib/admin/members";
 import { CLUB } from "@/lib/config";
 import { KINDS } from "@/lib/contact";
@@ -123,16 +123,34 @@ export function SignUps() {
   const chosen = LESSONS.find((l) => l.slug === lesson) ?? LESSONS[0];
   const [ask, dialog] = useConfirm();
   const ready = mode === "lesson" ? note.length <= NOTE_MAX : subject.trim().length >= 3 && message.trim().length >= 10;
-  const send = async (test = false) => {
-    if (!store?.broadcast) return;
-    const title = mode === "lesson" ? chosen.subject : subject || "(no subject)";
-    if (!test && !(await ask({ title: `Email ${people} ${people === 1 ? "person" : "people"}?`, body: <>Subject: <b>{title}</b>. Emails can&apos;t be called back once they&apos;re sent.</>, yes: `Send to ${people}` }))) return;
+  // a send goes out one email at a time, a few seconds apart, so it doesn't land in spam: the server sends what fits
+  // in under a minute and this keeps asking for the next round until everyone has it. If it stops (a closed tab,
+  // Gmail's daily limit), "Continue sending" picks it up and nobody gets two.
+  const [unfinished, setUnfinished] = useState<Awaited<ReturnType<typeof unfinishedBroadcast>>>(null);
+  useEffect(() => { if (me?.role === "admin" && store?.joinRequests) void unfinishedBroadcast().then(setUnfinished); }, [store, me?.role]);
+  const run = async (first: BroadcastBody) => {
     setSending(true); setResult(null);
-    const r = await store.broadcast(subject, message, audience, { ...(mode === "lesson" ? { lesson, note } : {}), ...(test ? { test: true } : {}) }); setSending(false);
-    if (!r.ok) return setResult({ k: "err", t: r.error });
-    if (test) return setResult({ k: "ok", t: "Sent a test to your own email. Check how it looks on your phone." });
-    setResult({ k: "ok", t: `Sent to ${r.sent} of ${r.total}${r.failed ? ` (${r.failed} failed)` : ""}.` });
-    setSubject(""); setMessage(""); setNote("");
+    let r = await broadcastRound(first);
+    for (;;) {
+      if (!r.ok) { setResult({ k: "err", t: r.error }); break; }
+      if (r.problem) { setResult({ k: "err", t: `${r.done ?? r.sent} of ${r.total} sent, then paused: ${r.problem} Press Continue sending later; nobody gets two.` }); break; }
+      if (!r.left || !r.id) { setResult({ k: "ok", t: `Sent to all ${r.total}.` }); setSubject(""); setMessage(""); setNote(""); break; }
+      setResult({ k: "ok", t: `Sending one at a time so it doesn't land in spam: ${r.done ?? r.sent} of ${r.total} sent, about ${Math.max(1, Math.ceil((r.left * 6) / 60))} min to go. Keep this page open.` });
+      r = await broadcastRound({ id: r.id });
+    }
+    setSending(false);
+    void unfinishedBroadcast().then(setUnfinished);
+  };
+  const content = (): BroadcastBody => (mode === "lesson" ? { audience, lesson, note } : { audience, subject, message });
+  const send = async (test = false) => {
+    if (test) {
+      setSending(true); setResult(null);
+      const r = await broadcastRound({ ...content(), test: true }); setSending(false);
+      return setResult(r.ok ? { k: "ok", t: "Sent a test to your own email. Check how it looks on your phone." } : { k: "err", t: r.error });
+    }
+    const title = mode === "lesson" ? chosen.subject : subject || "(no subject)";
+    if (!(await ask({ title: `Email ${people} ${people === 1 ? "person" : "people"}?`, body: <>Subject: <b>{title}</b>. It goes out one email at a time, a few seconds apart, so it doesn&apos;t land in spam: about {Math.max(1, Math.ceil((people * 6) / 60))} minutes with this page open. Emails can&apos;t be called back once they&apos;re sent.</>, yes: `Send to ${people}` }))) return;
+    await run(content());
   };
   const csv = async () => {
     const list = await exportSignups(); // goes through a database function, so every download is recorded in the audit log
@@ -145,10 +163,16 @@ export function SignUps() {
   return (
     <>
       {dialog}
-      {store?.broadcast && me?.role === "admin" && (
+      {store?.joinRequests && me?.role === "admin" && (
         <section className={card} aria-labelledby="email-h">
           <div className={head}><h2 id="email-h" className="text-[18px]">Email everyone</h2><span className="text-[13.5px] text-ink-3">Only people who haven&apos;t unsubscribed; every email carries an unsubscribe link</span></div>
           <div className="space-y-4 p-5">
+            {unfinished && !sending && (
+              <div className="flex flex-wrap items-center gap-3 rounded-md border border-[#d4a72c] bg-[#fff8c5] p-3 text-[14px]">
+                <span className="min-w-0 flex-1">&ldquo;{unfinished.subject}&rdquo; stopped after {unfinished.recipients} {unfinished.recipients === 1 ? "person" : "people"}. The rest haven&apos;t had it yet.</span>
+                <button type="button" onClick={() => void run({ id: unfinished.id })} className={btnSoft}>Continue sending</button>
+              </div>
+            )}
             <div role="tablist" aria-label="What to send" className="inline-flex rounded-full border border-line p-1">
               {([["lesson", "Weekly lesson"], ["own", "Write your own"]] as const).map(([id, l]) => (
                 <button key={id} type="button" role="tab" aria-selected={mode === id} onClick={() => { setMode(id); setResult(null); }} className={`rounded-full px-4 py-1.5 text-[13.5px] transition-colors duration-150 ${mode === id ? "bg-ink font-semibold text-white" : "text-ink-2 hover:text-ink"}`}>{l}</button>
