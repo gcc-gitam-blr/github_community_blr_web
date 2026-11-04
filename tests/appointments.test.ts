@@ -149,6 +149,7 @@ const audit = async (action: string) => (await one<{ n: number }>("select count(
   const warn2 = (await api<{ r: { ending: { handle: string; days_left: number }[] } }>("", "select appointment_warnings() r", [], "service_role")).rows[0].r;
   ok("a 9-day appointment shows with 9 days left", warn2.ending.some((e) => e.handle === "pat" && e.days_left === 9));
   ok("the digest's admin list is whoever holds an active admin appointment", (await api<{ email: string }>("", "select * from admin_emails()", [], "service_role")).rows.map((r) => r.email).sort().join() === "ada@gitam.in,bea@gitam.in");
+  ok("the digest goes to the admins and the core team (cy), not volunteers (pat) or ended appointments", (await api<{ email: string }>("", "select * from team_emails()", [], "service_role")).rows.map((r) => r.email).sort().join() === "ada@gitam.in,bea@gitam.in,cy@gitam.in");
   ok("the public key and signed-in users can't read the warnings", !!(await api("", "select appointment_warnings()", [], "anon")).error && !!(await api(A, "select appointment_warnings()")).error);
 
   // ---- the audit trail ----

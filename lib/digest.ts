@@ -55,9 +55,9 @@ export function buildDigest(rows: DigestRows, now = new Date()): Digest | null {
   return { from: istDay(new Date(now.getTime() - 7 * 864e5)), to: istDay(now), signups: { count: signups.length, first: signups.slice(0, FIRST_HANDLES).map((s) => (s.handle ? `@${s.handle}` : s.name || "someone")) }, messages, feedback, access, tasks, assets, policies };
 }
 
-/** Who gets it: ORGANISER_EMAILS when set (comma- or space-separated), otherwise every admin's email from the database. */
+/** Who gets it: the admins and core team from the database, plus anyone in ORGANISER_EMAILS (comma- or space-separated), each once. */
 export function digestRecipients(env: string | undefined, admins: { email: string | null }[]): string[] {
-  const list = env?.trim() ? env.split(/[\s,;]+/) : admins.map((a) => a.email ?? "");
+  const list = [...(env ?? "").split(/[\s,;]+/), ...admins.map((a) => a.email ?? "")];
   return [...new Set(list.map((e) => e.trim().toLowerCase()).filter((e) => EMAIL_RE.test(e)))];
 }
 

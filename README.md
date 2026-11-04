@@ -134,7 +134,7 @@ It works on the production address. Preview deployments and `localhost` automati
 | `NEXT_PUBLIC_EPOCH_MODE` | `live` / `off` forces Epoch's live state. |
 | `NEXT_PUBLIC_ANALYTICS` | `on` loads cookie-free Vercel Analytics + Speed Insights (enable them in the Vercel dashboard first). |
 | `CRON_SECRET` | Switches on the two weekly jobs: the clean-up of old personal data and the Monday digest email to organisers (see **Keeping it running** and *Email*). Any long random text; Vercel sends it to the jobs itself. Without it both refuse to run. |
-| `ORGANISER_EMAILS` | Optional. Who gets the Monday digest, comma-separated. Empty = every admin's email from Supabase. |
+| `ORGANISER_EMAILS` | Optional. Extra people who get the Monday digest, comma-separated. It always goes to everyone with an active admin or core appointment. |
 | `RATE_LIMIT_SALT` | Optional. Any long random text, used to hash visitors' IPs for the form rate limits. Without it a secret the site already has (`EMAIL_SECRET`) is used. |
 
 ## Run it
@@ -267,7 +267,7 @@ one link takes the address off both lists.
 Get involved messages by kind, and the average feedback rating per event, with a link to `/admin`. Quiet weeks send nothing.
 To turn it on, add in Vercel: `CRON_SECRET` (any long random text; Vercel sends it with each cron call and the route
 refuses anything else), `SUPABASE_SERVICE_ROLE_KEY` (it reads staff-only tables with no one signed in) and optionally
-`ORGANISER_EMAILS` (otherwise it goes to everyone with an active admin appointment). Without them it does nothing and says why.
+`ORGANISER_EMAILS` (extra addresses; it always goes to everyone with an active admin or core appointment). Without them it does nothing and says why.
 
 Epoch has **no passwords** — attendees sign in with GitHub — so there is no "forgot password" email to build.
 

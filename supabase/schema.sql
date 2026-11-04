@@ -753,6 +753,14 @@ language sql security definer stable set search_path = public, pg_temp as $$
    where a.role = 'admin' and a.revoked_at is null and a.starts_on <= today_ist() and a.ends_on >= today_ist() and p.email is not null
 $$;
 
+-- Who gets the Monday digest: everyone holding an active admin or core appointment today, so the whole core team knows
+-- what happened, not just the admins.
+create or replace function team_emails() returns table (email text)
+language sql security definer stable set search_path = public, pg_temp as $$
+  select distinct p.email from profiles p join appointments a on a.user_id = p.id
+   where a.role in ('admin','core') and a.revoked_at is null and a.starts_on <= today_ist() and a.ends_on >= today_ist() and p.email is not null
+$$;
+
 -- First admin (or a replacement when none is left): run once in the Supabase SQL editor after that person has signed in
 -- at /admin, e.g. select bootstrap_admin('your-handle', '2027-06-30'); — `npm run connect -- admin <handle> <until>` does the same.
 create or replace function bootstrap_admin(p_handle text, p_ends_on date)
@@ -769,8 +777,8 @@ end $$;
 
 revoke execute on function grant_appointment(text, text, text, date), end_appointment(bigint, text), set_role(text, text), list_people() from public, anon;
 grant execute on function grant_appointment(text, text, text, date), end_appointment(bigint, text), set_role(text, text), list_people() to authenticated;
-revoke execute on function appointment_warnings(), admin_emails(), bootstrap_admin(text, date) from public, anon, authenticated;
-grant execute on function appointment_warnings(), admin_emails(), bootstrap_admin(text, date) to service_role;
+revoke execute on function appointment_warnings(), admin_emails(), team_emails(), bootstrap_admin(text, date) from public, anon, authenticated;
+grant execute on function appointment_warnings(), admin_emails(), team_emails(), bootstrap_admin(text, date) to service_role;
 
 -- Admins put a volunteer on a booth (or take them off it with an empty booth). What a volunteer can do follows:
 -- with a booth, scan wallets and reverse recent scans there; without one, ticket check-in at the desk.

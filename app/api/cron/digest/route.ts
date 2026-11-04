@@ -48,10 +48,12 @@ export async function GET(req: Request) {
   const digest = buildDigest({ signups, messages: m.data ?? [], feedback: f.data ?? [], access: w.error ? undefined : w.data, tasks: tw.error ? undefined : tw.data, assets: aw.error ? undefined : aw.data, policies: pw.error ? undefined : pw.data }, now);
   if (!digest) return json({ ok: true, sent: 0, skipped: "Nothing happened this week." });
 
-  // admins are whoever holds an active admin appointment today (appointment_admin_emails), not the profile's role copy
-  const admins = process.env.ORGANISER_EMAILS?.trim() ? [] : ((await db.rpc("admin_emails")).data ?? []) as { email: string | null }[];
-  const to = digestRecipients(process.env.ORGANISER_EMAILS, admins);
-  if (!to.length) return json({ ok: true, sent: 0, skipped: "No organiser email to send to (set ORGANISER_EMAILS, or make someone admin)." });
+  // the admins and the core team: whoever holds an active admin or core appointment today, not the profile's role copy.
+  // Before supabase/schema.sql is re-run, team_emails doesn't exist yet, so it falls back to the admins alone.
+  let team = await db.rpc("team_emails");
+  if (team.error) { console.error("digest: team_emails failed (is supabase/schema.sql up to date?):", team.error.message); team = await db.rpc("admin_emails"); }
+  const to = digestRecipients(process.env.ORGANISER_EMAILS, (team.data ?? []) as { email: string | null }[]);
+  if (!to.length) return json({ ok: true, sent: 0, skipped: "No organiser email to send to (make someone admin or core, or set ORGANISER_EMAILS)." });
   const mail = digestEmail(digest, SITE_URL);
   const results = await Promise.all(to.map((t) => sendEmail(t, mail)));
   const sent = results.filter((r) => r.sent).length;

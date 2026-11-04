@@ -212,7 +212,7 @@ export function digestEmail(d: Digest, site: string): Mail {
 <p style="margin:0 0 14px;color:#59636e;font-family:ui-monospace,Menlo,monospace;font-size:14px">${esc(week)}</p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>
 ${button(admin, "Open the organiser dashboard")}
-<p style="margin-bottom:0;color:#59636e;font-size:14px">Sent every Monday to organisers, only when something happened or someone&#39;s access needs attention.</p>`, site);
+<p style="margin-bottom:0;color:#59636e;font-size:14px">Sent every Monday to the admins and core team, only when something happened or someone&#39;s access needs attention.</p>`, site);
   const text = [`The club's week (${week})`, "", ...lines.map(([k, v]) => `${k}\n  ${v}`), "", `Organiser dashboard: ${admin}`].join("\n");
   return { subject: `Club week: ${digestHeadline(d)}`, html, text };
 }

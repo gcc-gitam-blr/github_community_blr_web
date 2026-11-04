@@ -63,8 +63,8 @@ ok("a policy past its review date makes a digest, and the email names it", !!pol
 // who gets it
 const admins = [{ email: "Lead@Gitam.in" }, { email: null }, { email: "lead@gitam.in" }, { email: "second@gitam.in" }];
 ok("without ORGANISER_EMAILS, every admin with an email gets it once", digestRecipients(undefined, admins).join() === "lead@gitam.in,second@gitam.in");
-ok("ORGANISER_EMAILS replaces the admin list (commas or spaces, junk dropped)", digestRecipients(" a@gitam.in, b@gitam.in  nope ", admins).join() === "a@gitam.in,b@gitam.in");
-ok("an empty ORGANISER_EMAILS falls back to the admins", digestRecipients("  ", admins).length === 2);
+ok("ORGANISER_EMAILS adds to the team list (commas or spaces, junk dropped, nobody twice)", digestRecipients(" a@gitam.in, LEAD@gitam.in  nope ", admins).join() === "a@gitam.in,lead@gitam.in,second@gitam.in");
+ok("an empty ORGANISER_EMAILS just sends to the team", digestRecipients("  ", admins).length === 2);
 
 // the email
 const mail = digestEmail(d, "https://example.org");

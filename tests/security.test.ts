@@ -53,7 +53,7 @@ const EXPECTED: Record<string, string[]> = {
   set_idea_status: SIGNED_IN, request_to_join: SIGNED_IN, withdraw_request: SIGNED_IN, decide_request: SIGNED_IN, leave_project: SIGNED_IN, remove_project_member: SIGNED_IN,
   set_project_owner: SIGNED_IN, set_public_credit: SIGNED_IN, request_publishing: SIGNED_IN, decide_publishing: SIGNED_IN, unpublish_project: SIGNED_IN, public_projects: SERVER,
   my_board_status: SIGNED_IN, set_board_opt_in: SIGNED_IN, board_members: SERVER, // the board opt-in
-  sync_profile_roles: SERVER, appointment_warnings: SERVER, admin_emails: SERVER, bootstrap_admin: SERVER, // the weekly digest, and the first admin from the SQL editor
+  sync_profile_roles: SERVER, appointment_warnings: SERVER, admin_emails: SERVER, team_emails: SERVER, bootstrap_admin: SERVER, // the weekly digest, and the first admin from the SQL editor
   booth_tx: NOBODY, log_action: NOBODY, bump_leaderboard: NOBODY, // internal: other functions and triggers only
   my_role: ANYONE, // used by row-level-security policies, so every role must be able to run it; it only ever answers about the caller
   // public by design: a certificate is verified by its unguessable id; browser error reports are capped at 2000 a day
