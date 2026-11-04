@@ -7,7 +7,10 @@ import { exportSignups } from "@/lib/admin/client";
 import { csvCell } from "@/lib/admin/members";
 import { CLUB } from "@/lib/config";
 import { KINDS } from "@/lib/contact";
-import { TO_WRITE } from "@/lib/newsletter";
+import { NOTE_MAX, newsletterEmail } from "@/lib/newsletter";
+import { LESSONS, lessonOfTheWeek } from "@/lib/lessons";
+import { todayInIndia } from "@/lib/events";
+import { SITE_URL } from "@/lib/site";
 import { clubStats } from "@/lib/stats";
 import type { Audience, ClubMessage, EventFeedback, JoinRequest } from "@/lib/epoch/types";
 import { Note, btn, btnSoft, card, count, head, input } from "./kit";
@@ -108,24 +111,28 @@ export function SignUps() {
   const [sending, setSending] = useState(false); const [result, setResult] = useState<{ k: "ok" | "err"; t: string } | null>(null);
   const [audience, setAudience] = useState<Audience>("members");
   const [waiting, setWaiting] = useState<number | null>(null);
-  const [drafting, setDrafting] = useState(false);
-  // fills the form with this week's newsletter; nothing is sent until Send, and not while the [[ ]] part is unwritten
-  const draft = async () => {
-    setDrafting(true); setResult(null);
-    try { const d = await (await fetch("/api/newsletter")).json(); setSubject(d.subject); setMessage(d.message); }
-    catch { setResult({ k: "err", t: "Couldn't build the draft. Try again." }); }
-    setDrafting(false);
-  };
-  const unwritten = TO_WRITE.test(message);
+  // the weekly newsletter is the usual email; "write your own" is for the odd announcement
+  const [mode, setMode] = useState<"lesson" | "own">("lesson");
+  const today = todayInIndia(), thisWeek = lessonOfTheWeek(today).slug;
+  const [lesson, setLesson] = useState(thisWeek); const [note, setNote] = useState("");
+
+  // the preview is built exactly as each person's copy is, with your name in the greeting
+  const preview = useMemo(() => newsletterEmail({ lesson, note, name: me?.name, today, site: SITE_URL, unsubscribe: "#", audience }).html, [lesson, note, me?.name, today, audience]);
   useEffect(() => { if (me?.role === "admin") void store?.epochInterestCount?.().then(setWaiting); }, [store, me?.role]);
   const people = audience === "epoch" ? waiting ?? 0 : rows?.length ?? 0;
+  const chosen = LESSONS.find((l) => l.slug === lesson) ?? LESSONS[0];
   const [ask, dialog] = useConfirm();
-  const send = async () => {
+  const ready = mode === "lesson" ? note.length <= NOTE_MAX : subject.trim().length >= 3 && message.trim().length >= 10;
+  const send = async (test = false) => {
     if (!store?.broadcast) return;
-    if (!(await ask({ title: `Email ${people} ${people === 1 ? "person" : "people"}?`, body: <>Subject: <b>{subject || "(no subject)"}</b>. Emails can&apos;t be called back once they&apos;re sent.</>, yes: `Send to ${people}` }))) return;
+    const title = mode === "lesson" ? chosen.subject : subject || "(no subject)";
+    if (!test && !(await ask({ title: `Email ${people} ${people === 1 ? "person" : "people"}?`, body: <>Subject: <b>{title}</b>. Emails can&apos;t be called back once they&apos;re sent.</>, yes: `Send to ${people}` }))) return;
     setSending(true); setResult(null);
-    const r = await store.broadcast(subject, message, audience); setSending(false);
-    if (r.ok) { setResult({ k: "ok", t: `Sent to ${r.sent} of ${r.total}${r.failed ? ` (${r.failed} failed)` : ""}.` }); setSubject(""); setMessage(""); } else setResult({ k: "err", t: r.error });
+    const r = await store.broadcast(subject, message, audience, { ...(mode === "lesson" ? { lesson, note } : {}), ...(test ? { test: true } : {}) }); setSending(false);
+    if (!r.ok) return setResult({ k: "err", t: r.error });
+    if (test) return setResult({ k: "ok", t: "Sent a test to your own email. Check how it looks on your phone." });
+    setResult({ k: "ok", t: `Sent to ${r.sent} of ${r.total}${r.failed ? ` (${r.failed} failed)` : ""}.` });
+    setSubject(""); setMessage(""); setNote("");
   };
   const csv = async () => {
     const list = await exportSignups(); // goes through a database function, so every download is recorded in the audit log
@@ -142,10 +149,10 @@ export function SignUps() {
         <section className={card} aria-labelledby="email-h">
           <div className={head}><h2 id="email-h" className="text-[18px]">Email everyone</h2><span className="text-[13.5px] text-ink-3">Only people who haven&apos;t unsubscribed; every email carries an unsubscribe link</span></div>
           <div className="space-y-4 p-5">
-            <div className="flex flex-wrap items-center gap-2 rounded-md bg-soft p-3">
-              <span className="text-[14px] font-semibold">Weekly newsletter</span>
-              <button type="button" onClick={draft} disabled={drafting} className={btnSoft}>{drafting ? "Drafting…" : "Draft this week's"}</button>
-              <span className="text-[13px] text-ink-3">Fills the form with this week&apos;s events, last week&apos;s recaps, news, a Git command and what GitHub shipped. Write the part in [[ ]], read it through, then send. Sunday evening or Monday morning works best.</span>
+            <div role="tablist" aria-label="What to send" className="inline-flex rounded-full border border-line p-1">
+              {([["lesson", "Weekly lesson"], ["own", "Write your own"]] as const).map(([id, l]) => (
+                <button key={id} type="button" role="tab" aria-selected={mode === id} onClick={() => { setMode(id); setResult(null); }} className={`rounded-full px-4 py-1.5 text-[13.5px] transition-colors duration-150 ${mode === id ? "bg-ink font-semibold text-white" : "text-ink-2 hover:text-ink"}`}>{l}</button>
+              ))}
             </div>
             <fieldset className="flex flex-wrap gap-2">
               <legend className="mb-2 text-[14px] font-semibold">Who gets it</legend>
@@ -155,11 +162,33 @@ export function SignUps() {
                 </label>
               ))}
             </fieldset>
-            <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject, e.g. Tue 3 Nov: Open Source Unlocked" className={input} aria-label="Subject" maxLength={120} />
-            <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder={"Write your message. A blank line starts a new paragraph; links become clickable."} rows={7} className={input} aria-label="Message" maxLength={5000} />
+            {mode === "lesson" ? (
+              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
+                <div className="space-y-4">
+                  <p className="text-[14px] text-ink-2">&ldquo;Git in 60 seconds&rdquo;: one short lesson a week, with what&apos;s next at the club at the bottom. Each copy greets the person by name. Sunday evening or Monday morning works best.</p>
+                  <label className="block"><span className="mb-1.5 block text-[14px] font-semibold">Lesson</span>
+                    <select value={lesson} onChange={(e) => setLesson(e.target.value)} className={input}>
+                      {LESSONS.map((l, n) => <option key={l.slug} value={l.slug}>No. {n + 1}: {l.subject}{l.slug === thisWeek ? " (this week's)" : ""}</option>)}
+                    </select>
+                  </label>
+                  <label className="block"><span className="mb-1.5 block text-[14px] font-semibold">A note from the team <span className="font-normal text-ink-3">(optional, shows under the greeting)</span></span>
+                    <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} maxLength={NOTE_MAX} className={input} placeholder="Open Source Unlocked is on Tuesday. Bring a laptop!" />
+                  </label>
+                  <p className="text-[13px] text-ink-3">Events come from the calendar by themselves: this week&apos;s, or else the next one. Poll replies land in the club inbox.</p>
+                </div>
+                <div>
+                  <p className="mb-1.5 text-[14px] font-semibold">Preview <span className="font-normal text-ink-3">(what each person gets)</span></p>
+                  <iframe title="Newsletter preview" srcDoc={preview} sandbox="" className="h-[640px] w-full rounded-md border border-line bg-soft" />
+                </div>
+              </div>
+            ) : (<>
+              <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject, e.g. Tue 3 Nov: Open Source Unlocked" className={input} aria-label="Subject" maxLength={120} />
+              <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder={"Write your message. A blank line starts a new paragraph; links become clickable."} rows={7} className={input} aria-label="Message" maxLength={5000} />
+            </>)}
             <div className="flex flex-wrap items-center gap-3">
-              <button disabled={sending || unwritten || subject.trim().length < 3 || message.trim().length < 10} onClick={send} className={btn}>{sending ? "Sending…" : `Send to ${people} ${people === 1 ? "person" : "people"}`}</button>
-              {unwritten ? <p className="text-[13.5px] text-ink-2">Fill in or delete the part in <b>[[ ]]</b> to send.</p> : <Note note={result} />}
+              <button disabled={sending || !ready} onClick={() => void send()} className={btn}>{sending ? "Sending…" : `Send to ${people} ${people === 1 ? "person" : "people"}`}</button>
+              <button disabled={sending || !ready} onClick={() => void send(true)} className={btnSoft}>Send me a test</button>
+              <Note note={result} />
             </div>
           </div>
         </section>

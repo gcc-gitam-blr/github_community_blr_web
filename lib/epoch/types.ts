@@ -109,7 +109,8 @@ export interface EpochStore {
   /** staff, live (Supabase) mode only: "Get involved" messages */
   messages?(): Promise<ClubMessage[]>;
   /** admin, live mode only: email every subscribed sign-up, or everyone waiting for the Epoch dates */
-  broadcast?(subject: string, message: string, audience?: Audience): Promise<Result<{ sent: number; failed: number; total: number }>>;
+  /** A message the admin wrote, or (with `lesson`) the weekly newsletter, where subject and message are ignored. `test` sends one copy to the admin only. */
+  broadcast?(subject: string, message: string, audience?: Audience, newsletter?: { lesson?: string; note?: string; test?: boolean }): Promise<Result<{ sent: number; failed: number; total: number }>>;
   /** admin, live mode only: how many people are waiting for the Epoch dates (and haven't unsubscribed) */
   epochInterestCount?(): Promise<number | null>;
 }

@@ -185,11 +185,11 @@ export const supabaseStore: EpochStore = {
     return error ? null : count ?? 0;
   },
 
-  async broadcast(subject, message, audience = "members") {
+  async broadcast(subject, message, audience = "members", newsletter) {
     const { data: { session } } = await sb().auth.getSession();
     if (!session) return fail("Sign in first.");
     try {
-      const r = await fetch("/api/broadcast", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ subject, message, audience }) });
+      const r = await fetch("/api/broadcast", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ subject, message, audience, ...newsletter }) });
       const j = await r.json();
       return j.ok ? { ok: true, sent: j.sent, failed: j.failed, total: j.total } : fail(j.error ?? "Couldn't send.");
     } catch { return fail("Network error. Nothing was sent."); }

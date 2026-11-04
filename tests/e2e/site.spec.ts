@@ -366,13 +366,12 @@ test("My club explains itself when sign-in isn't switched on, and stays out of s
   expect(await page.locator('meta[name="robots"]').getAttribute("content")).toContain("noindex");
 });
 
-test("the newsletter draft comes from the site's own content", async ({ request }) => {
-  const d = await (await request.get("/api/newsletter")).json();
-  expect(d.today).toMatch(/^\d{4}-\d{2}-\d{2}$/); // this week's, from today in India
-  expect(d.subject).toMatch(/ · GitHub Community Club$/);
-  expect(d.message).toContain("ONE GIT COMMAND");
-  expect(d.message).toMatch(/\[\[[\s\S]+\]\]/); // the part an organiser writes before it can be sent
-  expect(d.message).toContain("See you soon");
+test("sending the newsletter needs an admin's sign-in, even for a test copy", async ({ request }) => {
+  for (const data of [{ lesson: "branches" }, { lesson: "branches", test: true }, { subject: "Hello there", message: "A message to everyone." }]) {
+    const r = await request.post("/api/broadcast", { data });
+    expect([401, 503]).toContain(r.status()); // 503: the test build has no database; with one, 401 without a login
+    expect((await r.json()).ok).toBe(false);
+  }
 });
 
 test("adding photos asks for the editor login first, and the upload API refuses without it", async ({ page, request }) => {
