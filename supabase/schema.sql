@@ -2402,17 +2402,23 @@ create or replace function domain_list() returns text[] language sql immutable s
   select array['web','mobile','ai-ml','data','cloud-devops','security','game-dev','design-ux','open-source','hardware-iot','other']
 $$;
 
--- Tidy a list of tags (skills): lower-case, trimmed, no repeats, 2 to 24 characters of letters, digits and + # . - space.
+-- Tidy a list of tags (skills) and keep them; this never refuses. Same rules as skillCheck in lib/projects.ts: lower-case, "/" "&" "|"
+-- become spaces, other symbols are dropped, at most 40 characters each (so "c", "r", "c++" and long phrases all work), no repeats,
+-- and only the first p_max are kept (the form tells people when that happens).
 create or replace function clean_tags(p_in text[], p_max int) returns text[] language plpgsql immutable set search_path = pg_catalog as $$
 declare t text; out text[] := '{}';
 begin
   foreach t in array coalesce(p_in, '{}') loop
-    t := lower(btrim(t));
-    if t = '' then continue; end if;
-    if t !~ '^[a-z0-9][a-z0-9+#. -]{1,23}$' then raise exception 'bad tag'; end if;
-    if not (t = any(out)) then out := out || t; end if;
+    t := lower(btrim(coalesce(t, '')));
+    t := regexp_replace(t, '[/&|]', ' ', 'g');
+    t := regexp_replace(t, '[^a-z0-9+#. -]', '', 'g');
+    t := regexp_replace(t, '\s+', ' ', 'g');
+    t := regexp_replace(t, '^[^a-z0-9.]+', '');
+    t := regexp_replace(left(t, 40), '[ .-]+$', '');
+    if t = '' or t = any(out) then continue; end if;
+    out := out || t;
+    exit when cardinality(out) >= p_max;
   end loop;
-  if cardinality(out) > p_max then raise exception 'too many tags'; end if;
   return out;
 end $$;
 
@@ -2497,7 +2503,7 @@ declare d text[]; s text[]; w text := nullif(trim(coalesce(p_wants, '')), '');
 begin
   if not can_take_part() then return json_build_object('ok', false, 'error', 'The project hub is for active members of the club.'); end if;
   begin d := clean_domains(p_domains, 1, 5); exception when others then return json_build_object('ok', false, 'error', 'Pick between 1 and 5 areas from the list.'); end;
-  begin s := clean_tags(p_skills, 8); exception when others then return json_build_object('ok', false, 'error', 'Add up to 8 skills, each 2 to 24 characters (letters, numbers, + # . -).'); end;
+  s := clean_tags(p_skills, 8);
   if w is not null and (length(w) > 280 or looks_like_secret(w)) then return json_build_object('ok', false, 'error', 'Keep "what I''d like to build" under 280 characters, and no passwords or keys.'); end if;
   if p_hours is not null and p_hours not in ('1-2','3-5','6+') then return json_build_object('ok', false, 'error', 'Pick how many hours a week.'); end if;
   insert into member_interests (user_id, domains, skills, wants, hours, discoverable) values (auth.uid(), d, s, w, p_hours, coalesce(p_discoverable, false))
@@ -2556,7 +2562,7 @@ begin
   if not can_take_part() then return json_build_object('ok', false, 'error', 'The project hub is for active members of the club.'); end if;
   if coalesce(p_club, false) and my_role() not in ('core','admin') then return json_build_object('ok', false, 'error', 'Only the core team posts club projects.'); end if;
   begin d := clean_domains(p_domains, 1, 3); exception when others then return json_build_object('ok', false, 'error', 'Pick between 1 and 3 areas from the list.'); end;
-  begin s := clean_tags(p_skills, 8); exception when others then return json_build_object('ok', false, 'error', 'Add up to 8 skills, each 2 to 24 characters (letters, numbers, + # . -).'); end;
+  s := clean_tags(p_skills, 8);
   if p_team_size is not null and p_team_size not between 2 and 12 then return json_build_object('ok', false, 'error', 'A team is 2 to 12 people.'); end if;
   if p_team_size is null and not coalesce(p_club, false) then return json_build_object('ok', false, 'error', 'Say how many people you need (2 to 12).'); end if;
   if looks_like_secret(sm) or looks_like_secret(p_title) then return json_build_object('ok', false, 'error', 'That looks like a password, key or token. Never post those.'); end if;
@@ -2578,7 +2584,7 @@ begin
   if not found or not can_take_part() or p.owner_id is distinct from auth.uid() then return json_build_object('ok', false, 'error', 'Only the owner can edit a project.'); end if;
   if p.status = 'archived' then return json_build_object('ok', false, 'error', 'An archived project can''t be edited.'); end if;
   begin d := clean_domains(p_domains, 1, 3); exception when others then return json_build_object('ok', false, 'error', 'Pick between 1 and 3 areas from the list.'); end;
-  begin s := clean_tags(p_skills, 8); exception when others then return json_build_object('ok', false, 'error', 'Add up to 8 skills, each 2 to 24 characters (letters, numbers, + # . -).'); end;
+  s := clean_tags(p_skills, 8);
   if p_team_size is not null and p_team_size not between 2 and 12 then return json_build_object('ok', false, 'error', 'A team is 2 to 12 people.'); end if;
   if p_team_size is null and p.origin = 'member' then return json_build_object('ok', false, 'error', 'Say how many people you need (2 to 12).'); end if;
   if p_team_size is not null and p_team_size < (select count(*) from project_members where project_id = p_id) then return json_build_object('ok', false, 'error', 'The team already has more people than that.'); end if;
