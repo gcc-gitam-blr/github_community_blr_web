@@ -284,6 +284,13 @@ Epoch has **no passwords** — attendees sign in with GitHub — so there is no 
 
 Gmail allows about 500 emails a day; the broadcast stops at 450 per send. For bigger lists, use Resend with a verified domain (`RESEND_API_KEY`).
 
+**Staying out of spam.** A burst of near-identical emails from one Gmail account is what spam filters catch, so the
+newsletter, announcements and certificates all go out **one at a time, 4 to 8 seconds apart** (`lib/email/paced.ts`):
+about 10 minutes per 100 people, with the admin page open. Each address is recorded the moment its email goes, so a
+send that stops (a closed tab, the daily limit) carries on with **Continue sending** and nobody gets two. The emails
+themselves are kept plain on purpose: a complete page, a plain-text copy, no outside stylesheets, few links, and
+links that show where they go (`tests/email-hygiene.test.ts` checks every one). `EMAIL_GAP_MS` changes the pause.
+
 **If emails stop sending,** the admin says why when you press send. The usual one is *"Gmail refused the login"*: the App Password was cancelled, which Google does when the account's password changes or 2-Step Verification is turned off. Make a new one at <https://myaccount.google.com/apppasswords>, replace `SMTP_PASS` in Vercel (and in `.env.local`), and redeploy. Nothing is sent twice: people who already got their certificate are remembered, so pressing *Email certificates* again sends only the rest.
 Without any of these settings the site works normally and just doesn't send email.
 
