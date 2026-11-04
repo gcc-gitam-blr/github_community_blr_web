@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { deleteInterests, myInterests, saveInterests, summary, type Summary } from "@/lib/hub/client";
-import { DOMAINS, HOURS, LIMITS, domainLabel, parseSkills, skillsText } from "@/lib/projects";
+import { DOMAINS, HOURS, LIMITS, domainLabel, skillCheck, skillsText } from "@/lib/projects";
 import { AreaPicker, Notice, btn, field, linkBtn, type Say } from "./bits";
 
 /* "What I'm into": the interest survey. Answers are private: the core team uses them to plan projects, and other members
@@ -23,9 +23,9 @@ export function Interests({ uid }: { uid: string }) {
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault(); setSay(null);
-    const sk = parseSkills(skills);
+    const chk = skillCheck(skills), sk = chk.skills;
     if (!domains.length) return setSay({ k: "err", t: "Pick at least one area you like." });
-    if (!sk) return setSay({ k: "err", t: `Skills: up to ${LIMITS.skills}, separated by commas, each 2 to ${LIMITS.skillMax} characters (letters, numbers, + # . -).` });
+    if (!sk) return setSay({ k: "err", t: `Skills: ${chk.problem}` });
     setBusy(true); const r = await saveInterests({ domains, skills: sk, wants: wants.trim() || null, hours: hours || null, discoverable: found }); setBusy(false);
     setSay(r.ok ? { k: "ok", t: "Saved. Thank you: this helps us choose projects the whole club can build." } : { k: "err", t: r.error });
     if (r.ok) { setSaved(true); setSum(await summary()); }

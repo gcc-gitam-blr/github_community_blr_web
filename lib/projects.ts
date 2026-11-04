@@ -23,14 +23,19 @@ export const LIMITS = { domainsMember: 5, domainsIdea: 3, skills: 8, skillMax: 2
 
 /** Skills as typed ("React, node.js ,  Python") → tidy tags, in the same shape the database accepts. Returns null if one is not allowed. */
 export function parseSkills(text: string): string[] | null {
+  return skillCheck(text).skills;
+}
+/** Tidies each skill the way people type them ("Problem  Solving.", "UI/UX", "R&D") and says which one is still not allowed. */
+export function skillCheck(text: string): { skills: string[] | null; problem?: string } {
   const out: string[] = [];
-  for (const raw of text.split(/[,\n]/)) {
-    const t = raw.trim().toLowerCase();
+  for (const raw of text.split(/[,;\n]/)) {
+    const t = raw.toLowerCase().replace(/[/&|]/g, " ").replace(/[^a-z0-9+#. -]/g, "").replace(/\s+/g, " ").replace(/^[^a-z0-9]+/, "").replace(/[ .-]+$/, "");
     if (!t) continue;
-    if (!/^[a-z0-9][a-z0-9+#. -]{1,23}$/.test(t)) return null;
+    if (t.length < 2) return { skills: null, problem: `"${raw.trim()}" is too short: write at least 2 characters (for example "c++").` };
+    if (t.length > LIMITS.skillMax) return { skills: null, problem: `"${raw.trim().slice(0, 30)}..." is too long: keep each skill to ${LIMITS.skillMax} characters and separate skills with commas.` };
     if (!out.includes(t)) out.push(t);
   }
-  return out.length <= LIMITS.skills ? out : null;
+  return out.length <= LIMITS.skills ? { skills: out } : { skills: null, problem: `That's ${out.length} skills: pick your best ${LIMITS.skills}.` };
 }
 export const skillsText = (skills: string[]) => skills.join(", ");
 /** A project repository must be a github.com/owner/repo address. */

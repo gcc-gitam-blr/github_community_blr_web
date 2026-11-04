@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { DOMAINS, LIMITS, REPO_RE, domainLabel, parseSkills, skillsText } from "@/lib/projects";
+import { DOMAINS, LIMITS, REPO_RE, domainLabel, skillCheck, skillsText } from "@/lib/projects";
 import type { Idea, IdeaFields } from "@/lib/hub/client";
 
 /* Small pieces the project hub (members) and Admin → Projects (core team) share. Flat, like the rest of the site. */
@@ -46,11 +46,11 @@ export function IdeaForm({ initial, club = false, busy, submit, cancel }: { init
   const [err, setErr] = useState("");
   const go = async (e: React.FormEvent) => {
     e.preventDefault(); setErr("");
-    const sk = parseSkills(skills);
+    const chk = skillCheck(skills), sk = chk.skills;
     if (title.trim().length < 3) return setErr("Give it a title of at least 3 characters.");
     if (summary.trim().length < 10) return setErr("Describe it in a sentence or two (at least 10 characters).");
     if (!domains.length) return setErr("Pick at least one area.");
-    if (!sk) return setErr(`Skills: up to ${LIMITS.skills}, separated by commas, each 2 to ${LIMITS.skillMax} characters (letters, numbers, + # . -).`);
+    if (!sk) return setErr(`Skills: ${chk.problem}`);
     const n = size.trim() === "" ? null : Number(size);
     if (n === null && !club) return setErr("Say how many people you need (2 to 12).");
     if (n !== null && !(Number.isInteger(n) && n >= LIMITS.teamMin && n <= LIMITS.teamMax)) return setErr("A team is 2 to 12 people.");

@@ -47,7 +47,7 @@ const members = async (pid: number) => (await db.query<{ user_id: string; role: 
 
   // ---- the lists agree ----
   ok("the areas in the app are the areas in the database", JSON.stringify((await one<{ d: string[] }>("select domain_list() d")).d) === JSON.stringify(DOMAINS.map((d) => d.id)));
-  ok("skills typed by people are tidied the way the database expects", JSON.stringify(parseSkills(" React, node.js ,  Python,react")) === JSON.stringify(["react", "node.js", "python"]) && parseSkills("a") === null && parseSkills("bad/skill") === null && parseSkills("1a,2b,3c,4d,5e,6f,7g,8h,9i") === null);
+  ok("skills typed by people are tidied the way the database expects", JSON.stringify(parseSkills(" React, node.js ,  Python,react")) === JSON.stringify(["react", "node.js", "python"]) && parseSkills("a") === null && parseSkills("bad/skill")?.[0] === "bad skill" && parseSkills("Problem  solving.")?.[0] === "problem solving" && parseSkills("1a,2b,3c,4d,5e,6f,7g,8h,9i") === null);
   ok("a repository link must be a github.com address", REPO_RE.test("https://github.com/gcc-gitam-blr/club-site") && !REPO_RE.test("https://gitlab.com/a/b") && !REPO_RE.test("http://github.com/a/b") && !REPO_RE.test("https://github.com/a"));
 
   // ---- who takes part ----
