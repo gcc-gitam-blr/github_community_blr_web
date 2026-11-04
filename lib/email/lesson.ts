@@ -4,9 +4,9 @@ import { LESSONS, type Lesson, type Line } from "../lessons";
 import { esc, type Mail } from "./templates";
 
 /* The weekly newsletter, as a one-minute lesson: a puzzle, a pause, the problem, the fix, one habit, a one-tap question,
-   then what's next at the club. It wears the site's own look: the same palette, Mona Sans and JetBrains Mono where the
-   email app loads web fonts, and the commit-graph nodes from the site's menu, so each part of the lesson reads like a
-   commit on a branch. Inline styles and tables only (email apps ignore stylesheets). The pictures are the club's Octodex
+   then what's next at the club. It wears the site's own look: the same palette, Mona Sans and JetBrains Mono where
+   they're installed (no web-font download: an outside stylesheet counts against an email in spam filters), and the
+   commit-graph nodes from the site's menu, so each part of the lesson reads like a commit on a branch. Inline styles and tables only (email apps ignore stylesheets). The pictures are the club's Octodex
    stickers, loaded from the site; where an app doesn't show images, their alt text stands in. */
 export interface AgendaItem { when: string; title: string; where?: string; url: string }
 export interface LessonInput {
@@ -122,7 +122,7 @@ ${agenda}
   const graph = `${dot(T.blue)}<span style="display:inline-block;width:18px;height:2px;background:${T.line};vertical-align:middle;margin:0 3px"></span>${dot(T.purpleNode)}<span style="display:inline-block;width:18px;height:2px;background:${T.line};vertical-align:middle;margin:0 3px"></span>${dot(T.mint)}<span style="display:inline-block;width:18px;height:2px;background:${T.line};vertical-align:middle;margin:0 3px"></span>${dot(T.brand)}`;
 
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Mona+Sans:wght@400;700;800&display=swap" rel="stylesheet"><title>${esc(l.subject)}</title></head>
+<title>${esc(l.subject)}</title></head>
 <body style="margin:0;padding:0;background:${T.soft};font-family:${SANS};color:${T.ink};-webkit-text-size-adjust:100%">
 <span style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${esc(l.preheader)}</span>
 ${table(`<tr><td align="center" style="padding:24px 12px">

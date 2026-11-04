@@ -11,7 +11,8 @@ export const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", 
 const GREEN = "#2ea043", INK = "#0b0b0f";
 
 function frame(preheader: string, inner: string, site: string, unsubscribe?: string, why?: string) {
-  return `<!doctype html><html><body style="margin:0;background:#f6f8fa;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:${INK}">
+  // a complete page (character set, title, language): spam filters score emails with a broken or missing head
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(preheader)}</title></head><body style="margin:0;background:#f6f8fa;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:${INK}">
 <span style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(preheader)}</span>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:28px 12px">
 <table role="presentation" width="100%" style="max-width:560px;background:#fff;border:1px solid #d0d7de;border-radius:12px" cellpadding="0" cellspacing="0">
