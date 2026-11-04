@@ -1,4 +1,4 @@
-import { validateJoin, type JoinInput, type JoinResult } from "@/lib/join";
+import { tidyName, validateJoin, type JoinInput, type JoinResult } from "@/lib/join";
 import { sendEmail } from "@/lib/email/send";
 import { welcomeEmail } from "@/lib/email/templates";
 import { finishUrl, tokenFor, unsubscribeApiUrl, unsubscribeUrl } from "@/lib/email/token";
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   const db = serverDb();
   if (!db) return reply({ ok: false, error: "Sign-ups are not connected yet.", fallback: true }, 503);
 
-  const email = input.email.trim().toLowerCase(), name = input.name.trim();
+  const email = input.email.trim().toLowerCase(), name = tidyName(input.name);
   const { data, error } = await db.rpc("join_club", { p_name: name, p_email: email });
   if (error) return reply({ ok: false, error: "Couldn't save that. Please try again.", fallback: true }, 502);
   if (data === "busy") return reply({ ok: false, error: "Lots of sign-ups right now. Please try again in a little while.", fallback: true }, 429);

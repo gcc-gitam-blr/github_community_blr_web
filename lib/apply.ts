@@ -41,7 +41,7 @@ export function basicProblem(i: ApplyInput): string | null {
   if (i.elapsedMs !== undefined && i.elapsedMs < MIN_FILL_MS) return TOO_FAST; // said, not dropped: a fast human just sends again
   if (!Number.isInteger(i.campaign) || i.campaign < 1) return "Applications aren't open right now.";
   const name = (i.name ?? "").trim();
-  if (name.length < 2 || name.length > 80) return "Please enter your name.";
+  if (!name) return "Please enter your name.";
   if (!EMAIL_RE.test((i.email ?? "").trim())) return "That email doesn't look right.";
   if (!HANDLE_RE.test(cleanHandle(i.handle ?? ""))) return "Add your GitHub username: we look at it when choosing the team.";
   return null;

@@ -27,7 +27,7 @@ ok("without a check-in column, approved guests are used — and the import says 
 ok("a CSV that isn't a guest list gives nothing", fromLumaCsv("foo,bar\n1,2\n").attendees.length === 0);
 
 ok("typing a person by hand", JSON.stringify(fromLine("Ada Lovelace, Ada@gitam.in, @ada-l")) === JSON.stringify({ name: "Ada Lovelace", email: "ada@gitam.in", handle: "ada-l" }));
-ok("a bad line is refused", fromLine("Ada") === null && fromLine("A, ada@gitam.in") === null && fromLine("Ada, not-an-email") === null);
+ok("a bad line is refused", fromLine("Ada") === null && fromLine("A, ada@gitam.in")?.name === "A." && fromLine(", ada@gitam.in") === null && fromLine("Ada, not-an-email") === null);
 ok("GitHub handles are checked", githubHandle("github.com/ok-name") === undefined && githubHandle("https://github.com/ok-name/repo") === "ok-name" && githubHandle("-bad") === undefined);
 
 if (fails) { console.log(`${fails} attendance check(s) failed`); process.exit(1); }

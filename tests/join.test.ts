@@ -1,6 +1,6 @@
 /* Joining the club: name and email first, the GitHub username and first event later. The shared checks and the
    /api/join and /api/join/more endpoints (called directly, no server needed). */
-import { cleanHandle, validateJoin, validateMore } from "../lib/join";
+import { cleanHandle, tidyName, validateJoin, validateMore } from "../lib/join";
 import { CLUB } from "../lib/config";
 import { tokenFor } from "../lib/email/token";
 
@@ -18,7 +18,7 @@ const req = (path: string, body: unknown, ip = "1.1.1.1") => new Request(`http:/
   // ---- step 1: a name and an email ----
   ok("a name and an email is a complete sign-up", validateJoin(good) === null);
   ok("no GitHub username or event is needed to join", validateJoin({ name: "Ada", email: "ada@gitam.in" }) === null);
-  ok("a one-letter name or a bad email is refused, with a friendly reason", validateJoin({ ...good, name: "A" }) === "What should we call you?" && validateJoin({ ...good, email: "ada@" }) !== null);
+  ok("a one-letter name is fine (stored as \"A.\"); an empty name or a bad email is refused, with a friendly reason", validateJoin({ ...good, name: "A" }) === null && tidyName("A") === "A." && tidyName("  Ada   Lovelace ") === "Ada Lovelace" && tidyName("x".repeat(200)).length === 80 && validateJoin({ ...good, name: "  " }) === "What should we call you?" && validateJoin({ ...good, email: "ada@" }) !== null);
   ok("a filled honeypot is spam", validateJoin({ ...good, website: "http://spam" }) === "spam");
   ok("a browser that fills both fields and a person who presses Join at once is a person, not a bot (timing is no longer a test)", validateJoin({ ...good, elapsedMs: 5 } as never) === null && validateJoin(good) === null);
 

@@ -2,7 +2,7 @@ import { CLUB } from "@/lib/config";
 import { DEFAULT_QUESTIONS, DEFAULT_TEAMS, answersProblem, basicProblem, cleanAnswers, type ApplyInput, type ApplyResult, type OpenCampaign, type Question } from "@/lib/apply";
 import { emailConfigured, sendEmail } from "@/lib/email/send";
 import { contactAck } from "@/lib/email/templates";
-import { cleanHandle } from "@/lib/join";
+import { cleanHandle, tidyName } from "@/lib/join";
 import { rateLimited } from "@/lib/ratelimit";
 import { SITE_URL } from "@/lib/site";
 import { serverDb } from "@/lib/supabase-server";
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
   if (problem) return reply({ ok: false, error: problem }, 422);
 
   const { data, error } = await db.rpc("submit_application", {
-    p_campaign: input.campaign, p_name: input.name.trim(), p_email: input.email.trim().toLowerCase(), p_handle: cleanHandle(input.handle),
+    p_campaign: input.campaign, p_name: tidyName(input.name), p_email: input.email.trim().toLowerCase(), p_handle: cleanHandle(input.handle),
     p_team: input.team || null, p_answers: cleanAnswers(input.answers, round.questions),
   });
   if (error) return reply({ ok: false, error: "Couldn't save that. Please try again." }, 502);
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
   if (data === "busy") return reply({ ok: false, error: "Lots of applications right now. Please try again in a little while." }, 429);
   if (data === "incomplete") return reply({ ok: false, error: "Please answer every question marked as required." }, 422);
   if (data === "created" && emailConfigured() && (CLUB.email || process.env.SMTP_USER)) {
-    await sendEmail(input.email.trim().toLowerCase(), contactAck({ name: input.name.trim(), kindLabel: "Core team application", site: SITE_URL })); // best effort
+    await sendEmail(input.email.trim().toLowerCase(), contactAck({ name: tidyName(input.name), kindLabel: "Core team application", site: SITE_URL })); // best effort
   }
   return reply({ ok: true, status: data === "exists" ? "exists" : "created" }, data === "created" ? 201 : 200);
 }

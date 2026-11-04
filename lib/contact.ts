@@ -18,7 +18,7 @@ export function validateContact(i: ContactInput): string | null {
   if (i.elapsedMs !== undefined && i.elapsedMs < MIN_FILL_MS) return TOO_FAST;
   if (!KINDS.some((k) => k.id === i.kind)) return "Pick what this is about.";
   const name = (i.name ?? "").trim();
-  if (name.length < 2 || name.length > 80) return "Please enter your name.";
+  if (!name) return "Please enter your name.";
   if (!EMAIL_RE.test((i.email ?? "").trim())) return "That email doesn't look right.";
   const h = cleanHandle(i.handle ?? "");
   if (h && !HANDLE_RE.test(h)) return "That doesn't look like a GitHub username.";

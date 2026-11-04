@@ -48,8 +48,8 @@ export function fromLumaCsv(text: string): Import {
 /** One person typed in by hand: "Ada Lovelace, ada@gitam.in" (GitHub handle optional, third). */
 export function fromLine(line: string): Attendee | null {
   const [name = "", email = "", gh = ""] = line.split(/[,\t;]/).map((x) => x.trim());
-  if (name.length < 2 || !EMAIL.test(email)) return null;
-  return { name: name.slice(0, 80), email: email.toLowerCase(), handle: githubHandle(gh) };
+  if (!name || !EMAIL.test(email)) return null;
+  return { name: name.slice(0, 80).padEnd(2, "."), email: email.toLowerCase(), handle: githubHandle(gh) };
 }
 
 /** A first name to greet someone by, or null when the name on file is really a GitHub username (one word, lower-case,

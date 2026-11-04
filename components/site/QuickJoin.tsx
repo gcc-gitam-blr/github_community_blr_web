@@ -44,7 +44,7 @@ export function JoinForm({ tone = "hero", onJoined }: { tone?: "hero" | "card"; 
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setErr("");
-    if (name.trim().length < 2) return setErr("What should we call you?");
+    if (!name.trim()) return setErr("What should we call you?");
     if (!EMAIL_RE.test(email.trim())) return setErr("That email doesn't look right.");
     setBusy(true);
     const res = await join(name, email, honey.current?.value);
