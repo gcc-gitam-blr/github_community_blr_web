@@ -19,23 +19,31 @@ export const domainLabel = (id: string) => DOMAINS.find((d) => d.id === id)?.lab
 export const HOURS = [{ id: "1-2", label: "1–2 hours a week" }, { id: "3-5", label: "3–5 hours a week" }, { id: "6+", label: "6 or more hours a week" }] as const;
 export const IDEA_STATUS = { idea: "Idea", forming: "Forming a team", building: "Building", shipped: "Shipped", archived: "Archived" } as const;
 export type IdeaStatus = keyof typeof IDEA_STATUS;
-export const LIMITS = { domainsMember: 5, domainsIdea: 3, skills: 8, skillMax: 24, wants: 280, title: 100, summary: 600, message: 300, teamMin: 2, teamMax: 12 } as const;
+export const LIMITS = { domainsMember: 5, domainsIdea: 3, skills: 8, skillMax: 40, wants: 280, title: 100, summary: 600, message: 300, teamMin: 2, teamMax: 12 } as const;
 
-/** Skills as typed ("React, node.js ,  Python") → tidy tags, in the same shape the database accepts. Returns null if one is not allowed. */
-export function parseSkills(text: string): string[] | null {
+/** Skills as typed ("React, node.js ,  Python") → tidy tags, in the shape the database keeps. Never refuses: see skillCheck. */
+export function parseSkills(text: string): string[] {
   return skillCheck(text).skills;
 }
-/** Tidies each skill the way people type them ("Problem  Solving.", "UI/UX", "R&D") and says which one is still not allowed. */
-export function skillCheck(text: string): { skills: string[] | null; problem?: string } {
-  const out: string[] = [];
+/** One skill, tidied: lower case, "UI/UX" → "ui ux", odd symbols and stray dots dropped, at most skillMax characters. "" if nothing is left. */
+export function tidySkill(raw: string): string {
+  const t = raw.toLowerCase().replace(/[/&|]/g, " ").replace(/[^a-z0-9+#. -]/g, "").replace(/\s+/g, " ").replace(/^[^a-z0-9.]+/, "");
+  return t.slice(0, LIMITS.skillMax).replace(/[ .-]+$/, "");
+}
+/** Tidies what people type and keeps it. Skills are free text, so this never says "no": single letters (C, R), long phrases and
+   extra skills are all handled, and `note` says what was shortened or left out so nobody is surprised. Mirrors clean_tags in the database. */
+export function skillCheck(text: string): { skills: string[]; note?: string } {
+  const all: string[] = [];
+  let cut = false;
   for (const raw of text.split(/[,;\n]/)) {
-    const t = raw.toLowerCase().replace(/[/&|]/g, " ").replace(/[^a-z0-9+#. -]/g, "").replace(/\s+/g, " ").replace(/^[^a-z0-9]+/, "").replace(/[ .-]+$/, "");
+    const t = tidySkill(raw);
     if (!t) continue;
-    if (t.length < 2) return { skills: null, problem: `"${raw.trim()}" is too short: write at least 2 characters (for example "c++").` };
-    if (t.length > LIMITS.skillMax) return { skills: null, problem: `"${raw.trim().slice(0, 30)}..." is too long: keep each skill to ${LIMITS.skillMax} characters and separate skills with commas.` };
-    if (!out.includes(t)) out.push(t);
+    if (t.length < raw.trim().length && tidySkill(raw.trim().slice(0, 200)).length === LIMITS.skillMax) cut = true;
+    if (!all.includes(t)) all.push(t);
   }
-  return out.length <= LIMITS.skills ? { skills: out } : { skills: null, problem: `That's ${out.length} skills: pick your best ${LIMITS.skills}.` };
+  const skills = all.slice(0, LIMITS.skills);
+  const notes = [all.length > skills.length && `We kept your first ${LIMITS.skills} skills.`, cut && `A long skill was shortened to ${LIMITS.skillMax} characters.`].filter(Boolean);
+  return notes.length ? { skills, note: notes.join(" ") } : { skills };
 }
 export const skillsText = (skills: string[]) => skills.join(", ");
 /** A project repository must be a github.com/owner/repo address. */

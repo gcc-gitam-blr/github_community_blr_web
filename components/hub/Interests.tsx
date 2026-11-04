@@ -23,11 +23,10 @@ export function Interests({ uid }: { uid: string }) {
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault(); setSay(null);
-    const chk = skillCheck(skills), sk = chk.skills;
+    const { skills: sk, note } = skillCheck(skills); setSkills(skillsText(sk));
     if (!domains.length) return setSay({ k: "err", t: "Pick at least one area you like." });
-    if (!sk) return setSay({ k: "err", t: `Skills: ${chk.problem}` });
     setBusy(true); const r = await saveInterests({ domains, skills: sk, wants: wants.trim() || null, hours: hours || null, discoverable: found }); setBusy(false);
-    setSay(r.ok ? { k: "ok", t: "Saved. Thank you: this helps us choose projects the whole club can build." } : { k: "err", t: r.error });
+    setSay(r.ok ? { k: "ok", t: `Saved. Thank you: this helps us choose projects the whole club can build.${note ? " " + note : ""}` } : { k: "err", t: r.error });
     if (r.ok) { setSaved(true); setSum(await summary()); }
   };
   const remove = async () => {

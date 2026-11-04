@@ -2,7 +2,7 @@
    supabase/schema.sql in PGlite and calls every function as the wrong user too, because the rules live in SQL. */
 import { PGlite } from "@electric-sql/pglite";
 import fs from "node:fs";
-import { DOMAINS, REPO_RE, parseSkills } from "../lib/projects";
+import { DOMAINS, REPO_RE, parseSkills, skillCheck } from "../lib/projects";
 
 import { AUTH_USERS } from "./auth-stub";
 const db = new PGlite();
@@ -47,7 +47,7 @@ const members = async (pid: number) => (await db.query<{ user_id: string; role: 
 
   // ---- the lists agree ----
   ok("the areas in the app are the areas in the database", JSON.stringify((await one<{ d: string[] }>("select domain_list() d")).d) === JSON.stringify(DOMAINS.map((d) => d.id)));
-  ok("skills typed by people are tidied the way the database expects", JSON.stringify(parseSkills(" React, node.js ,  Python,react")) === JSON.stringify(["react", "node.js", "python"]) && parseSkills("a") === null && parseSkills("bad/skill")?.[0] === "bad skill" && parseSkills("Problem  solving.")?.[0] === "problem solving" && parseSkills("1a,2b,3c,4d,5e,6f,7g,8h,9i") === null);
+  ok("skills typed by people are tidied, never refused: one-letter languages, long phrases, symbols, extras", JSON.stringify(parseSkills(" React, node.js ,  Python,react")) === JSON.stringify(["react", "node.js", "python"]) && parseSkills("C, R, c++, C#, .NET").join("|") === "c|r|c++|c#|.net" && parseSkills("bad/skill")[0] === "bad skill" && parseSkills("Problem  solving.")[0] === "problem solving" && parseSkills("a1,b2,c3,d4,e5,f6,g7,h8,i9").length === 8 && skillCheck("a1,b2,c3,d4,e5,f6,g7,h8,i9").note?.includes("first 8") === true && parseSkills("Financial Market Research Quantitative Analysis Tools")[0].length <= 40 && parseSkills(",, ,;;").length === 0 && parseSkills("日本語, ???").length === 0);
   ok("a repository link must be a github.com address", REPO_RE.test("https://github.com/gcc-gitam-blr/club-site") && !REPO_RE.test("https://gitlab.com/a/b") && !REPO_RE.test("http://github.com/a/b") && !REPO_RE.test("https://github.com/a"));
 
   // ---- who takes part ----
