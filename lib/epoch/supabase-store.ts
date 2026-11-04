@@ -2,6 +2,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { EPOCH } from "./config";
 import type { AuditEntry, Booth, EpochStore, Profile, Reward, Tx } from "./types";
 import { PENDING_NAME } from "./pending";
+import { cleanHandle } from "../join";
 
 let client: SupabaseClient | null = null;
 const sb = () => (client ??= createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!));
@@ -153,8 +154,8 @@ export const supabaseStore: EpochStore = {
     return ((data ?? []) as Row[]).map((r) => toProfile({ ...r, role: live.get(r.id) ?? r.role }));
   },
 
-  setRole: (handle, role) => call("set_role", { p_handle: handle, p_role: role }),
-  assignBooth: (handle, booth) => call("assign_booth", { p_handle: handle, p_booth: booth ?? "" }),
+  setRole: (handle, role) => call("set_role", { p_handle: cleanHandle(handle), p_role: role }),
+  assignBooth: (handle, booth) => call("assign_booth", { p_handle: cleanHandle(handle), p_booth: booth ?? "" }),
 
   async audit(filter = {}) {
     let q = sb().from("audit_log").select("*").order("at", { ascending: false }).limit(500);

@@ -18,7 +18,7 @@ export const TOO_FAST = "That was quick. Check it over, then send it again.";
 /** A GitHub username as people paste it: "@ada", " ada ", "github.com/ada" or "https://github.com/ada/" all become "ada". */
 export const cleanHandle = (h: string) => h.trim().replace(/^(?:https?:\/\/)?(?:www\.)?github\.com\//i, "").replace(/^@/, "").replace(/[/?#\s].*$/, "");
 /** A name as it is stored: spaces tidied, at most 80 characters, and at least 2 (the database wants 2, so "X" is kept as "X."). Only an empty name is refused. */
-export const tidyName = (n: string) => (n ?? "").replace(/\s+/g, " ").trim().slice(0, 80).padEnd(2, ".");
+export const tidyName = (n: string) => { const t = (n ?? "").replace(/\s+/g, " ").trim().slice(0, 80); return t && t.padEnd(2, "."); };
 
 export function validateJoin(i: JoinInput): string | null {
   // honeypot: a hidden field only bots fill in. No "too fast" check here: the browser fills both fields and people press

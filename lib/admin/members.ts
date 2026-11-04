@@ -1,4 +1,5 @@
 import { githubHandle, parseCsv } from "@/lib/attendance";
+import { tidyName } from "@/lib/join";
 
 /* Members: reading an import file, and writing an export. The database checks every row again (import_members in
    supabase/schema.sql), so this only turns a spreadsheet into rows and says what is missing before anything is sent.
@@ -52,7 +53,7 @@ export function parseMembersTable(input: string[][]): Parsed {
   const rows = table.slice(1).map((r) => {
     const raw = cell(r, "joined_on"), d = toIsoDate(raw);
     if (d === null) badDates++;
-    return { handle: githubHandle(cell(r, "handle")) ?? cell(r, "handle"), name: cell(r, "name"), email: cell(r, "email"), team: cell(r, "team").slice(0, 40), joined_on: d ?? "" };
+    return { handle: githubHandle(cell(r, "handle")) ?? cell(r, "handle"), name: tidyName(cell(r, "name")), email: cell(r, "email"), team: cell(r, "team").slice(0, 40), joined_on: d ?? "" };
   });
   const notes = badDates ? [`${badDates} joined date${badDates === 1 ? " wasn't" : "s weren't"} recognised and will be left empty.`] : [];
   return { rows, columns, notes, problem: rows.length ? null : "There are no people under the header row." };

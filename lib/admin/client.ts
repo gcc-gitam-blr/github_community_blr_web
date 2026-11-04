@@ -5,9 +5,15 @@ import type { AccessRole } from "@/lib/admin/appointments";
 import type { AssetProblem } from "@/lib/assets";
 import type { Member, MemberRow } from "@/lib/admin/members";
 import type { Answer, Question, RoundForm } from "@/lib/apply";
+import { cleanHandle, tidyName } from "@/lib/join";
+import { slugify } from "@/lib/events";
 
 /* What the /admin dashboard reads and changes. Every call runs as the signed-in organiser, so the
-   database's own rules (supabase/schema.sql) decide what's allowed — the UI only hides what won't work. */
+   database's own rules (supabase/schema.sql) decide what's allowed — the UI only hides what won't work.
+   What people type is tidied on the way: a GitHub username pasted as a link or with @ is just the username, a one-letter
+   name is kept, and a page address pasted as a whole link is just its last part. */
+/** "https://www.gccgitamblr.club/events/git-merge-26/" or "Git Merge 26" → "git-merge-26". */
+export const pageAddress = (s: string) => slugify(s.trim().replace(/[?#].*$/, "").replace(/\/+$/, "").split("/").pop() ?? "");
 export interface AttendanceRow { id: string; event: string; name: string; email: string; handle: string | null; emailed_at: string | null; created_at: string }
 /** `role` is the live role. Admins also get the appointment behind it: its title, end date and id (null for everyone else). */
 export interface Person { id: string; handle: string; name: string; role: "attendee" | AccessRole; title: string | null; ends_on: string | null; appointment_id: number | null; created_at: string }
@@ -58,7 +64,7 @@ export async function people(): Promise<Person[]> {
 
 /** Appoints someone (or changes their role, or extends the term) until `endsOn`. Works before their first sign-in too. */
 export async function grantAppointment(handle: string, role: AccessRole, title: string, endsOn: string): Promise<Res<{ pending?: boolean }>> {
-  const { data, error } = await supabase().rpc("grant_appointment", { p_handle: handle, p_role: role, p_title: title.trim() || null, p_ends_on: endsOn || null });
+  const { data, error } = await supabase().rpc("grant_appointment", { p_handle: cleanHandle(handle), p_role: role, p_title: title.trim() || null, p_ends_on: endsOn || null });
   if (error) return { ok: false, error: error.message };
   return data?.ok ? { ok: true, pending: !!data.pending } : { ok: false, error: data?.error ?? "Couldn't change who has access." };
 }
@@ -71,7 +77,7 @@ export async function endAppointment(id: number, reason: string): Promise<Res> {
 
 /** Takes back access that was promised to a username that hasn't signed in yet. */
 export async function cancelPending(handle: string): Promise<Res> {
-  const { data, error } = await supabase().rpc("set_role", { p_handle: handle, p_role: "attendee" });
+  const { data, error } = await supabase().rpc("set_role", { p_handle: cleanHandle(handle), p_role: "attendee" });
   if (error) return { ok: false, error: error.message };
   return data?.ok ? { ok: true } : { ok: false, error: data?.error ?? "Couldn't cancel that." };
 }
@@ -113,7 +119,7 @@ export async function members(): Promise<Member[]> {
   const { data } = await supabase().from("members").select("*").order("name").limit(2000);
   return (data ?? []) as Member[];
 }
-const memberArgs = (m: MemberRow) => ({ p_name: m.name, p_email: m.email, p_handle: m.handle, p_team: m.team, p_joined_on: m.joined_on || null });
+const memberArgs = (m: MemberRow) => ({ p_name: tidyName(m.name), p_email: m.email.trim(), p_handle: cleanHandle(m.handle ?? ""), p_team: m.team, p_joined_on: m.joined_on || null });
 export const createMember = (m: MemberRow) => rpcRes("create_member", memberArgs(m));
 export const updateMember = (id: string, m: MemberRow) => rpcRes("update_member", { p_id: id, ...memberArgs(m) });
 export const setMemberStatus = (id: string, status: Member["status"]) => rpcRes("set_member_status", { p_id: id, p_status: status });
@@ -162,7 +168,7 @@ export async function applications(campaign: number): Promise<{ apps: Applicatio
 export const createCampaign = (name: string, year: string, opensOn: string, closesOn: string) => rpcRes<{ id: number }>("create_campaign", { p_name: name, p_year: year, p_opens_on: opensOn, p_closes_on: closesOn });
 export const setCampaignStatus = (id: number, status: Campaign["status"]) => rpcRes("set_campaign_status", { p_id: id, p_status: status });
 export const setCampaignDates = (id: number, opensOn: string, closesOn: string) => rpcRes("set_campaign_dates", { p_id: id, p_opens_on: opensOn, p_closes_on: closesOn });
-export const addReviewer = (campaign: number, handle: string) => rpcRes("add_reviewer", { p_campaign: campaign, p_handle: handle });
+export const addReviewer = (campaign: number, handle: string) => rpcRes("add_reviewer", { p_campaign: campaign, p_handle: cleanHandle(handle) });
 export const removeReviewer = (campaign: number, user: string) => rpcRes("remove_reviewer", { p_campaign: campaign, p_user: user });
 export const reviewApplication = (app: number, score: number, notes: string) => rpcRes("review_application", { p_app: app, p_score: score, p_notes: notes });
 export const moveApplication = (app: number, to: ApplicationStatus) => rpcRes("move_application", { p_app: app, p_to: to });
@@ -215,7 +221,7 @@ export const decideProposal = (id: number, decision: "approved" | "returned" | "
 export const cancelProposal = (id: number, reason: string) => rpcRes("cancel_proposal", { p_id: id, p_reason: reason });
 export const completeProposal = (id: number, outcome: string, attendanceEvent: string | null, attendanceNote: string) => rpcRes("complete_proposal", { p_id: id, p_outcome: outcome, p_attendance_event: attendanceEvent, p_attendance_note: attendanceNote });
 export const setChecklistItem = (item: number, state: ChecklistItem["state"], note: string) => rpcRes("set_checklist_item", { p_item: item, p_state: state, p_note: note });
-export const linkProposalEvent = (id: number, slug: string) => rpcRes("link_proposal_event", { p_id: id, p_slug: slug });
+export const linkProposalEvent = (id: number, slug: string) => rpcRes("link_proposal_event", { p_id: id, p_slug: pageAddress(slug) || slug });
 
 // ---- Tasks, meetings and decisions ----
 export type TaskStatus = "todo" | "doing" | "blocked" | "done" | "dropped";
@@ -249,7 +255,7 @@ export async function meetings(): Promise<{ list: Meeting[]; notes: MeetingNote[
 }
 export const createMeeting = (title: string, heldOn: string, kind: Meeting["kind"], agenda: string) => rpcRes<{ id: number }>("create_meeting", { p_title: title, p_held_on: heldOn || null, p_kind: kind, p_agenda: agenda });
 export const updateMeeting = (id: number, title: string, agenda: string, minutes: string) => rpcRes("update_meeting", { p_id: id, p_title: title, p_agenda: agenda, p_minutes: minutes });
-export const setAttendees = (id: number, handles: string[]) => rpcRes<{ count: number }>("set_attendees", { p_id: id, p_handles: handles });
+export const setAttendees = (id: number, handles: string[]) => rpcRes<{ count: number }>("set_attendees", { p_id: id, p_handles: handles.map(cleanHandle).filter(Boolean) });
 export const finaliseMinutes = (id: number) => rpcRes("finalise_minutes", { p_id: id });
 export const addMinutesNote = (id: number, note: string) => rpcRes("add_minutes_note", { p_id: id, p_note: note });
 export const recordDecision = (meeting: number | null, title: string, decision: string, rationale: string, on: string) => rpcRes<{ id: number }>("record_decision", { p_meeting: meeting, p_title: title, p_decision: decision, p_rationale: rationale, p_decided_on: on });
@@ -303,7 +309,7 @@ export async function assets(): Promise<{ list: Asset[]; problems: AssetProblem[
   const people = Object.fromEntries(((p.data ?? []) as { id: string; handle: string; name: string }[]).map((x) => [x.id, { handle: x.handle, name: x.name }]));
   return { list: (a.data ?? []) as Asset[], problems: (w.data ?? []) as AssetProblem[], people };
 }
-export const saveAsset = (id: number | null, f: AssetFields) => rpcRes<{ id: number }>("save_asset", { p_id: id, p_name: f.name, p_kind: f.kind, p_url: f.url, p_owner: f.owner, p_backup: f.backup, p_notes: f.notes, p_review_due: f.reviewDue || null });
+export const saveAsset = (id: number | null, f: AssetFields) => rpcRes<{ id: number }>("save_asset", { p_id: id, p_name: f.name, p_kind: f.kind, p_url: f.url, p_owner: cleanHandle(f.owner), p_backup: cleanHandle(f.backup), p_notes: f.notes, p_review_due: f.reviewDue || null });
 export const setAssetNotes = (id: number, notes: string) => rpcRes("set_asset_notes", { p_id: id, p_notes: notes });
 export async function handovers(): Promise<{ lists: Handover[]; items: HandoverItem[] }> {
   const { data } = await supabase().from("handover_checklists").select("*").order("created_at", { ascending: false }).limit(20);
@@ -331,8 +337,8 @@ export async function policies(): Promise<{ list: PolicyRow[]; versions: PolicyV
   const names = ids.length ? Object.fromEntries(((await supabase().from("profiles").select("id, name").in("id", ids)).data ?? []).map((x) => [x.id as string, x.name as string])) : {};
   return { list, versions, drafts, names };
 }
-export const createPolicy = (slug: string, title: string, owner: string) => rpcRes<{ id: number }>("create_policy", { p_slug: slug, p_title: title, p_owner: owner });
-export const setPolicyOwner = (id: number, owner: string) => rpcRes("set_policy_owner", { p_id: id, p_owner: owner });
+export const createPolicy = (slug: string, title: string, owner: string) => rpcRes<{ id: number }>("create_policy", { p_slug: pageAddress(slug) || slug, p_title: title, p_owner: cleanHandle(owner) });
+export const setPolicyOwner = (id: number, owner: string) => rpcRes("set_policy_owner", { p_id: id, p_owner: cleanHandle(owner) });
 export const savePolicyDraft = (id: number, body: string) => rpcRes("save_policy_draft", { p_id: id, p_body: body });
 export const discardPolicyDraft = (id: number) => rpcRes("discard_policy_draft", { p_id: id });
 export const publishPolicyVersion = (id: number, effectiveOn: string, reviewDueOn: string) => rpcRes<{ version: number }>("publish_policy_version", { p_id: id, p_effective_on: effectiveOn || null, p_review_due_on: reviewDueOn || null });
