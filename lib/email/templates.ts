@@ -141,7 +141,7 @@ export function applicantEmail(i: ApplicantInput): Mail {
   return { subject: i.subject, html, text };
 }
 
-export interface CertificateInput { name: string; eventTitle: string; url: string; linkedin: string; site: string; feedback?: string; next?: { title: string; date: string; url: string };
+export interface CertificateInput { name: string; eventTitle: string; url: string; site: string; feedback?: string; next?: { title: string; date: string; url: string };
   /** the team's own message for this send (a festival wish, a word about the day), right under the greeting */
   note?: string; subject?: string }
 

@@ -74,10 +74,19 @@ export function Attendance({ admin }: { admin: boolean }) {
     if (bad) return setNote({ k: "err", t: `${bad} (in The email, above the list)` });
     if (!(await ask({ title: `Email ${n} certificate${n === 1 ? "" : "s"}?`, body: <>For <b>{title}</b>, {msg.note.trim() ? "with your message" : "the standard email"}. Emails can&apos;t be called back once they&apos;re sent.</>, yes: `Send ${n} email${n === 1 ? "" : "s"}` }))) return;
     setBusy(true); setNote(null);
-    const r = await sendCertificates(event, ids, { note: msg.note.trim(), subject: msg.subject.trim() }); setBusy(false);
-    setNote(r.ok
-      ? { k: r.failed ? "err" : "ok", t: `Sent ${r.sent} of ${r.total}.${r.left ? ` ${r.left} still to send: press the button again.` : ""}${r.failed ? ` ${r.failed} failed. ${r.problem ?? "Try again later."}` : ""}` }
-      : { k: "err", t: r.error });
+    // the server sends one at a time, a few seconds apart, so they don't arrive as a burst (that's what lands in spam);
+    // each call sends what fits in under a minute, and this keeps calling until everyone has theirs
+    let sent = 0, total = 0;
+    for (;;) {
+      const r = await sendCertificates(event, ids, { note: msg.note.trim(), subject: msg.subject.trim() });
+      if (!r.ok) { setNote({ k: "err", t: sent ? `Sent ${sent} of ${total}, then: ${r.error} Press the button again to send the rest.` : r.error }); break; }
+      sent += r.sent; total ||= r.total;
+      if (r.problem) { setNote({ k: "err", t: `Sent ${sent} of ${total}, then paused: ${r.problem} Press the button again to send the rest; nobody gets two.` }); break; }
+      if (ids || !r.left || !r.sent) { setNote({ k: "ok", t: `Sent ${sent} of ${total}.${r.left ? ` ${r.left} still to send: press the button again.` : ""}` }); break; }
+      setNote({ k: "ok", t: `Sending one at a time so they don't land in spam: ${sent} of ${total} sent. Keep this page open.` });
+      await load();
+    }
+    setBusy(false);
     await load();
   };
 

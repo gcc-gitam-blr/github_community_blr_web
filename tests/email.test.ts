@@ -37,7 +37,7 @@ const fake = http.createServer((req, res) => {
     if (url.startsWith("/rest/v1/broadcasts")) { db.broadcasts.push(JSON.parse(body)); return send(201, null); }
     if (url.startsWith("/rest/v1/attendance") && req.method === "GET") return send(200, db.attendance.filter((a) => !a.emailed_at));
     if (url.startsWith("/rest/v1/attendance") && req.method === "PATCH") {
-      const ids = decodeURIComponent(new URL(url, "http://x").searchParams.get("id") ?? "").replace(/^in\.\(|\)$/g, "").split(",").map((x) => x.replace(/"/g, ""));
+      const ids = decodeURIComponent(new URL(url, "http://x").searchParams.get("id") ?? "").replace(/^in\.\(|^eq\.|\)$/g, "").split(",").map((x) => x.replace(/"/g, ""));
       for (const a of db.attendance) if (ids.includes(a.id)) a.emailed_at = JSON.parse(body).emailed_at;
       return send(204, null);
     }
@@ -56,6 +56,7 @@ const settle = () => new Promise((r) => setTimeout(r, 300));
   const dbPort = await listen(fake);
 
   process.env.EMAIL_SECRET = "test-secret"; process.env.NEXT_PUBLIC_SITE_URL = "https://club.test";
+  process.env.EMAIL_GAP_MS = "0"; // no pauses between emails in tests (tests/paced.test.ts checks the pauses)
   const { welcomeEmail, broadcastEmail, esc } = await import("../lib/email/templates");
   const { tokenFor, verifyToken, unsubscribeUrl } = await import("../lib/email/token");
   const { sendEmail, emailConfigured, explain } = await import("../lib/email/send");

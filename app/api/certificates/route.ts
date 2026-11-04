@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import { certificateExtras, certificateUrl, eventByDate, linkedinUrl } from "@/lib/certificates";
+import { certificateExtras, certificateUrl, eventByDate } from "@/lib/certificates";
+import { sendPaced } from "@/lib/email/paced";
 import { batchMailer, emailConfigured } from "@/lib/email/send";
 import { certificateEmail, noteProblem } from "@/lib/email/templates";
 import { SITE_URL } from "@/lib/site";
@@ -46,24 +47,15 @@ export async function POST(req: Request) {
   try {
     const problem = await mailer.check();
     if (problem) return json({ ok: false, error: `Nothing was sent. ${problem}` }, 502);
-    const sentIds: string[] = []; let failed = 0, why: string | undefined;
-    // stop starting new emails in time to record who got one before the function's 60 s are up; the rest go next time
     // the same for everyone in this batch: the event's feedback form, and the next event to come
     const { feedback, next: nextUp } = certificateExtras(event, SITE_URL);
-    const queue = [...rows], now = new Date().toISOString(), stopAt = Date.now() + 45_000;
-    // one at a time: a burst of identical emails is one of the things that sends a batch to spam
-    await Promise.all(Array.from({ length: 1 }, async () => {
-      while (queue.length && Date.now() < stopAt) {
-        const r = queue.shift()!;
-        const url = certificateUrl(SITE_URL, r.id);
-        const mail = certificateEmail({ name: r.name, eventTitle: event.title, url, linkedin: linkedinUrl({ event: event.date, id: r.id, issued: now, site: SITE_URL }), site: SITE_URL, feedback, next: nextUp, note, subject });
-        const res = await mailer.send(r.email, mail);
-        if (res.sent) sentIds.push(r.id);
-        else { failed++; why ??= res.why; console.error("certificate email failed:", res.error); }
-      }
-    }));
-    if (sentIds.length) await db.from("attendance").update({ emailed_at: now }).in("id", sentIds);
-    if (!sentIds.length && failed) return json({ ok: false, error: `Nothing was sent. ${why ?? ""}`.trim() }, 502);
-    return json({ ok: true, sent: sentIds.length, failed, left: queue.length, total: rows.length, ...(why ? { problem: why } : {}) });
+    // one at a time, a few seconds apart, each person marked as sent the moment theirs goes (lib/email/paced.ts);
+    // what doesn't fit in this call's 45 seconds is left for the next one, which the admin page makes by itself
+    const r = await sendPaced(rows,
+      (p) => mailer.send(p.email, certificateEmail({ name: p.name, eventTitle: event.title, url: certificateUrl(SITE_URL, p.id), site: SITE_URL, feedback, next: nextUp, note, subject })),
+      async (p) => { await db.from("attendance").update({ emailed_at: new Date().toISOString() }).eq("id", p.id); },
+      Date.now() + 45_000);
+    if (!r.sent && r.problem) return json({ ok: false, error: `Nothing was sent. ${r.problem}` }, 502);
+    return json({ ok: true, sent: r.sent, failed: r.problem ? 1 : 0, left: r.left, total: rows.length, ...(r.problem ? { problem: r.problem } : {}) });
   } finally { mailer.close(); }
 }

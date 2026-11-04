@@ -30,7 +30,7 @@ export function CertEmail({ event, sample, value, onChange }: { event: string; s
   const mail = useMemo(() => {
     if (!ev || typeof window === "undefined") return null;
     const site = window.location.origin;
-    return certificateEmail({ name: sample, eventTitle: ev.title, url: `${site}/certificates/sample`, linkedin: "https://www.linkedin.com/profile/add", site, ...certificateExtras(ev, site), note: value.note, subject: value.subject });
+    return certificateEmail({ name: sample, eventTitle: ev.title, url: `${site}/certificates/sample`, site, ...certificateExtras(ev, site), note: value.note, subject: value.subject });
   }, [ev, sample, value.note, value.subject]);
   if (!ev) return null;
   const set = (m: Partial<CertMsg>) => onChange({ ...value, ...m });
