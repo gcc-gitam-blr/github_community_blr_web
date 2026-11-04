@@ -66,7 +66,6 @@ export function answersProblem(i: ApplyInput, form: RoundForm): string | null {
     if (q.type === "link" && !isLink(t)) return `That link doesn't look right: ${q.label}`;
     const max = q.type === "short" || q.type === "link" ? LIMITS.short : LIMITS.answer;
     if (t.length > max) return `Please keep each answer under ${max} characters: ${q.label}`;
-    if (q.type === "long" && q.required && t.length < 10) return `Tell us a little more: ${q.label}`;
   }
   return null;
 }

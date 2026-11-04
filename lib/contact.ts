@@ -12,6 +12,9 @@ export type Kind = (typeof KINDS)[number]["id"];
 export interface ContactInput { kind: string; name: string; email: string; handle?: string; message: string; website?: string; elapsedMs?: number }
 export type ContactResult = { ok: true } | { ok: false; error: string; fallback?: boolean };
 
+/** The message as it is saved. The database wants 10 or more characters, so a very short one ("When?") is saved with a note, not refused. */
+export const storedMessage = (m: string) => { const t = (m ?? "").trim(); return t.length < 10 ? `${t} (short message)` : t; };
+
 export function validateContact(i: ContactInput): string | null {
   if (i.website) return "spam"; // honeypot
   // too quick for a person usually means a script; say so instead of dropping it, so a fast human just sends again
@@ -24,7 +27,7 @@ export function validateContact(i: ContactInput): string | null {
   if (h && !HANDLE_RE.test(h)) return "That doesn't look like a GitHub username.";
   if (i.kind === "apply" && !h) return "Add your GitHub username. We look at it when choosing the team.";
   const m = (i.message ?? "").trim();
-  if (m.length < 10) return "Tell us a little more (at least a sentence).";
+  if (!m) return "Write a few words so we know what you need.";
   if (m.length > 3000) return "That's a bit long. Please keep it under 3000 characters.";
   return null;
 }

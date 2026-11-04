@@ -1,5 +1,5 @@
 import { CLUB } from "@/lib/config";
-import { KINDS, validateContact, type ContactInput, type ContactResult } from "@/lib/contact";
+import { KINDS, storedMessage, validateContact, type ContactInput, type ContactResult } from "@/lib/contact";
 import { emailConfigured, sendEmail } from "@/lib/email/send";
 import { contactAck, contactNotification } from "@/lib/email/templates";
 import { cleanHandle, tidyName } from "@/lib/join";
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   const canEmail = emailConfigured() && !!inbox;
   if (!db && !canEmail) return reply({ ok: false, error: "The club inbox isn't switched on yet.", fallback: true }, 503); // the form then hands the message to Instagram
 
-  const name = tidyName(input.name), email = input.email.trim().toLowerCase(), handle = cleanHandle(input.handle ?? "") || undefined, message = input.message.trim();
+  const name = tidyName(input.name), email = input.email.trim().toLowerCase(), handle = cleanHandle(input.handle ?? "") || undefined, message = storedMessage(input.message);
   const kindLabel = KINDS.find((k) => k.id === input.kind)!.label;
 
   if (db) {

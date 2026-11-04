@@ -23,7 +23,7 @@ const settle = () => new Promise((r) => setTimeout(r, 300));
 (async () => {
   const smtpPort = await new Promise<number>((r) => smtp.listen(0, "127.0.0.1", () => r((smtp.server.address() as AddressInfo).port)));
   const dbPort = await new Promise<number>((r) => fake.listen(0, "127.0.0.1", () => r((fake.address() as AddressInfo).port)));
-  const { validateContact } = await import("../lib/contact");
+  const { validateContact, storedMessage } = await import("../lib/contact");
   const human = { elapsedMs: 20_000 };
   const good = { kind: "apply", name: "Ada Lovelace", email: "ada@gitam.in", handle: "@ada", message: "I'd love to help run events and design.", ...human };
 
@@ -31,7 +31,7 @@ const settle = () => new Promise((r) => setTimeout(r, 300));
   ok("a question doesn't need a GitHub username", validateContact({ ...good, kind: "question", handle: "" }) === null);
   ok("a core-team application does need one", validateContact({ ...good, handle: "" }) !== null);
   ok("an unknown kind is rejected", validateContact({ ...good, kind: "hack" }) !== null);
-  ok("a one-word message is rejected", validateContact({ ...good, message: "hi" }) !== null);
+  ok("a short message is fine, saved with a note to meet the database minimum; an empty one is refused", validateContact({ ...good, message: "When?" }) === null && storedMessage("When?") === "When? (short message)" && storedMessage("  Is it free to join?  ") === "Is it free to join?" && validateContact({ ...good, message: "   " }) !== null);
   ok("a 3001-character message is rejected", validateContact({ ...good, message: "x".repeat(3001) }) !== null);
   ok("a bad email is rejected", validateContact({ ...good, email: "ada@" }) !== null);
   ok("a filled honeypot is spam", validateContact({ ...good, website: "x" }) === "spam");
