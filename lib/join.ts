@@ -15,7 +15,8 @@ export const MIN_FILL_MS = 2500; // the longer forms (contact, feedback, applica
 /** What a form says when it was sent faster than a person types: visible, so a real person is never silently dropped. */
 export const TOO_FAST = "That was quick. Check it over, then send it again.";
 
-export const cleanHandle = (h: string) => h.trim().replace(/^@/, "");
+/** A GitHub username as people paste it: "@ada", " ada ", "github.com/ada" or "https://github.com/ada/" all become "ada". */
+export const cleanHandle = (h: string) => h.trim().replace(/^(?:https?:\/\/)?(?:www\.)?github\.com\//i, "").replace(/^@/, "").replace(/[/?#\s].*$/, "");
 
 export function validateJoin(i: JoinInput): string | null {
   // honeypot: a hidden field only bots fill in. No "too fast" check here: the browser fills both fields and people press

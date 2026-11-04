@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { PENDING_NAME } from "@/lib/epoch/pending";
 import { atHandle } from "@/lib/handle";
+import { cleanHandle } from "@/lib/join";
 import { Frame, Notice } from "./Frame";
 import { btnInk, btnSoft, field, glass, label } from "./Bits";
 import { useEpoch } from "./EpochProvider";
@@ -80,7 +81,7 @@ export function Register() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); if (!store) return;
     if (remote) return step === "details" ? sendCode() : checkCode();
-    if (!/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i.test(f.handle.replace(/^@/, "")) || !f.name.trim() || !EMAIL_OK(f.email)) return setMsg({ k: "err", t: "Fill in a valid GitHub handle, name and email." });
+    if (!/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i.test(cleanHandle(f.handle)) || !f.name.trim() || !EMAIL_OK(f.email)) return setMsg({ k: "err", t: "Fill in a valid GitHub handle, name and email." });
     setBusy(true); setMsg(null);
     const r = await store.register(f);
     setBusy(false);

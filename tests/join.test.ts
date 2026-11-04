@@ -1,6 +1,6 @@
 /* Joining the club: name and email first, the GitHub username and first event later. The shared checks and the
    /api/join and /api/join/more endpoints (called directly, no server needed). */
-import { validateJoin, validateMore } from "../lib/join";
+import { cleanHandle, validateJoin, validateMore } from "../lib/join";
 import { CLUB } from "../lib/config";
 import { tokenFor } from "../lib/email/token";
 
@@ -27,6 +27,7 @@ const req = (path: string, body: unknown, ip = "1.1.1.1") => new Request(`http:/
   ok("a GitHub username, an event, or both can be added", validateMore({ email: "ada@gitam.in", token: t, handle: "@ada" }) === null && validateMore({ email: "ada@gitam.in", token: t, firstEvent: EVENT }) === null);
   ok("…but not a made-up username or an event that isn't on the calendar", validateMore({ email: "ada@gitam.in", token: t, handle: "-bad-" }) !== null && validateMore({ email: "ada@gitam.in", token: t, firstEvent: "2030-01-01" }) !== null);
   ok("an empty second step says what's missing", (validateMore({ email: "ada@gitam.in", token: t }) ?? "").startsWith("Add your GitHub username"));
+  ok("a GitHub username pasted as a link, with @, spaces or a slash, is still the username", ["ada", "@ada", " ada ", "github.com/ada", "https://github.com/ada/", "https://www.github.com/ada?tab=repositories", "HTTP://GitHub.com/ada#x"].every((h) => cleanHandle(h).toLowerCase() === "ada") && validateMore({ email: "ada@gitam.in", token: tokenFor("ada@gitam.in"), handle: "https://github.com/ada" }) === null);
 
   // ---- the endpoints ----
   let r = await post({ ...good, email: "nope" }, "2.2.2.2");
