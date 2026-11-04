@@ -51,7 +51,8 @@ export async function POST(req: Request) {
     // the same for everyone in this batch: the event's feedback form, and the next event to come
     const { feedback, next: nextUp } = certificateExtras(event, SITE_URL);
     const queue = [...rows], now = new Date().toISOString(), stopAt = Date.now() + 45_000;
-    await Promise.all(Array.from({ length: 3 }, async () => {
+    // one at a time: a burst of identical emails is one of the things that sends a batch to spam
+    await Promise.all(Array.from({ length: 1 }, async () => {
       while (queue.length && Date.now() < stopAt) {
         const r = queue.shift()!;
         const url = certificateUrl(SITE_URL, r.id);
