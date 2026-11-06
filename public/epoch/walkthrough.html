@@ -1,0 +1,1117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="A 3D walk through GITAM Bengaluru dressed for Epoch, the GitHub Community Club fest.">
+<link rel="icon" href="/favicon.svg">
+<title>Epoch Walkthrough</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-size:14px}[hidden]{display:none!important}
+/* Layout: full-bleed 3D campus; notes card on the left, stops as a commit rail along the bottom, map bottom-right */
+:root{
+  --bg:#cfe3ee; --paper:#ffffff; --soft:#f5f7f6; --ink:#0b0b0f; --mute:#595866; --hair:rgba(18,18,26,.12);
+  --brand:#1f883d; --gold:#c98a00;
+  --display:"Mona Sans",-apple-system,"Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --shadow:0 1px 2px rgba(0,0,0,.08),0 8px 24px rgba(0,0,0,.10);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141a2e; --paper:#0f0f17; --soft:#181824; --ink:#f2f2f2; --mute:#a3a4bd; --hair:rgba(255,255,255,.12);
+  --brand:#3fc84e; --gold:#ffc933; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141a2e; --paper:#0f0f17; --soft:#181824; --ink:#f2f2f2; --mute:#a3a4bd; --hair:rgba(255,255,255,.12);
+  --brand:#3fc84e; --gold:#ffc933; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35); color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--display);overflow:hidden;-webkit-font-smoothing:antialiased}
+#scene{position:fixed;inset:0;touch-action:none;cursor:grab;display:block;width:100%;height:100%}
+#scene.drag{cursor:grabbing}
+.panel{background:var(--paper);border:1px solid var(--hair);border-radius:10px;box-shadow:var(--shadow)}
+button{font:inherit;color:inherit}
+button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+#hud{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);left:max(16px,env(safe-area-inset-left,0px));padding:10px 14px;display:flex;flex-direction:column;gap:2px}
+#hud b{font-weight:800;font-size:18px;letter-spacing:-.01em}
+#hud span{font-family:var(--mono);font-size:11px;color:var(--mute)}
+#modes{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);right:max(16px,env(safe-area-inset-right,0px));display:flex;padding:3px;gap:2px}
+#modes button{border:0;background:transparent;padding:7px 12px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;color:var(--mute)}
+#modes button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+#card{position:fixed;left:max(16px,env(safe-area-inset-left,0px));top:calc(env(safe-area-inset-top,0px) + 80px);width:340px;max-height:calc(100% - 230px);overflow:auto;padding:16px 18px 18px;display:flex;flex-direction:column;gap:12px}
+#card .eyebrow{font-family:var(--mono);font-size:11px;color:var(--mute);letter-spacing:.04em;display:flex;justify-content:space-between;gap:8px}
+#card h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.015em;text-wrap:balance;line-height:1.15}
+#card p{margin:0;font-size:14px;line-height:1.5}
+#card h3{margin:0;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+#card ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+#card li{font-size:14px;line-height:1.45;padding-left:16px;position:relative}
+#card li::before{content:"";position:absolute;left:2px;top:.5em;width:7px;height:7px;border-radius:50%;border:1.5px solid var(--brand)}
+.when{display:flex;flex-wrap:wrap;gap:6px}
+.when span{font-family:var(--mono);font-size:11.5px;padding:3px 8px;border-radius:999px;background:var(--soft);border:1px solid var(--hair);font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips span{font-size:12px;padding:3px 8px;border-radius:6px;border:1px solid var(--hair);border-left-width:4px;display:inline-flex;gap:6px;align-items:center}
+.chips i{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--mute);font-variant-numeric:tabular-nums}
+.budget{font-size:13.5px;line-height:1.45;padding:10px 12px;border-radius:8px;background:var(--soft);border:1px dashed var(--hair)}
+.budget b{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:2px}
+#cardToggle{display:none}
+#rail{position:fixed;left:0;right:0;bottom:0;padding:10px max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 12px) max(16px,env(safe-area-inset-left,0px));display:flex;gap:10px;align-items:center;pointer-events:none}
+#rail>*{pointer-events:auto}
+.step{border:1px solid var(--hair);background:var(--paper);box-shadow:var(--shadow);border-radius:999px;width:38px;height:38px;flex:none;cursor:pointer;font-size:16px;display:grid;place-items:center}
+#stopsWrap{flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;padding:6px 10px;border-radius:999px}
+#stopsWrap::-webkit-scrollbar{display:none}
+#stops{list-style:none;margin:0;padding:0;display:flex;position:relative;width:max-content}
+#stops::before{content:"";position:absolute;left:14px;right:14px;top:13px;height:2px;background:var(--mute);opacity:.45}
+#stops li button{background:none;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 8px;min-width:78px}
+#stops .dot{width:14px;height:14px;border-radius:50%;background:var(--paper);border:2.5px solid var(--mute);position:relative;z-index:1;transition:transform .2s cubic-bezier(.23,1,.32,1)}
+#stops .lbl{font-size:11.5px;font-weight:600;white-space:nowrap;background:var(--paper);padding:2px 7px;border-radius:5px;border:1px solid var(--hair)}
+#stops button[aria-current="step"] .dot{background:var(--brand);border-color:var(--brand);transform:scale(1.25)}
+#stops button[aria-current="step"] .lbl{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+#stops button:hover .dot{transform:scale(1.2)}
+#head{font-family:var(--mono);font-size:11px;padding:6px 10px;white-space:nowrap}
+#map{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 86px);width:156px;height:222px;padding:6px}
+#map canvas{width:100%;height:100%;display:block;border-radius:6px}
+#hint{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 86px);font-size:12.5px;padding:7px 12px;color:var(--mute);white-space:nowrap;transition:opacity .4s}
+#hint kbd{font-family:var(--mono);font-size:11px;padding:1px 5px;border:1px solid var(--hair);border-radius:4px;color:var(--ink)}
+#pad{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 86px);display:none;flex-direction:column;gap:8px}
+#pad button{width:56px;height:56px;border-radius:50%;border:1px solid var(--hair);background:var(--paper);box-shadow:var(--shadow);font-size:20px;touch-action:none;user-select:none;-webkit-user-select:none}
+#loading{position:fixed;inset:0;display:grid;place-items:center;font-family:var(--mono);font-size:13px;color:var(--mute);background:var(--bg)}
+@media (pointer:coarse){#pad{display:flex}#map{display:none}#hint .k{display:none}}
+@media (max-width:760px){
+  #hud{padding:8px 11px}#hud b{font-size:15px}
+  #modes button{padding:6px 9px;font-size:12px}
+  #card{top:auto;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));width:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 74px);max-height:42%;padding:14px 16px}
+  #card.closed>*:not(.top){display:none}
+  #card .top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  #cardToggle{display:inline-block;border:1px solid var(--hair);background:var(--soft);border-radius:6px;padding:4px 9px;font-size:12px;cursor:pointer;flex:none}
+  #card h2{font-size:18px}
+  #pad{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 70px)}
+  #map,#hint,#head{display:none}
+}
+@media (prefers-reduced-motion:reduce){#stops .dot{transition:none}}
+</style>
+</head>
+<body>
+
+<canvas id="scene" aria-label="3D walkthrough of GITAM Bengaluru decorated for Epoch"></canvas>
+<div id="loading">laying out the campus…</div>
+<div id="hud" class="panel"><b>Epoch, on the day</b><span>GITAM Bengaluru · December 2026</span></div>
+<div id="modes" class="panel" role="group" aria-label="Time of day">
+  <button id="mDay" aria-pressed="true">Daytime</button>
+  <button id="mEve" aria-pressed="false">18:00 closing</button>
+</div>
+<aside id="card" class="panel" aria-live="polite">
+  <div class="top"><div class="eyebrow" style="flex:1"><span id="cStep"></span><span id="cZone"></span></div><button id="cardToggle" aria-expanded="true">Hide</button></div>
+  <h2 id="cTitle"></h2>
+  <div class="when" id="cWhen"></div>
+  <p id="cLede"></p>
+  <div id="cChipsWrap" hidden><h3>Here</h3><div class="chips" id="cChips" style="margin-top:8px"></div></div>
+  <div><h3>How to dress it</h3><ul id="cDress" style="margin-top:8px"></ul></div>
+  <div class="budget"><b>On a tight budget</b><span id="cBudget"></span></div>
+</aside>
+<div id="map" class="panel"><canvas id="mapc" width="288" height="420" aria-label="Campus map"></canvas></div>
+<div id="hint" class="panel">Drag to look <span class="k">· <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to walk · <kbd>Shift</kbd> to hurry</span> · or follow the stops</div>
+<div id="pad"><button id="fwd" aria-label="Walk forward">▲</button><button id="back" aria-label="Walk back">▼</button></div>
+<nav id="rail" aria-label="Walkthrough stops">
+  <button class="step" id="prev" aria-label="Previous stop">‹</button>
+  <div id="stopsWrap" class="panel"><ol id="stops"></ol></div>
+  <button class="step" id="next" aria-label="Next stop">›</button>
+  <span id="head" class="panel">HEAD → overview</span>
+</nav>
+
+<script src="/epoch/three.min.js"></script>
+<script>
+(async () => {
+try { await Promise.race([Promise.all(['800 64px "Mona Sans"','600 32px "Mona Sans"','400 32px "Mona Sans"','400 30px "JetBrains Mono"','600 30px "JetBrains Mono"'].map(f => document.fonts.load(f))), new Promise(r => setTimeout(r, 3000))]); } catch (e) {}
+
+/* ------------------------------------------------------------------
+   CAMPUS, traced from the campus map at ~0.8 m per map pixel.
+   x: west (−) → east (+). z: north (−) → south (+). North is up on the map.
+   The gate is on the east road; both academic blocks face east onto the field.
+------------------------------------------------------------------- */
+const C = { purple: 0xb48be6, mint: 0x4fd1a1, blue: 0x7cc3ec, gold: 0xffc933, green: 0x3fc84e };
+const HEX = n => "#" + n.toString(16).padStart(6, "0");
+const GROUP = { Play: C.purple, Make: C.mint, Explore: C.blue, Compete: C.green, Shop: C.gold };
+const PAL = [C.purple, C.mint, C.blue, C.gold, C.green];
+
+const CAMPUS = { x0: -125, x1: 92, z0: -195, z1: 152 };
+const GATE_X = 92;
+const STRIP = { x0: 21, x1: 74, z0: -50.4, z1: -38.4 };     // bushy strip from the gate to the left turn
+const STRIP2 = { x0: -93, x1: -37 };                         // same strip again along Visvesvaraya (same z)
+const STRIPS = [[STRIP.x0, STRIP.x1], [STRIP2.x0, STRIP2.x1]];
+const SH = { cx: -52, cz: 72, w: 80, d: 60 };                // Shivaji Bhavan main block (x −92..−12, z 42..102), front faces east
+const VB = { x: -58, z: -9, r: 21 };                        // Visvesvaraya Bhavan, eight-sided, front faces east
+const CAFE = { x: 4.8, z: -1.6, r: 9 };
+const GAP = { x0: -93, x1: 14, z0: 13, z1: 20 };              // walking road just below Visvesvaraya (post office, then bank)
+const OPEN = { x0: -92, x1: 14, z0: 20, z1: 41 };             // the big open space from that road to Shivaji (shops on its ground floor)
+const RING = { w0: -100, w1: -93, s0: 104, s1: 111, e0: 14, e1: 21 };   // ring road: west, south and east legs
+const TRACK = { x: 42, z: 72, a: 15, R: 16, r: 10.5 };       // exactly in front of Shivaji, no further south
+const STAGE = { x: 42, z: 92, w: 12, d: 5, h: 1.2 };        // on the track infield, facing north
+const FIELD = [[22, -30], [88, -24], [78.4, 24], [64, 80], [56, 142], [38, 148], [6, 116], [10.4, 80], [16, 24], [19.2, -28]];
+
+/* walking surface height: flat except the sunken courtyard, its east stairs and west ramp */
+function H() { return 0; }   // the whole campus is at ground level
+
+const WALK_TENTS = [
+  ["Virtual Reality Merge Zone", "Play", 40], ["Retro Gaming Nexus", "Play", 40], ["Commit Lottery", "Play", 20], ["Dart Commit", "Play", 20],
+  ["Reverse Musical Chairs", "Play", 20], ["Coin Drop Challenge", "Play", 20], ["Act It Backwards", "Play", 20], ["Blindfold Course desk", "Play", 30],
+  ["Startup Spotlight", "Explore", 0], ["Fortune Teller", "Explore", 20], ["Merchandise Stall", "Shop", null],
+];
+const COURT_TENTS = [
+  ["Octocat Splash", "Make", 30], ["Origami Wonderland", "Make", 20], ["3D Printing Showcase", "Make", 30],
+  ["Voiceover Studio", "Make", 20], ["Digital Art Station", "Make", 20], ["Cultural Photo Booth", "Explore", 0],
+];
+const RECHARGE = [
+  { name: "Tech Trivia", x: 80, z: -50 }, { name: "Git Speed Quiz", x: 62, z: -27 }, { name: "Fortune Wheel", x: -4, z: -18 },
+  { name: "Code Puzzle", x: -26, z: 32 }, { name: "Debug Dash", x: -40, z: 24 },
+];
+
+const STOPS = [
+  { key: "overview", short: "Overview", zone: "from above the field", pos: [118, 100], fly: 85, look: [-20, 0, -20],
+    title: "Epoch across the campus",
+    when: ["December 2026 · two days"],
+    lede: "Shivaji Bhavan on the left, Visvesvaraya on the right, the café roof between them and the field in front. The gate and the hostels are off to the right.",
+    dress: ["Green line: the walk in from the IN gate along the bushy strip, down the road between the café and Visvesvaraya, through the gap and onto the track to the stage.",
+            "Purple: the stalls along the road in front of Shivaji, with the track behind them. Mint: the making corner between the two blocks.",
+            "The five gold +20 pillars are the recharge points, spread out so people cross the whole campus."],
+    budget: "Use the arrows below to walk it stop by stop, or drag and use W A S D to wander." },
+  { key: "gate", short: "Gate", zone: "east road", pos: [112, -36], look: [92, 5, -42],
+    title: "The two gates",
+    when: ["Day 1 · from 07:30", "Day 2 · from 07:30"],
+    lede: "Both gates on the east road with the security cabin between them. Make one the fest entrance and keep the OUT gate for leaving, so the crowd flows one way.",
+    dress: ["A truss arch just outside the IN gate with one flex print: EPOCH, the dates, the club. Print the inner side too: people read it on the way out.",
+            "Wrap the white gate pillars in fabric bands in the five booth colours. The lamps on top stay as they are.",
+            "Bunting along the green railing on both sides, and two standees at the IN gate: buy a ticket, open your coin wallet."],
+    budget: "Skip the truss and hang the flex straight across the IN gate pillars. Pillar wraps are just cloth and cable ties." },
+  { key: "reg", short: "Coin counter", zone: "inside the gate", pos: [77, -37], look: [82, 1.8, -24],
+    title: "Coin counter",
+    when: ["Day 1 · 07:30–09:00 rush", "open both days"],
+    lede: "On the forecourt just inside the gate, before the strip. Ticket in, wristband on, 398 coins credited to the attendee's profile.",
+    dress: ["A long desk with a backdrop shaped like the paper ticket: wristbands at one end, coin credit at the other.",
+            "One board: ₹199 = 398 coins, and where the five recharge points are on campus.",
+            "Use the red stanchions the campus already has for the queue, with floor dots leading into the commit line."],
+    budget: "Two tables, one backdrop flex, and volunteers in the same green tee. That's the whole counter." },
+  { key: "strip", short: "Lawn strip", zone: "past the cabin", pos: [78, -35], look: [8, 3, -44],
+    title: "The central lawn strip",
+    when: ["all day, both days"],
+    lede: "Straight in from the gate: the bushy strip with a road on each side, the three hostels on the right. It breaks where the left road turns off, opens up by the café, then starts again in front of Visvesvaraya.",
+    dress: ["Banners on every lamp post along the strip, in four designs that repeat: EPOCH, 398 coins, every commit counts, play · make · learn · win.",
+            "Pennant strings across both roads, about 6 m up so buses and the stage truck still pass.",
+            "Commit dots down the left road: floor vinyl by day, solar garden lights at night."],
+    budget: "The lamp posts are already there. Banners with pole pockets and cable ties need no hardware." },
+  { key: "sports", short: "Turf & court", zone: "north end of the field", pos: [56, -36], look: [50, 0.5, -6],
+    title: "Turf, court and sprint track",
+    when: ["Day 1 · 14:00–18:00", "Day 2 · 14:00–18:00"],
+    lede: "The north end of the field: the football turf, the basketball court beside it, and the straight sprint track that starts here and runs south into the big track. The big games that need open ground go here.",
+    chips: [["Human-Size Snake & Ladder", "Play", 30], ["Pull and Stack (giant Jenga)", "Play", 30], ["Blindfolded Obstacle Course", "Play", 30], ["Git Escape Challenge", "Compete", 60]],
+    dress: ["Snake & ladder as one 8 × 8 m flex sheet on the turf. Turf can't take pegs, so weigh the corners with sandbags.",
+            "Giant Jenga on the basketball court, the Git Escape container on the grass beside the turf.",
+            "Pennants along the court fences. The fences are already there, so this is the cheapest colour on campus."],
+    budget: "Ask the sports office for the courts and turf in writing early. Cones for the blindfold course come from their store." },
+  { key: "cafe", short: "Café", zone: "beside Visvesvaraya", pos: [-16, -27], look: [4.8, 3, -1.6],
+    title: "GITAM Café",
+    when: ["lunch 12:00–14:00", "open all day"],
+    lede: "Where the first strip breaks there is open space, with the round café in it. Visvesvaraya and its own bushy strip start further on. There is no road behind the café: the field starts right there. The only way through to Shivaji and the track is the road between the café and Visvesvaraya, so everyone passes here and it's the natural meeting point.",
+    dress: ["Fairy lights along the roof edge: from the road it reads as a lantern at night.",
+            "A sign under the roof: 'meet at the café', with the walkway map.",
+            "Recharge point 3 just past it, so people waiting for friends play a round."],
+    budget: "Only lights and one sign. The building already does the work." },
+  { key: "walk", short: "Booth walkway", zone: "along the field", pos: [17.5, 32], look: [21, 2, 96],
+    title: "The booth walkway",
+    when: ["Day 1 · 14:00–18:00", "Day 2 · 14:00–18:00"],
+    lede: "The stalls stand along the east road, right in front of Shivaji, with the track behind them on the lawn. Eleven tents in one row facing the road: games first, then startups, fortune teller and merch.",
+    chipsFrom: "walk",
+    dress: ["The same 3 × 3 m tent for every booth. Only the valance colour changes by group: purple Play, blue Explore, gold merch.",
+            "Swap the flags on the existing flagpoles for flags in the booth colours for the two days.",
+            "A coin price board on every tent in the same spot, front right leg."],
+    budget: "Rent all gazebos from one vendor in bulk. Print one valance template and change the name." },
+  { key: "shivaji", short: "Shivaji Bhavan", zone: "Academic Block 1", pos: [16, 60], look: [-12, 13, 72],
+    title: "Shivaji Bhavan: competitions & workshops",
+    when: ["D1 08:30 Fail-Proof Code", "D2 08:30 Code Auction"],
+    lede: "The engineering block with the arched glass front, facing the track. The CSE labs host both coding competitions and all five workshops, so learners never cross campus.",
+    chips: [["D1 09:00 Git & GitHub Basics", "Make"], ["D1 10:30 GitHub Portfolio", "Make"], ["D1 14:00 Digital Art Hack", "Make"], ["D2 08:00 Advanced Git", "Make"], ["D2 10:30 Code Review & QA", "Make"]],
+    dress: ["Two vertical banners down the pilasters either side of the arch: git checkout workshops and git push competitions.",
+            "A live scoreboard TV under the portico during the competitions.",
+            "Room signs in plastic sleeves on each lab door, so the Day 2 change takes two minutes."],
+    budget: "Hang the banners from the terrace parapet with rope. No scaffolding needed." },
+  { key: "visves", short: "Visvesvaraya", zone: "Academic Block 2", pos: [-12, -22], look: [-37, 13, -9],
+    title: "Visvesvaraya Bhavan: talks",
+    when: ["D1 16:00 Placement presentation", "D2 16:00 Guest speaker"],
+    lede: "The eight-sided block behind its own bushy two-lane strip, past the open space by the café. Its seminar hall hosts the two afternoon talks (confirm which room is free).",
+    dress: ["One long banner down the projecting front bay under the pediment, facing the road.",
+            "Speaker name boards at the portico steps, and a sign at the café pointing here from 15:45.",
+            "Reuse the inauguration backdrop inside the hall."],
+    budget: "Everything here is reused from the stage or the gate." },
+  { key: "stage", short: "Main stage", zone: "track infield", pos: [42, 58], look: [42, 4, 95],
+    title: "Main stage on the track",
+    when: ["Day 1 · 08:00 inauguration", "Day 2 · 18:00 winners & closing"],
+    lede: "The track sits right in front of Shivaji. The stage stands at its south bend facing north, so the crowd fills the infield with Shivaji on their left. Beyond it is the water treatment plant, the volleyball court sits in the far south-east corner, and the temple is out of the way in the south-west corner.",
+    dress: ["12 × 5 m stage with an LED wall: the live coin leaderboard between sessions.",
+            "Four light poles at the corners of the infield with strings crossing over the crowd.",
+            "Chairs only in the front rows. The rest of the infield stays open for standing."],
+    budget: "A projector on a white flex screen instead of LED. It only works after sunset, which is when the closing is." },
+  { key: "gap", short: "Between blocks", zone: "Visvesvaraya to Shivaji", pos: [-90, 16.5], look: [-20, 2, 24],
+    title: "Between the two blocks",
+    when: ["Day 1 · 14:00–18:00", "Day 2 · 14:00–18:00"],
+    lede: "From the west road behind the blocks, a walking road runs just below Visvesvaraya: the post office first, then the bank, both on your left in its ground floor. On the right a big open space reaches all the way to Shivaji, whose ground floor holds the bakery, juice and stationery shops. The quiet making corner.",
+    chipsFrom: "court",
+    dress: ["The six Make & Explore tents in one row in the open space, facing the road, with room left in front of the shops.",
+            "A canopy of light strings across the open space, building to building: at night it glows between the two blocks.",
+            "Tell the bakery and juice shops early: it will be their busiest two days of the year."],
+    budget: "Borrow tables and chairs from the blocks themselves. Ask the stationery shops to stock origami paper." },
+  { key: "temple", short: "Temple corner", zone: "south-west corner", pos: [-88, 122], look: [-116, 3, 140],
+    title: "The temple corner",
+    when: ["both days"],
+    lede: "Go round Visvesvaraya and down the west road to the corner: the temple, with a lawn in front of it. The south road runs east from here with the lawn on your right and Shivaji on your left.",
+    dress: ["No bunting, banners or lights on or near the temple. Leave its lawn clear.",
+            "No speakers on the west and south roads. The stage faces north, away from this corner.",
+            "Lamp banners can carry on along the south road once you're past the lawn."],
+    budget: "This stop costs nothing: it's where you decide what not to do." },
+  { key: "hostels", short: "Hostel side", zone: "right road", pos: [86, -66], look: [66, 9, -96],
+    title: "Hostel side",
+    when: ["both days"],
+    lede: "Take the right road from the strip: Vinay Sadan, the staff quarters and Kokila Sadan face their long lawn. Go straight and turn left past the old court and the bioenergy unit, and the road loops behind the blocks back down to the Visvesvaraya strip. People live here, so keep it calm.",
+    dress: ["Lamp banners on the right road only, no music.",
+            "One corner of the lawn for a volunteer rest and storage tent.",
+            "Arrow signs back to the event side for people coming down from their rooms."],
+    budget: "A borrowed tent and a cooler of water. Volunteers will thank you." },
+  { key: "closing", short: "Closing night", zone: "Day 2 · 18:00", pos: [42, 64], look: [42, 4.5, 95], evening: true,
+    title: "Closing night",
+    when: ["Day 2 · 18:00–19:00"],
+    lede: "Sunset in Bengaluru in December is around 17:55. The infield lights up under the strings, the walkway glows along the field, and winners walk the commit line to the stage.",
+    dress: ["Warm fairy lights on every pennant string, the café roof and the tent edges.",
+            "Uplights on the white pilasters of both buildings, facing the field: cheap and dramatic.",
+            "The LED wall shows the total coins spent over the two days."],
+    budget: "Buy the fairy lights, don't hire them: the club will use them again every year." },
+];
+
+/* ---------------------------------------------------------------- */
+const canvas = document.getElementById("scene");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(66, 1, 0.1, 1200);
+camera.rotation.order = "YXZ";
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const coarse = matchMedia("(pointer: coarse)").matches;
+
+const hemi = new THREE.HemisphereLight(0xdfefff, 0x6c7a52, 0.85);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff2dc, 1.05);
+sun.target.position.set(-15, 0, -25);
+sun.castShadow = true;
+sun.shadow.mapSize.set(coarse ? 2048 : 4096, coarse ? 2048 : 4096);
+Object.assign(sun.shadow.camera, { left: -200, right: 200, top: 200, bottom: -200, near: 10, far: 520 });
+sun.shadow.bias = -0.0008;
+scene.add(sun, sun.target);
+scene.fog = new THREE.Fog(0xcfe3ee, 260, 760);
+
+/* helpers */
+const matCache = {};
+const mat = (color, o = {}) => { const k = color + JSON.stringify(o); return matCache[k] || (matCache[k] = new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0, ...o })); };
+const colliders = [];
+function box(w, h, d, m, x, y, z, opts = {}) {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), typeof m === "number" ? mat(m) : m);
+  mesh.position.set(x, y, z);
+  mesh.castShadow = opts.cast !== false; mesh.receiveShadow = true;
+  if (opts.ry) mesh.rotation.y = opts.ry;
+  (opts.parent || scene).add(mesh);
+  if (opts.collide) colliders.push({ x0: x - w / 2, x1: x + w / 2, z0: z - d / 2, z1: z + d / 2 });
+  return mesh;
+}
+const col = (x0, x1, z0, z1) => colliders.push({ x0, x1, z0, z1 });
+/* buildings are modelled facing local +z, then turned so the front faces east (+x): world = (cx + lz, cz − lx) */
+const colR = (cx, cz, lx0, lx1, lz0, lz1) => col(cx + lz0, cx + lz1, cz - lx1, cz - lx0);
+function ctex(w, h, draw) {
+  const c = document.createElement("canvas"); c.width = w; c.height = h;
+  const g = c.getContext("2d"); draw(g, w, h);
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; return t;
+}
+const FONT = '"Mona Sans", "Segoe UI", system-ui, sans-serif';
+const MONO = '"JetBrains Mono", Consolas, monospace';
+function fit(g, text, maxW, size, weight, fam = FONT) {
+  let s = size; do { g.font = `${weight} ${s}px ${fam}`; s -= 2; } while (g.measureText(text).width > maxW && s > 8); return s + 2;
+}
+function plane(tex, w, h, basic = false) {
+  const m = basic ? new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }) : new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 });
+  const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m); p.receiveShadow = !basic; return p;
+}
+function placed(obj, x, y, z, ry = 0, parent = scene) { obj.position.set(x, y, z); obj.rotation.y = ry; parent.add(obj); return obj; }
+function commitStrip(g, x0, x1, y, r, cols) {
+  g.strokeStyle = "rgba(255,255,255,.5)"; g.lineWidth = r * 0.45; g.beginPath(); g.moveTo(x0, y); g.lineTo(x1, y); g.stroke();
+  cols.forEach((c, i) => { g.fillStyle = HEX(c); g.beginPath(); g.arc(x0 + (x1 - x0) * (i / (cols.length - 1)), y, r, 0, 7); g.fill(); });
+}
+function flat(w, d, color, x, z, y = 0.01, m) {
+  const p = new THREE.Mesh(new THREE.PlaneGeometry(w, d), m || mat(color));
+  p.rotation.x = -Math.PI / 2; p.position.set(x, y, z); p.receiveShadow = true; scene.add(p); return p;
+}
+const flatR = (x0, x1, z0, z1, color, y = 0.01, m) => flat(x1 - x0, z1 - z0, color, (x0 + x1) / 2, (z0 + z1) / 2, y, m);
+function quad(a, b, c, d, m) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute([...a, ...b, ...c, ...d], 3));
+  g.setAttribute("uv", new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2));
+  g.setIndex([0, 1, 2, 0, 2, 3]); g.computeVertexNormals();
+  const mesh = new THREE.Mesh(g, m); mesh.receiveShadow = true; scene.add(mesh); return mesh;
+}
+function polyGround(pts, color, y) {
+  const s = new THREE.Shape(pts.map(([x, z]) => new THREE.Vector2(x, -z)));
+  const g = new THREE.ShapeGeometry(s); g.rotateX(-Math.PI / 2);
+  const m = new THREE.Mesh(g, mat(color, { roughness: 1 })); m.position.y = y; m.receiveShadow = true; scene.add(m); return m;
+}
+function signTex(text, { w = 1024, h = 160, bg = "#f7f4ee", fg = "#1b1b22", size = 80, weight = 800, fam = FONT } = {}) {
+  return ctex(w, h, (g) => { g.fillStyle = bg; g.fillRect(0, 0, w, h); g.fillStyle = fg; g.textAlign = "center"; g.textBaseline = "middle"; fit(g, text, w - 60, size, weight, fam); g.fillText(text, w / 2, h / 2 + 3); });
+}
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+
+/* light strings */
+const bulbMat = new THREE.MeshBasicMaterial({ color: 0xd8d2c0 });
+const lampMat = new THREE.MeshBasicMaterial({ color: 0xe8e4d6 });
+const bulbs = [], flags = [], stringLines = [];
+function bunting(a, b, sag, cols, flagGap = 0.55, withFlags = true) {
+  const len = a.distanceTo(b), n = Math.max(2, Math.floor(len / flagGap));
+  const ry = -Math.atan2(b.z - a.z, b.x - a.x);
+  const pts = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n, p = new THREE.Vector3().lerpVectors(a, b, t); p.y -= sag * 4 * t * (1 - t); pts.push(p);
+    if (i > 0 && i < n) {
+      if (withFlags && i % 2) flags.push({ p, ry, color: cols[(i >> 1) % cols.length] });
+      else bulbs.push(p.clone().add(V(0, -0.04, 0)));
+    }
+  }
+  stringLines.push(pts);
+}
+
+/* ---------------- ground ---------------- */
+const soil = ctex(512, 512, (g, w, h) => {
+  g.fillStyle = "#93a25e"; g.fillRect(0, 0, w, h);
+  let s = 3; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 70; i++) { g.fillStyle = r() < 0.45 ? "rgba(178,104,62,.55)" : "rgba(84,120,58,.5)"; g.beginPath(); g.ellipse(r() * w, r() * h, 20 + r() * 70, 14 + r() * 40, r() * 3, 0, 7); g.fill(); }
+});
+soil.wrapS = soil.wrapT = THREE.RepeatWrapping; soil.repeat.set(10, 10);
+const soilMat = new THREE.MeshStandardMaterial({ map: soil, roughness: 1 });
+function ringPlanes(o, hole, y, m) {
+  flatR(o.x0, o.x1, o.z0, hole.z0, 0, y, m); flatR(o.x0, o.x1, hole.z1, o.z1, 0, y, m);
+  flatR(o.x0, hole.x0, hole.z0, hole.z1, 0, y, m); flatR(hole.x1, o.x1, hole.z0, hole.z1, 0, y, m);
+}
+ringPlanes({ x0: -900, x1: 900, z0: -900, z1: 900 }, CAMPUS, 0, soilMat);
+flatR(CAMPUS.x0, CAMPUS.x1, CAMPUS.z0, CAMPUS.z1, 0, 0.005, mat(0x8aad57, { roughness: 1 }));
+
+const ASPH = 0x4b4e54, PAVE = 0xd6cfc2, PAVE2 = 0xc6bead;
+flatR(92.5, 106, -150, 172, ASPH, 0.015);           // approach road along the east wall
+flatR(-400, 400, 156, 170, 0x55585e, 0.016);       // NH 207 to the south
+[160, 166].forEach(z => flatR(-400, 400, z - 0.15, z + 0.15, 0xe9b44c, 0.02));
+flatR(92.5, 98, -58, -30, 0xb8b0a0, 0.02);          // apron outside the gates
+flatR(74, 92, -58, -30, PAVE, 0.021);               // forecourt inside the gates
+flatR(RING.w0, STRIP.x1, -56, STRIP.z0, ASPH, 0.02);             // right (north) road, carries on along the top of Visvesvaraya
+flatR(RING.w0, STRIP.x1, STRIP.z1, -32, ASPH, 0.02);             // left (south) road, both strips
+STRIPS.forEach(([a, b]) => flatR(a, b, STRIP.z0, STRIP.z1, 0x7fa64f, 0.015));  // the two bushy strips
+flatR(STRIP2.x1, STRIP.x0, STRIP.z0, STRIP.z1, 0x93b85e, 0.014);  // open space between them, by the café (no bushes)
+flatR(RING.w0, STRIP.x1, -58, -56, PAVE2, 0.022); flatR(RING.w0, STRIP.x1, -32, -30.4, PAVE2, 0.022);
+flatR(STRIP.x0, 70, -66, -58, 0x93b85e, 0.013);     // small lawn in front of the first hostel
+flatR(75, 80, -190, -56, ASPH, 0.02);               // road up to the hostels
+flatR(80, 90, -190, -58, 0x93b85e, 0.013);          // hostel lawn
+polyGround(FIELD, 0x86b04f, 0.012);                 // the field
+flatR(-24, -8, -32, GAP.z0, ASPH, 0.021);           // road between Visvesvaraya and the café down to the gap
+function pathSeg(x0, z0, x1, z1, w, color = PAVE2, y = 0.017) {
+  const p = flat(w, Math.hypot(x1 - x0, z1 - z0), color, (x0 + x1) / 2, (z0 + z1) / 2, y);
+  p.rotation.z = -Math.atan2(x1 - x0, -(z1 - z0)); return p;
+}
+flatR(RING.w0, RING.w1, -56, RING.s1, ASPH, 0.021);     // west road, behind both blocks
+flatR(RING.w0, RING.e1, RING.s0, RING.s1, ASPH, 0.021);  // south road: Shivaji on the left, lawn on the right
+flatR(RING.e0, RING.e1, GAP.z0, RING.s1, ASPH, 0.021);   // east road: starts at the gap, Shivaji on one side, the track on the other
+flatR(GAP.x0, GAP.x1, GAP.z0, GAP.z1, 0x8d8f93, 0.021);   // walking road just below Visvesvaraya
+flatR(OPEN.x0, OPEN.x1, OPEN.z0, OPEN.z1, 0xdcd6cb, 0.02);  // big open space up to Shivaji
+flatR(4, 10, -190, -56, ASPH, 0.02); flatR(4, 80, -194, -189, ASPH, 0.02);   // loop road round the hostels
+flatR(-12, 14, 42, 104, 0x5a5d62, 0.019);             // forecourt in front of Shivaji
+flatR(21, 25.5, 40, 104, PAVE, 0.022);              // stall edge of the east road
+flatR(-92, -80, -28, 10, ASPH, 0.016);              // sloped parking behind Visvesvaraya
+flatR(-118, -20, 113, 148, 0x93b85e, 0.013);        // lawn south of the south road, in front of the temple
+/* ---------------- boundary wall + gates ---------------- */
+const railTex = ctex(256, 128, (g, w, h) => {
+  g.fillStyle = "#1f6b3a"; g.fillRect(0, 10, w, 7); g.fillRect(0, h - 14, w, 8);
+  for (let x = 4; x < w; x += 16) { g.fillRect(x, 4, 4, h - 8); g.beginPath(); g.moveTo(x - 3, 8); g.lineTo(x + 2, 0); g.lineTo(x + 7, 8); g.fill(); }
+});
+railTex.wrapS = THREE.RepeatWrapping;
+function wallRun(x0, z0, x1, z1) {
+  const len = Math.hypot(x1 - x0, z1 - z0), cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, ry = -Math.atan2(z1 - z0, x1 - x0);
+  box(len, 0.9, 0.4, 0xf1eee8, cx, 0.45, cz, { ry, cast: false });
+  const t = railTex.clone(); t.needsUpdate = true; t.repeat.set(len / 2.2, 1);
+  placed(new THREE.Mesh(new THREE.PlaneGeometry(len, 1.5), new THREE.MeshStandardMaterial({ map: t, alphaTest: 0.5, side: THREE.DoubleSide })), cx, 1.65, cz, ry);
+  for (let i = 0; i <= len; i += 9) { const k = i / len; box(0.5, 2.6, 0.5, 0xf4f1ea, x0 + (x1 - x0) * k, 1.3, z0 + (z1 - z0) * k, { cast: false }); }
+  col(Math.min(x0, x1) - 0.3, Math.max(x0, x1) + 0.3, Math.min(z0, z1) - 0.3, Math.max(z0, z1) + 0.3);
+}
+wallRun(GATE_X, CAMPUS.z0, GATE_X, -56); wallRun(GATE_X, -32, GATE_X, CAMPUS.z1);
+wallRun(CAMPUS.x0, CAMPUS.z0, CAMPUS.x1, CAMPUS.z0); wallRun(CAMPUS.x0, CAMPUS.z1, CAMPUS.x1, CAMPUS.z1); wallRun(CAMPUS.x0, CAMPUS.z0, CAMPUS.x0, CAMPUS.z1);
+placed(plane(ctex(1536, 160, (g, w, h) => { g.fillStyle = "#1d3f9e"; g.fillRect(0, 0, w, h); g.fillStyle = "#fff"; g.textBaseline = "middle"; g.font = `800 86px ${FONT}`; g.fillText("GITAM", 50, h / 2 + 4); g.font = `600 44px ${FONT}`; g.fillText("(Deemed to be University) · Bengaluru", 420, h / 2 + 4); }), 22, 2.3), GATE_X + 0.45, 1.4, -10, Math.PI / 2);
+[-56, -48, -40, -32].forEach(z => {
+  box(1.2, 4.4, 1.2, 0xf6f4ef, GATE_X, 2.2, z, { collide: true });
+  box(1.5, 0.35, 1.5, 0xf6f4ef, GATE_X, 4.55, z); box(0.9, 0.7, 0.9, 0xf6f4ef, GATE_X, 5.05, z);
+  const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.42, 14, 10, 0, 7, 0, 1.7), mat(0x22252b)); lamp.position.set(GATE_X, 5.45, z); scene.add(lamp);
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 8), lampMat); bulb.position.set(GATE_X, 5.5, z); scene.add(bulb);
+  [0.9, 1.7, 2.5, 3.3].forEach((y, i) => box(1.26, 0.32, 1.26, PAL[(i + (z > -44 ? 0 : 2)) % 5], GATE_X, y, z, { cast: false }));
+});
+const leafTex = ctex(256, 128, (g, w, h) => { g.fillStyle = "#1f6b3a"; g.fillRect(0, 14, w, 7); g.fillRect(0, h - 22, w, 8); g.fillRect(0, h / 2, w, 5); for (let x = 6; x < w; x += 14) g.fillRect(x, 6, 4, h - 10); });
+leafTex.wrapS = THREE.RepeatWrapping; leafTex.repeat.set(2, 1);
+const leafMat = new THREE.MeshStandardMaterial({ map: leafTex, alphaTest: 0.5, side: THREE.DoubleSide });
+[-55.6, -48.4, -39.6, -32.4].forEach(z => placed(new THREE.Mesh(new THREE.PlaneGeometry(5.6, 2.5), leafMat), GATE_X - 3, 1.3, z));
+[["OUT", -48], ["IN", -40]].forEach(([t, z]) => placed(plane(signTex(t, { w: 256, h: 96, bg: "#111", fg: "#e7c46a", size: 64 }), 0.9, 0.34), GATE_X + 0.62, 2.3, z, Math.PI / 2));
+box(5, 3.1, 6, 0xf4f1ea, GATE_X - 5, 1.55, -44, { collide: true });   // security cabin between the gates
+box(7.5, 0.3, 8.5, 0xe6e2da, GATE_X - 4.5, 3.35, -44);
+box(0.1, 1.2, 3, 0x405766, GATE_X - 2.45, 1.8, -44, { cast: false });
+const truss = mat(0xb8bcc2, { metalness: 0.6, roughness: 0.4 });
+[-41, -31].forEach(z => { box(0.6, 8.4, 0.6, truss, GATE_X + 2.5, 4.2, z, { collide: true }); box(0.6, 8.4, 0.6, truss, GATE_X + 3.7, 4.2, z, { collide: true }); });
+box(1.8, 2.3, 10.6, truss, GATE_X + 3.1, 9.2, -36);
+const archF = ctex(2048, 300, (g, w) => {
+  g.fillStyle = "#0a0a14"; g.fillRect(0, 0, w, 300);
+  g.fillStyle = "#ffc933"; g.textBaseline = "middle"; g.font = `800 190px ${FONT}`; g.fillText("EPOCH", 60, 130);
+  const ew = g.measureText("EPOCH").width + 100;
+  g.fillStyle = "#fff"; fit(g, "GitHub Community Club · GITAM Bengaluru", w - ew - 60, 60, 600); g.fillText("GitHub Community Club · GITAM Bengaluru", ew, 96);
+  g.fillStyle = "#a3a4bd"; fit(g, "two days · one economy · every commit counts", w - ew - 60, 44, 400, MONO); g.fillText("two days · one economy · every commit counts", ew, 176);
+  commitStrip(g, 60, w - 60, 266, 12, PAL.concat(PAL));
+});
+const archB = ctex(2048, 300, (g, w) => { g.fillStyle = "#0a0a14"; g.fillRect(0, 0, w, 300); g.fillStyle = "#fff"; g.textBaseline = "middle"; g.textAlign = "center"; fit(g, "git commit -m \"see you next year\"", w - 120, 120, 800); g.fillText("git commit -m \"see you next year\"", w / 2, 130); commitStrip(g, 60, w - 60, 260, 12, PAL); });
+placed(plane(archF, 10.4, 1.95, true), GATE_X + 4.02, 9.2, -36, Math.PI / 2);
+placed(plane(archB, 10.4, 1.95, true), GATE_X + 2.18, 9.2, -36, -Math.PI / 2);
+[[GATE_X + 5.5, -29, "TICKETS", "₹199 → 398 coins"], [GATE_X + 5.5, -43, "WALLET", "check your coins"]].forEach(([x, z, a, b]) => {
+  const t = ctex(256, 512, (g, w) => {
+    g.fillStyle = "#0a0a14"; g.fillRect(0, 0, w, 512); g.fillStyle = "#fff"; g.font = `800 40px ${FONT}`; g.textAlign = "center"; g.fillText(a, w / 2, 70);
+    g.font = `400 20px ${MONO}`; g.fillStyle = "#a3a4bd"; g.fillText(b, w / 2, 104);
+    g.fillStyle = "#fff"; g.fillRect(48, 150, 160, 160); g.fillStyle = "#0a0a14";
+    for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) if ((i * 7 + j * 3 + i * j) % 3 === 0) g.fillRect(56 + i * 18, 158 + j * 18, 16, 16);
+    commitStrip(g, 40, w - 40, 420, 12, PAL);
+  });
+  placed(plane(t, 1, 2), x, 1.05, z, Math.PI / 2 + (z > -36 ? -0.2 : 0.2));
+});
+for (let i = 0; i < 4; i++) { bunting(V(GATE_X + 0.4, 2.5, -31 + i * 7), V(GATE_X + 0.4, 2.5, -24 + i * 7), 0.5, PAL); bunting(V(GATE_X + 0.4, 2.5, -57 - i * 7), V(GATE_X + 0.4, 2.5, -64 - i * 7), 0.5, PAL); }
+bunting(V(GATE_X + 2.5, 7.9, -40.7), V(GATE_X + 2.5, 7.9, -31.3), 0.8, PAL);
+
+/* ---------------- facades ---------------- */
+function brickFacade(wm, hm, floors) {
+  const s = Math.min(2048 / wm, 28), W = Math.round(wm * s), Hh = Math.round(hm * s), fh = (Hh - 0.8 * s) / floors;
+  return ctex(W, Hh, g => {
+    g.fillStyle = "#c99a5c"; g.fillRect(0, 0, W, Hh);
+    g.fillStyle = "#efe9de"; g.fillRect(0, 0, W, 0.8 * s); g.fillRect(0, Hh - fh, W, fh);
+    const bay = 3 * s, nb = Math.floor(W / bay);
+    for (let b = 0; b < nb; b++) {
+      for (let f = 0; f < floors - 1; f++) {
+        const x = (b + 0.5) * bay - 0.65 * s, y = 0.8 * s + f * fh + fh * 0.22;
+        g.fillStyle = "#f7f4ee"; g.fillRect(x - 3, y - 3, 1.3 * s + 6, 1.7 * s + 6);
+        g.fillStyle = "#3a4650"; g.fillRect(x, y, 1.3 * s, 1.7 * s);
+        g.fillStyle = "#f7f4ee"; g.fillRect(x + 0.63 * s, y, 3, 1.7 * s);
+      }
+      g.fillStyle = "#2b3138"; g.fillRect(b * bay + 0.35 * s, Hh - fh * 0.85, bay - 0.7 * s, fh * 0.85);
+      if (b % 3 === 0) { g.fillStyle = "#f2ede4"; g.fillRect(b * bay - 0.45 * s, 0.8 * s, 0.9 * s, Hh - fh - 0.8 * s); }
+    }
+  });
+}
+/* Chhatrapati Shivaji Bhavan: long front faces east onto the field, arch + portico in the middle */
+{
+  const g = new THREE.Group(); g.position.set(SH.cx, 0, SH.cz); g.rotation.y = Math.PI / 2; scene.add(g);
+  const W = SH.d, D = SH.w, h = 30;   // local width along the front, local depth
+  const front = new THREE.MeshStandardMaterial({ map: brickFacade(W, h, 8), roughness: 0.85 });
+  const side = new THREE.MeshStandardMaterial({ map: brickFacade(D, h, 8), roughness: 0.85 });
+  const roof = mat(0xe9e5dc);
+  const m = new THREE.Mesh(new THREE.BoxGeometry(W, h, D), [side, side, roof, roof, front, front]);
+  m.position.set(0, h / 2, 0); m.castShadow = m.receiveShadow = true; g.add(m);
+  colR(SH.cx, SH.cz, -W / 2 - 0.3, W / 2 + 0.3, -D / 2 - 0.3, D / 2 + 0.3);
+  [[-20, -20, 10, 3, 8], [5, -10, 14, 3.5, 10], [18, 15, 9, 3, 12], [-10, 20, 6, 2.5, 6]].forEach(([x, z, a, hh, b]) => box(a, hh, b, 0xf2f0ea, x, h + hh / 2, z, { parent: g }));
+  const arch = ctex(640, 1220, (gg, Wc, Hh) => {
+    const s = Wc / 16, y = hh => Hh - hh * s;
+    gg.fillStyle = "#f2eee6"; gg.fillRect(0, 0, Wc, Hh);
+    gg.fillStyle = "#1c222a"; gg.beginPath(); gg.moveTo(3 * s, y(3.8)); gg.lineTo(3 * s, y(21)); gg.arc(8 * s, y(21), 5 * s, Math.PI, 0); gg.lineTo(13 * s, y(3.8)); gg.closePath(); gg.fill();
+    gg.strokeStyle = "rgba(255,255,255,.18)"; gg.lineWidth = 3;
+    for (let x = 3; x <= 13; x += 1.25) { gg.beginPath(); gg.moveTo(x * s, y(3.8)); gg.lineTo(x * s, y(21 + Math.sqrt(Math.max(0, 25 - (x - 8) ** 2)))); gg.stroke(); }
+    for (let k = 7.5; k <= 21; k += 3.75) { gg.beginPath(); gg.moveTo(3 * s, y(k)); gg.lineTo(13 * s, y(k)); gg.stroke(); }
+    gg.fillStyle = "#9a6a2e"; gg.textAlign = "center"; gg.textBaseline = "middle"; fit(gg, "CHHATRAPATI SHIVAJI BHAVAN", 13 * s, 40, 800); gg.fillText("CHHATRAPATI SHIVAJI BHAVAN", 8 * s, y(28));
+    gg.fillStyle = "#c79b4a"; gg.beginPath(); gg.ellipse(8 * s, y(29.4), 1.2 * s, 0.4 * s, 0, 0, 7); gg.fill();
+  });
+  const cm = new THREE.MeshStandardMaterial({ map: arch, roughness: 0.6 }), plain = mat(0xf2eee6);
+  const lx = -2, fz = D / 2;   // arch sits at world z 48
+  const c = new THREE.Mesh(new THREE.BoxGeometry(16, 30.5, 1.4), [plain, plain, plain, plain, cm, plain]);
+  c.position.set(lx, 15.25, fz + 0.7); c.castShadow = true; g.add(c);
+  colR(SH.cx, SH.cz, lx - 8, lx + 8, fz, fz + 1.4);
+  box(22, 1.2, 8, 0xeee8dc, lx, 7.6, fz + 4.6, { parent: g });
+  box(22.4, 0.4, 8.4, 0xb98a50, lx, 8.3, fz + 4.6, { parent: g });
+  [-10, -4, 4, 10].forEach(dx => { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.6, 7, 16), mat(0xa8683a)); p.position.set(lx + dx, 3.5, fz + 8); p.castShadow = true; g.add(p); colR(SH.cx, SH.cz, lx + dx - 0.6, lx + dx + 0.6, fz + 7.4, fz + 8.6); });
+  box(16, 0.5, 4, 0xd7d0c4, lx, 0.25, fz + 3.4, { parent: g, cast: false });
+  [["git checkout workshops", C.purple, -11], ["git push competitions", C.green, 11]].forEach(([t, colr, dx]) => {
+    const tex = ctex(200, 1200, (gg, Wc, Hh) => { gg.fillStyle = HEX(colr); gg.fillRect(0, 0, Wc, Hh); gg.fillStyle = "#0b0b0f"; gg.save(); gg.translate(Wc / 2 + 14, Hh / 2); gg.rotate(-Math.PI / 2); gg.textAlign = "center"; gg.textBaseline = "middle"; fit(gg, t, Hh - 160, 92, 800, MONO); gg.fillText(t, 0, 0); gg.restore(); gg.font = `800 34px ${FONT}`; gg.textAlign = "center"; gg.fillText("EPOCH", Wc / 2, 60); gg.beginPath(); gg.arc(Wc / 2, Hh - 60, 16, 0, 7); gg.fill(); });
+    placed(plane(tex, 2.6, 15.5), lx + dx, 19, fz + 0.14, 0, g);
+  });
+  const tv = ctex(512, 288, (gg, Wc, Hh) => { gg.fillStyle = "#0a0a14"; gg.fillRect(0, 0, Wc, Hh); gg.fillStyle = "#3fc84e"; gg.font = `600 28px ${MONO}`; gg.fillText("fail-proof code · live", 24, 44); ["team 1", "team 2", "team 3", "team 4"].forEach((t, i) => { gg.fillStyle = "#c9d1d9"; gg.fillText(t, 24, 100 + i * 46); gg.fillStyle = "#30363d"; gg.fillRect(170, 80 + i * 46, 300 - i * 50, 24); }); });
+  placed(plane(tv, 1.8, 1.0, true), lx + 6.5, 1.9, fz + 9.2, 0, g);
+  box(0.1, 1.4, 0.1, 0x3a3d44, lx + 6.5, 0.7, fz + 9.15, { parent: g, cast: false });
+  box(10, 37, 10, 0xc99a5c, -86, 18.5, 47, { collide: true });   // stair tower at the back corner
+  box(10.4, 0.8, 10.4, 0xefe9de, -86, 37.4, 47);
+}
+/* ground-floor services: post office then bank under Visvesvaraya, shops under Shivaji */
+{
+  const vb = ctex(1024, 160, (g, W, Hh) => {
+    g.fillStyle = "#e9e3d8"; g.fillRect(0, 0, W, Hh);
+    [["Post office", "#c8372d"], ["Bank", "#2f5aa8"]].forEach(([n, c], i) => { const x = i * W / 2; g.fillStyle = "#2b3138"; g.fillRect(x + 30, 56, W / 2 - 60, Hh - 56); g.fillStyle = c; g.fillRect(x + 20, 8, W / 2 - 40, 42); g.fillStyle = "#fff"; g.textAlign = "center"; g.textBaseline = "middle"; g.font = `800 32px ${FONT}`; g.fillText(n, x + W / 4, 30); g.fillStyle = "rgba(255,230,170,.3)"; g.fillRect(x + 40, 66, W / 2 - 80, 40); });
+  });
+  placed(plane(vb, 16, 2.5), VB.x, 1.25, VB.z + VB.r + 0.12);
+  const shops = ctex(2048, 160, (g, W, Hh) => {
+    g.fillStyle = "#efe9de"; g.fillRect(0, 0, W, Hh);
+    const names = [["Bakery", "#e9b872"], ["Juice", "#9fd36f"], ["Stationery", "#8fb6e3"], ["Stationery", "#8fb6e3"], ["Xerox", "#f2f2f2"], ["Snacks", "#f0a070"]], sw = W / names.length;
+    names.forEach(([n, c], i) => { const x = i * sw; g.fillStyle = "#2b3138"; g.fillRect(x + 20, 56, sw - 40, Hh - 56); g.fillStyle = c; g.fillRect(x + 12, 8, sw - 24, 42); g.fillStyle = "#1b1b22"; g.textAlign = "center"; g.textBaseline = "middle"; g.font = `800 30px ${FONT}`; g.fillText(n, x + sw / 2, 30); g.fillStyle = "rgba(255,230,170,.35)"; g.fillRect(x + 30, 66, sw - 60, 40); });
+  });
+  placed(plane(shops, 60, 3), -50, 1.5, SH.cz - SH.d / 2 - 0.08, Math.PI);
+}
+/* annexe blocks on the west side (from the map) */
+[[-120, -108, -4, 30], [-122, -109, 34, 76]].forEach(([x0, x1, z0, z1]) => { box(x1 - x0, 8, z1 - z0, 0xe9e4da, (x0 + x1) / 2, 4, (z0 + z1) / 2, { collide: true }); box(x1 - x0 + 0.4, 0.5, z1 - z0 + 0.4, 0xc99a5c, (x0 + x1) / 2, 8.2, (z0 + z1) / 2); });
+box(6, 4, 6, 0xe4e0d6, 17.6, 2, -70.4, { collide: true });
+/* Sir Visvesvaraya Bhavan: eight-sided tower, front faces east to the road */
+{
+  const g = new THREE.Group(); g.position.set(VB.x, 0, VB.z); g.rotation.y = Math.PI / 2; scene.add(g);
+  const h = 30, R = VB.r / Math.cos(Math.PI / 8), r = VB.r;
+  const tex = ctex(2048, 512, (gg, W, Hh) => {
+    gg.fillStyle = "#f2efe9"; gg.fillRect(0, 0, W, Hh);
+    const fw = W / 8, floors = 9, fh = (Hh - 26) / floors;
+    for (let f8 = 0; f8 < 8; f8++) {
+      const x0 = f8 * fw;
+      for (let fl = 0; fl < floors; fl++) for (let k = 0; k < 4; k++) {
+        const x = x0 + 36 + k * (fw - 52) / 4, y = 26 + fl * fh + fh * 0.22;
+        gg.fillStyle = "#b8743e"; gg.fillRect(x - 3, y - 3, 34, fh * 0.56 + 6); gg.fillStyle = "#3d4650"; gg.fillRect(x, y, 28, fh * 0.56);
+      }
+      gg.fillStyle = "#b8743e"; gg.fillRect(x0, 0, 14, Hh); gg.fillRect(x0 + fw - 14, 0, 14, Hh); gg.fillRect(x0 + fw / 2 - 4, 26, 8, Hh); gg.fillRect(x0, 0, fw, 10);
+    }
+  });
+  const t = new THREE.Mesh(new THREE.CylinderGeometry(R, R, h, 8, 1, false, Math.PI / 8), [new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 }), mat(0xe9e5dc), mat(0xe9e5dc)]);
+  t.position.set(0, h / 2, 0); t.castShadow = t.receiveShadow = true; g.add(t);
+  col(VB.x - r, VB.x + r, VB.z - r, VB.z + r);
+  const pod = ctex(1024, 128, (gg, W, Hh) => { gg.fillStyle = "#b5683f"; gg.fillRect(0, 0, W, Hh); gg.fillStyle = "#e9e3d8"; gg.fillRect(0, 0, W, 12); for (let x = 20; x < W; x += 52) { gg.fillStyle = "#f4efe6"; gg.fillRect(x - 3, 40, 34, 50); gg.fillStyle = "#3d4650"; gg.fillRect(x, 43, 28, 44); } });
+  box(2 * r - 4, 4.5, 2 * r - 4, new THREE.MeshStandardMaterial({ map: pod, roughness: 0.9 }), 0, 2.25, -2, { parent: g });
+  const bayTex = ctex(400, 1000, (gg, W, Hh) => { gg.fillStyle = "#f2efe9"; gg.fillRect(0, 0, W, Hh); gg.fillStyle = "#b8743e"; gg.fillRect(0, 0, 26, Hh); gg.fillRect(W - 26, 0, 26, Hh); for (let fl = 0; fl < 9; fl++) for (let k = 0; k < 3; k++) { const x = 70 + k * 100, y = 40 + fl * 100; gg.fillStyle = "#b8743e"; gg.fillRect(x - 4, y - 4, 52, 60); gg.fillStyle = "#3d4650"; gg.fillRect(x, y, 44, 52); } });
+  box(13, 30, 3, new THREE.MeshStandardMaterial({ map: bayTex }), 0, 15, r + 1.4, { parent: g });
+  colR(VB.x, VB.z, -6.5, 6.5, r, r + 2.9);
+  const ped = new THREE.Shape(); ped.moveTo(-7.5, 0); ped.lineTo(7.5, 0); ped.lineTo(0, 3.6); ped.closePath();
+  const pg = new THREE.ExtrudeGeometry(ped, { depth: 3.4, bevelEnabled: false }); pg.translate(0, 0, -1.7);
+  const pe = new THREE.Mesh(pg, mat(0xc27a45)); pe.position.set(0, 30, r + 1.4); pe.castShadow = true; g.add(pe);
+  box(14, 0.8, 4.6, 0xeee9df, 0, 6.2, r + 5.1, { parent: g });
+  placed(plane(signTex("SIR VISVESVARAYA BHAVAN", { bg: "#8a5a32", fg: "#f6e7c8", size: 70, w: 1400, h: 120 }), 13, 0.75), 0, 6.2, r + 7.42, 0, g);
+  [-5.5, 5.5].forEach(dx => { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.5, 5.8, 14), mat(0xa8683a)); p.position.set(dx, 2.9, r + 6.9); p.castShadow = true; g.add(p); colR(VB.x, VB.z, dx - 0.5, dx + 0.5, r + 6.4, r + 7.4); });
+  for (let i = 0; i < 4; i++) box(10, 0.18, 0.5, 0xd7d0c4, 0, 0.09 + i * 0.18, r + 3 + 0.5 * (3 - i), { parent: g, cast: false });
+  box(16, 3, 12, 0xf2f0ea, -3, h + 1.5, -3, { parent: g }); box(8, 0.2, 5, 0x2b3550, 9, h + 0.6, 4, { parent: g });
+  const fb = ctex(220, 1100, (gg, W, Hh) => { gg.fillStyle = "#ffc933"; gg.fillRect(0, 0, W, Hh); gg.fillStyle = "#0b0b0f"; gg.save(); gg.translate(W / 2 + 12, Hh / 2); gg.rotate(-Math.PI / 2); gg.textAlign = "center"; gg.textBaseline = "middle"; fit(gg, "talks · 16:00 · seminar hall", Hh - 140, 84, 800); gg.fillText("talks · 16:00 · seminar hall", 0, 0); gg.restore(); gg.font = `800 36px ${FONT}`; gg.textAlign = "center"; gg.fillText("EPOCH", W / 2, 60); });
+  placed(plane(fb, 2.6, 13), 0, 16, r + 2.95, 0, g);
+}
+/* hostels: Vinay Sadan, staff quarters, Kokila Sadan, facing east onto their lawn */
+const hTexCache = {};
+function hTex(len) {
+  const k = Math.round(len);
+  return hTexCache[k] || (hTexCache[k] = ctex(Math.max(64, k * 22), 9 * 64 + 30, (g, W, Hh) => {
+    g.fillStyle = "#f4f3ef"; g.fillRect(0, 0, W, Hh);
+    for (let f = 0; f < 9; f++) for (let x = 14; x < W - 26; x += 44) { g.fillStyle = "#9aa3ab"; g.fillRect(x - 2, 40 + f * 64, 30, 32); g.fillStyle = "#4b5560"; g.fillRect(x, 42 + f * 64, 26, 28); }
+    g.fillStyle = "rgba(0,0,0,.06)"; for (let x = 0; x < W; x += 176) g.fillRect(x, 0, 10, Hh);
+  }));
+}
+function hBox(x0, x1, z0, z1, h) {
+  const w = x1 - x0, d = z1 - z0, r = mat(0xe4e2dc);
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), [d, d, 0, 0, w, w].map(l => l ? new THREE.MeshStandardMaterial({ map: hTex(l) }) : r));
+  m.position.set((x0 + x1) / 2, h / 2, (z0 + z1) / 2); m.castShadow = m.receiveShadow = true; scene.add(m); col(x0, x1, z0, z1);
+}
+[["VINAY SADAN", 20, 68, -108, -70, 27], ["STAFF QUARTERS", 24, 72, -140, -114, 24], ["KOKILA SADAN", 26, 74, -184, -146, 27]].forEach(([name, x0, x1, z0, z1, h]) => {
+  hBox(x1 - 14, x1, z0, z1, h);
+  hBox(x0, x1 - 14, z0, z0 + 11, h - 3); hBox(x0, x1 - 14, z1 - 11, z1, h - 3);
+  box(4, 2.4, 4, 0xdedbd3, x1 - 7, h + 1.2, (z0 + z1) / 2 - 5); box(0.15, 5, 0.15, 0x777777, x1 - 4, h + 2.5, (z0 + z1) / 2 + 4);
+  placed(plane(signTex(name, { size: 70 }), 8, 1.25), x1 + 0.08, 5, (z0 + z1) / 2, Math.PI / 2);
+});
+
+/* ---------------- the field: courts, turf, track ---------------- */
+{
+  const T = TRACK;
+  const stadium = r => { const s = new THREE.Shape(); s.moveTo(-T.a, -r); s.lineTo(T.a, -r); s.absarc(T.a, 0, r, -Math.PI / 2, Math.PI / 2, false); s.lineTo(-T.a, r); s.absarc(-T.a, 0, r, Math.PI / 2, Math.PI * 1.5, false); return s; };
+  const ring = stadium(T.R); ring.holes.push(stadium(T.r));
+  const along = geo => { geo.rotateX(-Math.PI / 2); geo.rotateY(Math.PI / 2); return geo; };
+  const rm = new THREE.Mesh(along(new THREE.ShapeGeometry(ring, 40)), mat(0xc4673f, { roughness: 1 })); rm.position.set(T.x, 0.022, T.z); rm.receiveShadow = true; scene.add(rm);
+  const im = new THREE.Mesh(along(new THREE.ShapeGeometry(stadium(T.r), 40)), mat(0x7fae4c, { roughness: 1 })); im.position.set(T.x, 0.02, T.z); im.receiveShadow = true; scene.add(im);
+  const lm = new THREE.LineBasicMaterial({ color: 0xf3eee6 });
+  for (let r = T.r + 1.1; r < T.R; r += 1.1) scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(stadium(r).getPoints(40).map(p => V(T.x - p.y, 0.045, T.z - p.x))), lm));
+  // two basketball courts (blue on red), long axis north–south
+  const ct = ctex(512, 280, (g, W, Hh) => { g.fillStyle = "#c84b3b"; g.fillRect(0, 0, W, Hh); g.fillStyle = "#3b62b8"; g.fillRect(24, 24, W - 48, Hh - 48); g.strokeStyle = "#fff"; g.lineWidth = 4; g.strokeRect(24, 24, W - 48, Hh - 48); g.beginPath(); g.moveTo(W / 2, 24); g.lineTo(W / 2, Hh - 24); g.stroke(); g.beginPath(); g.arc(W / 2, Hh / 2, 36, 0, 7); g.stroke(); g.fillStyle = "#c84b3b"; g.fillRect(24, Hh / 2 - 34, 90, 68); g.strokeRect(24, Hh / 2 - 34, 90, 68); g.fillRect(W - 114, Hh / 2 - 34, 90, 68); g.strokeRect(W - 114, Hh / 2 - 34, 90, 68); });
+  [50.5].forEach(x => { const p = flat(28, 15, 0, x, -16, 0.03, new THREE.MeshStandardMaterial({ map: ct, roughness: 0.9 })); p.rotation.z = Math.PI / 2; [-1, 1].forEach(s => { box(0.2, 3.2, 0.2, 0x555555, x, 1.6, -16 + s * 14.6); box(1.8, 1.05, 0.1, 0xffffff, x, 3.4, -16 + s * 14.3); }); });
+  for (let x = 42; x <= 59; x += 4.25) [-31.5, -0.5].forEach(z => box(0.1, 3, 0.1, 0x3d5a45, x, 1.5, z, { cast: false }));
+  [-31.5, -0.5].forEach(z => { box(17, 0.08, 0.08, 0x3d5a45, 50.5, 3, z, { cast: false }); bunting(V(42, 2.9, z), V(59, 2.9, z), 0.5, PAL); });
+  // straight sprint track: starts where the old second court was and runs south into the big track
+  const sx0 = TRACK.x - TRACK.R, sx1 = TRACK.x - TRACK.r, sz0 = -30, sz1 = TRACK.z - TRACK.a;
+  flatR(sx0, sx1, sz0, sz1, 0xc4673f, 0.023);
+  for (let x = sx0 + 1.1; x < sx1; x += 1.1) flatR(x - 0.05, x + 0.05, sz0, sz1, 0xf3eee6, 0.026);
+  flatR(sx0, sx1, sz0 + 1, sz0 + 1.25, 0xf3eee6, 0.027);
+  // volleyball court in the far south-east corner, fenced in
+  { const vx = 74, vz = 134;
+    flat(9, 18, 0xd9a86a, vx, vz, 0.03); flatR(vx - 4.5, vx + 4.5, vz - 0.05, vz + 0.05, 0xffffff, 0.034);
+    [[vx - 4.5, vz - 9, vx + 4.5, vz - 9], [vx - 4.5, vz + 9, vx + 4.5, vz + 9]].forEach(([a, b, c, d]) => flatR(a, c, b - 0.05, b + 0.05, 0xffffff, 0.034));
+    [vx - 5, vx + 5].forEach(x => box(0.12, 2.6, 0.12, 0x555555, x, 1.3, vz)); box(10, 0.9, 0.04, 0xf2f2f2, vx, 2.05, vz, { cast: false });
+    for (let z = vz - 14; z <= vz + 14; z += 4) [vx - 9, vx + 9].forEach(x => box(0.1, 3.5, 0.1, 0x2c2f33, x, 1.75, z, { cast: false }));
+    for (let x = vx - 9; x <= vx + 9; x += 4.5) [vz - 14, vz + 14].forEach(z => box(0.1, 3.5, 0.1, 0x2c2f33, x, 1.75, z, { cast: false }));
+    const vn = ctex(64, 64, (g, W) => { g.strokeStyle = "rgba(30,30,30,.7)"; g.lineWidth = 1.5; for (let i = 0; i <= W; i += 8) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, W); g.stroke(); g.beginPath(); g.moveTo(0, i); g.lineTo(W, i); g.stroke(); } }); vn.wrapS = vn.wrapT = THREE.RepeatWrapping; vn.repeat.set(14, 2);
+    const vnm = new THREE.MeshBasicMaterial({ map: vn, transparent: true, side: THREE.DoubleSide, depthWrite: false });
+    [vx - 9, vx + 9].forEach(x => placed(new THREE.Mesh(new THREE.PlaneGeometry(28, 3.5), vnm), x, 1.75, vz, Math.PI / 2));
+    [vz - 14, vz + 14].forEach(z => placed(new THREE.Mesh(new THREE.PlaneGeometry(18, 3.5), vnm), vx, 1.75, z));
+    col(vx - 9.2, vx + 9.2, vz - 14.2, vz - 13.8); col(vx - 9.2, vx + 9.2, vz + 13.8, vz + 14.2); col(vx - 9.2, vx - 8.8, vz - 14, vz + 14); col(vx + 8.8, vx + 9.2, vz - 14, vz + 14);
+  }
+  // mini turf
+  const tt = ctex(384, 512, (g, W, Hh) => { for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? "#3f8f3a" : "#47993f"; g.fillRect(0, i * Hh / 8, W, Hh / 8); } g.strokeStyle = "#fff"; g.lineWidth = 4; g.strokeRect(14, 14, W - 28, Hh - 28); g.beginPath(); g.moveTo(14, Hh / 2); g.lineTo(W - 14, Hh / 2); g.stroke(); g.beginPath(); g.arc(W / 2, Hh / 2, 40, 0, 7); g.stroke(); });
+  flat(20, 26, 0, 71, -9, 0.03, new THREE.MeshStandardMaterial({ map: tt, roughness: 1 }));
+  for (let z = -22; z <= 4; z += 4.3) [61, 81].forEach(x => box(0.1, 4, 0.1, 0x2c2f33, x, 2, z, { cast: false }));
+  const netTex = ctex(64, 64, (g, W) => { g.strokeStyle = "rgba(30,30,30,.7)"; g.lineWidth = 1.5; for (let i = 0; i <= W; i += 8) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, W); g.stroke(); g.beginPath(); g.moveTo(0, i); g.lineTo(W, i); g.stroke(); } });
+  netTex.wrapS = netTex.wrapT = THREE.RepeatWrapping; netTex.repeat.set(13, 2);
+  const net = new THREE.MeshBasicMaterial({ map: netTex, transparent: true, side: THREE.DoubleSide, depthWrite: false });
+  [61, 81].forEach(x => placed(new THREE.Mesh(new THREE.PlaneGeometry(26, 4), net), x, 2, -9, Math.PI / 2));
+  const sl = ctex(1024, 1024, (g, w) => {
+    const n = 10, c = w / n, pal = ["#fffdf7", "#ffe28f", "#e9dcfb", "#d8f5ea", "#dceefb"];
+    for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) { g.fillStyle = pal[(r * 3 + k) % 5]; g.fillRect(k * c, r * c, c, c); const num = (n - 1 - r) * n + ((n - 1 - r) % 2 ? n - k : k + 1); g.fillStyle = "#0b0b0f"; g.font = `600 26px ${MONO}`; g.fillText(num, k * c + 8, r * c + 30); }
+    const ladder = (x0, y0, x1, y1) => { g.strokeStyle = "#8a5cc7"; g.lineWidth = 12; const dx = 18; g.beginPath(); g.moveTo(x0 - dx, y0); g.lineTo(x1 - dx, y1); g.moveTo(x0 + dx, y0); g.lineTo(x1 + dx, y1); g.stroke(); for (let t = 0.1; t < 1; t += 0.15) { g.beginPath(); g.moveTo(x0 - dx + (x1 - x0) * t, y0 + (y1 - y0) * t); g.lineTo(x0 + dx + (x1 - x0) * t, y0 + (y1 - y0) * t); g.stroke(); } };
+    const snake = pts => { g.strokeStyle = "#1f883d"; g.lineWidth = 26; g.lineCap = "round"; g.beginPath(); g.moveTo(...pts[0]); for (let i = 1; i < pts.length - 1; i += 2) g.quadraticCurveTo(...pts[i], ...pts[i + 1]); g.stroke(); g.fillStyle = "#1f883d"; g.beginPath(); g.arc(...pts[0], 24, 0, 7); g.fill(); };
+    ladder(150, 900, 260, 560); ladder(650, 760, 560, 250); ladder(860, 500, 900, 120);
+    snake([[420, 160], [300, 300], [380, 460], [460, 620], [360, 760]]); snake([[760, 400], [900, 560], [780, 700], [660, 840], [760, 960]]);
+  });
+  flat(8, 8, 0, 69, -12, 0.04, new THREE.MeshStandardMaterial({ map: sl, roughness: 0.9 }));
+  [[65, -16], [73, -16], [65, -8], [73, -8]].forEach(([x, z]) => box(0.5, 0.25, 0.3, 0xc8b48a, x, 0.12, z, { cast: false }));
+  for (let i = 0; i < 7; i++) { const cn = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.6, 12), mat(0xf26b3a)); cn.position.set(77 + (i % 2) * 1.6, 0.3, -20 + i * 3); cn.castShadow = true; scene.add(cn); }
+  const jx = 46, jz = -24;   // giant Jenga on the basketball court
+  for (let l = 0; l < 14; l++) for (let k = -1; k <= 1; k++) { if ((l * 5 + k) % 7 === 3) continue; const al = l % 2 === 0; box(al ? 1.2 : 0.38, 0.24, al ? 0.38 : 1.2, l % 3 === 0 ? 0xe2c18c : 0xd9b57c, jx + (al ? 0 : k * 0.4), 0.15 + l * 0.245, jz + (al ? k * 0.4 : 0)); }
+  col(jx - 0.7, jx + 0.7, jz - 0.7, jz + 0.7);
+  const cx = 62, cz = 16;   // Git Escape container
+  const cTex = ctex(512, 256, (g, w, h) => { g.fillStyle = "#14161c"; g.fillRect(0, 0, w, h); for (let x = 0; x < w; x += 16) { g.fillStyle = "rgba(255,255,255,.05)"; g.fillRect(x, 0, 6, h); } });
+  box(6.1, 2.6, 2.44, new THREE.MeshStandardMaterial({ map: cTex, roughness: 0.7, metalness: 0.2 }), cx, 1.3, cz, { collide: true });
+  const door = ctex(1024, 420, (g, w, h) => { g.fillStyle = "#14161c"; g.fillRect(0, 0, w, h); g.fillStyle = "#3fc84e"; g.font = `600 70px ${MONO}`; g.fillText("$ git escape", 40, 120); g.fillStyle = "#c9d1d9"; g.font = `400 40px ${MONO}`; g.fillText("15 minutes · teams of 4", 40, 200); g.fillText("commit your way out", 40, 260); g.fillStyle = "#ffc933"; g.font = `800 58px ${FONT}`; g.fillText("60 coins", 40, 360); });
+  placed(plane(door, 5.6, 2.3, true), cx, 1.35, cz - 1.23, Math.PI);
+  placed(plane(door, 2.3, 1.0, true), cx - 3.06, 1.6, cz, -Math.PI / 2);
+}
+/* water treatment plant at the south end of the field */
+{
+  const wx = 38, wz = 124;
+  [[wx - 6, wz - 6, 5.5, 6], [wx + 6, wz - 4, 4.5, 7.5]].forEach(([x, z, r, h]) => {
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 28), mat(0xd9dcd6)); t.position.set(x, h / 2, z); t.castShadow = t.receiveShadow = true; scene.add(t);
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(r + 0.15, r + 0.15, 0.3, 28), mat(0x8c939a)); rim.position.set(x, h, z); scene.add(rim);
+    col(x - r, x + r, z - r, z + r);
+  });
+  const ring = new THREE.Mesh(new THREE.CylinderGeometry(5, 5, 1.2, 32, 1, true), new THREE.MeshStandardMaterial({ color: 0xbfc4bd, side: THREE.DoubleSide })); ring.position.set(wx - 2, 0.6, wz + 9); scene.add(ring);
+  flat(9.6, 9.6, 0x5d7f86, wx - 2, wz + 9, 0.9).geometry = new THREE.CircleGeometry(4.8, 32); col(wx - 7, wx + 3, wz + 4, wz + 14);
+  box(6, 3.4, 4.5, 0xe6e1d6, wx + 8, 1.7, wz + 8, { collide: true });
+  placed(plane(signTex("water treatment", { size: 64, w: 768, h: 128 }), 3.4, 0.56), wx + 8, 2.6, wz + 5.74, Math.PI);
+  for (let x = wx - 14; x <= wx + 14; x += 4) [wz - 14, wz + 16].forEach(z => box(0.1, 2.2, 0.1, 0x2c2f33, x, 1.1, z, { cast: false }));
+  for (let z = wz - 14; z <= wz + 16; z += 4) [wx - 14, wx + 14].forEach(x => box(0.1, 2.2, 0.1, 0x2c2f33, x, 1.1, z, { cast: false }));
+}
+/* old court (not used now) and the bioenergy unit, on the loop road behind the hostels */
+{
+  flat(24, 14, 0x9aa38c, -28, -178, 0.03);
+  [[-40, -16], [-16, -16]].forEach(([a, b]) => flatR(a, b, -185.1, -184.9, 0xd8d8d0, 0.035)); flatR(-40, -16, -171.1, -170.9, 0xd8d8d0, 0.035);
+  flatR(-40.1, -39.9, -185, -171, 0xd8d8d0, 0.035); flatR(-16.1, -15.9, -185, -171, 0xd8d8d0, 0.035);
+  [[-12, -160], [-3, -160]].forEach(([x, z]) => { const d = new THREE.Mesh(new THREE.SphereGeometry(3.2, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), mat(0x7f8b6a)); d.position.set(x, 0.4, z); d.castShadow = true; scene.add(d); col(x - 3.2, x + 3.2, z - 3.2, z + 3.2); });
+  box(5, 2.6, 4, 0xd9d4c8, -8, 1.3, -151, { collide: true });
+  placed(plane(signTex("bioenergy unit", { size: 64, w: 768, h: 128 }), 3, 0.5), -8, 2.2, -148.95);
+}
+/* temple at the south-west corner, lawn in front, left undecorated */
+{
+  const x = -116, z = 140;
+  box(7, 1, 7, 0xe8e1d2, x, 0.5, z, { collide: true }); box(4.4, 3.2, 4.4, 0xf3ecdc, x, 2.6, z);
+  const sk = new THREE.Mesh(new THREE.ConeGeometry(2.9, 4.6, 4), mat(0xd9a650)); sk.rotation.y = Math.PI / 4; sk.position.set(x, 6.5, z); sk.castShadow = true; scene.add(sk);
+  box(0.06, 2.2, 0.06, 0x777777, x, 9.7, z);
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.55), new THREE.MeshStandardMaterial({ color: 0xf08a24, side: THREE.DoubleSide })); fl.position.set(x + 0.45, 10.5, z); scene.add(fl);
+}
+
+/* ---------------- café ---------------- */
+{
+  const { x, z, r } = CAFE;
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(r, r + 0.5, 0.25, 8, 1, false, Math.PI / 8), mat(0xb9714a)); base.position.set(x, 0.125, z); base.receiveShadow = true; scene.add(base);
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(r + 1.4, 3.6, 8, 1, false, Math.PI / 8), mat(0xb4553d)); roof.position.set(x, 5.9, z); roof.castShadow = true; scene.add(roof);
+  box(1.1, 1.1, 1.1, 0x8a3e2c, x, 8.1, z);
+  for (let i = 0; i < 8; i++) {
+    const a = Math.PI / 8 + i * Math.PI / 4, a2 = a + Math.PI / 4;
+    const px = x + Math.sin(a) * (r - 0.6), pz = z + Math.cos(a) * (r - 0.6);
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 4.1, 10), mat(0xf2eee6)); post.position.set(px, 2.05, pz); post.castShadow = true; scene.add(post);
+    col(px - 0.3, px + 0.3, pz - 0.3, pz + 0.3);
+    const Re = r + 1.3, e1 = V(x + Math.sin(a) * Re, 4.1, z + Math.cos(a) * Re), e2 = V(x + Math.sin(a2) * Re, 4.1, z + Math.cos(a2) * Re);
+    for (let t = 0.05; t < 1; t += 0.1) bulbs.push(new THREE.Vector3().lerpVectors(e1, e2, t));
+  }
+  for (let i = 0; i < 5; i++) { const a = i * 1.26, tx = x + Math.sin(a) * 4.2, tz = z + Math.cos(a) * 4.2; const tb = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.06, 16), mat(0xffffff)); tb.position.set(tx, 0.8, tz); tb.castShadow = true; scene.add(tb); box(0.08, 0.75, 0.08, 0x888888, tx, 0.42, tz, { cast: false }); }
+  const s = ctex(1024, 220, (g, w, h) => { g.fillStyle = "#0a0a14"; g.fillRect(0, 0, w, h); g.fillStyle = "#fff"; g.font = `800 92px ${FONT}`; g.textBaseline = "middle"; g.fillText("meet at the café", 50, 92); g.fillStyle = "#ffc933"; g.font = `400 40px ${MONO}`; g.fillText("booths ↓ · courts → · stage on the track", 50, 170); });
+  placed(plane(s, 4.6, 1, true), x - r + 1.6, 3.2, z, -Math.PI / 2);
+  placed(plane(s, 4.6, 1, true), x - r + 1.62, 3.2, z, Math.PI / 2);
+}
+
+/* ---------------- lawn strip: bushes, lamps, banners ---------------- */
+const bushPts = [];
+for (let z = -29; z <= 11; z += 1.6) bushPts.push([16.6, z, 0.9]);   // hedge behind the café: no way through to the field
+const SC = (STRIP.z0 + STRIP.z1) / 2;
+STRIPS.forEach(([a, b]) => {
+  for (let x = a + 2; x <= b - 2; x += 3.2) bushPts.push([x, SC - 2.2, 1.05], [x + 1.6, SC + 2.2, 1.05]);
+  for (let x = a + 4; x <= b - 2; x += 12) bushPts.push([x, SC, 1.4]);
+});
+const bannerSet = [["epoch/", "EPOCH", "dec 2026", C.gold], ["coins/", "398", "per ticket", C.mint], ["every", "COMMIT", "counts", C.purple], ["play · make", "LEARN", "win", C.blue]]
+  .map(([top, big, sub, colr]) => ctex(256, 740, (g, w, h) => { g.fillStyle = HEX(colr); g.fillRect(0, 0, w, h); g.fillStyle = "#0b0b0f"; g.textAlign = "center"; g.textBaseline = "middle"; g.font = `600 30px ${MONO}`; g.fillText(top, w / 2, 70); fit(g, big, w - 40, 110, 800); g.fillText(big, w / 2, h / 2); g.font = `600 30px ${MONO}`; g.fillText(sub, w / 2, h - 120); g.beginPath(); g.arc(w / 2, h - 50, 14, 0, 7); g.fill(); g.fillRect(w / 2 - 3, h - 50, 6, 50); }));
+let bi = 0;
+for (const [sa, sb] of STRIPS) for (let x = sb - 2; x >= sa + 1; x -= 12.5) {
+  [[-57.4, 1], [STRIP.z0 + 0.6, -1], [STRIP.z1 - 0.6, 1], [-30.8, -1]].forEach(([z, dir]) => {
+    box(0.18, 6.6, 0.18, 0x3a3d44, x, 3.3, z, { collide: true });
+    box(0.12, 0.12, 1.2, 0x3a3d44, x, 6.55, z + dir * 0.5);
+    const hd = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.18, 0.5), lampMat); hd.position.set(x, 6.45, z + dir * 1.0); scene.add(hd);
+    const t = bannerSet[(bi++) % 4];
+    [Math.PI / 2, -Math.PI / 2].forEach(ry => placed(plane(t, 0.85, 2.45), x + (ry > 0 ? 0.02 : -0.02), 4.4, z + dir * 0.55, ry));
+  });
+  bunting(V(x, 6.2, -57.4), V(x, 6.2, STRIP.z0 + 0.6), 0.9, PAL); bunting(V(x, 6.2, STRIP.z1 - 0.6), V(x, 6.2, -30.8), 0.9, PAL);
+}
+
+/* ---------------- commit line on the ground ---------------- */
+const dotGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.04, 20);
+const lineMats = {}; const lineMat = c => lineMats[c] || (lineMats[c] = new THREE.MeshBasicMaterial({ color: c }));
+function commitPath(pts, color, every = 3) {
+  const curve = new THREE.CatmullRomCurve3(pts.map(([x, z]) => V(x, H(x, z) + 0.05, z)));
+  const sp = curve.getSpacedPoints(Math.max(2, Math.round(curve.getLength() / every)));
+  sp.forEach(p => p.y = H(p.x, p.z) + 0.05);
+  for (let i = 0; i < sp.length - 1; i++) { const a = sp[i], b = sp[i + 1]; const r = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.02, a.distanceTo(b)), lineMat(color)); r.position.copy(a).lerp(b, 0.5); r.lookAt(b); scene.add(r); }
+  sp.forEach(p => { const d = new THREE.Mesh(dotGeo, lineMat(color)); d.position.copy(p); scene.add(d); });
+}
+commitPath([[104, -36], [GATE_X, -36], [74, -35.2], [30, -35.2], [0, -35], [-16, -30], [-16, 8], [-8, 16.5], [12, 16.5], [17.5, 22], [17.5, 36], [26, 40], [36, 46], [42, 56], [42, 84]], C.green);
+commitPath([[17.5, 36], [19.6, 42], [19.6, 104]], C.purple);
+commitPath([[60, -35], [62, -29]], C.gold, 2);
+commitPath([[86, -36], [84, -31], [82, -28]], C.gold, 2);
+commitPath([[14, 16.5], [-20, 16.5], [-40, 22], [-60, 22]], C.mint);
+
+/* ---------------- coin counter ---------------- */
+{
+  const x = 82, z = -26;
+  box(6, 0.95, 1.1, 0xf3efe6, x, 0.475, z - 0.6, { collide: true });
+  const stub = ctex(1024, 400, (g, w, h) => {
+    g.fillStyle = "#fffdf7"; g.fillRect(0, 0, w, h);
+    g.fillStyle = "#0b0b0f"; g.font = `800 92px ${FONT}`; g.fillText("EPOCH", 50, 130); g.font = `600 36px ${FONT}`; g.fillText("Admit one · two days", 50, 190);
+    g.font = `400 30px ${MONO}`; g.fillStyle = "#595866"; g.fillText("wristbands this side", 50, 330);
+    g.setLineDash([16, 14]); g.strokeStyle = "#0b0b0f"; g.lineWidth = 5; g.beginPath(); g.moveTo(680, 20); g.lineTo(680, h - 20); g.stroke(); g.setLineDash([]);
+    g.fillStyle = "#ffc933"; g.beginPath(); g.arc(850, 150, 78, 0, 7); g.fill(); g.fillStyle = "#0b0b0f"; g.textAlign = "center"; g.font = `800 64px ${FONT}`; g.fillText("398", 850, 172);
+    g.font = `600 30px ${MONO}`; g.fillText("₹199 = 398 coins", 850, 300); g.fillStyle = "#595866"; g.fillText("coins credited here", 850, 345);
+  });
+  placed(plane(stub, 6.6, 2.6), x, 2.2, z + 0.9, Math.PI);
+  box(6.8, 2.9, 0.12, 0x222222, x, 1.45, z + 0.98);
+  const canopy = new THREE.Mesh(new THREE.BoxGeometry(7.4, 0.12, 4), mat(0xffffff)); canopy.position.set(x, 3.2, z - 0.6); canopy.castShadow = true; scene.add(canopy);
+  [-3.6, 3.6].forEach(dx => box(0.07, 3.2, 0.07, 0xdedede, x + dx, 1.6, z - 2.5, { cast: false }));
+  for (let i = 0; i < 7; i++) box(0.08, 1, 0.08, 0x888888, x - 4 + i * 1.3, 0.5, z - 3.6, { cast: false });
+  box(7.8, 0.06, 0.03, 0xb3372f, x - 0.1, 0.92, z - 3.6, { cast: false });
+}
+
+/* ---------------- tents ---------------- */
+const tentRoofGeo = new THREE.ConeGeometry(2.2, 1.1, 4, 1); tentRoofGeo.rotateY(Math.PI / 4);
+const mapDots = [];
+function tent(x, z, ry, color, name, price, y = 0) {
+  const size = 3, g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; scene.add(g);
+  const h = 2.4, s = size / 2;
+  [[-s, -s], [s, -s], [-s, s], [s, s]].forEach(([a, b]) => box(0.06, h, 0.06, 0xdedede, a, h / 2, b, { parent: g, cast: false }));
+  const roof = new THREE.Mesh(tentRoofGeo, mat(0xfafafa)); roof.position.y = h + 0.55; roof.castShadow = true; g.add(roof);
+  const t = ctex(768, 96, (cx, w, hh) => { cx.fillStyle = HEX(color); cx.fillRect(0, 0, w, hh); cx.fillStyle = "#0b0b0f"; cx.textBaseline = "middle"; cx.textAlign = "center"; fit(cx, name, w - 40, 52, 800); cx.fillText(name, w / 2, hh / 2 + 2); });
+  const val = new THREE.MeshStandardMaterial({ map: t, roughness: 0.85 }), plain = mat(color);
+  [[0, s, 0], [Math.PI, -s, 0], [Math.PI / 2, 0, s], [-Math.PI / 2, 0, -s]].forEach(([r, zz, xx], i) => { const p = new THREE.Mesh(new THREE.PlaneGeometry(size, 0.36), i < 2 ? val : plain); p.position.set(xx, h - 0.15, zz); p.rotation.y = r; g.add(p); });
+  box(size * 0.8, 0.75, 0.7, mat(color), 0, 0.375, s - 0.5, { parent: g });
+  box(size * 0.8 + 0.02, 0.04, 0.72, 0xf7f7f7, 0, 0.76, s - 0.5, { parent: g, cast: false });
+  const pt = ctex(256, 256, (cx, w, hh) => {
+    cx.fillStyle = "#fffdf7"; cx.fillRect(0, 0, w, hh); cx.fillStyle = "#0b0b0f"; cx.textAlign = "center"; cx.textBaseline = "middle";
+    if (price === null) { cx.font = `800 64px ${FONT}`; cx.fillText("merch", w / 2, 100); cx.font = `600 30px ${MONO}`; cx.fillText("tees · hoodies", w / 2, 170); }
+    else if (price === 0) { cx.font = `800 96px ${FONT}`; cx.fillText("free", w / 2, 120); }
+    else { cx.fillStyle = "#ffc933"; cx.beginPath(); cx.arc(w / 2, 110, 82, 0, 7); cx.fill(); cx.fillStyle = "#0b0b0f"; cx.font = `800 96px ${FONT}`; cx.fillText(price, w / 2, 116); cx.font = `600 32px ${MONO}`; cx.fillText("coins", w / 2, 222); }
+  });
+  const pb = plane(pt, 0.55, 0.55); pb.position.set(s + 0.05, 1.25, s + 0.35); pb.rotation.y = 0.35; g.add(pb);
+  box(0.04, 1.0, 0.04, 0x3a3d44, s + 0.05, 0.5, s + 0.33, { parent: g, cast: false });
+  g.updateMatrixWorld();
+  const c = [[-s, h, -s], [s, h, -s], [s, h, s], [-s, h, s]].map(v => V(...v).applyMatrix4(g.matrixWorld));
+  for (let i = 0; i < 4; i++) for (let t2 = 0.1; t2 < 1; t2 += 0.2) bulbs.push(new THREE.Vector3().lerpVectors(c[i], c[(i + 1) % 4], t2));
+  col(x - s, x + s, z - s, z + s); mapDots.push([x, z, color]);
+}
+WALK_TENTS.forEach(([n, grp, p], i) => tent(23, 45 + i * 5.6, -Math.PI / 2, GROUP[grp], n, p));
+COURT_TENTS.forEach(([n, grp, p], i) => tent(-76 + i * 5, 28, Math.PI, GROUP[grp], n, p));
+
+/* flagpoles along the road beside the field (booth-colour flags for the fest) */
+const flagPoles = [];
+for (let z = 42; z <= 104; z += 6) {
+  const x = 20.7;
+  box(0.1, 8, 0.1, 0xeeeeee, x, 4, z); col(x - 0.2, x + 0.2, z - 0.2, z + 0.2);
+  const f = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.95), new THREE.MeshStandardMaterial({ color: PAL[flagPoles.length % 5], side: THREE.DoubleSide, roughness: 0.9 }));
+  f.geometry.translate(0.78, 0, 0); f.position.set(x, 7.4, z); f.castShadow = true; scene.add(f); flagPoles.push(f);
+}
+for (let i = 0; i < WALK_TENTS.length - 1; i++) bunting(V(24.5, 2.9, 46.5 + i * 5.6), V(24.5, 2.9, 49.1 + i * 5.6), 0.2, PAL);
+for (let z = 48; z <= 100; z += 12) bunting(V(20.7, 6.6, z), V(-0.5, 5.4, z), 1.4, PAL, 0.6);
+
+/* recharge points */
+const coins = [];
+RECHARGE.forEach(({ name, x, z }) => {
+  const y = H(x, z);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.5, 1.25, 20), mat(0x0a0a14)); base.position.set(x, y + 0.625, z); base.castShadow = true; scene.add(base);
+  const t = ctex(512, 256, (g, w, h) => { g.fillStyle = "#ffc933"; g.fillRect(0, 0, w, h); g.fillStyle = "#0b0b0f"; g.textAlign = "center"; g.textBaseline = "middle"; g.font = `800 120px ${FONT}`; g.fillText("+20", w / 2, 96); fit(g, name, w - 40, 44, 600); g.fillText(name, w / 2, 196); });
+  [0, Math.PI / 2, Math.PI, -Math.PI / 2].forEach(r => { const gp = new THREE.Group(); gp.position.set(x, y + 1.55, z); gp.rotation.y = r; const p = plane(t, 1.0, 0.5); p.position.z = 0.51; gp.add(p); scene.add(gp); });
+  box(1.0, 0.5, 1.0, 0xffc933, x, y + 1.55, z);
+  const cg = new THREE.CylinderGeometry(0.32, 0.32, 0.07, 28); cg.rotateX(Math.PI / 2);
+  const coin = new THREE.Mesh(cg, mat(0xffc933, { metalness: 0.5, roughness: 0.35 })); coin.position.set(x, y + 2.3, z); coin.userData.y = y + 2.3; coin.castShadow = true; scene.add(coin); coins.push(coin);
+  col(x - 0.6, x + 0.6, z - 0.6, z + 0.6);
+});
+
+/* ---------------- main stage on the track infield, facing north ---------------- */
+const S = STAGE;
+const front = S.z - S.d / 2, back = S.z + S.d / 2;
+box(S.w, S.h, S.d, 0x1b1c22, S.x, S.h / 2, S.z, { collide: true });
+box(4, 0.4, 1.2, 0x2b2d35, S.x, 0.2, front - 0.6); box(4, 0.4, 0.6, 0x2b2d35, S.x, 0.6, front - 0.3);
+const ledTex = ctex(1536, 640, (g, w, h) => {
+  g.fillStyle = "#0a0a14"; g.fillRect(0, 0, w, h); g.fillStyle = "rgba(255,255,255,.035)"; for (let x = 0; x < w; x += 8) g.fillRect(x, 0, 2, h);
+  g.fillStyle = "#ffc933"; g.textAlign = "center"; g.textBaseline = "middle"; g.font = `800 250px ${FONT}`; g.fillText("EPOCH", w / 2, 230);
+  g.fillStyle = "#fff"; g.font = `600 58px ${FONT}`; g.fillText("Day 2 · 18:00 · Winners & closing", w / 2, 420);
+  g.fillStyle = "#a3a4bd"; g.font = `400 38px ${MONO}`; g.fillText("live coin leaderboard between sessions", w / 2, 500);
+  commitStrip(g, 200, w - 200, 580, 14, PAL);
+});
+placed(plane(ledTex, 10, 4.2, true), S.x, S.h + 2.8, back - 0.45, Math.PI);
+box(10.4, 4.6, 0.3, 0x111111, S.x, S.h + 2.8, back - 0.25);
+[-1, 1].forEach(s => {
+  box(0.4, 8, 0.4, truss, S.x + s * 6.2, 4, front + 0.3, { collide: true }); box(0.4, 8, 0.4, truss, S.x + s * 6.2, 4, back - 0.3);
+  box(1.1, 2.4, 0.9, 0x16171c, S.x + s * 7.6, 1.2, front + 1, { collide: true }); box(0.9, 1.4, 0.8, 0x16171c, S.x + s * 7.6, 3.1, front + 1);
+});
+box(12.8, 0.5, 0.5, truss, S.x, 8, front + 0.3); box(12.8, 0.5, 0.5, truss, S.x, 8, back - 0.3);
+for (let i = -2; i <= 2; i++) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.4, 12), lampMat); p.position.set(S.x + i * 2.2, 7.6, front + 0.3); p.rotation.x = -0.7; scene.add(p); }
+box(0.8, 1.15, 0.6, 0xffc933, S.x + 3.5, S.h + 0.575, S.z - 1);
+bunting(V(S.x - 6.2, 7.7, front + 0.1), V(S.x + 6.2, 7.7, front + 0.1), 0.6, PAL);
+{
+  const N = 2 * 5 * 6, seat = new THREE.InstancedMesh(new THREE.BoxGeometry(0.46, 0.06, 0.44), mat(0x2b2d35), N), backs = new THREE.InstancedMesh(new THREE.BoxGeometry(0.46, 0.5, 0.05), mat(0x2b2d35), N);
+  const d = new THREE.Object3D(); let k = 0;
+  [-1, 1].forEach(s => { for (let c = 0; c < 5; c++) for (let r = 0; r < 6; r++) { const x = S.x + s * (1.4 + c * 0.8), z = 86.5 - r * 1.1; d.position.set(x, 0.46, z); d.updateMatrix(); seat.setMatrixAt(k, d.matrix); d.position.set(x, 0.7, z - 0.2); d.updateMatrix(); backs.setMatrixAt(k, d.matrix); k++; } });
+  seat.castShadow = backs.castShadow = true; scene.add(seat, backs);
+}
+// light poles at the corners of the infield, strings over the crowd
+{
+  const P = [[32.5, 55], [51.5, 55], [32.5, 87], [51.5, 87]];
+  P.forEach(([x, z]) => { box(0.16, 7.2, 0.16, 0x3a3d44, x, 3.6, z, { collide: true }); const hd = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), lampMat); hd.position.set(x, 7.3, z); scene.add(hd); });
+  const pv = ([x, z]) => V(x, 7, z);
+  bunting(pv(P[0]), pv(P[3]), 2.4, PAL, 0.6); bunting(pv(P[1]), pv(P[2]), 2.4, PAL, 0.6);
+  bunting(pv(P[0]), pv(P[2]), 1.8, PAL, 0.6, false); bunting(pv(P[1]), pv(P[3]), 1.8, PAL, 0.6, false); bunting(pv(P[0]), pv(P[1]), 1.2, PAL, 0.6);
+}
+
+/* ---------------- the gap between the two blocks (ground level) ---------------- */
+for (let x = -84; x <= -24; x += 6) bunting(V(x, 7.5, GAP.z0 - 0.3), V(x + 3, 7.5, OPEN.z1 + 0.6), 2.2, PAL, 0.6, x % 12 === 0);
+bunting(V(OPEN.x0, 7.5, 30), V(-14, 7.5, 30), 3.2, PAL, 0.6, false);
+for (let i = 0; i < 12; i++) box(1.8, 1.3, 4.2, [0xffffff, 0x9aa2ab, 0x2b2d35, 0xb3372f][i % 4], -89 + (i % 2) * 5, 0.65, -24 + Math.floor(i / 2) * 5, { collide: true });
+
+/* ---------------- instanced trees, palms, bushes, flags, bulbs, people ---------------- */
+const rand = (() => { let s = 11; return () => (s = (s * 16807) % 2147483647) / 2147483647; })();
+const trees = [], palms = [];
+for (let x = CAMPUS.x0 + 6; x <= CAMPUS.x1 - 6; x += 9) { trees.push([x + rand() * 3, CAMPUS.z1 - 4 - rand() * 2, 0.9 + rand() * 0.4]); trees.push([x + rand() * 3, CAMPUS.z0 + 5 + rand() * 3, 0.9 + rand() * 0.4]); }
+for (let z = CAMPUS.z0 + 8; z <= CAMPUS.z1 - 8; z += 9) trees.push([CAMPUS.x0 + 5 + rand() * 3, z, 0.9 + rand() * 0.4]);
+for (let z = -150; z <= -64; z += 9) trees.push([-14 + rand() * 4, z, 0.9 + rand() * 0.3]);
+for (let i = 0; i < 40; i++) trees.push([-118 + rand() * 120, -190 + rand() * 120, 0.8 + rand() * 0.5]);
+for (let i = 0; i < 420; i++) { const x = -450 + rand() * 900, z = -450 + rand() * 900; if (x > CAMPUS.x0 - 8 && x < 112 && z > CAMPUS.z0 - 8 && z < 160) continue; trees.push([x, z, 0.8 + rand() * 0.9]); }
+[[8, 46], [8, 58], [8, 70], [8, 88], [8, 100], [-30, -60], [-60, -60], [-4, 48], [-2, 60], [-4, 90], [-2, 100], [-60, 118], [-40, 118], [0, -24], [-30, -24]].forEach(p => palms.push(p));
+{
+  const d = new THREE.Object3D();
+  const inField = (x, z) => { let c = false; for (let i = 0, j = FIELD.length - 1; i < FIELD.length; j = i++) { const [xi, zi] = FIELD[i], [xj, zj] = FIELD[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c; } return c; };
+  const T = trees.filter(([x, z]) => !inField(x, z) && !colliders.some(c => x > c.x0 - 1.5 && x < c.x1 + 1.5 && z > c.z0 - 1.5 && z < c.z1 + 1.5));
+  const trunk = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.16, 0.24, 2.6, 6), mat(0x6b4f3a), T.length);
+  const crown = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(2.1, 0), new THREE.MeshStandardMaterial({ color: 0xffffff, flatShading: true, roughness: 0.9 }), T.length);
+  const greens = [0x4f7d3a, 0x5d8a3f, 0x47723a, 0x6a9346];
+  T.forEach(([x, z, s], i) => {
+    d.rotation.set(0, 0, 0); d.position.set(x, 1.3 * s, z); d.scale.set(s, s, s); d.updateMatrix(); trunk.setMatrixAt(i, d.matrix);
+    d.position.set(x, 3.4 * s, z); d.rotation.set(rand(), rand() * 3, 0); d.scale.set(s, s * 1.05, s); d.updateMatrix(); crown.setMatrixAt(i, d.matrix); crown.setColorAt(i, new THREE.Color(greens[i % 4]));
+    if (x > CAMPUS.x0 && x < CAMPUS.x1 && z > CAMPUS.z0 && z < CAMPUS.z1) col(x - 0.35, x + 0.35, z - 0.35, z + 0.35);
+  });
+  trunk.castShadow = crown.castShadow = true; scene.add(trunk, crown);
+  const pt = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.14, 0.22, 7, 7), mat(0x8a7356), palms.length);
+  const fronds = new THREE.ConeGeometry(2.6, 1.4, 7); fronds.rotateX(Math.PI); fronds.translate(0, 0.2, 0);
+  const pc = new THREE.InstancedMesh(fronds, new THREE.MeshStandardMaterial({ color: 0x4d7f34, flatShading: true }), palms.length);
+  palms.forEach(([x, z], i) => { d.rotation.set((rand() - 0.5) * 0.12, 0, (rand() - 0.5) * 0.12); d.scale.set(1, 1, 1); d.position.set(x, 3.5, z); d.updateMatrix(); pt.setMatrixAt(i, d.matrix); d.position.set(x, 7.1, z); d.rotation.set(0, rand() * 3, 0); d.updateMatrix(); pc.setMatrixAt(i, d.matrix); col(x - 0.3, x + 0.3, z - 0.3, z + 0.3); });
+  pt.castShadow = pc.castShadow = true; scene.add(pt, pc);
+  const bu = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 8), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 }), bushPts.length);
+  bushPts.forEach(([x, z, s], i) => { d.rotation.set(0, 0, 0); d.position.set(x, s * 0.75, z); d.scale.set(s, s * 0.85, s); d.updateMatrix(); bu.setMatrixAt(i, d.matrix); bu.setColorAt(i, new THREE.Color(i % 3 ? 0x6f9a3e : 0xa9b83f)); col(x - s * 0.8, x + s * 0.8, z - s * 0.8, z + s * 0.8); });
+  bu.castShadow = true; scene.add(bu);
+  const fg = new THREE.BufferGeometry(); fg.setAttribute("position", new THREE.Float32BufferAttribute([-0.17, 0, 0, 0.17, 0, 0, 0, -0.38, 0], 3)); fg.computeVertexNormals();
+  const fm = new THREE.InstancedMesh(fg, new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide, roughness: 0.9 }), flags.length);
+  flags.forEach(({ p, ry, color }, i) => { d.position.copy(p); d.rotation.set(0, ry, 0); d.scale.set(1, 1, 1); d.updateMatrix(); fm.setMatrixAt(i, d.matrix); fm.setColorAt(i, new THREE.Color(color)); });
+  fm.castShadow = true; scene.add(fm);
+  const lineM = new THREE.LineBasicMaterial({ color: 0x3a3d44 });
+  stringLines.forEach(pts => scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), lineM)));
+  const bm = new THREE.InstancedMesh(new THREE.SphereGeometry(0.055, 6, 4), bulbMat, bulbs.length);
+  bulbs.forEach((p, i) => { d.position.copy(p); d.rotation.set(0, 0, 0); d.scale.set(1, 1, 1); d.updateMatrix(); bm.setMatrixAt(i, d.matrix); });
+  scene.add(bm);
+  // people
+  const reserved = [{ x0: 34, x1: 50, z0: 88, z1: 97 }, { x0: 23, x1: 53, z0: 109, z1: 141 }, { x0: 64, x1: 84, z0: 119, z1: 149 }, { x0: 64, x1: 74, z0: -17, z1: -7 }, { x0: 76, x1: 80, z0: -21, z1: 0 }];
+  const ok = (x, z) => {
+    if (reserved.some(r => x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1)) return false;
+    if (colliders.some(r => x > r.x0 - 0.6 && x < r.x1 + 0.6 && z > r.z0 - 0.6 && z < r.z1 + 0.6)) return false;
+    const h0 = H(x, z); if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => Math.abs(H(x + a, z + b) - h0) > 0.3)) return false;
+    return !STOPS.some(s => { if (s.fly) return false; const dx = x - s.pos[0], dz = z - s.pos[1], lx = s.look[0] - s.pos[0], lz = s.look[2] - s.pos[1], dl = Math.hypot(lx, lz) || 1; const al = (dx * lx + dz * lz) / dl, off = Math.abs(dx * lz - dz * lx) / dl; return Math.hypot(dx, dz) < 3 || (al > 0 && al < 10 && off < al * 0.35 + 1); });
+  };
+  const ppl = [];
+  const zone = (n, x0, x1, z0, z1) => { for (let i = 0; i < n; i++) { const x = x0 + rand() * (x1 - x0), z = z0 + rand() * (z1 - z0); if (ok(x, z)) ppl.push([x, z]); } };
+  zone(30, 20, 74, -38, -32); zone(10, 20, 74, -56, -50.4); zone(15, 74, 92, -58, -30); zone(8, 93, 104, -50, -20);
+  zone(25, -24, 14, -38, -12); zone(50, 14.5, 20, 40, 104); zone(110, 32, 52, 56, 86); zone(25, -90, 12, 13.5, 19.5); zone(60, -90, 12, 21, 40); zone(10, -100, -93, -50, 108); zone(12, -100, 20, 104, 111); zone(25, -40, 14, -30, 10);
+  zone(30, 26, 81, -30, 14); zone(20, -10, 9, 42, 104); zone(8, 80, 90, -150, -60);
+  const body = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.22, 0.85, 3, 8), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 }), ppl.length);
+  const head = new THREE.InstancedMesh(new THREE.SphereGeometry(0.15, 10, 8), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 }), ppl.length);
+  const shirts = [0x2f3a56, 0xffffff, 0xb34a3a, 0x3a6f8f, 0x1f883d, 0x8a5cc7, 0xe9c46a, 0x222222, 0xd9d3c7, 0x7a8b99], skins = [0x8d5a3b, 0xa86b45, 0x6e4430, 0xc08a5f];
+  ppl.forEach(([x, z], i) => { const s = 0.92 + rand() * 0.16, y = H(x, z); d.rotation.set(0, 0, 0); d.position.set(x, y + 0.65 * s, z); d.scale.set(s, s, s); d.updateMatrix(); body.setMatrixAt(i, d.matrix); body.setColorAt(i, new THREE.Color(shirts[Math.floor(rand() * shirts.length)])); d.position.set(x, y + 1.5 * s, z); d.updateMatrix(); head.setMatrixAt(i, d.matrix); head.setColorAt(i, new THREE.Color(skins[i % 4])); });
+  body.castShadow = true; scene.add(body, head);
+}
+
+/* evening lights */
+const eveLights = [];
+[[36, 9, 81], [48, 9, 81]].forEach(([x, y, z]) => { const s = new THREE.SpotLight(0xfff0d0, 0, 40, 0.5, 0.5, 1); s.position.set(x, y, z); s.target.position.set(S.x, 1.2, S.z); scene.add(s, s.target); eveLights.push([s, 2.6]); });
+[[42, 7, 70], [-60, 5, 28], [22, 6, 56], [22, 6, 88], [4.8, 5, -1.6], [48, 6, -44], [GATE_X, 7, -36]].forEach(([x, y, z]) => { const p = new THREE.PointLight(0xffc77a, 0, 36, 1.5); p.position.set(x, y, z); scene.add(p); eveLights.push([p, 1.5]); });
+let evening = false;
+function setEvening(on) {
+  evening = on;
+  const sky = on ? 0x1a2142 : 0xcfe3ee;
+  scene.background = new THREE.Color(sky); scene.fog.color.set(sky); scene.fog.near = on ? 90 : 260; scene.fog.far = on ? 360 : 760;
+  hemi.intensity = on ? 0.28 : 0.85; hemi.color.set(on ? 0x6a74b8 : 0xdfefff); hemi.groundColor.set(on ? 0x2a2a36 : 0x6c7a52);
+  sun.intensity = on ? 0.18 : 1.05; sun.color.set(on ? 0xff9d6b : 0xfff2dc); sun.position.set(on ? -180 : 70, on ? 30 : 150, on ? 30 : 60);
+  bulbMat.color.set(on ? 0xffd27a : 0xd8d2c0); lampMat.color.set(on ? 0xfff0c8 : 0xe8e4d6);
+  eveLights.forEach(([l, k]) => l.intensity = on ? k : 0);
+  document.getElementById("mDay").setAttribute("aria-pressed", String(!on));
+  document.getElementById("mEve").setAttribute("aria-pressed", String(on));
+}
+
+/* ---------------- movement ---------------- */
+const player = { x: 112, z: -36, yaw: 0, pitch: 0, y: 0, fly: 0 };
+const EYE = 1.65, keys = {};
+let tween = null, detached = false, cur = 0;
+function lookAngles(px, pz, [tx, ty, tz], fly = 0) { const dx = tx - px, dz = tz - pz; return { yaw: Math.atan2(-dx, -dz), pitch: Math.atan2(ty - (H(px, pz) + EYE + fly), Math.hypot(dx, dz)) }; }
+function blocked(x, z, fromH) {
+  if (x < -123 || x > 105 || z < -193 || z > 168) return true;
+  if (Math.abs(H(x, z) - fromH) > 0.45) return true;
+  const r = 0.35; return colliders.some(c => x > c.x0 - r && x < c.x1 + r && z > c.z0 - r && z < c.z1 + r);
+}
+function goTo(i, instant) {
+  const s = STOPS[i], prevKey = STOPS[cur].key; cur = i;
+  const tgt = lookAngles(s.pos[0], s.pos[1], s.look, s.fly || 0);
+  let dy = tgt.yaw - player.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+  const from = { ...player }, dist = Math.hypot(s.pos[0] - from.x, s.pos[1] - from.z);
+  const dur = instant || reduced ? 0 : Math.min(3, 1 + dist / 80);
+  tween = { t: 0, dur, from, to: { x: s.pos[0], z: s.pos[1], yaw: from.yaw + dy, pitch: tgt.pitch, fly: s.fly || 0 } };
+  if (s.evening) setEvening(true); else if (prevKey === "closing") setEvening(false);
+  detached = false; render();
+}
+const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+addEventListener("keydown", e => {
+  if (e.target.closest && e.target.closest("button") && (e.key === " " || e.key === "Enter")) return;
+  const k = e.key.toLowerCase(); keys[k] = true;
+  if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k)) { e.preventDefault(); tween = null; }
+  if (k === "]" || k === "n") step(1);
+  if (k === "[" || k === "p") step(-1);
+});
+addEventListener("keyup", e => { keys[e.key.toLowerCase()] = false; });
+addEventListener("blur", () => { for (const k in keys) keys[k] = false; });
+let drag = null;
+canvas.addEventListener("pointerdown", e => { drag = { x: e.clientX, y: e.clientY, id: e.pointerId }; canvas.setPointerCapture(e.pointerId); canvas.classList.add("drag"); });
+canvas.addEventListener("pointermove", e => {
+  if (!drag || drag.id !== e.pointerId) return;
+  const k = e.pointerType === "touch" ? 0.006 : 0.0045;
+  player.yaw += (e.clientX - drag.x) * k; player.pitch = Math.max(-1.1, Math.min(1.1, player.pitch + (e.clientY - drag.y) * k * 0.8));
+  drag.x = e.clientX; drag.y = e.clientY; tween = null; markDetached();
+});
+const endDrag = () => { drag = null; canvas.classList.remove("drag"); };
+canvas.addEventListener("pointerup", endDrag); canvas.addEventListener("pointercancel", endDrag);
+const hold = (id, k) => { const el = document.getElementById(id); el.addEventListener("pointerdown", e => { e.preventDefault(); keys[k] = true; tween = null; }); ["pointerup", "pointercancel", "pointerleave"].forEach(ev => el.addEventListener(ev, () => keys[k] = false)); };
+hold("fwd", "w"); hold("back", "s");
+function markDetached() { if (!detached) { detached = true; render(); } }
+
+/* ---------------- UI ---------------- */
+const stopsEl = document.getElementById("stops");
+STOPS.forEach((s, i) => { const li = document.createElement("li"); li.innerHTML = `<button data-i="${i}" aria-label="Stop ${i + 1}: ${s.title}"><span class="dot"></span><span class="lbl">${s.short}</span></button>`; stopsEl.appendChild(li); });
+stopsEl.addEventListener("click", e => { const b = e.target.closest("button"); if (b) goTo(+b.dataset.i); });
+const step = d => goTo((cur + d + STOPS.length) % STOPS.length);
+document.getElementById("prev").onclick = () => step(-1);
+document.getElementById("next").onclick = () => step(1);
+document.getElementById("mDay").onclick = () => setEvening(false);
+document.getElementById("mEve").onclick = () => setEvening(true);
+const card = document.getElementById("card"), ct = document.getElementById("cardToggle");
+ct.onclick = () => { const closed = card.classList.toggle("closed"); ct.textContent = closed ? "Notes" : "Hide"; ct.setAttribute("aria-expanded", String(!closed)); };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function render() {
+  const s = STOPS[cur];
+  document.getElementById("cStep").textContent = `stop ${cur + 1} of ${STOPS.length}`;
+  document.getElementById("cZone").textContent = s.zone;
+  document.getElementById("cTitle").textContent = s.title;
+  document.getElementById("cWhen").innerHTML = s.when.map(w => `<span>${esc(w)}</span>`).join("");
+  document.getElementById("cLede").textContent = s.lede;
+  document.getElementById("cDress").innerHTML = s.dress.map(d => `<li>${esc(d)}</li>`).join("");
+  document.getElementById("cBudget").textContent = s.budget;
+  const list = s.chipsFrom === "walk" ? WALK_TENTS : s.chipsFrom === "court" ? COURT_TENTS : s.chips;
+  document.getElementById("cChipsWrap").hidden = !list;
+  if (list) document.getElementById("cChips").innerHTML = list.map(([n, g, p]) => `<span style="border-left-color:${HEX(GROUP[g])}">${esc(n)}${p === undefined ? "" : `<i>${p === null ? "₹" : p === 0 ? "free" : p + "c"}</i>`}</span>`).join("");
+  stopsEl.querySelectorAll("button").forEach((b, i) => { if (i === cur && !detached) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current"); });
+  document.getElementById("head").textContent = detached ? "HEAD detached · walking" : `HEAD → ${s.short.toLowerCase()}`;
+  const active = stopsEl.querySelector(`[data-i="${cur}"]`);
+  if (active && !detached) active.scrollIntoView({ block: "nearest", inline: "center", behavior: reduced ? "auto" : "smooth" });
+}
+
+/* minimap: north up, traced from the campus map */
+const mapc = document.getElementById("mapc"), mg = mapc.getContext("2d");
+const MX = x => (x + 130) / 240 * mapc.width, MZ = z => (z + 198) / 372 * mapc.height;
+const mapBase = document.createElement("canvas"); mapBase.width = mapc.width; mapBase.height = mapc.height;
+{
+  const g = mapBase.getContext("2d"), R = (x0, x1, z0, z1, c) => { g.fillStyle = c; g.fillRect(MX(x0), MZ(z0), MX(x1) - MX(x0), MZ(z1) - MZ(z0)); };
+  const poly = (pts, c) => { g.fillStyle = c; g.beginPath(); pts.forEach(([x, z]) => g.lineTo(MX(x), MZ(z))); g.closePath(); g.fill(); };
+  g.fillStyle = "#f3f1ea"; g.fillRect(0, 0, mapBase.width, mapBase.height);
+  R(CAMPUS.x0, CAMPUS.x1, CAMPUS.z0, CAMPUS.z1, "#eef0e4");
+  R(92.5, 106, -198, 174, "#c9c6bd"); R(-130, 110, 156, 170, "#e9b44c");
+  poly(FIELD, "#cfe3b4"); R(80, 90, -190, -58, "#cfe3b4"); STRIPS.forEach(([a, b]) => R(a, b, STRIP.z0, STRIP.z1, "#cfe3b4")); R(-118, -20, 113, 148, "#cfe3b4");
+  R(RING.w0, STRIP.x1, -56, STRIP.z0, "#c9c6bd"); R(RING.w0, STRIP.x1, STRIP.z1, -32, "#c9c6bd"); R(-24, -8, -38, -4, "#c9c6bd"); R(75, 80, -190, -56, "#c9c6bd"); R(4, 10, -190, -56, "#c9c6bd"); R(4, 80, -194, -189, "#c9c6bd");
+  R(RING.w0, RING.w1, -56, RING.s1, "#c9c6bd"); R(RING.w0, RING.e1, RING.s0, RING.s1, "#c9c6bd"); R(RING.e0, RING.e1, GAP.z0, RING.s1, "#c9c6bd"); R(GAP.x0, GAP.x1, GAP.z0, GAP.z1, "#b5b3ad"); R(OPEN.x0, OPEN.x1, OPEN.z0, OPEN.z1, "#e6dfd0");
+  R(TRACK.x - TRACK.R, TRACK.x - TRACK.r, -30, TRACK.z - TRACK.a, "#e09a7a"); R(65, 83, 120, 148, "#d9a86a"); g.fillStyle = "#c9ccc6"; g.beginPath(); g.arc(MX(32), MZ(118), 5, 0, 7); g.arc(MX(44), MZ(120), 4, 0, 7); g.fill(); R(-40, -16, -185, -171, "#b9c0a8");
+  g.fillStyle = "#e09a7a"; g.beginPath(); g.ellipse(MX(TRACK.x), MZ(TRACK.z), (TRACK.R / 240) * mapc.width, ((TRACK.a + TRACK.R) / 358) * mapc.height, 0, 0, 7); g.fill();
+  g.fillStyle = "#cfe3b4"; g.beginPath(); g.ellipse(MX(TRACK.x), MZ(TRACK.z), (TRACK.r / 240) * mapc.width, ((TRACK.a + TRACK.r) / 358) * mapc.height, 0, 0, 7); g.fill();
+  R(43, 58, -30, -2, "#7d9bd6"); R(61, 81, -22, 4, "#8cc07a");
+  R(-92, -12, 42, 102, "#b7c7d0"); R(-12, -2, 63, 85, "#b7c7d0");
+  g.fillStyle = "#b7c7d0"; g.beginPath(); for (let i = 0; i < 8; i++) { const a = Math.PI / 8 + i * Math.PI / 4, rr = VB.r / Math.cos(Math.PI / 8); g.lineTo(MX(VB.x + Math.sin(a) * rr), MZ(VB.z + Math.cos(a) * rr)); } g.closePath(); g.fill();
+  [[20, 68, -108, -70], [24, 72, -140, -114], [26, 74, -184, -146]].forEach(([a, b, c, d]) => R(a, b, c, d, "#d8cdb8"));
+  R(-120, -108, -4, 30, "#c9c6bd"); R(-122, -109, 34, 76, "#c9c6bd");
+  g.fillStyle = "#c2593f"; g.beginPath(); g.arc(MX(CAFE.x), MZ(CAFE.z), (CAFE.r / 240) * mapc.width, 0, 7); g.fill();
+  R(STAGE.x - 6, STAGE.x + 6, STAGE.z - 2.5, STAGE.z + 2.5, "#1b1c22");
+  g.fillStyle = "#d9a650"; g.fillRect(MX(-116) - 3, MZ(126) - 3, 6, 6);
+  mapDots.forEach(([x, z, c]) => { g.fillStyle = HEX(c); g.fillRect(MX(x) - 3, MZ(z) - 3, 6, 6); });
+  RECHARGE.forEach(({ x, z }) => { g.fillStyle = "#ffc933"; g.strokeStyle = "#111"; g.lineWidth = 1; g.beginPath(); g.arc(MX(x), MZ(z), 4, 0, 7); g.fill(); g.stroke(); });
+  g.fillStyle = "#1b1c22"; g.font = `700 13px ${FONT}`; g.textAlign = "center";
+  [["Shivaji", -52, 74], ["Visves", VB.x, VB.z + 4], ["Hostels", 47, -128], ["Gate", 86, -62], ["Track", TRACK.x, TRACK.z + 4]].forEach(([t, x, z]) => g.fillText(t, MX(x), MZ(z)));
+}
+function drawMap() {
+  mg.drawImage(mapBase, 0, 0);
+  mg.save(); mg.translate(MX(player.x), MZ(player.z)); mg.rotate(-player.yaw);
+  mg.fillStyle = "rgba(31,136,61,.3)"; mg.beginPath(); mg.moveTo(0, 0); mg.arc(0, 0, 30, -Math.PI / 2 - 0.55, -Math.PI / 2 + 0.55); mg.fill();
+  mg.fillStyle = "#0b0b0f"; mg.strokeStyle = "#fff"; mg.lineWidth = 2.5; mg.beginPath(); mg.moveTo(0, -9); mg.lineTo(6, 7); mg.lineTo(-6, 7); mg.closePath(); mg.fill(); mg.stroke();
+  mg.restore();
+}
+
+/* ---------------- loop ---------------- */
+let mapVisible = true;
+function resize() { mapVisible = getComputedStyle(document.getElementById("map")).display !== "none"; const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w < h ? 78 : 66; camera.updateProjectionMatrix(); }
+addEventListener("resize", resize);
+let last = performance.now(), hintHidden = false;
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (tween) {
+    tween.t += dt; const k = tween.dur ? ease(Math.min(1, tween.t / tween.dur)) : 1;
+    for (const p of ["x", "z", "yaw", "pitch", "fly"]) player[p] = tween.from[p] + (tween.to[p] - tween.from[p]) * k;
+    if (k >= 1) tween = null;
+  } else {
+    const f = (keys.w || keys.arrowup ? 1 : 0) - (keys.s || keys.arrowdown ? 1 : 0), sd = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
+    player.yaw += ((keys.arrowleft ? 1 : 0) - (keys.arrowright ? 1 : 0)) * dt * 1.8;
+    if (f || sd) {
+      markDetached(); player.fly = Math.max(0, player.fly - dt * 40);
+      const sp = (keys.shift ? 9 : 3.8) * dt, fx = -Math.sin(player.yaw), fz = -Math.cos(player.yaw), rx = Math.cos(player.yaw), rz = -Math.sin(player.yaw);
+      let mx = fx * f + rx * sd, mz = fz * f + rz * sd; const n = Math.hypot(mx, mz) || 1; mx = mx / n * sp; mz = mz / n * sp;
+      const free = player.fly > 2 || blocked(player.x, player.z, H(player.x, player.z));
+      if (free || !blocked(player.x + mx, player.z, H(player.x, player.z))) player.x += mx;
+      if (free || !blocked(player.x, player.z + mz, H(player.x, player.z))) player.z += mz;
+      if (!hintHidden) { hintHidden = true; document.getElementById("hint").style.opacity = "0"; }
+    }
+  }
+  player.y += (H(player.x, player.z) - player.y) * Math.min(1, dt * 12);
+  camera.position.set(player.x, player.y + EYE + player.fly, player.z);
+  camera.rotation.set(player.pitch, player.yaw, 0);
+  if (!reduced) { coins.forEach((c, i) => { c.rotation.y = now / 700 + i; c.position.y = c.userData.y + Math.sin(now / 600 + i) * 0.06; }); flagPoles.forEach((f, i) => { f.rotation.y = Math.sin(now / 900 + i * 0.7) * 0.25; }); }
+  renderer.render(scene, camera);
+  if (mapVisible) drawMap();
+  requestAnimationFrame(frame);
+}
+resize(); setEvening(false);
+const startAt = Math.max(0, STOPS.findIndex(s => "#" + s.key === location.hash));
+player.fly = STOPS[startAt].fly || 0; goTo(startAt, true); player.y = H(STOPS[startAt].pos[0], STOPS[startAt].pos[1]);
+addEventListener("hashchange", () => { const i = STOPS.findIndex(s => "#" + s.key === location.hash); if (i >= 0) goTo(i); });
+document.getElementById("loading").remove();
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>
