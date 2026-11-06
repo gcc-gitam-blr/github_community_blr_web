@@ -14,7 +14,7 @@ const vr = BOOTHS.find((b) => b.id === "vr");
 const price = EPOCH.ticketPriceINR ? `₹${EPOCH.ticketPriceINR}` : null;
 const C = EPOCH.currency;
 
-function GuidePage({ kicker, title, sub, sticker, other, parts, path }: { kicker: string; title: string; sub: string; sticker: StickerName; other: { href: string; label: string }; parts: Part[]; path: string }) {
+function GuidePage({ kicker, title, sub, sticker, other, extra, parts, path }: { kicker: string; title: string; sub: string; sticker: StickerName; other: { href: string; label: string }; extra?: { href: string; label: string }; parts: Part[]; path: string }) {
   return (
     <article className="guide mx-auto w-full max-w-[1040px] px-5 pb-20 pt-28 md:px-10 md:pt-36">
       <header className="flex flex-wrap items-end justify-between gap-6 border-b border-ink/15 pb-6">
@@ -24,7 +24,7 @@ function GuidePage({ kicker, title, sub, sticker, other, parts, path }: { kicker
           <p className="mt-3 max-w-[56ch] text-[17px] text-mute">{sub}</p>
         </div>
         <div className="flex items-end gap-4">
-          <div className="no-print flex flex-col items-start gap-2"><PrintButton>Print this page</PrintButton><Link href={other.href} className="px-1 text-[14px] text-mute underline underline-offset-2 hover:text-ink">{other.label}</Link></div>
+          <div className="no-print flex flex-col items-start gap-2"><PrintButton>Print this page</PrintButton><Link href={other.href} className="px-1 text-[14px] text-mute underline underline-offset-2 hover:text-ink">{other.label}</Link>{extra && <a href={extra.href} className="px-1 text-[14px] text-mute underline underline-offset-2 hover:text-ink">{extra.label}</a>}</div>
           <Sticker name={sticker} size={96} tilt={6} className="hidden sm:block print:hidden" alt="" />
         </div>
       </header>
@@ -70,5 +70,5 @@ export function OrganiserGuide() {
       ? <ul className="space-y-1">{CONTACTS.map((c) => <li key={c.name + c.phone}><b className="font-medium">{c.name}</b>{c.role ? ` · ${c.role}` : ""} · <a className="font-mono underline underline-offset-2" href={`tel:${c.phone.replace(/\s/g, "")}`}>{c.phone}</a></li>)}</ul>
       : <p>Any admin (they&apos;re listed on the Desk under Who runs what), or the registration desk. {help}</p> },
   ];
-  return <GuidePage kicker={`${EPOCH.name}_${EPOCH.edition} · organiser guide`} title="Running Epoch." sub="For volunteers and admins: check-in, cash, scanning, fixing mistakes and the kiosk." sticker="support" other={{ href: "/epoch/guide", label: "Attendee guide" }} parts={parts} path="/epoch/guide/organisers" />;
+  return <GuidePage kicker={`${EPOCH.name}_${EPOCH.edition} · organiser guide`} title="Running Epoch." sub="For volunteers and admins: check-in, cash, scanning, fixing mistakes and the kiosk." sticker="support" other={{ href: "/epoch/guide", label: "Attendee guide" }} extra={{ href: "/epoch/walkthrough.html", label: "The venue in 3D" }} parts={parts} path="/epoch/guide/organisers" />;
 }
