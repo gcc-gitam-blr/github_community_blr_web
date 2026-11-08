@@ -13,6 +13,7 @@ ok("subjects fit an inbox line (80 characters or fewer)", LESSONS.every((l) => l
 ok("no em dashes anywhere in the copy", !LESSONS.some((l) => JSON.stringify(l).includes("—")));
 ok("the lesson is the same all week and changes the next", lessonOfTheWeek("2026-11-05").slug === lessonOfTheWeek("2026-11-07").slug && lessonOfTheWeek("2026-11-05").slug !== lessonOfTheWeek("2026-11-12").slug);
 ok("every lesson comes round once before any repeats", new Set(Array.from({ length: LESSONS.length }, (_, w) => lessonOfTheWeek(new Date(Date.UTC(2026, 10, 5) + w * 7 * 864e5).toISOString().slice(0, 10)).slug)).size === LESSONS.length);
+ok("the first issue (Sunday 8 Nov 2026) sends lesson 1, and the next Sunday lesson 2", lessonOfTheWeek("2026-11-08").slug === LESSONS[0].slug && lessonOfTheWeek("2026-11-14").slug === LESSONS[0].slug && lessonOfTheWeek("2026-11-15").slug === LESSONS[1].slug);
 ok("a lesson is found by its slug, and an unknown slug finds nothing", lessonBySlug("branches")?.slug === "branches" && lessonBySlug("nope") === undefined && lessonNumber(LESSONS[2]) === 3);
 
 const l = LESSONS[0];
