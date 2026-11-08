@@ -7,6 +7,7 @@ import { SITE_URL } from "@/lib/site";
 import { NOTE_MAX, WHY, newsletterEmail, type Audience } from "@/lib/newsletter";
 import { lessonBySlug } from "@/lib/lessons";
 import { todayInIndia } from "@/lib/events";
+import { EMAIL_RE } from "@/lib/join";
 
 /* POST /api/broadcast — an admin emails everyone on one list who hasn't unsubscribed: club sign-ups ("members",
    the default) or the "tell me when Epoch dates are out" list ("epoch"). One unsubscribe link covers both.
@@ -17,7 +18,8 @@ import { todayInIndia } from "@/lib/events";
    longer than one call may run. So:
      { lesson | subject+message, audience }  → saves the send, then sends what fits in about 45 seconds
      { id }                                  → carries on with a saved send (the admin page calls this until left is 0)
-     { ..., test: true }                     → one copy to the admin who asked, marked [Test], not saved
+     { ..., test: true, testTo? }            → one copy, marked [Test], not saved: to testTo if given (say a college
+                                               address, to see whether it lands in spam there), else to the admin who asked
    Each address is recorded the moment its email goes, so a paused send carries on later and nobody gets two.
    The caller proves who they are with their Supabase login (Bearer token); the database's own
    rules (RLS) decide what they may read, and only role 'admin' may send. */
@@ -37,7 +39,7 @@ export async function POST(req: Request) {
   const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) return json({ ok: false, error: "Sign in first." }, 401);
 
-  let body: { id?: number; subject?: string; message?: string; audience?: string; lesson?: string; note?: string; test?: boolean };
+  let body: { id?: number; subject?: string; message?: string; audience?: string; lesson?: string; note?: string; test?: boolean; testTo?: string };
   try { body = await req.json(); } catch { return json({ ok: false, error: "Bad request." }, 400); }
   const resuming = body.id !== undefined;
   if (resuming && !(Number.isInteger(body.id) && body.id! > 0)) return json({ ok: false, error: "Bad request." }, 400);
@@ -75,13 +77,17 @@ export async function POST(req: Request) {
     const problem = await mailer.check();
     if (problem) return json({ ok: false, error: `Nothing was sent. ${problem}` }, 502);
 
-    // "Send me a test": one copy to the admin who asked, marked as a test and not saved as a send
+    // "Send a test": one copy, marked as a test and not saved as a send. To the address typed in (a college inbox,
+    // to see whether it lands in spam there), or else to the admin who asked.
     if (body.test === true) {
-      if (!user.user.email) return json({ ok: false, error: "Your account has no email address to send the test to." }, 422);
+      const typed = (body.testTo ?? "").trim().toLowerCase();
+      if (typed && (!EMAIL_RE.test(typed) || typed.length > 254)) return json({ ok: false, error: "That test address doesn't look right." }, 422);
+      const to = typed || user.user.email;
+      if (!to) return json({ ok: false, error: "Your account has no email address to send the test to. Type one in the test box." }, 422);
       const me = (await db.from("profiles").select("name").eq("id", user.user.id).maybeSingle()).data as { name?: string | null } | null;
-      const mail = mailFor({ audience, lesson: lesson?.slug ?? null, note, subject, message }, { email: user.user.email, name: me?.name ?? null });
-      const res = await mailer.send(user.user.email, { ...mail, subject: `[Test] ${mail.subject}` }, headers(user.user.email));
-      return res.sent ? json({ ok: true, sent: 1, left: 0, total: 1 }) : json({ ok: false, error: `Nothing was sent. ${res.reason === "failed" ? res.why : ""}`.trim() }, 502);
+      const mail = mailFor({ audience, lesson: lesson?.slug ?? null, note, subject, message }, { email: to, name: me?.name ?? null });
+      const res = await mailer.send(to, { ...mail, subject: `[Test] ${mail.subject}` }, headers(to));
+      return res.sent ? json({ ok: true, sent: 1, left: 0, total: 1, to }) : json({ ok: false, error: `Nothing was sent. ${res.reason === "failed" ? res.why : ""}`.trim() }, 502);
     }
 
     const list = async (a: Audience) => db.from(LISTS[a]).select(a === "members" ? "email, name" : "email").eq("unsubscribed", false).limit(MAX_PER_SEND + 1).returns<Person[]>();

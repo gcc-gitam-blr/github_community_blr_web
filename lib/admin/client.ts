@@ -100,8 +100,8 @@ export async function sendCertificates(event: string, ids?: string[], msg?: { no
 
 /** One round of an email to a whole list (app/api/broadcast): start one with its content, or carry on with `{ id }`.
     `left` is how many still wait; `problem` says why a round paused (a daily limit, a refused login). */
-export interface BroadcastRound { id?: number; sent: number; done?: number; left: number; total: number; problem?: string }
-export type BroadcastBody = { id: number } | { audience: "members" | "epoch"; lesson?: string; note?: string; subject?: string; message?: string; test?: boolean };
+export interface BroadcastRound { id?: number; sent: number; done?: number; left: number; total: number; problem?: string; to?: string }
+export type BroadcastBody = { id: number } | { audience: "members" | "epoch"; lesson?: string; note?: string; subject?: string; message?: string; test?: boolean; testTo?: string };
 export async function broadcastRound(body: BroadcastBody): Promise<Res<BroadcastRound>> {
   const { data: { session } } = await supabase().auth.getSession();
   if (!session) return { ok: false, error: "Sign in again." };
