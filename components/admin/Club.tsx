@@ -115,6 +115,8 @@ export function SignUps() {
   const [mode, setMode] = useState<"lesson" | "own">("lesson");
   const today = todayInIndia(), thisWeek = lessonOfTheWeek(today).slug;
   const [lesson, setLesson] = useState(thisWeek); const [note, setNote] = useState("");
+  // where "Send a test" goes: empty means your own sign-in email; a college address shows whether it lands in spam there
+  const [testTo, setTestTo] = useState("");
 
   // the preview is built exactly as each person's copy is, with your name in the greeting
   const preview = useMemo(() => newsletterEmail({ lesson, note, name: me?.name, today, site: SITE_URL, unsubscribe: "#", audience }).html, [lesson, note, me?.name, today, audience]);
@@ -145,8 +147,8 @@ export function SignUps() {
   const send = async (test = false) => {
     if (test) {
       setSending(true); setResult(null);
-      const r = await broadcastRound({ ...content(), test: true }); setSending(false);
-      return setResult(r.ok ? { k: "ok", t: "Sent a test to your own email. Check how it looks on your phone." } : { k: "err", t: r.error });
+      const r = await broadcastRound({ ...content(), test: true, ...(testTo.trim() ? { testTo: testTo.trim() } : {}) }); setSending(false);
+      return setResult(r.ok ? { k: "ok", t: `Sent a test to ${r.to ?? "your own email"}. Check whether it landed in the inbox or in spam, and how it looks on your phone.` } : { k: "err", t: r.error });
     }
     const title = mode === "lesson" ? chosen.subject : subject || "(no subject)";
     if (!(await ask({ title: `Email ${people} ${people === 1 ? "person" : "people"}?`, body: <>Subject: <b>{title}</b>. It goes out one email at a time, a few seconds apart, so it doesn&apos;t land in spam: about {Math.max(1, Math.ceil((people * 6) / 60))} minutes with this page open. Emails can&apos;t be called back once they&apos;re sent.</>, yes: `Send to ${people}` }))) return;
@@ -211,7 +213,10 @@ export function SignUps() {
             </>)}
             <div className="flex flex-wrap items-center gap-3">
               <button disabled={sending || !ready} onClick={() => void send()} className={btn}>{sending ? "Sending…" : `Send to ${people} ${people === 1 ? "person" : "people"}`}</button>
-              <button disabled={sending || !ready} onClick={() => void send(true)} className={btnSoft}>Send me a test</button>
+              <span className="flex flex-wrap items-center gap-2">
+                <input type="email" value={testTo} onChange={(e) => setTestTo(e.target.value)} placeholder="Test to: your email, or e.g. a gitam.in one" aria-label="Send the test to this address (leave empty for your own email)" className={`${input.replace("w-full ", "")} w-[280px] max-w-full`} maxLength={254} />
+                <button disabled={sending || !ready} onClick={() => void send(true)} className={btnSoft}>{testTo.trim() ? "Send a test there" : "Send me a test"}</button>
+              </span>
               <Note note={result} />
             </div>
           </div>
