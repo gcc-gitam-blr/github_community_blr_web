@@ -201,9 +201,13 @@ export const LESSONS: Lesson[] = [
   },
 ];
 
-/** This week's lesson: one a week, in order, the same all week (and round again once they run out). */
+/** The first issue went out on Diwali, Sunday 8 Nov 2026, with lesson 1. A week runs Sunday to Saturday. */
+export const FIRST_ISSUE = "2026-11-08";
+
+/** This week's lesson: one a week, in order from the first issue, the same all week (and round again once they run out). */
 export function lessonOfTheWeek(today: string): Lesson {
-  return LESSONS[weekNumber(today) % LESSONS.length];
+  const n = LESSONS.length;
+  return LESSONS[((weekNumber(today) % n) + n) % n];
 }
-const weekNumber = (today: string) => Math.floor(Date.parse(today + "T00:00:00Z") / (7 * 864e5));
+const weekNumber = (today: string) => Math.floor((Date.parse(today + "T00:00:00Z") - Date.parse(FIRST_ISSUE + "T00:00:00Z")) / (7 * 864e5));
 export const lessonBySlug = (slug: string | undefined) => LESSONS.find((l) => l.slug === slug);
