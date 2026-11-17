@@ -40,5 +40,20 @@ demo-video/
 .vercel
 .env*
 
-# scratch SEO audit output (claude-seo plugin)
+# Local audits and diagnostic output
 *-audit/
+audit-reports/
+audit-results/
+coverage/
+blob-report/
+*.har
+
+# Personal agent/editor state and temporary artifacts
+.codex/
+.idea/
+.tmp/
+tmp/
+*.local
+
+# Keep the public setup template
+!.env.example
